@@ -1,53 +1,38 @@
 # Clips
 
-Next-generation vertical short-form video and live-streaming platform designed for a zero-dollar bootstrap MVP.
+Vertical shorts, live streaming, and long-form in one product.
 
-## Core product principles
+**Discovery:** Learning machine ranked by completion, rewatches, shares, and skips. Adaptive per-user taste profiles. Follower count never ranks content.
 
-- **Meritocratic discovery**: Ranking is driven purely by real-time engagement velocity (completion rate, loops, shares, comments/saves, likes). Creator follower count is never used as a ranking signal.
-- **100% creator-owned subscriptions**: Creators receive the full listed subscription or tip amount. A transparent processing fee is charged on top to the buyer.
-- **90/10 ad revenue pool**: 90% of the monthly ad pool is distributed to creators by verified impression share; 10% is retained by the platform.
-- **Zero-cost media architecture**:
-  - Client-side compression target (720p vertical) before any network upload.
-  - Zero-storage reference importer (metadata + external URL only).
-  - Backblaze B2 compatible object storage path ($0.005/GB) with Cloudflare edge caching for egress protection.
+**Monetization:** Creators keep 100% of subscription list price (fees on top for buyers). Ad pool 90/10 by impression share.
+
+**Storage:** Zero raw masters on ingress. Client-side compression path. Zero-storage URL importer with cross-post detection.
 
 ## Stack
 
-- React 19 + Vite 8
-- Tailwind CSS 4
-- Lucide React icons
-- Oxlint
+- React 19 + Vite 8 + Tailwind CSS 4
+- Client-only MVP (localStorage sessions, taste, imports)
+- Static deploy (Render / any static host)
 
-## Getting started
+## Scripts
 
 ```bash
 npm install
 npm run dev
+npm run build
+npm run preview
 ```
 
-Open [http://localhost:5173](http://localhost:5173).
+## Key modules
 
-## Project structure
+- `src/lib/algorithmEngine.js` — adaptive ranking + `recordInteraction`
+- `src/lib/crossPostDetector.js` — source platform heuristics
+- `src/lib/storage.js` — persistence + zero-cost helpers
+- `src/lib/financialLedger.js` — on-top fee math
 
-```
-src/
-  components/     # UI: Navbar, Sidebar, feeds, modals, wallet, dashboard
-  context/        # Auth (dual-role viewer / creator)
-  data/           # Verified public creators and representative content
-  lib/            # Algorithm, financial ledger, storage helpers, utils
-  App.jsx
-  main.jsx
-  index.css
-```
+## Legal intake
 
-## Notes
+- DMCA: copyright@platform.internal
+- Counter-notifications: dmca-counter@platform.internal
 
-- Content catalog uses verified public creators only (no fabricated personas).
-- No emoji characters in the codebase.
-- Theme is 99% white with powder-blue accents (`#2C729B`) in positions analogous to YouTube red.
-- Import Short and Cost Simulator are available from the top bar and Creator Studio.
-
-## License
-
-Private / proprietary for the Clips MVP.
+See `PRODUCT_BACKLOG.md` for the full checklist.
