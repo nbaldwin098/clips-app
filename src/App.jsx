@@ -20,7 +20,7 @@ function AppShell() {
   const openCost = () => setCostOpen(true)
 
   return (
-    <div className="min-h-screen bg-white text-slate-900">
+    <div className="min-h-screen bg-[#FAFCFF] text-slate-900">
       <Navbar
         currentView={view}
         onNavigate={setView}
