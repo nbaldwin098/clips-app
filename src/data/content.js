@@ -1,12 +1,8 @@
 /**
- * Content catalog helpers.
- * Catalog is composed of:
- *  - Legal PD/CC seed library (see legalSeed.js)
- *  - User imports via zero-storage importer
- * No fake social creators.
+ * Content catalog — empty by design.
+ * No seed library, no fabricated creators.
+ * Content enters only via authenticated import or upload.
  */
-
-export { LEGAL_SEED, getLegalSeed, getLegalSeedById, LICENSE } from './legalSeed'
 
 export const VIDEOS = []
 export const SHORTS = []
