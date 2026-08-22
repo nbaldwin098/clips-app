@@ -1,19 +1,19 @@
-import { Home } from 'lucide-react'
+import { Home, Compass } from 'lucide-react'
 
 export default function NotFoundPage({ onNavigate }) {
   return (
-    <div className="flex flex-1 items-center justify-center p-6 min-h-[50vh]">
+    <div className="flex flex-1 items-center justify-center p-6 min-h-[60vh] bg-[#0b0b0f]">
       <div className="max-w-md text-center">
-        <p className="text-5xl font-semibold text-slate-200 tracking-tight">404</p>
-        <h1 className="mt-4 text-lg font-semibold text-slate-900">Page not found</h1>
-        <p className="mt-2 text-sm text-slate-500 leading-relaxed">
-          That view does not exist. Head home or open Explore to browse the legal library.
+        <p className="text-6xl font-semibold text-zinc-800 tracking-tight">404</p>
+        <h1 className="mt-4 text-lg font-semibold text-zinc-100">Page not found</h1>
+        <p className="mt-2 text-sm text-zinc-500 leading-relaxed">
+          That screen does not exist or the link is broken. Head back to Recommended.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <button
             type="button"
-            onClick={() => onNavigate?.('home')}
-            className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-[#2C729B] text-white text-sm font-medium hover:bg-[#245F82]"
+            onClick={() => (onNavigate ? onNavigate('home') : (window.location.href = '/'))}
+            className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-[#007ACC] text-white text-sm font-medium hover:bg-[#23A9F2]"
           >
             <Home className="h-4 w-4" />
             Home
@@ -21,9 +21,10 @@ export default function NotFoundPage({ onNavigate }) {
           <button
             type="button"
             onClick={() => onNavigate?.('explore')}
-            className="h-10 px-5 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="inline-flex items-center gap-2 h-10 px-5 rounded-xl border border-zinc-800 bg-[#121218] text-sm font-medium text-zinc-300 hover:bg-zinc-800"
           >
-            Explore
+            <Compass className="h-4 w-4" />
+            Search
           </button>
         </div>
       </div>

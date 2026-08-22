@@ -19,6 +19,20 @@ function sanitizeUser(u) {
   return u
 }
 
+function pickUniqueHandle(raw, exceptUserId = null) {
+  let v = validateHandle(raw, { currentUserId: exceptUserId })
+  if (v.ok) return v.handle
+  let base = normalizeHandle(raw) || 'user'
+  if (base.length < 3) base = 'user'
+  if (!/^[a-z]/.test(base)) base = `u${base}`.slice(0, 24)
+  for (let i = 0; i < 99; i++) {
+    const tryH = (i === 0 ? base : `${base}${i}`).slice(0, 24)
+    v = validateHandle(tryH, { currentUserId: exceptUserId })
+    if (v.ok) return v.handle
+  }
+  return `user${Date.now().toString(36).slice(-6)}`
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => sanitizeUser(lsGet('user', null)))
   const [mode, setMode] = useState(() => lsGet('mode', 'viewer'))
@@ -52,34 +66,26 @@ export function AuthProvider({ children }) {
       typeof payload === 'object' && payload.provider ? payload.provider : 'email'
 
     const existing = sanitizeUser(lsGet('user', null))
-    let handleRaw =
-      (typeof payload === 'object' && payload.handle) || displayName || 'user'
-    let v = validateHandle(handleRaw, {
-      currentUserId: existing?.email === email ? existing.id : null,
-    })
-    if (!v.ok) {
-      let base = normalizeHandle(handleRaw) || 'user'
-      if (base.length < 3) base = 'user'
-      for (let i = 0; i < 50; i++) {
-        const tryH = (i === 0 ? base : `${base}${i}`).slice(0, 24)
-        v = validateHandle(tryH, {
-          currentUserId: existing?.email === email ? existing.id : null,
-        })
-        if (v.ok) break
-      }
+    if (existing && existing.email === email) {
+      const next = { ...existing, provider, displayName }
+      setUser(next)
+      setMode('viewer')
+      try { indexUser(next) } catch {}
+      return
     }
-    const next =
-      existing && existing.email === email
-        ? { ...existing, provider, displayName, handle: existing.handle || v.handle }
-        : {
-            ...DEFAULT_USER,
-            id: `user_${Date.now()}`,
-            email,
-            displayName,
-            handle: v.handle,
-            provider,
-            creatorStatus: 'none',
-          }
+
+    const handle = pickUniqueHandle(
+      (typeof payload === 'object' && payload.handle) || displayName || 'user'
+    )
+    const next = {
+      ...DEFAULT_USER,
+      id: `user_${Date.now()}`,
+      email,
+      displayName,
+      handle,
+      provider,
+      creatorStatus: 'none',
+    }
     setUser(next)
     setMode('viewer')
     try { indexUser(next) } catch {}
@@ -93,14 +99,15 @@ export function AuthProvider({ children }) {
   }, [])
 
   const updateProfile = useCallback((partial) => {
+    if (partial && partial.handle != null) {
+      const cur = lsGet('user', null)
+      const v = validateHandle(partial.handle, { currentUserId: cur?.id })
+      if (!v.ok) throw new Error(v.error || 'Invalid handle')
+      partial = { ...partial, handle: v.handle }
+    }
     setUser((prev) => {
       if (!prev) return prev
-      let next = { ...prev, ...partial }
-      if (partial.handle != null) {
-        const v = validateHandle(partial.handle, { currentUserId: prev.id })
-        if (!v.ok) throw new Error(v.error || 'Invalid handle')
-        next.handle = v.handle
-      }
+      const next = { ...prev, ...partial }
       lsSet('user', next)
       try { indexUser(next) } catch {}
       return next
@@ -112,6 +119,7 @@ export function AuthProvider({ children }) {
       if (!prev) return prev
       const next = { ...prev, isCreator: true }
       lsSet('user', next)
+      try { indexUser(next) } catch {}
       return next
     })
     setMode('creator')
