@@ -20,6 +20,8 @@ import AuthRequired from './components/AuthRequired'
 import ImportShortModal from './components/ImportShortModal'
 import AuthModal from './components/AuthModal'
 import UploadModal from './components/UploadModal'
+import SoundsPage from './components/SoundsPage'
+import CheckoutPage from './components/CheckoutPage'
 import {
   TermsOfService,
   PrivacyPolicy,
@@ -30,6 +32,7 @@ import { startSession } from './lib/algorithmEngine'
 
 const KNOWN_VIEWS = new Set([
   'home',
+  'clips',
   'shorts',
   'live',
   'dashboard',
@@ -43,6 +46,8 @@ const KNOWN_VIEWS = new Set([
   'help',
   'about',
   'notifications',
+  'sounds',
+  'checkout',
   'legal-tos',
   'legal-privacy',
   'legal-creator',
@@ -55,11 +60,10 @@ function AppShell() {
   const [importOpen, setImportOpen] = useState(false)
   const [authOpen, setAuthOpen] = useState(false)
   const [uploadOpen, setUploadOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
 
   useEffect(() => {
-    if (isAuthenticated && user?.id) {
-      startSession(user.id)
-    }
+    if (isAuthenticated && user?.id) startSession(user.id)
   }, [isAuthenticated, user?.id])
 
   const openAuth = () => setAuthOpen(true)
@@ -79,63 +83,73 @@ function AppShell() {
   }
 
   const navigate = (next) => {
-    setView(next)
+    const map = next === 'shorts' ? 'clips' : next
+    setView(map)
     try {
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch {}
   }
 
-  const showSidebar =
-    !view.startsWith('legal-') && view !== 'settings' && view !== 'help' && view !== 'about'
+  const showSidebarChrome = !String(view).startsWith('legal-')
 
   const renderMain = () => {
-    if (!KNOWN_VIEWS.has(view)) {
-      return <NotFoundPage onNavigate={navigate} />
-    }
+    if (!KNOWN_VIEWS.has(view)) return <NotFoundPage onNavigate={navigate} />
 
     if (view === 'dashboard' && !isAuthenticated) {
       return (
         <AuthRequired
           title="Creator Studio"
-          description="Sign in to manage imports, uploads, and live settings."
+          description="Sign in to manage clips, uploads, and live."
           onOpenAuth={openAuth}
         />
       )
     }
     if (view === 'wallet' && !isAuthenticated) {
       return (
-        <AuthRequired
-          title="Creator wallet"
-          description="Sign in to view payouts and connect Stripe."
-          onOpenAuth={openAuth}
-        />
+        <AuthRequired title="Wallet" description="Sign in to view payouts." onOpenAuth={openAuth} />
       )
     }
     if (view === 'settings' && !isAuthenticated) {
       return (
         <AuthRequired
           title="Settings"
-          description="Sign in to manage your account, stream keys, and profile."
+          description="Sign in to manage your account."
           onOpenAuth={openAuth}
         />
+      )
+    }
+    if (view === 'checkout' && !isAuthenticated) {
+      return (
+        <AuthRequired title="Checkout" description="Sign in to continue." onOpenAuth={openAuth} />
       )
     }
 
     switch (view) {
       case 'home':
-        return <HomeFeed onNavigate={navigate} onOpenImport={openImport} />
+        return <HomeFeed />
+      case 'clips':
       case 'shorts':
-        return <ShortsFeed onOpenImport={openImport} />
+        return <ShortsFeed />
       case 'live':
         return <LiveView onNavigate={navigate} />
       case 'dashboard':
-        return <CreatorDashboard onOpenImport={openImport} onOpenUpload={openUpload} onNavigate={navigate} />
+        return (
+          <CreatorDashboard
+            onOpenImport={openImport}
+            onOpenUpload={openUpload}
+            onNavigate={navigate}
+          />
+        )
       case 'wallet':
         return <CreatorWallet />
       case 'settings':
         return <SettingsPage />
       case 'explore':
         return <ExplorePage />
+      case 'sounds':
+        return <SoundsPage />
+      case 'checkout':
+        return <CheckoutPage />
       case 'history':
         return <LibraryPage initialTab="history" />
       case 'liked':
@@ -164,21 +178,21 @@ function AppShell() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFCFF] text-slate-900 flex flex-col">
+    <div className="min-h-screen bg-[#0b0b0f] text-zinc-100 flex flex-col">
       <Navbar
         currentView={view}
         onNavigate={navigate}
-        onOpenImport={openImport}
         onOpenAuth={openAuth}
         onOpenUpload={openUpload}
+        onToggleSidebar={() => setSidebarOpen((s) => !s)}
       />
       <div className="flex flex-1 min-h-0">
-        {showSidebar && (
+        {showSidebarChrome && (
           <Sidebar
             currentView={view}
             onNavigate={navigate}
-            onOpenImport={openImport}
-            onOpenUpload={openUpload}
+            open={sidebarOpen}
+            onClose={() => setSidebarOpen(false)}
           />
         )}
         <main className="flex-1 min-w-0 flex flex-col">
