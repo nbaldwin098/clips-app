@@ -74,15 +74,15 @@ export default function Sidebar({ currentView, onNavigate, open, onClose }) {
       <div className="mx-3 border-t border-zinc-800" />
       <div className="p-2 space-y-0.5">
         <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Creator</p>
-        {isApprovedCreator ? (
+        {isApprovedCreator && (
           <>
             <NavBtn active={currentView === 'dashboard'} onClick={() => go('dashboard')} icon={LayoutDashboard} label="Studio" />
             <NavBtn active={currentView === 'wallet'} onClick={() => go('wallet')} icon={Wallet} label="Wallet" />
             <NavBtn active={currentView === 'analytics'} onClick={() => go('analytics')} icon={BarChart3} label="Analytics" />
           </>
-        ) : (
-          <NavBtn active={currentView === 'creator-apply'} onClick={() => go(isAuthenticated ? 'creator-apply' : 'home')} icon={ShieldCheck} label="Apply to create" />
         )}
+
+        <NavBtn active={currentView === 'creators'} onClick={() => go('creators')} icon={Users} label="All creators" />
 
         <p className="px-3 pt-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Recommended creators</p>
         {recommendedCreators.length === 0 ? (
@@ -98,7 +98,6 @@ export default function Sidebar({ currentView, onNavigate, open, onClose }) {
             </button>
           ))
         )}
-        <NavBtn active={currentView === 'creators'} onClick={() => go('creators')} icon={Users} label="All creators" />
       </div>
 
       <div className="mx-3 border-t border-zinc-800" />
