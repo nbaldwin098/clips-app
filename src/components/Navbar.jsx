@@ -1,8 +1,25 @@
-import { Search, Bell, LogIn, Menu, Plus } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { Search, Bell, LogIn, Menu, Plus, User, Tv, Settings, LogOut, ChevronDown } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
 export default function Navbar({ onNavigate, onOpenAuth, onOpenUpload, onToggleSidebar }) {
-  const { user, isAuthenticated } = useAuth()
+  const { user, isAuthenticated, logout } = useAuth()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    const close = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [])
+
+  const go = (view) => {
+    setMenuOpen(false)
+    onNavigate(view)
+  }
+
   return (
     <header className="sticky top-0 z-50 h-14 border-b border-zinc-800 bg-[#0b0b0f]/95 backdrop-blur-md">
       <div className="flex h-full w-full items-center px-3 sm:px-4 gap-2">
@@ -25,8 +42,25 @@ export default function Navbar({ onNavigate, onOpenAuth, onOpenUpload, onToggleS
           <button type="button" onClick={onOpenUpload} className="h-9 w-9 flex items-center justify-center rounded-full bg-[#007ACC] text-white hover:bg-[#0098ff]" title="Create"><Plus className="h-5 w-5" /></button>
           {isAuthenticated ? (
             <>
-              <button type="button" onClick={() => onNavigate('notifications')} className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-zinc-800" title="Notifications"><Bell className="h-5 w-5 text-[#007ACC]" color="#007ACC" /></button>
-              <button type="button" onClick={() => onNavigate('settings')} className="h-8 w-8 rounded-full bg-[#007acc]/25 flex items-center justify-center text-xs font-semibold text-[#007ACC]" title="Account">{user?.displayName?.[0]?.toUpperCase() || 'U'}</button>
+              <button type="button" onClick={() => onNavigate('notifications')} className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-zinc-800">
+                <Bell className="h-5 w-5 text-[#007ACC]" color="#007ACC" />
+              </button>
+              <div className="relative" ref={ref}>
+                <button type="button" onClick={() => setMenuOpen((o) => !o)} className="h-8 pl-1 pr-2 rounded-full bg-[#007acc]/25 flex items-center gap-1 text-xs font-semibold text-[#007ACC]">
+                  <span className="h-7 w-7 rounded-full bg-[#007ACC]/30 flex items-center justify-center">{user?.displayName?.[0]?.toUpperCase() || 'U'}</span>
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </button>
+                {menuOpen && (
+                  <div className="absolute right-0 mt-2 w-52 rounded-xl border border-zinc-800 bg-[#121218] shadow-xl py-1 z-50">
+                    <p className="px-3 py-2 text-[10px] text-zinc-500 truncate">{user?.email}</p>
+                    <button type="button" onClick={() => go('settings')} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-[#007ACC] hover:bg-zinc-800"><User className="h-4 w-4" /> Account</button>
+                    <button type="button" onClick={() => go('channel')} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-[#007ACC] hover:bg-zinc-800"><Tv className="h-4 w-4" /> Channel</button>
+                    <button type="button" onClick={() => go('settings')} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-[#007ACC] hover:bg-zinc-800"><Settings className="h-4 w-4" /> Settings</button>
+                    <div className="border-t border-zinc-800 my-1" />
+                    <button type="button" onClick={() => { logout(); setMenuOpen(false); onNavigate('home') }} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-zinc-400 hover:bg-zinc-800"><LogOut className="h-4 w-4" /> Sign out</button>
+                  </div>
+                )}
+              </div>
             </>
           ) : (
             <button type="button" onClick={onOpenAuth} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-[#007ACC] text-white text-sm font-medium hover:bg-[#0098ff]"><LogIn className="h-4 w-4" />Sign in</button>
