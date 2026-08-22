@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
+/** Email + password only (sign up also asks display name + handle). */
 export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
   const { login } = useAuth()
   const [mode, setMode] = useState(initialMode)
@@ -10,13 +11,11 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
   const [displayName, setDisplayName] = useState('')
   const [handle, setHandle] = useState('')
   const [error, setError] = useState('')
-  const [appleNote, setAppleNote] = useState(false)
 
   useEffect(() => {
     if (open) {
       setMode(initialMode)
       setError('')
-      setAppleNote(false)
       setPassword('')
     }
   }, [open, initialMode])
@@ -35,7 +34,6 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
       setError('Password must be at least 6 characters.')
       return
     }
-
     if (mode === 'signup') {
       const name = displayName.trim()
       const h = handle.trim().toLowerCase().replace(/[^a-z0-9_]/g, '')
@@ -44,14 +42,13 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
         return
       }
       if (h.length < 3) {
-        setError('Handle must be at least 3 characters (letters, numbers, _).')
+        setError('Handle must be at least 3 characters.')
         return
       }
       login({ email: mail, displayName: name, handle: h, provider: 'email' })
     } else {
       login({ email: mail, displayName: mail.split('@')[0], provider: 'email' })
     }
-
     setEmail('')
     setPassword('')
     setDisplayName('')
@@ -61,110 +58,85 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative w-full max-w-sm rounded-2xl bg-white shadow-2xl border border-slate-200">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-          <h2 className="text-base font-semibold text-slate-900">
+      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
+      <div className="relative w-full max-w-sm rounded-2xl bg-[#121218] shadow-2xl border border-zinc-800">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
+          <h2 className="text-base font-semibold text-[#007ACC]">
             {mode === 'signin' ? 'Sign in' : 'Create account'}
           </h2>
-          <button type="button" onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-slate-100">
-            <X className="h-4 w-4 text-slate-500" />
+          <button type="button" onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-zinc-800">
+            <X className="h-4 w-4 text-[#007ACC]" />
           </button>
         </div>
 
-        <div className="p-5 space-y-3">
+        <div className="p-5">
           <form onSubmit={submit} className="space-y-3">
             {mode === 'signup' && (
               <>
                 <label className="block">
-                  <span className="text-xs font-medium text-slate-600">Display name</span>
+                  <span className="text-xs font-medium text-[#007ACC]">Display name</span>
                   <input
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="How you appear on Clips"
-                    className="mt-1 w-full h-10 rounded-lg border border-slate-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2C729B]/30 focus:border-[#2C729B]"
-                    autoComplete="nickname"
+                    className="mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100 focus:outline-none focus:ring-1 focus:ring-[#007ACC]"
                   />
                 </label>
                 <label className="block">
-                  <span className="text-xs font-medium text-slate-600">Handle</span>
-                  <div className="mt-1 flex items-center">
-                    <span className="h-10 flex items-center px-3 rounded-l-lg border border-r-0 border-slate-200 bg-slate-50 text-sm text-slate-500">@</span>
+                  <span className="text-xs font-medium text-[#007ACC]">Handle</span>
+                  <div className="mt-1 flex">
+                    <span className="h-10 flex items-center px-3 rounded-l-lg border border-r-0 border-zinc-800 bg-zinc-900 text-sm text-[#007ACC]">@</span>
                     <input
                       value={handle}
                       onChange={(e) => setHandle(e.target.value.replace(/\s/g, '').toLowerCase())}
-                      placeholder="yourname"
-                      className="h-10 flex-1 rounded-r-lg border border-slate-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2C729B]/30 focus:border-[#2C729B]"
-                      autoComplete="username"
+                      className="h-10 flex-1 rounded-r-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100 focus:outline-none focus:ring-1 focus:ring-[#007ACC]"
                     />
                   </div>
                 </label>
               </>
             )}
-
             <label className="block">
-              <span className="text-xs font-medium text-slate-600">Email</span>
+              <span className="text-xs font-medium text-[#007ACC]">Email</span>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="mt-1 w-full h-10 rounded-lg border border-slate-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2C729B]/30 focus:border-[#2C729B]"
+                className="mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100 focus:outline-none focus:ring-1 focus:ring-[#007ACC]"
                 autoComplete="email"
               />
             </label>
             <label className="block">
-              <span className="text-xs font-medium text-slate-600">Password</span>
+              <span className="text-xs font-medium text-[#007ACC]">Password</span>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="At least 6 characters"
-                className="mt-1 w-full h-10 rounded-lg border border-slate-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2C729B]/30 focus:border-[#2C729B]"
+                className="mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100 focus:outline-none focus:ring-1 focus:ring-[#007ACC]"
                 autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
               />
             </label>
-            {error && <p className="text-sm text-red-600">{error}</p>}
-            <button type="submit" className="w-full h-10 rounded-lg bg-[#2C729B] text-white text-sm font-medium hover:bg-[#245F82]">
+            {error && <p className="text-sm text-red-400">{error}</p>}
+            <button type="submit" className="w-full h-10 rounded-lg bg-[#007ACC] text-white text-sm font-medium hover:bg-[#0098ff]">
               {mode === 'signin' ? 'Sign in' : 'Create account'}
             </button>
           </form>
 
-          <p className="text-xs text-slate-500 text-center">
+          <p className="text-xs text-zinc-500 text-center mt-4">
             {mode === 'signin' ? (
               <>
                 No account?{' '}
-                <button type="button" className="text-[#2C729B] font-medium" onClick={() => { setMode('signup'); setError('') }}>
+                <button type="button" className="text-[#007ACC] font-medium" onClick={() => setMode('signup')}>
                   Sign up
                 </button>
               </>
             ) : (
               <>
-                Already have an account?{' '}
-                <button type="button" className="text-[#2C729B] font-medium" onClick={() => { setMode('signin'); setError('') }}>
+                Have an account?{' '}
+                <button type="button" className="text-[#007ACC] font-medium" onClick={() => setMode('signin')}>
                   Sign in
                 </button>
               </>
             )}
           </p>
-
-          <div className="flex items-center gap-3 pt-1">
-            <div className="h-px flex-1 bg-slate-200" />
-            <span className="text-xs text-slate-400">or</span>
-            <div className="h-px flex-1 bg-slate-200" />
-          </div>
-
-          <button type="button" onClick={() => setAppleNote(true)} className="w-full h-10 rounded-lg bg-black text-white text-sm font-medium hover:bg-slate-900 flex items-center justify-center gap-2">
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-              <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
-            </svg>
-            Continue with Apple
-          </button>
-          {appleNote && (
-            <p className="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 leading-relaxed">
-              Apple Sign In is not connected yet. Use email and password for now.
-            </p>
-          )}
         </div>
       </div>
     </div>
