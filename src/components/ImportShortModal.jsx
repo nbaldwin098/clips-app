@@ -54,14 +54,14 @@ export default function ImportShortModal({ open, onClose }) {
         </div>
         <div className="p-5 space-y-4">
           <p className="text-sm text-slate-600">
-            Paste a public link. We store only metadata + URL (zero binary). Supported: your social posts, or legal sources (NASA, Wikimedia, Archive.org).
+            Paste a public short link. Only metadata and a reference URL are stored — not the video file.
           </p>
           <div className="relative">
             <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://… (social or nasa.gov / archive.org / wikimedia)"
+              placeholder="https://www.tiktok.com/@… or youtube.com/shorts/…"
               className="w-full h-10 rounded-lg border border-slate-200 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2C729B]/30 focus:border-[#2C729B]"
             />
           </div>
@@ -76,12 +76,6 @@ export default function ImportShortModal({ open, onClose }) {
               <p className="text-xs text-slate-600">
                 Origin: {result.origin || result.platform || 'unknown'} · {result.storedBytes} bytes stored
               </p>
-              {result.license && (
-                <p className="text-xs text-slate-600">
-                  License: {result.license}
-                  {result.attribution ? ` · ${result.attribution}` : ''}
-                </p>
-              )}
               {result.crossPost?.isCrossPost && (
                 <div className="flex items-start gap-2 rounded-md bg-amber-50 border border-amber-100 px-2.5 py-2 text-xs text-amber-800">
                   <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />

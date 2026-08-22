@@ -1,8 +1,8 @@
 export default function HelpPage() {
   const faqs = [
     {
-      q: 'Why is there content already?',
-      a: 'The legal library seeds public-domain and open-license material (NASA, Wikimedia, Internet Archive, USGS). Every item shows license and attribution. No fake creators and no scraped social videos.',
+      q: 'Why is the feed empty?',
+      a: 'Clips does not show fabricated videos. Content appears after real imports or uploads from signed-in users.',
     },
     {
       q: 'Can I watch without an account?',
@@ -14,7 +14,7 @@ export default function HelpPage() {
     },
     {
       q: 'What is a zero-storage import?',
-      a: 'Paste a public URL (your social post or a legal source). We store only metadata and a reference — not the video file.',
+      a: 'Paste a public short URL. We store only metadata and a reference — not the binary file.',
     },
     {
       q: 'How do subscriptions work?',
@@ -22,7 +22,7 @@ export default function HelpPage() {
     },
     {
       q: 'How do I report copyright infringement?',
-      a: 'Email a complete DMCA notice to copyright@platform.internal. See Settings → Copyright & DMCA. We use notice-and-takedown only — no proactive Content ID.',
+      a: 'Email a complete DMCA notice to copyright@platform.internal. See Settings → Copyright & DMCA.',
     },
   ]
 
