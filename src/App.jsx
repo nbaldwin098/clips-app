@@ -25,6 +25,8 @@ import CreatorApplyPage from './components/CreatorApplyPage'
 import SupportPage from './components/SupportPage'
 import AdminPortal from './components/AdminPortal'
 import CreatorsPage from './components/CreatorsPage'
+import AnalyticsPage from './components/AnalyticsPage'
+import ChannelPage from './components/ChannelPage'
 import {
   TermsOfService,
   PrivacyPolicy,
@@ -34,9 +36,11 @@ import {
 import { startSession } from './lib/algorithmEngine'
 
 const KNOWN_VIEWS = new Set([
-  'home','creators','clips','shorts','live','dashboard','wallet','settings','explore',
-  'history','liked','watch-later','library','help','about','notifications','sounds',
-  'checkout','creator-apply','support','admin','legal-tos','legal-privacy','legal-creator','legal-community',
+  'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
+  'explore', 'history', 'liked', 'watch-later', 'library', 'help', 'about',
+  'notifications', 'sounds', 'checkout', 'creator-apply', 'support', 'admin',
+  'analytics', 'channel',
+  'legal-tos', 'legal-privacy', 'legal-creator', 'legal-community',
 ])
 
 function AppShell() {
@@ -52,18 +56,27 @@ function AppShell() {
   }, [isAuthenticated, user?.id])
 
   const openAuth = () => setAuthOpen(true)
-  const openImport = () => { if (!isAuthenticated) { setAuthOpen(true); return }; setImportOpen(true) }
-  const openUpload = () => { if (!isAuthenticated) { setAuthOpen(true); return }; setUploadOpen(true) }
+  const openImport = () => {
+    if (!isAuthenticated) { setAuthOpen(true); return }
+    setImportOpen(true)
+  }
+  const openUpload = () => {
+    if (!isAuthenticated) { setAuthOpen(true); return }
+    setUploadOpen(true)
+  }
   const navigate = (next) => {
     setView(next === 'shorts' ? 'clips' : next)
     try { window.scrollTo({ top: 0, behavior: 'smooth' }) } catch {}
   }
 
   const lockedCreator = (v) =>
-    (v === 'dashboard' || v === 'wallet') && isAuthenticated && user?.creatorStatus !== 'approved'
+    (v === 'dashboard' || v === 'wallet' || v === 'analytics') &&
+    isAuthenticated &&
+    user?.creatorStatus !== 'approved'
 
   const renderMain = () => {
     if (!KNOWN_VIEWS.has(view)) return <NotFoundPage onNavigate={navigate} />
+
     if (lockedCreator(view)) {
       return (
         <div className="p-8 max-w-md mx-auto text-center">
@@ -80,6 +93,8 @@ function AppShell() {
       return <AuthRequired title="Wallet" description="Sign in." onOpenAuth={openAuth} />
     if (view === 'settings' && !isAuthenticated)
       return <AuthRequired title="Settings" description="Sign in." onOpenAuth={openAuth} />
+    if (view === 'channel' && !isAuthenticated)
+      return <AuthRequired title="Channel" description="Sign in." onOpenAuth={openAuth} />
 
     switch (view) {
       case 'home': return <HomeFeed />
@@ -89,10 +104,12 @@ function AppShell() {
       case 'live': return <LiveView onNavigate={navigate} onOpenAuth={openAuth} />
       case 'dashboard': return <CreatorDashboard onOpenImport={openImport} onOpenUpload={openUpload} onNavigate={navigate} />
       case 'wallet': return <CreatorWallet onNavigate={navigate} />
+      case 'analytics': return <AnalyticsPage onNavigate={navigate} />
+      case 'channel': return <ChannelPage onNavigate={navigate} />
       case 'settings': return <SettingsPage onNavigate={navigate} />
       case 'explore': return <ExplorePage />
-      case 'sounds': return <SoundsPage />
-      case 'checkout': return <CheckoutPage />
+      case 'sounds': return <SoundsPage onOpenAuth={openAuth} />
+      case 'checkout': return <CheckoutPage onNavigate={navigate} />
       case 'creator-apply': return <CreatorApplyPage onOpenAuth={openAuth} />
       case 'support': return <SupportPage onOpenAuth={openAuth} />
       case 'admin': return <AdminPortal />
