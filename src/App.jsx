@@ -22,6 +22,9 @@ import AuthModal from './components/AuthModal'
 import UploadModal from './components/UploadModal'
 import SoundsPage from './components/SoundsPage'
 import CheckoutPage from './components/CheckoutPage'
+import CreatorApplyPage from './components/CreatorApplyPage'
+import SupportPage from './components/SupportPage'
+import AdminPortal from './components/AdminPortal'
 import {
   TermsOfService,
   PrivacyPolicy,
@@ -48,6 +51,9 @@ const KNOWN_VIEWS = new Set([
   'notifications',
   'sounds',
   'checkout',
+  'creator-apply',
+  'support',
+  'admin',
   'legal-tos',
   'legal-privacy',
   'legal-creator',
@@ -95,6 +101,17 @@ function AppShell() {
   const renderMain = () => {
     if (!KNOWN_VIEWS.has(view)) return <NotFoundPage onNavigate={navigate} />
 
+    if ((view === 'dashboard' || view === 'wallet') && isAuthenticated && user?.creatorStatus !== 'approved') {
+      return (
+        <div className="p-8 max-w-md mx-auto text-center">
+          <p className="text-sm text-zinc-200 font-medium">Creator tools locked</p>
+          <p className="text-xs text-zinc-500 mt-2">Apply to become a creator and wait for admin approval.</p>
+          <button type="button" onClick={() => navigate('creator-apply')} className="mt-4 h-10 px-4 rounded-lg bg-[#007ACC] text-white text-sm">
+            Apply to create
+          </button>
+        </div>
+      )
+    }
     if (view === 'dashboard' && !isAuthenticated) {
       return (
         <AuthRequired
@@ -131,7 +148,7 @@ function AppShell() {
       case 'shorts':
         return <ShortsFeed />
       case 'live':
-        return <LiveView onNavigate={navigate} />
+        return <LiveView onNavigate={navigate} onOpenAuth={openAuth} />
       case 'dashboard':
         return (
           <CreatorDashboard
@@ -150,6 +167,12 @@ function AppShell() {
         return <SoundsPage />
       case 'checkout':
         return <CheckoutPage />
+      case 'creator-apply':
+        return <CreatorApplyPage onOpenAuth={openAuth} />
+      case 'support':
+        return <SupportPage onOpenAuth={openAuth} />
+      case 'admin':
+        return <AdminPortal />
       case 'history':
         return <LibraryPage initialTab="history" />
       case 'liked':
