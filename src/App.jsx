@@ -14,7 +14,6 @@ import LibraryPage from './components/LibraryPage'
 import ExplorePage from './components/ExplorePage'
 import HelpPage from './components/HelpPage'
 import ImportShortModal from './components/ImportShortModal'
-import CostSimulatorModal from './components/CostSimulatorModal'
 import AuthModal from './components/AuthModal'
 import UploadModal from './components/UploadModal'
 import {
@@ -29,7 +28,6 @@ function AppShell() {
   const { user, isAuthenticated } = useAuth()
   const [view, setView] = useState('home')
   const [importOpen, setImportOpen] = useState(false)
-  const [costOpen, setCostOpen] = useState(false)
   const [authOpen, setAuthOpen] = useState(false)
   const [uploadOpen, setUploadOpen] = useState(false)
 
@@ -40,7 +38,6 @@ function AppShell() {
   }, [isAuthenticated, user?.id])
 
   const openImport = () => setImportOpen(true)
-  const openCost = () => setCostOpen(true)
   const openAuth = () => setAuthOpen(true)
   const openUpload = () => setUploadOpen(true)
 
@@ -52,7 +49,6 @@ function AppShell() {
         currentView={view}
         onNavigate={setView}
         onOpenImport={openImport}
-        onOpenCostSim={openCost}
         onOpenAuth={openAuth}
         onOpenUpload={openUpload}
       />
@@ -62,7 +58,6 @@ function AppShell() {
             currentView={view}
             onNavigate={setView}
             onOpenImport={openImport}
-            onOpenCostSim={openCost}
             onOpenUpload={openUpload}
           />
         )}
@@ -71,9 +66,7 @@ function AppShell() {
             {view === 'home' && <HomeFeed onNavigate={setView} onOpenImport={openImport} />}
             {view === 'shorts' && <ShortsFeed onOpenImport={openImport} />}
             {view === 'live' && <LiveView />}
-            {view === 'dashboard' && (
-              <CreatorDashboard onOpenImport={openImport} onOpenCostSim={openCost} />
-            )}
+            {view === 'dashboard' && <CreatorDashboard onOpenImport={openImport} />}
             {view === 'wallet' && <CreatorWallet />}
             {view === 'settings' && <SettingsPage />}
             {view === 'explore' && <ExplorePage />}
@@ -92,7 +85,6 @@ function AppShell() {
       </div>
 
       <ImportShortModal open={importOpen} onClose={() => setImportOpen(false)} />
-      <CostSimulatorModal open={costOpen} onClose={() => setCostOpen(false)} />
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
       <UploadModal open={uploadOpen} onClose={() => setUploadOpen(false)} />
     </div>
