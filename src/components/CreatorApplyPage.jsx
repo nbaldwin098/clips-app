@@ -2,11 +2,18 @@ import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { getApplicationForUser, submitCreatorApplication } from '../lib/moderation'
 
+const inputCls =
+  'mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100 placeholder:text-zinc-600'
+
 export default function CreatorApplyPage({ onOpenAuth }) {
   const { user, isAuthenticated, updateProfile } = useAuth()
   const existing = user ? getApplicationForUser(user.id) : null
-  const [about, setAbout] = useState('')
-  const [links, setLinks] = useState('')
+  const [name, setName] = useState(user?.displayName || '')
+  const [email, setEmail] = useState(user?.email || '')
+  const [phone, setPhone] = useState('')
+  const [address, setAddress] = useState('')
+  const [bio, setBio] = useState('')
+  const [social, setSocial] = useState(['', '', '', ''])
   const [category, setCategory] = useState('gaming')
   const [done, setDone] = useState(false)
 
@@ -21,7 +28,7 @@ export default function CreatorApplyPage({ onOpenAuth }) {
   if (user.creatorStatus === 'approved') {
     return (
       <div className="p-6 max-w-md mx-auto rounded-2xl border border-zinc-800 bg-[#121218] text-sm text-zinc-200">
-        You are an approved creator. Studio and live tools are unlocked in the menu.
+        You are an approved creator. Studio and live tools are unlocked.
       </div>
     )
   }
@@ -29,36 +36,59 @@ export default function CreatorApplyPage({ onOpenAuth }) {
   if (existing?.status === 'pending' || user.creatorStatus === 'pending' || done) {
     return (
       <div className="p-6 max-w-md mx-auto rounded-2xl border border-zinc-800 bg-[#121218] text-sm text-zinc-200">
-        Application pending review. An admin will approve or reject it from the Admin portal.
+        Application pending. We may contact you at the email or phone you provided.
       </div>
     )
   }
 
   const submit = (e) => {
     e.preventDefault()
+    const links = social.map((s) => s.trim()).filter(Boolean).slice(0, 4)
     submitCreatorApplication({
       userId: user.id,
-      email: user.email,
-      displayName: user.displayName,
       handle: user.handle,
-      about: about.trim(),
-      links: links.trim(),
+      name: name.trim().slice(0, 80),
+      email: email.trim().slice(0, 120),
+      phone: phone.trim().slice(0, 32),
+      address: address.trim().slice(0, 160),
+      bio: bio.trim().slice(0, 280),
+      links,
       category,
     })
-    updateProfile({ creatorStatus: 'pending' })
+    updateProfile({
+      creatorStatus: 'pending',
+      displayName: name.trim().slice(0, 80) || user.displayName,
+    })
     setDone(true)
+  }
+
+  const setLink = (i, v) => {
+    setSocial((prev) => {
+      const next = [...prev]
+      next[i] = v
+      return next
+    })
   }
 
   return (
     <div className="p-4 md:p-6 max-w-md mx-auto">
       <h1 className="text-lg font-semibold text-[#007ACC]">Apply to create</h1>
-      <p className="text-xs text-zinc-500 mt-1 mb-4">
-        Apply → staff review → unlock Studio, live, monetization tools.
-      </p>
+      <p className="text-xs text-zinc-500 mt-1 mb-4">Short form so we can review and reach you.</p>
       <form onSubmit={submit} className="space-y-3 rounded-2xl border border-zinc-800 bg-[#121218] p-5">
-        <label className="block text-xs text-[#007ACC]">
-          Category
-          <select value={category} onChange={(e) => setCategory(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100">
+        <label className="block text-xs text-[#007ACC]">Full name
+          <input required value={name} onChange={(e) => setName(e.target.value)} className={inputCls} maxLength={80} />
+        </label>
+        <label className="block text-xs text-[#007ACC]">Email
+          <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} maxLength={120} />
+        </label>
+        <label className="block text-xs text-[#007ACC]">Phone
+          <input required type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputCls} maxLength={32} placeholder="+1…" />
+        </label>
+        <label className="block text-xs text-[#007ACC]">Address
+          <input required value={address} onChange={(e) => setAddress(e.target.value)} className={inputCls} maxLength={160} placeholder="City, State / Region" />
+        </label>
+        <label className="block text-xs text-[#007ACC]">Category
+          <select value={category} onChange={(e) => setCategory(e.target.value)} className={inputCls}>
             <option value="gaming">Gaming</option>
             <option value="irl">IRL</option>
             <option value="music">Music</option>
@@ -66,14 +96,17 @@ export default function CreatorApplyPage({ onOpenAuth }) {
             <option value="other">Other</option>
           </select>
         </label>
-        <label className="block text-xs text-[#007ACC]">
-          About your channel
-          <textarea value={about} onChange={(e) => setAbout(e.target.value)} rows={3} required className="mt-1 w-full rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 py-2 text-sm text-zinc-100" />
+        <label className="block text-xs text-[#007ACC]">Bio — Tell us about yourself
+          <textarea required value={bio} onChange={(e) => setBio(e.target.value)} rows={3} maxLength={280} placeholder="Who you are and what you’ll post (280 chars)" className="mt-1 w-full rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600" />
         </label>
-        <label className="block text-xs text-[#007ACC]">
-          Links (optional)
-          <input value={links} onChange={(e) => setLinks(e.target.value)} placeholder="https://..." className="mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100" />
-        </label>
+        <div>
+          <p className="text-xs text-[#007ACC] mb-1">Social links (up to 4)</p>
+          <div className="space-y-2">
+            {[0, 1, 2, 3].map((i) => (
+              <input key={i} value={social[i]} onChange={(e) => setLink(i, e.target.value)} className={inputCls} placeholder={`https://… (${i + 1})`} maxLength={120} />
+            ))}
+          </div>
+        </div>
         <button type="submit" className="w-full h-10 rounded-lg bg-[#007ACC] text-white text-sm font-medium">Submit application</button>
       </form>
     </div>
