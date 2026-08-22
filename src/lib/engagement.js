@@ -51,6 +51,16 @@ export function getViews(contentId) {
   return lsGet(VIEWS, {})[contentId] || 0
 }
 
+export function getSubscriptionsForUser(userId) {
+  if (!userId) return []
+  const all = lsGet(SUBS, {})
+  const out = []
+  for (const [creatorId, list] of Object.entries(all)) {
+    if (Array.isArray(list) && list.includes(userId)) out.push(creatorId)
+  }
+  return out
+}
+
 export function getSubscriberCount(creatorId) {
   return (lsGet(SUBS, {})[creatorId] || []).length
 }
