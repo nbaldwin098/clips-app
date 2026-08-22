@@ -1,11 +1,14 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import {
-  Home, Clapperboard, Radio, Compass, History, Clock, ThumbsUp, Settings,
+  Home, Clapperboard, Radio, Compass, History, Clock, ThumbsUp,
   LayoutDashboard, Wallet, Music, Users, ChevronDown, ChevronRight,
-  HelpCircle, FileText, Shield, Scale, BookOpen, Copyright, LifeBuoy, ShieldCheck, X,
+  HelpCircle, FileText, Shield, Scale, BookOpen, Copyright, LifeBuoy,
+  ShieldCheck, BarChart3, X,
 } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { useAuth } from '../context/AuthContext'
+import { listIndexedUsers } from '../lib/moderation'
+import { lsGet } from '../lib/storage'
 
 const itemCls = (active) =>
   cn(
@@ -26,54 +29,90 @@ export default function Sidebar({ currentView, onNavigate, open, onClose }) {
   const { isAuthenticated, user } = useAuth()
   const isApprovedCreator = user?.creatorStatus === 'approved'
   const [moreOpen, setMoreOpen] = useState(false)
-  const go = (id) => { onNavigate(id); onClose?.() }
+
+  const go = (id) => {
+    onNavigate(id)
+    if (typeof window !== 'undefined' && window.innerWidth < 768) onClose?.()
+  }
+
+  const recommendedCreators = useMemo(() => {
+    const users = listIndexedUsers().filter((u) => u.creatorStatus === 'approved' || u.isCreator)
+    const clips = lsGet('user_clips', [])
+    const count = {}
+    for (const c of clips) {
+      const id = c.creatorId || c.userId
+      if (id) count[id] = (count[id] || 0) + 1
+    }
+    return users.map((u) => ({ ...u, n: count[u.id] || 0 })).sort((a, b) => b.n - a.n).slice(0, 5)
+  }, [currentView, user?.id])
 
   const body = (
     <div className="flex flex-col h-full text-[#007ACC]">
       <div className="flex items-center justify-between p-3 md:hidden">
         <span className="text-sm font-semibold">Menu</span>
-        <button type="button" onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-zinc-800"><X className="h-4 w-4" /></button>
+        <button type="button" onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-zinc-800" aria-label="Close menu">
+          <X className="h-4 w-4" />
+        </button>
       </div>
+
       <nav className="p-2 space-y-0.5">
         <NavBtn active={currentView === 'home'} onClick={() => go('home')} icon={Home} label="Recommended" />
-        <NavBtn active={currentView === 'creators'} onClick={() => go('creators')} icon={Users} label="Creators" />
         <NavBtn active={currentView === 'clips' || currentView === 'shorts'} onClick={() => go('clips')} icon={Clapperboard} label="Clips" />
         <NavBtn active={currentView === 'live'} onClick={() => go('live')} icon={Radio} label="Live" />
         <NavBtn active={currentView === 'explore'} onClick={() => go('explore')} icon={Compass} label="Search" />
         <NavBtn active={currentView === 'sounds'} onClick={() => go('sounds')} icon={Music} label="Sounds" />
       </nav>
+
       <div className="mx-3 border-t border-zinc-800" />
       <div className="p-2 space-y-0.5">
         <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Library</p>
         <NavBtn active={currentView === 'history'} onClick={() => go('history')} icon={History} label="History" />
         <NavBtn active={currentView === 'watch-later'} onClick={() => go('watch-later')} icon={Clock} label="Watch later" />
         <NavBtn active={currentView === 'liked'} onClick={() => go('liked')} icon={ThumbsUp} label="Liked" />
-        <NavBtn active={currentView === 'settings'} onClick={() => go('settings')} icon={Settings} label="Settings" />
       </div>
-      {isApprovedCreator && (
-        <>
-          <div className="mx-3 border-t border-zinc-800" />
-          <div className="p-2 space-y-0.5">
-            <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Creator</p>
-            <NavBtn active={currentView === 'dashboard'} onClick={() => go('dashboard')} icon={LayoutDashboard} label="Studio" />
-            <NavBtn active={currentView === 'wallet'} onClick={() => go('wallet')} icon={Wallet} label="Wallet" />
-          </div>
-        </>
-      )}
-      {isAuthenticated && user?.creatorStatus !== 'approved' && (
-        <div className="p-2">
-          <NavBtn active={currentView === 'creator-apply'} onClick={() => go('creator-apply')} icon={ShieldCheck} label="Apply to create" />
-        </div>
-      )}
+
       <div className="mx-3 border-t border-zinc-800" />
       <div className="p-2 space-y-0.5">
-        <NavBtn active={currentView === 'support'} onClick={() => go('support')} icon={LifeBuoy} label="Support" />
+        <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Creator</p>
+        {isApprovedCreator ? (
+          <>
+            <NavBtn active={currentView === 'dashboard'} onClick={() => go('dashboard')} icon={LayoutDashboard} label="Studio" />
+            <NavBtn active={currentView === 'wallet'} onClick={() => go('wallet')} icon={Wallet} label="Wallet" />
+            <NavBtn active={currentView === 'analytics'} onClick={() => go('analytics')} icon={BarChart3} label="Analytics" />
+          </>
+        ) : (
+          <NavBtn active={currentView === 'creator-apply'} onClick={() => go(isAuthenticated ? 'creator-apply' : 'home')} icon={ShieldCheck} label="Apply to create" />
+        )}
+
+        <p className="px-3 pt-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Recommended creators</p>
+        {recommendedCreators.length === 0 ? (
+          <p className="px-3 text-[11px] text-zinc-600 leading-snug">None yet — empty until approved creators post.</p>
+        ) : (
+          recommendedCreators.map((c) => (
+            <button key={c.id} type="button" onClick={() => go('creators')} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left hover:bg-zinc-800/80">
+              <span className="h-7 w-7 rounded-full bg-[#007ACC]/20 text-[#007ACC] flex items-center justify-center text-xs font-semibold shrink-0">{(c.displayName || '?')[0].toUpperCase()}</span>
+              <span className="min-w-0">
+                <span className="block text-xs text-zinc-200 truncate">{c.displayName}</span>
+                <span className="block text-[10px] text-zinc-500 truncate">@{c.handle}</span>
+              </span>
+            </button>
+          ))
+        )}
+        <NavBtn active={currentView === 'creators'} onClick={() => go('creators')} icon={Users} label="All creators" />
+      </div>
+
+      <div className="mx-3 border-t border-zinc-800" />
+      <div className="p-2 space-y-0.5">
         <button type="button" onClick={() => setMoreOpen((v) => !v)} className={itemCls(false)}>
           {moreOpen ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
           <span>… More</span>
         </button>
         {moreOpen && (
           <div className="ml-2 space-y-0.5 border-l border-zinc-800 pl-2">
+            <NavBtn active={currentView === 'support'} onClick={() => go('support')} icon={LifeBuoy} label="Support" />
+            {isAuthenticated && user?.creatorStatus !== 'approved' && (
+              <NavBtn active={currentView === 'creator-apply'} onClick={() => go('creator-apply')} icon={ShieldCheck} label="Apply to create" />
+            )}
             <NavBtn active={currentView === 'about'} onClick={() => go('about')} icon={BookOpen} label="About" />
             <NavBtn active={currentView === 'help'} onClick={() => go('help')} icon={HelpCircle} label="Help" />
             <NavBtn active={currentView === 'legal-tos'} onClick={() => go('legal-tos')} icon={FileText} label="Terms of Service" />
@@ -90,7 +129,9 @@ export default function Sidebar({ currentView, onNavigate, open, onClose }) {
 
   return (
     <>
-      <aside className={cn('hidden md:flex shrink-0 flex-col border-r border-zinc-800 bg-[#121218] h-[calc(100vh-3.5rem)] sticky top-14 overflow-y-auto transition-all duration-200', open ? 'w-56' : 'w-0 overflow-hidden border-0')}>{open && body}</aside>
+      <aside className={cn('hidden md:flex shrink-0 flex-col border-r border-zinc-800 bg-[#121218] h-[calc(100vh-3.5rem)] sticky top-14 overflow-y-auto transition-all duration-200', open ? 'w-56' : 'w-0 overflow-hidden border-0')}>
+        {open && body}
+      </aside>
       {open && (
         <div className="md:hidden fixed inset-0 z-40">
           <div className="absolute inset-0 bg-black/60" onClick={onClose} />
