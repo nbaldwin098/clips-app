@@ -6,7 +6,9 @@ Vertical shorts, live streaming, and long-form in one product.
 
 **Monetization:** Creators keep 100% of subscription list price (fees on top for buyers). Ad pool 90/10 by impression share.
 
-**Storage:** Primary path is link import (TikTok / YouTube Shorts / Instagram / Twitch / Kick). We store only metadata + source URL — no binary on our servers. Optional owned-file path uses client-side compression before upload.
+**Storage:** Primary path is link import (social or legal library). Metadata + source URL only. Legal cold-start library: NASA / Wikimedia / Archive.org with attribution on every card.
+
+**UI handoff:** `docs/UI_HANDOFF.md` · `docs/BACKEND_SCHEMA.md`.
 
 ## Stack
 
@@ -27,13 +29,10 @@ npm run preview
 
 - `src/lib/algorithmEngine.js` — adaptive ranking + `recordInteraction`
 - `src/lib/crossPostDetector.js` — source platform heuristics
+- `src/lib/contentService.js` — feed/import facade for UI
 - `src/lib/storage.js` — zero-storage import helpers + local persistence
+- `src/data/legalSeed.js` — PD/CC legal library
 - `src/lib/financialLedger.js` — on-top fee math
-- Settings cover Account, Security, Stream, Chat, Monetization, Copyright/DMCA, Notifications, Roles, Analytics
-
-## Product backlog
-
-See `PRODUCT_BACKLOG.md` for the full open/closed list.
 
 ## Legal intake (MVP)
 

@@ -1,24 +1,35 @@
-import { Clapperboard, Upload } from 'lucide-react'
+import { useMemo } from 'react'
+import { Upload } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
+import { getShortsFeed } from '../lib/contentService'
+import ContentCard from './ContentCard'
 
 export default function ShortsFeed({ onOpenImport }) {
+  const { user } = useAuth()
+  const items = useMemo(() => getShortsFeed(user?.id || null), [user?.id])
+
   return (
-    <div className="flex items-center justify-center h-[calc(100vh-3.5rem)] bg-[#FAFCFF]">
-      <div className="text-center px-6 max-w-md">
-        <div className="mx-auto h-14 w-14 rounded-2xl bg-[#EBF4FA] flex items-center justify-center">
-          <Clapperboard className="h-7 w-7 text-[#2C729B]" />
+    <div className="p-4 md:p-6 max-w-[1400px] mx-auto">
+      <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+        <div>
+          <h1 className="text-lg font-semibold text-slate-900">Shorts</h1>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Vertical clips from the legal library and your imports
+          </p>
         </div>
-        <h2 className="mt-5 text-lg font-semibold text-slate-900">Shorts feed is empty</h2>
-        <p className="mt-2 text-sm text-slate-500 leading-relaxed">
-          The algorithm only ranks real engagement velocity: completion, loops, shares, and early-skip penalties.
-          Follower count is ignored. Import a short to begin seed testing.
-        </p>
         <button
           onClick={onOpenImport}
-          className="mt-6 inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-[#2C729B] text-white text-sm font-medium hover:bg-[#245F82] transition-colors shadow-sm"
+          className="inline-flex items-center gap-2 h-9 px-4 rounded-xl bg-[#2C729B] text-white text-sm font-medium hover:bg-[#245F82]"
         >
           <Upload className="h-4 w-4" />
           Import Short
         </button>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+        {items.map((item) => (
+          <ContentCard key={item.id} item={item} />
+        ))}
       </div>
     </div>
   )
