@@ -1,4 +1,4 @@
-import { Search, Bell, Upload, Radio, Settings, User, LogIn, LayoutDashboard } from 'lucide-react'
+import { Search, Bell, Upload, Settings, LogIn, LayoutDashboard } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { cn } from '../lib/utils'
 
@@ -59,6 +59,13 @@ export default function Navbar({ onNavigate, currentView, onOpenImport, onOpenCo
                 )}
               >
                 {mode === 'creator' ? 'Creator Studio' : 'Creator Mode'}
+              </button>
+              <button
+                onClick={() => onNavigate('settings')}
+                className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-slate-100"
+                title="Settings"
+              >
+                <Settings className="h-5 w-5 text-slate-600" />
               </button>
               <button className="relative h-9 w-9 flex items-center justify-center rounded-full hover:bg-slate-100">
                 <Bell className="h-5 w-5 text-slate-600" />
