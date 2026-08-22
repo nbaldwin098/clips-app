@@ -1,9 +1,7 @@
-import { getDemoWalletSnapshot, buildCheckout } from '../lib/financialLedger'
-import { formatCount } from '../data/content'
+import { buildCheckout } from '../lib/financialLedger'
 import { DollarSign, Users, TrendingUp, CreditCard } from 'lucide-react'
 
 export default function CreatorWallet() {
-  const snap = getDemoWalletSnapshot('mkbhd')
   const subCheckout = buildCheckout(4.99)
 
   return (
@@ -16,32 +14,28 @@ export default function CreatorWallet() {
             <TrendingUp className="h-4 w-4" />
             Ad impressions (month)
           </div>
-          <p className="mt-2 text-2xl font-semibold text-slate-900">{formatCount(snap.adImpressions)}</p>
+          <p className="mt-2 text-2xl font-semibold text-slate-900">0</p>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-5">
           <div className="flex items-center gap-2 text-slate-500 text-sm">
             <DollarSign className="h-4 w-4" />
             Estimated ad revenue (90%)
           </div>
-          <p className="mt-2 text-2xl font-semibold text-slate-900">
-            ${snap.estimatedAdRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-          </p>
+          <p className="mt-2 text-2xl font-semibold text-slate-900">$0</p>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-5">
           <div className="flex items-center gap-2 text-slate-500 text-sm">
             <Users className="h-4 w-4" />
             Active subscribers
           </div>
-          <p className="mt-2 text-2xl font-semibold text-slate-900">{formatCount(snap.activeSubscribers)}</p>
+          <p className="mt-2 text-2xl font-semibold text-slate-900">0</p>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-5">
           <div className="flex items-center gap-2 text-slate-500 text-sm">
             <CreditCard className="h-4 w-4" />
             Pending payout
           </div>
-          <p className="mt-2 text-2xl font-semibold text-slate-900">
-            ${snap.pendingPayout.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-          </p>
+          <p className="mt-2 text-2xl font-semibold text-slate-900">$0</p>
         </div>
       </div>
 
@@ -50,7 +44,7 @@ export default function CreatorWallet() {
         <p className="text-sm text-slate-600 leading-relaxed">
           Platform aggregates total ad revenue each month. 90% of the pool is distributed to creators
           in proportion to verified ad impressions. 10% is retained by the platform. Follower count
-          does not affect the allocation.
+          does not affect the allocation. No impressions recorded yet.
         </p>
       </section>
 
