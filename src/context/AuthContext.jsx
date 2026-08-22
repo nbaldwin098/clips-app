@@ -19,17 +19,8 @@ function sanitizeUser(u) {
   return u
 }
 
-function maybeApproveCalabi(user) {
-  if (!user) return user
-  const h = String(user.handle || '').toLowerCase()
-  if (h === 'calabi' && user.creatorStatus !== 'approved') {
-    return { ...user, creatorStatus: 'approved', isCreator: true }
-  }
-  return user
-}
-
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => maybeApproveCalabi(sanitizeUser(lsGet('user', null))))
+  const [user, setUser] = useState(() => sanitizeUser(lsGet('user', null)))
   const [mode, setMode] = useState(() => lsGet('mode', 'viewer'))
 
   useEffect(() => {
@@ -40,16 +31,6 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     lsSet('mode', mode)
   }, [mode])
-
-  useEffect(() => {
-    if (!user) return
-    const next = maybeApproveCalabi(user)
-    if (next !== user && next.creatorStatus === 'approved' && user.creatorStatus !== 'approved') {
-      setUser(next)
-      lsSet('user', next)
-      try { indexUser(next) } catch {}
-    }
-  }, [user?.id, user?.handle, user?.creatorStatus])
 
   useEffect(() => {
     const raw = lsGet('user', null)
@@ -71,7 +52,7 @@ export function AuthProvider({ children }) {
       typeof payload === 'object' && payload.provider ? payload.provider : 'email'
 
     const existing = sanitizeUser(lsGet('user', null))
-    let next =
+    const next =
       existing && existing.email === email
         ? { ...existing, provider, displayName }
         : {
@@ -91,7 +72,6 @@ export function AuthProvider({ children }) {
             provider,
             creatorStatus: existing?.creatorStatus || 'none',
           }
-    next = maybeApproveCalabi(next)
     setUser(next)
     setMode('viewer')
     try { indexUser(next) } catch {}
@@ -107,7 +87,7 @@ export function AuthProvider({ children }) {
   const updateProfile = useCallback((partial) => {
     setUser((prev) => {
       if (!prev) return prev
-      let next = maybeApproveCalabi({ ...prev, ...partial })
+      const next = { ...prev, ...partial }
       lsSet('user', next)
       try { indexUser(next) } catch {}
       return next
