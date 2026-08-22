@@ -3,7 +3,6 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import Navbar from './components/Navbar'
 import Sidebar from './components/Sidebar'
-import Footer from './components/Footer'
 import HomeFeed from './components/HomeFeed'
 import ShortsFeed from './components/ShortsFeed'
 import LiveView from './components/LiveView'
@@ -25,6 +24,7 @@ import CheckoutPage from './components/CheckoutPage'
 import CreatorApplyPage from './components/CreatorApplyPage'
 import SupportPage from './components/SupportPage'
 import AdminPortal from './components/AdminPortal'
+import CreatorsPage from './components/CreatorsPage'
 import {
   TermsOfService,
   PrivacyPolicy,
@@ -34,30 +34,9 @@ import {
 import { startSession } from './lib/algorithmEngine'
 
 const KNOWN_VIEWS = new Set([
-  'home',
-  'clips',
-  'shorts',
-  'live',
-  'dashboard',
-  'wallet',
-  'settings',
-  'explore',
-  'history',
-  'liked',
-  'watch-later',
-  'library',
-  'help',
-  'about',
-  'notifications',
-  'sounds',
-  'checkout',
-  'creator-apply',
-  'support',
-  'admin',
-  'legal-tos',
-  'legal-privacy',
-  'legal-creator',
-  'legal-community',
+  'home','creators','clips','shorts','live','dashboard','wallet','settings','explore',
+  'history','liked','watch-later','library','help','about','notifications','sounds',
+  'checkout','creator-apply','support','admin','legal-tos','legal-privacy','legal-creator','legal-community',
 ])
 
 function AppShell() {
@@ -73,157 +52,72 @@ function AppShell() {
   }, [isAuthenticated, user?.id])
 
   const openAuth = () => setAuthOpen(true)
-  const openImport = () => {
-    if (!isAuthenticated) {
-      setAuthOpen(true)
-      return
-    }
-    setImportOpen(true)
-  }
-  const openUpload = () => {
-    if (!isAuthenticated) {
-      setAuthOpen(true)
-      return
-    }
-    setUploadOpen(true)
-  }
-
+  const openImport = () => { if (!isAuthenticated) { setAuthOpen(true); return }; setImportOpen(true) }
+  const openUpload = () => { if (!isAuthenticated) { setAuthOpen(true); return }; setUploadOpen(true) }
   const navigate = (next) => {
-    const map = next === 'shorts' ? 'clips' : next
-    setView(map)
-    try {
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-    } catch {}
+    setView(next === 'shorts' ? 'clips' : next)
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }) } catch {}
   }
 
-  const showSidebarChrome = !String(view).startsWith('legal-')
+  const lockedCreator = (v) =>
+    (v === 'dashboard' || v === 'wallet') && isAuthenticated && user?.creatorStatus !== 'approved'
 
   const renderMain = () => {
     if (!KNOWN_VIEWS.has(view)) return <NotFoundPage onNavigate={navigate} />
-
-    if ((view === 'dashboard' || view === 'wallet') && isAuthenticated && user?.creatorStatus !== 'approved') {
+    if (lockedCreator(view)) {
       return (
         <div className="p-8 max-w-md mx-auto text-center">
           <p className="text-sm text-zinc-200 font-medium">Creator tools locked</p>
-          <p className="text-xs text-zinc-500 mt-2">Apply to become a creator and wait for admin approval.</p>
-          <button type="button" onClick={() => navigate('creator-apply')} className="mt-4 h-10 px-4 rounded-lg bg-[#007ACC] text-white text-sm">
-            Apply to create
-          </button>
+          <p className="text-xs text-zinc-500 mt-2">Apply and wait for admin approval.</p>
+          <button type="button" onClick={() => navigate('creator-apply')} className="mt-4 h-10 px-4 rounded-lg bg-[#007ACC] text-white text-sm">Apply to create</button>
+          <button type="button" onClick={() => navigate('home')} className="mt-3 block mx-auto text-xs text-[#007ACC]">← Back to Recommended</button>
         </div>
       )
     }
-    if (view === 'dashboard' && !isAuthenticated) {
-      return (
-        <AuthRequired
-          title="Creator Studio"
-          description="Sign in to manage clips, uploads, and live."
-          onOpenAuth={openAuth}
-        />
-      )
-    }
-    if (view === 'wallet' && !isAuthenticated) {
-      return (
-        <AuthRequired title="Wallet" description="Sign in to view payouts." onOpenAuth={openAuth} />
-      )
-    }
-    if (view === 'settings' && !isAuthenticated) {
-      return (
-        <AuthRequired
-          title="Settings"
-          description="Sign in to manage your account."
-          onOpenAuth={openAuth}
-        />
-      )
-    }
-    if (view === 'checkout' && !isAuthenticated) {
-      return (
-        <AuthRequired title="Checkout" description="Sign in to continue." onOpenAuth={openAuth} />
-      )
-    }
+    if (view === 'dashboard' && !isAuthenticated)
+      return <AuthRequired title="Creator Studio" description="Sign in." onOpenAuth={openAuth} />
+    if (view === 'wallet' && !isAuthenticated)
+      return <AuthRequired title="Wallet" description="Sign in." onOpenAuth={openAuth} />
+    if (view === 'settings' && !isAuthenticated)
+      return <AuthRequired title="Settings" description="Sign in." onOpenAuth={openAuth} />
 
     switch (view) {
-      case 'home':
-        return <HomeFeed />
+      case 'home': return <HomeFeed />
+      case 'creators': return <CreatorsPage />
       case 'clips':
-      case 'shorts':
-        return <ShortsFeed />
-      case 'live':
-        return <LiveView onNavigate={navigate} onOpenAuth={openAuth} />
-      case 'dashboard':
-        return (
-          <CreatorDashboard
-            onOpenImport={openImport}
-            onOpenUpload={openUpload}
-            onNavigate={navigate}
-          />
-        )
-      case 'wallet':
-        return <CreatorWallet />
-      case 'settings':
-        return <SettingsPage />
-      case 'explore':
-        return <ExplorePage />
-      case 'sounds':
-        return <SoundsPage />
-      case 'checkout':
-        return <CheckoutPage />
-      case 'creator-apply':
-        return <CreatorApplyPage onOpenAuth={openAuth} />
-      case 'support':
-        return <SupportPage onOpenAuth={openAuth} />
-      case 'admin':
-        return <AdminPortal />
-      case 'history':
-        return <LibraryPage initialTab="history" />
-      case 'liked':
-        return <LibraryPage initialTab="liked" />
-      case 'watch-later':
-        return <LibraryPage initialTab="saved" />
-      case 'library':
-        return <LibraryPage />
-      case 'help':
-        return <HelpPage />
-      case 'about':
-        return <AboutPage />
-      case 'notifications':
-        return <NotificationsPage />
-      case 'legal-tos':
-        return <TermsOfService />
-      case 'legal-privacy':
-        return <PrivacyPolicy />
-      case 'legal-creator':
-        return <CreatorAgreement />
-      case 'legal-community':
-        return <CommunityGuidelines />
-      default:
-        return <NotFoundPage onNavigate={navigate} />
+      case 'shorts': return <ShortsFeed />
+      case 'live': return <LiveView onNavigate={navigate} onOpenAuth={openAuth} />
+      case 'dashboard': return <CreatorDashboard onOpenImport={openImport} onOpenUpload={openUpload} onNavigate={navigate} />
+      case 'wallet': return <CreatorWallet onNavigate={navigate} />
+      case 'settings': return <SettingsPage onNavigate={navigate} />
+      case 'explore': return <ExplorePage />
+      case 'sounds': return <SoundsPage />
+      case 'checkout': return <CheckoutPage />
+      case 'creator-apply': return <CreatorApplyPage onOpenAuth={openAuth} />
+      case 'support': return <SupportPage onOpenAuth={openAuth} />
+      case 'admin': return <AdminPortal />
+      case 'history': return <LibraryPage initialTab="history" />
+      case 'liked': return <LibraryPage initialTab="liked" />
+      case 'watch-later': return <LibraryPage initialTab="saved" />
+      case 'library': return <LibraryPage />
+      case 'help': return <HelpPage />
+      case 'about': return <AboutPage />
+      case 'notifications': return <NotificationsPage />
+      case 'legal-tos': return <TermsOfService />
+      case 'legal-privacy': return <PrivacyPolicy />
+      case 'legal-creator': return <CreatorAgreement />
+      case 'legal-community': return <CommunityGuidelines />
+      default: return <NotFoundPage onNavigate={navigate} />
     }
   }
 
   return (
     <div className="min-h-screen bg-[#0b0b0f] text-zinc-100 flex flex-col">
-      <Navbar
-        currentView={view}
-        onNavigate={navigate}
-        onOpenAuth={openAuth}
-        onOpenUpload={openUpload}
-        onToggleSidebar={() => setSidebarOpen((s) => !s)}
-      />
+      <Navbar onNavigate={navigate} onOpenAuth={openAuth} onOpenUpload={openUpload} onToggleSidebar={() => setSidebarOpen((s) => !s)} />
       <div className="flex flex-1 min-h-0">
-        {showSidebarChrome && (
-          <Sidebar
-            currentView={view}
-            onNavigate={navigate}
-            open={sidebarOpen}
-            onClose={() => setSidebarOpen(false)}
-          />
-        )}
-        <main className="flex-1 min-w-0 flex flex-col">
-          <div className="flex-1">{renderMain()}</div>
-          <Footer onNavigate={navigate} />
-        </main>
+        <Sidebar currentView={view} onNavigate={navigate} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <main className="flex-1 min-w-0 overflow-y-auto bg-[#0b0b0f]">{renderMain()}</main>
       </div>
-
       <ImportShortModal open={importOpen} onClose={() => setImportOpen(false)} />
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
       <UploadModal open={uploadOpen} onClose={() => setUploadOpen(false)} />
