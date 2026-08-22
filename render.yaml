@@ -1,0 +1,10 @@
+# Render Blueprint — Static Site
+services:
+  - type: web
+    name: clips-app
+    runtime: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_STRIPE_PUBLISHABLE_KEY
+        sync: false
