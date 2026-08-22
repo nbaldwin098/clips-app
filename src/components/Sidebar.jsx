@@ -1,201 +1,100 @@
+import { useState } from 'react'
 import {
-  Home,
-  Clapperboard,
-  Radio,
-  Compass,
-  History,
-  Clock,
-  ThumbsUp,
-  Settings,
-  LayoutDashboard,
-  Wallet,
-  Music,
-  X,
+  Home, Clapperboard, Radio, Compass, History, Clock, ThumbsUp, Settings,
+  LayoutDashboard, Wallet, Music, Users, ChevronDown, ChevronRight,
+  HelpCircle, FileText, Shield, Scale, BookOpen, Copyright, LifeBuoy, ShieldCheck, X,
 } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { useAuth } from '../context/AuthContext'
 
-const NAV_ITEMS = [
-  { id: 'home', label: 'Recommended', icon: Home },
-  { id: 'clips', label: 'Clips', icon: Clapperboard },
-  { id: 'live', label: 'Live', icon: Radio },
-  { id: 'explore', label: 'Search', icon: Compass },
-  { id: 'sounds', label: 'Sounds', icon: Music },
-]
+const itemCls = (active) =>
+  cn(
+    'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+    active ? 'bg-[#007ACC]/20 text-[#007ACC]' : 'text-[#007ACC]/85 hover:bg-zinc-800/80 hover:text-[#23A9F2]'
+  )
 
-const LIBRARY = [
-  { id: 'history', label: 'History', icon: History },
-  { id: 'watch-later', label: 'Watch later', icon: Clock },
-  { id: 'liked', label: 'Liked', icon: ThumbsUp },
-]
+function NavBtn({ active, onClick, icon: Icon, label }) {
+  return (
+    <button type="button" onClick={onClick} className={itemCls(active)}>
+      {Icon && <Icon className="h-5 w-5 shrink-0" color="currentColor" />}
+      <span>{label}</span>
+    </button>
+  )
+}
 
-export default function Sidebar({
-  currentView,
-  onNavigate,
-  open,
-  onClose,
-  collapsed,
-}) {
-  const { mode, isAuthenticated } = useAuth()
+export default function Sidebar({ currentView, onNavigate, open, onClose }) {
+  const { isAuthenticated, user } = useAuth()
+  const isApprovedCreator = user?.creatorStatus === 'approved'
+  const [moreOpen, setMoreOpen] = useState(false)
+  const go = (id) => { onNavigate(id); onClose?.() }
 
   const body = (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full text-[#007ACC]">
       <div className="flex items-center justify-between p-3 md:hidden">
-        <span className="text-sm font-semibold text-[#007ACC]">Menu</span>
-        <button
-          type="button"
-          onClick={onClose}
-          className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-zinc-800"
-        >
-          <X className="h-4 w-4 text-[#007ACC]" />
-        </button>
+        <span className="text-sm font-semibold">Menu</span>
+        <button type="button" onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-zinc-800"><X className="h-4 w-4" /></button>
       </div>
-
       <nav className="p-2 space-y-0.5">
-        {NAV_ITEMS.map((item) => {
-          const Icon = item.icon
-          const active = currentView === item.id || (item.id === 'home' && currentView === 'home')
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => {
-                onNavigate(item.id)
-                onClose?.()
-              }}
-              className={cn(
-                'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                active
-                  ? 'bg-[#007acc]/20 text-[#0098ff]'
-                  : 'text-[#007ACC] hover:bg-zinc-800/80 hover:text-[#23A9F2]'
-              )}
-            >
-              <Icon className="h-5 w-5 shrink-0" color="currentColor" />
-              {!collapsed && item.label}
-            </button>
-          )
-        })}
+        <NavBtn active={currentView === 'home'} onClick={() => go('home')} icon={Home} label="Recommended" />
+        <NavBtn active={currentView === 'creators'} onClick={() => go('creators')} icon={Users} label="Creators" />
+        <NavBtn active={currentView === 'clips' || currentView === 'shorts'} onClick={() => go('clips')} icon={Clapperboard} label="Clips" />
+        <NavBtn active={currentView === 'live'} onClick={() => go('live')} icon={Radio} label="Live" />
+        <NavBtn active={currentView === 'explore'} onClick={() => go('explore')} icon={Compass} label="Search" />
+        <NavBtn active={currentView === 'sounds'} onClick={() => go('sounds')} icon={Music} label="Sounds" />
       </nav>
-
       <div className="mx-3 border-t border-zinc-800" />
-
-      <div className="p-2">
-        {!collapsed && (
-          <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
-            Library
-          </p>
-        )}
-        <div className="space-y-0.5">
-          {LIBRARY.map((item) => {
-            const Icon = item.icon
-            const active = currentView === item.id
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => {
-                  onNavigate(item.id)
-                  onClose?.()
-                }}
-                className={cn(
-                  'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                  active
-                    ? 'bg-[#007acc]/20 text-[#0098ff]'
-                    : 'text-[#007ACC] hover:bg-zinc-800/80 hover:text-[#23A9F2]'
-                )}
-              >
-                <Icon className="h-5 w-5 shrink-0" color="currentColor" />
-                {!collapsed && item.label}
-              </button>
-            )
-          })}
-        </div>
+      <div className="p-2 space-y-0.5">
+        <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Library</p>
+        <NavBtn active={currentView === 'history'} onClick={() => go('history')} icon={History} label="History" />
+        <NavBtn active={currentView === 'watch-later'} onClick={() => go('watch-later')} icon={Clock} label="Watch later" />
+        <NavBtn active={currentView === 'liked'} onClick={() => go('liked')} icon={ThumbsUp} label="Liked" />
+        <NavBtn active={currentView === 'settings'} onClick={() => go('settings')} icon={Settings} label="Settings" />
       </div>
-
-      {isAuthenticated && (
+      {isApprovedCreator && (
         <>
           <div className="mx-3 border-t border-zinc-800" />
           <div className="p-2 space-y-0.5">
-            {!collapsed && (
-              <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
-                Creator
-              </p>
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                onNavigate('dashboard')
-                onClose?.()
-              }}
-              className={cn(
-                'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                currentView === 'dashboard'
-                  ? 'bg-[#007acc]/20 text-[#0098ff]'
-                  : 'text-[#007ACC] hover:bg-zinc-800/80 hover:text-[#23A9F2]'
-              )}
-            >
-              <LayoutDashboard className="h-5 w-5" color="currentColor" />
-              {!collapsed && 'Studio'}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                onNavigate('wallet')
-                onClose?.()
-              }}
-              className={cn(
-                'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                currentView === 'wallet'
-                  ? 'bg-[#007acc]/20 text-[#0098ff]'
-                  : 'text-[#007ACC] hover:bg-zinc-800/80 hover:text-[#23A9F2]'
-              )}
-            >
-              <Wallet className="h-5 w-5" color="currentColor" />
-              {!collapsed && 'Wallet'}
-            </button>
+            <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Creator</p>
+            <NavBtn active={currentView === 'dashboard'} onClick={() => go('dashboard')} icon={LayoutDashboard} label="Studio" />
+            <NavBtn active={currentView === 'wallet'} onClick={() => go('wallet')} icon={Wallet} label="Wallet" />
           </div>
         </>
       )}
-
+      {isAuthenticated && user?.creatorStatus !== 'approved' && (
+        <div className="p-2">
+          <NavBtn active={currentView === 'creator-apply'} onClick={() => go('creator-apply')} icon={ShieldCheck} label="Apply to create" />
+        </div>
+      )}
       <div className="mx-3 border-t border-zinc-800" />
-      <div className="p-2">
-        <button
-          type="button"
-          onClick={() => {
-            onNavigate('settings')
-            onClose?.()
-          }}
-          className={cn(
-            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-            currentView === 'settings'
-              ? 'bg-[#007acc]/20 text-[#0098ff]'
-              : 'text-[#007ACC] hover:bg-zinc-800/80 hover:text-[#23A9F2]'
-          )}
-        >
-          <Settings className="h-5 w-5 shrink-0" color="currentColor" />
-          {!collapsed && 'Settings'}
+      <div className="p-2 space-y-0.5">
+        <NavBtn active={currentView === 'support'} onClick={() => go('support')} icon={LifeBuoy} label="Support" />
+        <button type="button" onClick={() => setMoreOpen((v) => !v)} className={itemCls(false)}>
+          {moreOpen ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+          <span>… More</span>
         </button>
+        {moreOpen && (
+          <div className="ml-2 space-y-0.5 border-l border-zinc-800 pl-2">
+            <NavBtn active={currentView === 'about'} onClick={() => go('about')} icon={BookOpen} label="About" />
+            <NavBtn active={currentView === 'help'} onClick={() => go('help')} icon={HelpCircle} label="Help" />
+            <NavBtn active={currentView === 'legal-tos'} onClick={() => go('legal-tos')} icon={FileText} label="Terms of Service" />
+            <NavBtn active={currentView === 'legal-privacy'} onClick={() => go('legal-privacy')} icon={Shield} label="Privacy Policy" />
+            <NavBtn active={currentView === 'legal-creator'} onClick={() => go('legal-creator')} icon={Scale} label="Creator Agreement" />
+            <NavBtn active={currentView === 'legal-community'} onClick={() => go('legal-community')} icon={Users} label="Community Guidelines" />
+            <NavBtn active={currentView === 'help'} onClick={() => go('help')} icon={Copyright} label="Copyright & DMCA" />
+            <NavBtn active={currentView === 'admin'} onClick={() => go('admin')} icon={ShieldCheck} label="Admin" />
+          </div>
+        )}
       </div>
     </div>
   )
 
   return (
     <>
-      <aside
-        className={cn(
-          'hidden md:flex shrink-0 flex-col border-r border-zinc-800 bg-[#121218] h-[calc(100vh-3.5rem)] sticky top-14 overflow-y-auto transition-all duration-200',
-          open ? 'w-56' : 'w-0 overflow-hidden border-0'
-        )}
-      >
-        {open && body}
-      </aside>
-
+      <aside className={cn('hidden md:flex shrink-0 flex-col border-r border-zinc-800 bg-[#121218] h-[calc(100vh-3.5rem)] sticky top-14 overflow-y-auto transition-all duration-200', open ? 'w-56' : 'w-0 overflow-hidden border-0')}>{open && body}</aside>
       {open && (
         <div className="md:hidden fixed inset-0 z-40">
           <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-          <aside className="absolute left-0 top-0 bottom-0 w-64 bg-[#121218] border-r border-zinc-800 overflow-y-auto">
-            {body}
-          </aside>
+          <aside className="absolute left-0 top-0 bottom-0 w-64 bg-[#121218] border-r border-zinc-800 overflow-y-auto">{body}</aside>
         </div>
       )}
     </>
