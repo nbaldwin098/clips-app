@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Clips — Page list + 10 templates</title>
+  <style>
+    :root { --bg:#f8fafc; --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: Inter, system-ui, sans-serif; background:var(--bg); color:var(--ink); }
+    header { position:sticky; top:0; z-index:10; background:#fff; border-bottom:1px solid var(--line); padding:16px 24px; }
+    header h1 { margin:0; font-size:18px; }
+    header p { margin:4px 0 0; font-size:13px; color:var(--muted); }
+    main { padding:24px; max-width:1400px; margin:0 auto; }
+    h2 { font-size:15px; margin:28px 0 12px; }
+    .pages { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; }
+    .page-chip { background:#fff; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:12px; }
+    .page-chip b { display:block; font-size:10px; color:var(--muted); font-weight:500; }
+    .tpl { background:#fff; border:1px solid var(--line); border-radius:16px; padding:16px; overflow-x:auto; margin-bottom:20px; }
+    .tpl-head { display:flex; justify-content:space-between; margin-bottom:12px; gap:12px; }
+    .tpl-head h3 { margin:0; font-size:14px; }
+    .tpl-head span { font-size:11px; color:var(--muted); }
+    .row { display:flex; gap:10px; min-width:max-content; }
+    .phone { width:140px; height:240px; border-radius:12px; border:1px solid var(--line); overflow:hidden; flex-shrink:0; display:flex; flex-direction:column; font-size:8px; }
+    .phone .bar { height:22px; display:flex; align-items:center; padding:0 6px; font-weight:600; font-size:9px; gap:4px; }
+    .phone .bar .dot { width:8px; height:8px; border-radius:2px; }
+    .phone .body { flex:1; padding:6px; display:flex; flex-direction:column; gap:4px; }
+    .phone .block { border-radius:4px; height:28px; }
+    .phone .block.lg { height:56px; }
+    .phone .block.sm { height:14px; width:70%; }
+    .phone .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:4px; }
+    .phone .label { font-size:7px; font-weight:600; text-transform:uppercase; opacity:.7; }
+    .t1 .phone { background:#fafcff; } .t1 .bar { background:#fff; border-bottom:1px solid #e8eef5; } .t1 .dot { background:#2c729b; } .t1 .block { background:#ebf4fa; } .t1 .accent { background:#2c729b !important; }
+    .t2 .phone { background:#fff; } .t2 .bar { background:#fff; border-bottom:1px solid #eee; } .t2 .dot { background:#cc0000; } .t2 .block { background:#f2f2f2; } .t2 .accent { background:#cc0000 !important; }
+    .t3 .phone { background:#0b0f14; color:#e2e8f0; } .t3 .bar { background:#111827; color:#f8fafc; } .t3 .dot { background:#38bdf8; } .t3 .block { background:#1e293b; } .t3 .accent { background:#38bdf8 !important; }
+    .t4 .phone { background:#faf8ff; } .t4 .bar { background:#fff; } .t4 .dot { background:#7c3aed; } .t4 .block { background:#efe9fb; } .t4 .accent { background:#7c3aed !important; }
+    .t5 .phone { background:#f4fbf7; } .t5 .bar { background:#fff; } .t5 .dot { background:#059669; } .t5 .block { background:#e6f6ee; } .t5 .accent { background:#059669 !important; }
+    .t6 .phone { background:#fff; } .t6 .bar { background:#000; color:#fff; } .t6 .dot { background:#fff; } .t6 .block { background:#f0f0f0; } .t6 .accent { background:#000 !important; }
+    .t7 .phone { background:#fbf7f2; } .t7 .bar { background:#fffaf5; } .t7 .dot { background:#c2410c; } .t7 .block { background:#f3e8dc; } .t7 .accent { background:#c2410c !important; }
+    .t8 .phone { background:linear-gradient(180deg,#eef7fb,#f7fbfd); } .t8 .bar { background:rgba(255,255,255,.9); } .t8 .dot { background:#0284c7; } .t8 .block { background:rgba(2,132,199,.12); } .t8 .accent { background:#0284c7 !important; }
+    .t9 .phone { background:#f1f5f9; } .t9 .bar { background:#0f172a; color:#fff; height:18px; } .t9 .dot { background:#22d3ee; } .t9 .block { background:#fff; border:1px solid #e2e8f0; height:20px; } .t9 .accent { background:#0f172a !important; }
+    .t10 .phone { background:#fff; } .t10 .bar { background:#2c729b; color:#fff; } .t10 .dot { background:#fff; } .t10 .block { background:#f1f5f9; } .t10 .accent { background:#245f82 !important; }
+    .legend { font-size:12px; color:var(--muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Clips — every page + 10 design templates</h1>
+    <p>Side-by-side wireframes. Template 1 = current live direction (white + powder blue).</p>
+  </header>
+  <main>
+    <h2>Page inventory</h2>
+    <div class="pages" id="chips"></div>
+    <h2>10 templates × core screens</h2>
+    <p class="legend">Columns: Home · Shorts · Live · Studio · Wallet · Sign in · Settings · About · Explore · Library</p>
+    <div id="templates"></div>
+  </main>
+  <script>
+    const pages = [
+      ['Public','Home'],['Public','Shorts'],['Public','Live'],['Public','Explore'],['Public','Library'],
+      ['Public','Notifications'],['Public','Help'],['Public','About'],['Public','404'],
+      ['Legal','Terms'],['Legal','Privacy'],['Legal','Creator agreement'],['Legal','Community'],
+      ['Auth','Sign in'],['Auth','Sign up'],['Auth','Auth gate'],
+      ['Creator','Studio'],['Creator','Wallet'],['Creator','Onboarding'],
+      ['Settings','Account'],['Settings','Security'],['Settings','Channel'],['Settings','Stream'],
+      ['Settings','Chat'],['Settings','Monetization'],['Settings','Analytics'],['Settings','Notifications'],
+      ['Settings','Roles'],['Settings','Copyright'],['Modal','Import'],['Modal','Upload']
+    ];
+    document.getElementById('chips').innerHTML = pages.map(([g,n]) =>
+      `<div class="page-chip"><b>${g}</b>${n}</div>`).join('');
+    const screens = [
+      { name:'Home', html:'<div class="label">Home</div><div class="block lg"></div><div class="grid2"><div class="block"></div><div class="block"></div></div><div class="block sm"></div>' },
+      { name:'Shorts', html:'<div class="label">Shorts</div><div class="grid2"><div class="block lg"></div><div class="block lg"></div><div class="block lg"></div><div class="block lg"></div></div>' },
+      { name:'Live', html:'<div class="label">Live</div><div class="block lg"></div><div class="block sm"></div><div class="block accent" style="height:18px;border-radius:4px"></div>' },
+      { name:'Studio', html:'<div class="label">Studio</div><div class="block"></div><div class="block"></div><div class="block accent" style="height:16px"></div>' },
+      { name:'Wallet', html:'<div class="label">Wallet</div><div class="grid2"><div class="block"></div><div class="block"></div><div class="block"></div><div class="block"></div></div>' },
+      { name:'Sign in', html:'<div class="label">Sign in</div><div class="block"></div><div class="block"></div><div class="block accent" style="height:18px"></div>' },
+      { name:'Settings', html:'<div class="label">Settings</div><div class="block sm"></div><div class="block sm"></div><div class="block"></div>' },
+      { name:'About', html:'<div class="label">About</div><div class="block sm"></div><div class="block lg"></div>' },
+      { name:'Explore', html:'<div class="label">Explore</div><div class="block" style="border-radius:999px;height:16px"></div><div class="grid2"><div class="block"></div><div class="block"></div></div>' },
+      { name:'Library', html:'<div class="label">Library</div><div class="block"></div><div class="block"></div><div class="block"></div>' }
+    ];
+    const names = [
+      ['t1','1 — Current (powder blue)','Live site'],
+      ['t2','2 — White + red','YT-adjacent'],
+      ['t3','3 — Dark studio','Twitch energy'],
+      ['t4','4 — Soft lavender','Lifestyle'],
+      ['t5','5 — Emerald trust','Payouts'],
+      ['t6','6 — B/W contrast','Brutalist'],
+      ['t7','7 — Warm sand','Editorial'],
+      ['t8','8 — Ocean glass','Airy'],
+      ['t9','9 — Dense mobile','Compact'],
+      ['t10','10 — Blue bar creator','Studio-first']
+    ];
+    const root = document.getElementById('templates');
+    names.forEach(([cls, title, sub]) => {
+      const tpl = document.createElement('div');
+      tpl.className = 'tpl ' + cls;
+      tpl.innerHTML = `<div class="tpl-head"><h3>${title}</h3><span>${sub}</span></div><div class="row"></div>`;
+      const row = tpl.querySelector('.row');
+      screens.forEach(s => {
+        const el = document.createElement('div');
+        el.className = 'phone';
+        el.innerHTML = `<div class="bar"><span class="dot"></span>${s.name}</div><div class="body">${s.html}</div>`;
+        row.appendChild(el);
+      });
+      root.appendChild(tpl);
+    });
+  </script>
+</body>
+</html>
