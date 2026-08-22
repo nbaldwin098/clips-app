@@ -6,6 +6,7 @@ import StreamSettings from './settings/StreamSettings'
 import ChatSettings from './settings/ChatSettings'
 import MonetizationSettings from './settings/MonetizationSettings'
 import ChannelSettings from './settings/ChannelSettings'
+import CopyrightSettings from './settings/CopyrightSettings'
 
 export default function SettingsPage() {
   const [section, setSection] = useState('account')
@@ -36,6 +37,7 @@ export default function SettingsPage() {
           <p className="mt-2 text-sm text-slate-500">Channel performance, retention curves, and traffic sources appear after real traffic is recorded.</p>
         </div>
       )}
+      {section === 'copyright' && <CopyrightSettings />}
       {section === 'legal' && (
         <div className="space-y-4">
           <h1 className="text-xl font-semibold text-slate-900">Legal & Data</h1>
