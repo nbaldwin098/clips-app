@@ -82,9 +82,7 @@ function AppShell() {
     setView(next)
     try {
       window.scrollTo({ top: 0, behavior: 'smooth' })
-    } catch {
-      /* ignore */
-    }
+    } catch {}
   }
 
   const showSidebar =
@@ -113,6 +111,15 @@ function AppShell() {
         />
       )
     }
+    if (view === 'settings' && !isAuthenticated) {
+      return (
+        <AuthRequired
+          title="Settings"
+          description="Sign in to manage your account, stream keys, and profile."
+          onOpenAuth={openAuth}
+        />
+      )
+    }
 
     switch (view) {
       case 'home':
@@ -122,7 +129,7 @@ function AppShell() {
       case 'live':
         return <LiveView onNavigate={navigate} />
       case 'dashboard':
-        return <CreatorDashboard onOpenImport={openImport} />
+        return <CreatorDashboard onOpenImport={openImport} onOpenUpload={openUpload} onNavigate={navigate} />
       case 'wallet':
         return <CreatorWallet />
       case 'settings':
