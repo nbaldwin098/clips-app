@@ -34,6 +34,7 @@ import {
   CommunityGuidelines,
 } from './components/legal/LegalPages'
 import { startSession } from './lib/algorithmEngine'
+import { lsGet, lsSet } from './lib/storage'
 
 const KNOWN_VIEWS = new Set([
   'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
@@ -49,7 +50,7 @@ function AppShell() {
   const [importOpen, setImportOpen] = useState(false)
   const [authOpen, setAuthOpen] = useState(false)
   const [uploadOpen, setUploadOpen] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(() => lsGet('sidebar_open', true) !== false)
 
   useEffect(() => {
     if (isAuthenticated && user?.id) startSession(user.id)
@@ -76,7 +77,6 @@ function AppShell() {
 
   const renderMain = () => {
     if (!KNOWN_VIEWS.has(view)) return <NotFoundPage onNavigate={navigate} />
-
     if (lockedCreator(view)) {
       return (
         <div className="p-8 max-w-md mx-auto text-center">
@@ -130,9 +130,19 @@ function AppShell() {
 
   return (
     <div className="min-h-screen bg-[#0b0b0f] text-zinc-100 flex flex-col">
-      <Navbar onNavigate={navigate} onOpenAuth={openAuth} onOpenUpload={openUpload} onToggleSidebar={() => setSidebarOpen((s) => !s)} />
+      <Navbar
+        onNavigate={navigate}
+        onOpenAuth={openAuth}
+        onOpenUpload={openUpload}
+        onToggleSidebar={() => setSidebarOpen((s) => { const n = !s; lsSet('sidebar_open', n); return n })}
+      />
       <div className="flex flex-1 min-h-0">
-        <Sidebar currentView={view} onNavigate={navigate} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <Sidebar
+          currentView={view}
+          onNavigate={navigate}
+          open={sidebarOpen}
+          onClose={() => { lsSet('sidebar_open', false); setSidebarOpen(false) }}
+        />
         <main className="flex-1 min-w-0 overflow-y-auto bg-[#0b0b0f]">{renderMain()}</main>
       </div>
       <ImportShortModal open={importOpen} onClose={() => setImportOpen(false)} />
