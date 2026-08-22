@@ -25,12 +25,13 @@ export default function Footer({ onNavigate }) {
             </p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-10 gap-y-2">
+            {link('About', 'about')}
+            {link('Help', 'help')}
             {link('Terms of Service', 'legal-tos')}
             {link('Privacy Policy', 'legal-privacy')}
             {link('Creator Agreement', 'legal-creator')}
             {link('Community Guidelines', 'legal-community')}
             {link('Copyright & DMCA', 'settings')}
-            {link('Help', 'help')}
           </div>
         </div>
         <p className="mt-8 text-[11px] text-slate-400">

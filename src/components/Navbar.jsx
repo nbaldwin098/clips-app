@@ -72,7 +72,11 @@ export default function Navbar({
               >
                 <Settings className="h-5 w-5 text-slate-600" />
               </button>
-              <button className="relative h-9 w-9 flex items-center justify-center rounded-full hover:bg-slate-100">
+              <button
+                onClick={() => onNavigate('notifications')}
+                className="relative h-9 w-9 flex items-center justify-center rounded-full hover:bg-slate-100"
+                title="Notifications"
+              >
                 <Bell className="h-5 w-5 text-slate-600" />
               </button>
               <button
