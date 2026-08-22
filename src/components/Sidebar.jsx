@@ -28,11 +28,11 @@ const LIBRARY = [
   { id: 'liked', label: 'Liked videos', icon: ThumbsUp },
 ]
 
-export default function Sidebar({ currentView, onNavigate, onOpenImport, onOpenCostSim }) {
+export default function Sidebar({ currentView, onNavigate, onOpenImport }) {
   const { mode, isAuthenticated } = useAuth()
 
   return (
-    <aside className="hidden md:flex w-56 shrink-0 flex-col border-r border-slate-200 bg-white h-[calc(100vh-3.5rem)] sticky top-14 overflow-y-auto">
+    <aside className="hidden md:flex w-56 shrink-0 flex-col border-r border-slate-200/80 bg-white/80 backdrop-blur-sm h-[calc(100vh-3.5rem)] sticky top-14 overflow-y-auto">
       <nav className="p-3 space-y-1">
         {NAV_ITEMS.map(item => {
           const Icon = item.icon
@@ -106,13 +106,6 @@ export default function Sidebar({ currentView, onNavigate, onOpenImport, onOpenC
                 Import Short
               </button>
               <button
-                onClick={onOpenCostSim}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"
-              >
-                <Settings className="h-5 w-5" />
-                Infrastructure
-              </button>
-              <button
                 onClick={() => onNavigate('wallet')}
                 className={cn(
                   'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
@@ -129,9 +122,19 @@ export default function Sidebar({ currentView, onNavigate, onOpenImport, onOpenC
         </>
       )}
 
+      <div className="mx-3 border-t border-slate-200" />
+      <div className="p-3">
+        <button
+          onClick={() => onNavigate('settings')}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+        >
+          <Settings className="h-5 w-5 shrink-0" />
+          Settings
+        </button>
+      </div>
       <div className="mt-auto p-4 text-xs text-slate-400">
         <p>Clips MVP</p>
-        <p className="mt-1">Zero-cost bootstrap architecture</p>
+        <p className="mt-1">Link import · zero binary storage</p>
       </div>
     </aside>
   )

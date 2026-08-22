@@ -1,9 +1,8 @@
 /**
- * Zero-cost storage architecture helpers + local persistence.
- * - Zero-Storage Smart Reference: store only metadata + external stream URL.
- * - Backblaze B2 S3-compatible target for scale ($0.005/GB).
- * - Cloudflare edge caching assumed for delivery.
- * - localStorage for client-side user state until backend is wired.
+ * Storage helpers + local persistence.
+ * Primary path: Zero-Storage Smart Reference — store only metadata + external URL.
+ * Optional later path: owned copies on object storage + Cloudflare delivery.
+ * localStorage holds client-side user state until a backend is wired.
  */
 
 import { attachCrossPostMeta, detectPlatformFromUrl } from './crossPostDetector'
@@ -51,27 +50,10 @@ export function lsRemove(key) {
   localStorage.removeItem(LS_KEYS[key] || key)
 }
 
-export function estimateB2Cost(videoCount, avgMb = 30) {
-  const gb = (videoCount * avgMb) / 1024
-  const monthly = gb * 0.005
-  return {
-    videoCount,
-    totalGb: Math.round(gb * 100) / 100,
-    monthlyUsd: Math.round(monthly * 100) / 100,
-  }
-}
-
-export function estimateS3Cost(videoCount, avgMb = 30) {
-  const gb = (videoCount * avgMb) / 1024
-  const storage = gb * 0.023
-  const egress = gb * 0.09 * 0.3
-  return {
-    videoCount,
-    totalGb: Math.round(gb * 100) / 100,
-    monthlyUsd: Math.round((storage + egress) * 100) / 100,
-  }
-}
-
+/**
+ * Parse a public short URL into a lightweight metadata record.
+ * Attaches cross-post assessment. Does not download binary video data.
+ */
 export function parseExternalShort(url) {
   try {
     const platformInfo = detectPlatformFromUrl(url)
@@ -104,6 +86,9 @@ export function parseExternalShort(url) {
   }
 }
 
+/**
+ * Persist an imported reference into the local library.
+ */
 export function saveImport(record) {
   const list = lsGet('imports', [])
   const next = [record, ...list.filter((r) => r.id !== record.id)].slice(0, 200)

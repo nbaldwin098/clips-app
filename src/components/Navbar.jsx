@@ -1,4 +1,4 @@
-import { Search, Bell, Upload, Settings, LogIn, LayoutDashboard } from 'lucide-react'
+import { Search, Bell, Upload, Settings, LogIn } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { cn } from '../lib/utils'
 
@@ -6,7 +6,6 @@ export default function Navbar({
   onNavigate,
   currentView,
   onOpenImport,
-  onOpenCostSim,
   onOpenAuth,
   onOpenUpload,
 }) {
@@ -50,13 +49,6 @@ export default function Navbar({
             className="hidden lg:inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
           >
             Import
-          </button>
-          <button
-            onClick={onOpenCostSim}
-            className="hidden xl:inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
-          >
-            <LayoutDashboard className="h-4 w-4" />
-            Costs
           </button>
 
           {isAuthenticated ? (
