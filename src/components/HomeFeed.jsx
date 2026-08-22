@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Radio, Upload, Film } from 'lucide-react'
+import { Radio, Upload, Film, Sparkles } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getHomeFeed } from '../lib/contentService'
 import ContentCard from './ContentCard'
@@ -20,7 +20,7 @@ export default function HomeFeed({ onNavigate, onOpenImport }) {
           </div>
           <p className="mt-4 text-sm font-medium text-slate-800">No live broadcasts yet</p>
           <p className="mt-1.5 text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
-            Live ingest comes online with stream keys + chat. Until then, browse the legal library and imports below.
+            Streams appear here when creators go live with a valid key.
           </p>
         </div>
       </section>
@@ -30,7 +30,7 @@ export default function HomeFeed({ onNavigate, onOpenImport }) {
           <div>
             <h2 className="text-lg font-semibold text-slate-900">Recommended</h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Public-domain & open-license seeds · your imports · ranked by watch signals
+              Ranked by completion, rewatches, and shares — no follower bias
             </p>
           </div>
           <div className="flex gap-2">
@@ -53,8 +53,13 @@ export default function HomeFeed({ onNavigate, onOpenImport }) {
 
         {items.length === 0 ? (
           <div className="rounded-2xl border border-slate-200/80 bg-white px-6 py-16 text-center shadow-sm">
-            <p className="text-sm font-medium text-slate-800">Feed is empty</p>
-            <p className="mt-1.5 text-xs text-slate-500">Import a link or wait for legal library load.</p>
+            <div className="mx-auto h-12 w-12 rounded-full bg-[#EBF4FA] flex items-center justify-center">
+              <Sparkles className="h-6 w-6 text-[#2C729B]" />
+            </div>
+            <p className="mt-4 text-sm font-medium text-slate-800">Your feed is ready</p>
+            <p className="mt-1.5 text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+              No placeholder videos. Import a link or upload after you sign in to start filling the feed.
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
