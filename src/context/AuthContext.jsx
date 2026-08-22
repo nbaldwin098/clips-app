@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { lsGet, lsSet, lsRemove } from '../lib/storage'
+import { indexUser } from '../lib/moderation'
 
 const AuthContext = createContext(null)
 
@@ -9,6 +10,7 @@ const DEFAULT_USER = {
   displayName: 'Viewer',
   handle: 'viewer',
   isCreator: false,
+  creatorStatus: 'none',
   avatar: null,
 }
 
@@ -68,9 +70,13 @@ export function AuthProvider({ children }) {
                 .slice(0, 24) ||
               'user',
             provider,
+            creatorStatus: existing?.creatorStatus || 'none',
           }
     setUser(next)
     setMode('viewer')
+    try {
+      indexUser(next)
+    } catch {}
   }, [])
 
   const logout = useCallback(() => {
@@ -85,6 +91,9 @@ export function AuthProvider({ children }) {
       if (!prev) return prev
       const next = { ...prev, ...partial }
       lsSet('user', next)
+      try {
+        indexUser(next)
+      } catch {}
       return next
     })
   }, [])
