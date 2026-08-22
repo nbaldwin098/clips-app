@@ -12,8 +12,17 @@ const DEFAULT_USER = {
   avatar: null,
 }
 
+function sanitizeUser(u) {
+  if (!u || typeof u !== 'object') return null
+  if (u.provider === 'apple') return null
+  if (typeof u.displayName === 'string' && /apple\s*user/i.test(u.displayName)) return null
+  if (typeof u.email === 'string' && /privaterelay\.appleid\.com/i.test(u.email)) return null
+  if (typeof u.email === 'string' && /^apple_\d+@/i.test(u.email)) return null
+  return u
+}
+
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => lsGet('user', null))
+  const [user, setUser] = useState(() => sanitizeUser(lsGet('user', null)))
   const [mode, setMode] = useState(() => lsGet('mode', 'viewer'))
 
   useEffect(() => {
@@ -25,31 +34,42 @@ export function AuthProvider({ children }) {
     lsSet('mode', mode)
   }, [mode])
 
+  useEffect(() => {
+    const raw = lsGet('user', null)
+    if (raw && !sanitizeUser(raw)) {
+      lsRemove('user')
+      setUser(null)
+      setMode('viewer')
+    }
+  }, [])
+
   const login = useCallback((payload = {}) => {
     const email =
-      typeof payload === 'string'
-        ? payload
-        : payload.email || 'viewer@clips.local'
+      typeof payload === 'string' ? payload : payload.email || 'viewer@clips.local'
     const displayName =
       typeof payload === 'object' && payload.displayName
         ? payload.displayName
         : email.split('@')[0] || 'Viewer'
     const provider =
       typeof payload === 'object' && payload.provider ? payload.provider : 'email'
-    const existing = lsGet('user', null)
+
+    if (provider === 'apple') return
+
+    const existing = sanitizeUser(lsGet('user', null))
     const next =
       existing && existing.email === email
-        ? { ...existing, provider }
+        ? { ...existing, provider: 'email' }
         : {
             ...DEFAULT_USER,
             id: `user_${Date.now()}`,
             email,
             displayName,
-            handle: displayName
-              .toLowerCase()
-              .replace(/[^a-z0-9_]/g, '')
-              .slice(0, 24) || 'user',
-            provider,
+            handle:
+              displayName
+                .toLowerCase()
+                .replace(/[^a-z0-9_]/g, '')
+                .slice(0, 24) || 'user',
+            provider: 'email',
           }
     setUser(next)
     setMode('viewer')
