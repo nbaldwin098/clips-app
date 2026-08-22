@@ -5,6 +5,9 @@ const APPS_KEY = 'creator_applications'
 const TICKETS_KEY = 'support_tickets'
 const USERS_INDEX = 'users_index'
 
+export const PLATFORM_OWNER_HANDLE = 'cs1'
+const DEFAULT_ADMIN_PASSWORD = 'ClipsOps-cs1'
+
 const RESERVED = new Set([
   'admin', 'administrator', 'clips', 'support', 'help', 'official', 'youtube',
   'twitch', 'settings', 'login', 'signup', 'api', 'www', 'root', 'null', 'undefined',
@@ -39,17 +42,25 @@ export function validateHandle(raw, { currentUserId = null } = {}) {
   return { ok: true, handle, error: null }
 }
 
-export function isAdminSession() {
-  return !!lsGet(ADMIN_KEY, null)
+export function isPlatformOwner(user) {
+  return !!user && String(user.handle || '').toLowerCase() === PLATFORM_OWNER_HANDLE
 }
 
-export function adminLogin(code) {
-  const ok = code === 'clips-admin' || code === import.meta.env?.VITE_ADMIN_CODE
-  if (ok) {
-    lsSet(ADMIN_KEY, { at: Date.now() })
-    return true
+export function isAdminSession() {
+  const s = lsGet(ADMIN_KEY, null)
+  return !!(s && s.ok)
+}
+
+export function adminLogin(code, user) {
+  if (!isPlatformOwner(user)) {
+    return { ok: false, error: 'Admin is only available for the platform owner account.' }
   }
-  return false
+  const expected = import.meta.env?.VITE_ADMIN_CODE || DEFAULT_ADMIN_PASSWORD
+  if (String(code || '') !== String(expected)) {
+    return { ok: false, error: 'Invalid admin password' }
+  }
+  lsSet(ADMIN_KEY, { at: Date.now(), ok: true, handle: PLATFORM_OWNER_HANDLE })
+  return { ok: true }
 }
 
 export function adminLogout() {
