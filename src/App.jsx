@@ -28,6 +28,9 @@ import CreatorsPage from './components/CreatorsPage'
 import AnalyticsPage from './components/AnalyticsPage'
 import ChannelPage from './components/ChannelPage'
 import SubscriptionsPage from './components/SubscriptionsPage'
+import PlaylistsPage from './components/PlaylistsPage'
+import CommunityPage from './components/CommunityPage'
+import StudioToolsPage from './components/StudioToolsPage'
 import {
   TermsOfService, PrivacyPolicy, CreatorAgreement, CommunityGuidelines,
 } from './components/legal/LegalPages'
@@ -38,7 +41,8 @@ const KNOWN_VIEWS = new Set([
   'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
   'explore', 'history', 'liked', 'watch-later', 'library', 'help', 'about',
   'notifications', 'sounds', 'checkout', 'creator-apply', 'support', 'admin',
-  'analytics', 'channel', 'subscriptions',
+  'analytics', 'channel',
+  'subscriptions', 'playlists', 'community', 'studio-tools',
   'legal-tos', 'legal-privacy', 'legal-creator', 'legal-community',
 ])
 
@@ -55,19 +59,32 @@ function AppShell() {
   }, [isAuthenticated, user?.id])
 
   const openAuth = () => setAuthOpen(true)
-  const openImport = () => { if (!isAuthenticated) { setAuthOpen(true); return }; setImportOpen(true) }
-  const openUpload = () => { if (!isAuthenticated) { setAuthOpen(true); return }; setUploadOpen(true) }
+  const openImport = () => {
+    if (!isAuthenticated) { setAuthOpen(true); return }
+    setImportOpen(true)
+  }
+  const openUpload = () => {
+    if (!isAuthenticated) { setAuthOpen(true); return }
+    setUploadOpen(true)
+  }
   const navigate = (next) => {
-    setView(next === 'shorts' ? 'clips' : next)
-    try { window.scrollTo({ top: 0, behavior: 'smooth' }) } catch {}
+    try {
+      const id = next === 'shorts' ? 'clips' : String(next || 'home')
+      setView(id)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } catch {
+      setView('home')
+    }
   }
 
   const lockedCreator = (v) =>
-    (v === 'dashboard' || v === 'wallet' || v === 'analytics') &&
-    isAuthenticated && user?.creatorStatus !== 'approved'
+    (v === 'dashboard' || v === 'wallet' || v === 'analytics' || v === 'studio-tools') &&
+    isAuthenticated &&
+    user?.creatorStatus !== 'approved'
 
   const renderMain = () => {
     if (!KNOWN_VIEWS.has(view)) return <NotFoundPage onNavigate={navigate} />
+
     if (lockedCreator(view)) {
       return (
         <div className="p-8 max-w-md mx-auto text-center">
@@ -78,15 +95,18 @@ function AppShell() {
         </div>
       )
     }
-    if (view === 'dashboard' && !isAuthenticated) return <AuthRequired title="Creator Studio" description="Sign in." onOpenAuth={openAuth} />
-    if (view === 'wallet' && !isAuthenticated) return <AuthRequired title="Wallet" description="Sign in." onOpenAuth={openAuth} />
-    if (view === 'settings' && !isAuthenticated) return <AuthRequired title="Settings" description="Sign in." onOpenAuth={openAuth} />
-    if (view === 'channel' && !isAuthenticated) return <AuthRequired title="Channel" description="Sign in." onOpenAuth={openAuth} />
+    if (view === 'dashboard' && !isAuthenticated)
+      return <AuthRequired title="Creator Studio" description="Sign in." onOpenAuth={openAuth} />
+    if (view === 'wallet' && !isAuthenticated)
+      return <AuthRequired title="Wallet" description="Sign in." onOpenAuth={openAuth} />
+    if (view === 'settings' && !isAuthenticated)
+      return <AuthRequired title="Settings" description="Sign in." onOpenAuth={openAuth} />
+    if (view === 'channel' && !isAuthenticated)
+      return <AuthRequired title="Channel" description="Sign in." onOpenAuth={openAuth} />
 
     switch (view) {
       case 'home': return <HomeFeed />
       case 'creators': return <CreatorsPage />
-      case 'subscriptions': return <SubscriptionsPage onNavigate={navigate} onOpenAuth={openAuth} />
       case 'clips':
       case 'shorts': return <ShortsFeed />
       case 'live': return <LiveView onNavigate={navigate} onOpenAuth={openAuth} />
@@ -94,6 +114,10 @@ function AppShell() {
       case 'wallet': return <CreatorWallet onNavigate={navigate} />
       case 'analytics': return <AnalyticsPage onNavigate={navigate} />
       case 'channel': return <ChannelPage onNavigate={navigate} />
+      case 'subscriptions': return <SubscriptionsPage onNavigate={navigate} onOpenAuth={openAuth} />
+      case 'playlists': return <PlaylistsPage onNavigate={navigate} onOpenAuth={openAuth} />
+      case 'community': return <CommunityPage onNavigate={navigate} onOpenAuth={openAuth} />
+      case 'studio-tools': return <StudioToolsPage onNavigate={navigate} />
       case 'settings': return <SettingsPage onNavigate={navigate} />
       case 'explore': return <ExplorePage />
       case 'sounds': return <SoundsPage onOpenAuth={openAuth} />
