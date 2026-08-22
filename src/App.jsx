@@ -27,11 +27,9 @@ import AdminPortal from './components/AdminPortal'
 import CreatorsPage from './components/CreatorsPage'
 import AnalyticsPage from './components/AnalyticsPage'
 import ChannelPage from './components/ChannelPage'
+import SubscriptionsPage from './components/SubscriptionsPage'
 import {
-  TermsOfService,
-  PrivacyPolicy,
-  CreatorAgreement,
-  CommunityGuidelines,
+  TermsOfService, PrivacyPolicy, CreatorAgreement, CommunityGuidelines,
 } from './components/legal/LegalPages'
 import { startSession } from './lib/algorithmEngine'
 import { lsGet, lsSet } from './lib/storage'
@@ -40,7 +38,7 @@ const KNOWN_VIEWS = new Set([
   'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
   'explore', 'history', 'liked', 'watch-later', 'library', 'help', 'about',
   'notifications', 'sounds', 'checkout', 'creator-apply', 'support', 'admin',
-  'analytics', 'channel',
+  'analytics', 'channel', 'subscriptions',
   'legal-tos', 'legal-privacy', 'legal-creator', 'legal-community',
 ])
 
@@ -57,14 +55,8 @@ function AppShell() {
   }, [isAuthenticated, user?.id])
 
   const openAuth = () => setAuthOpen(true)
-  const openImport = () => {
-    if (!isAuthenticated) { setAuthOpen(true); return }
-    setImportOpen(true)
-  }
-  const openUpload = () => {
-    if (!isAuthenticated) { setAuthOpen(true); return }
-    setUploadOpen(true)
-  }
+  const openImport = () => { if (!isAuthenticated) { setAuthOpen(true); return }; setImportOpen(true) }
+  const openUpload = () => { if (!isAuthenticated) { setAuthOpen(true); return }; setUploadOpen(true) }
   const navigate = (next) => {
     setView(next === 'shorts' ? 'clips' : next)
     try { window.scrollTo({ top: 0, behavior: 'smooth' }) } catch {}
@@ -72,8 +64,7 @@ function AppShell() {
 
   const lockedCreator = (v) =>
     (v === 'dashboard' || v === 'wallet' || v === 'analytics') &&
-    isAuthenticated &&
-    user?.creatorStatus !== 'approved'
+    isAuthenticated && user?.creatorStatus !== 'approved'
 
   const renderMain = () => {
     if (!KNOWN_VIEWS.has(view)) return <NotFoundPage onNavigate={navigate} />
@@ -87,18 +78,15 @@ function AppShell() {
         </div>
       )
     }
-    if (view === 'dashboard' && !isAuthenticated)
-      return <AuthRequired title="Creator Studio" description="Sign in." onOpenAuth={openAuth} />
-    if (view === 'wallet' && !isAuthenticated)
-      return <AuthRequired title="Wallet" description="Sign in." onOpenAuth={openAuth} />
-    if (view === 'settings' && !isAuthenticated)
-      return <AuthRequired title="Settings" description="Sign in." onOpenAuth={openAuth} />
-    if (view === 'channel' && !isAuthenticated)
-      return <AuthRequired title="Channel" description="Sign in." onOpenAuth={openAuth} />
+    if (view === 'dashboard' && !isAuthenticated) return <AuthRequired title="Creator Studio" description="Sign in." onOpenAuth={openAuth} />
+    if (view === 'wallet' && !isAuthenticated) return <AuthRequired title="Wallet" description="Sign in." onOpenAuth={openAuth} />
+    if (view === 'settings' && !isAuthenticated) return <AuthRequired title="Settings" description="Sign in." onOpenAuth={openAuth} />
+    if (view === 'channel' && !isAuthenticated) return <AuthRequired title="Channel" description="Sign in." onOpenAuth={openAuth} />
 
     switch (view) {
       case 'home': return <HomeFeed />
       case 'creators': return <CreatorsPage />
+      case 'subscriptions': return <SubscriptionsPage onNavigate={navigate} onOpenAuth={openAuth} />
       case 'clips':
       case 'shorts': return <ShortsFeed />
       case 'live': return <LiveView onNavigate={navigate} onOpenAuth={openAuth} />
@@ -130,19 +118,9 @@ function AppShell() {
 
   return (
     <div className="min-h-screen bg-[#0b0b0f] text-zinc-100 flex flex-col">
-      <Navbar
-        onNavigate={navigate}
-        onOpenAuth={openAuth}
-        onOpenUpload={openUpload}
-        onToggleSidebar={() => setSidebarOpen((s) => { const n = !s; lsSet('sidebar_open', n); return n })}
-      />
+      <Navbar onNavigate={navigate} onOpenAuth={openAuth} onOpenUpload={openUpload} onToggleSidebar={() => setSidebarOpen((s) => { const n = !s; lsSet('sidebar_open', n); return n })} />
       <div className="flex flex-1 min-h-0">
-        <Sidebar
-          currentView={view}
-          onNavigate={navigate}
-          open={sidebarOpen}
-          onClose={() => { lsSet('sidebar_open', false); setSidebarOpen(false) }}
-        />
+        <Sidebar currentView={view} onNavigate={navigate} open={sidebarOpen} onClose={() => { lsSet('sidebar_open', false); setSidebarOpen(false) }} />
         <main className="flex-1 min-w-0 overflow-y-auto bg-[#0b0b0f]">{renderMain()}</main>
       </div>
       <ImportShortModal open={importOpen} onClose={() => setImportOpen(false)} />
