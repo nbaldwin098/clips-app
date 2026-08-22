@@ -1,14 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --color-bg: #FFFFFF;
-  --color-surface: #F8FAFC;
-  --color-border: #E2E8F0;
+  --color-bg: #FAFCFF;
+  --color-surface: #FFFFFF;
+  --color-border: #E8EEF5;
   --color-text: #0F172A;
   --color-muted: #64748B;
   --color-accent: #2C729B;
   --color-accent-hover: #245F82;
-  --color-accent-light: #E8F1F7;
+  --color-accent-light: #EBF4FA;
+  --color-success: #059669;
+  --color-warning: #D97706;
 }
 
 html, body, #root {
@@ -24,7 +26,6 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -40,7 +41,14 @@ body {
   background: #94A3B8;
 }
 
-/* Video progress accent */
-video::-webkit-media-controls-panel {
-  background: linear-gradient(transparent, rgba(0,0,0,0.6));
+:focus-visible {
+  outline: 2px solid #2C729B;
+  outline-offset: 2px;
+}
+
+.card-lift {
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+.card-lift:hover {
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
 }

@@ -1,48 +1,93 @@
-import { createContext, useContext, useState, useCallback } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import { lsGet, lsSet, lsRemove } from '../lib/storage'
 
 const AuthContext = createContext(null)
 
-const DEMO_USER = {
-  id: 'user_demo',
-  email: 'viewer@clips.local',
-  displayName: 'Demo Viewer',
-  handle: 'demoviewer',
+const DEFAULT_USER = {
+  id: 'user_local',
+  email: '',
+  displayName: 'Viewer',
+  handle: 'viewer',
   isCreator: false,
   avatar: null,
 }
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
-  const [mode, setMode] = useState('viewer') // 'viewer' | 'creator'
+  const [user, setUser] = useState(() => lsGet('user', null))
+  const [mode, setMode] = useState(() => lsGet('mode', 'viewer'))
+
+  useEffect(() => {
+    if (user) lsSet('user', user)
+    else lsRemove('user')
+  }, [user])
+
+  useEffect(() => {
+    lsSet('mode', mode)
+  }, [mode])
 
   const login = useCallback((email = 'viewer@clips.local') => {
-    setUser({ ...DEMO_USER, email })
+    const existing = lsGet('user', null)
+    const next = existing && existing.email === email
+      ? existing
+      : {
+          ...DEFAULT_USER,
+          id: `user_${Date.now()}`,
+          email,
+          displayName: email.split('@')[0] || 'Viewer',
+          handle: (email.split('@')[0] || 'viewer').toLowerCase().replace(/[^a-z0-9_]/g, ''),
+        }
+    setUser(next)
     setMode('viewer')
   }, [])
 
   const logout = useCallback(() => {
     setUser(null)
     setMode('viewer')
+    lsRemove('user')
+    lsSet('mode', 'viewer')
+  }, [])
+
+  const updateProfile = useCallback((partial) => {
+    setUser((prev) => {
+      if (!prev) return prev
+      const next = { ...prev, ...partial }
+      lsSet('user', next)
+      return next
+    })
   }, [])
 
   const enableCreatorMode = useCallback(() => {
-    if (!user) return
-    setUser(prev => ({
-      ...prev,
-      isCreator: true,
-      handle: prev.handle || 'creator',
-      displayName: prev.displayName || 'Creator',
-    }))
+    setUser((prev) => {
+      if (!prev) return prev
+      const next = {
+        ...prev,
+        isCreator: true,
+        handle: prev.handle || 'creator',
+        displayName: prev.displayName || 'Creator',
+      }
+      lsSet('user', next)
+      return next
+    })
     setMode('creator')
-  }, [user])
+  }, [])
 
   const switchMode = useCallback((next) => {
-    if (next === 'creator' && user && !user.isCreator) {
-      enableCreatorMode()
-    } else {
-      setMode(next)
+    if (next === 'creator') {
+      setUser((prev) => {
+        if (!prev) return prev
+        if (prev.isCreator) return prev
+        const updated = {
+          ...prev,
+          isCreator: true,
+          handle: prev.handle || 'creator',
+          displayName: prev.displayName || 'Creator',
+        }
+        lsSet('user', updated)
+        return updated
+      })
     }
-  }, [user, enableCreatorMode])
+    setMode(next)
+  }, [])
 
   const value = {
     user,
@@ -50,6 +95,7 @@ export function AuthProvider({ children }) {
     mode,
     login,
     logout,
+    updateProfile,
     enableCreatorMode,
     switchMode,
   }
