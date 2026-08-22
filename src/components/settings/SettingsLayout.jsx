@@ -1,7 +1,7 @@
 import { cn } from '../../lib/utils'
 import {
   User, Shield, Bell, Lock, Radio, MessageSquare, Wallet,
-  BarChart3, Palette, Key, Users, FileText
+  BarChart3, Palette, Key, Users, FileText, Scale
 } from 'lucide-react'
 
 const SECTIONS = [
@@ -14,6 +14,7 @@ const SECTIONS = [
   { id: 'notifications', label: 'Notifications', icon: Bell },
   { id: 'roles', label: 'Roles & Permissions', icon: Users },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+  { id: 'copyright', label: 'Copyright & DMCA', icon: Scale },
   { id: 'legal', label: 'Legal & Data', icon: FileText },
 ]
 
