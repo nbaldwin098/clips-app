@@ -1,14 +1,11 @@
+import { useState, useRef } from 'react'
 import PageHeader from './PageHeader'
 import { useAuth } from '../context/AuthContext'
 import {
-  getSubscriberCount,
-  getCreatorAnalytics,
-  getCreatorRanking,
-  listEmotes,
-  addEmote,
-  PREMIUM_PRICE,
+  getSubscriberCount, getCreatorAnalytics, getCreatorRanking,
+  listEmotes, addEmote, PREMIUM_PRICE,
 } from '../lib/engagement'
-import { useState } from 'react'
+import { Camera } from 'lucide-react'
 
 export default function ChannelPage({ onNavigate }) {
   const { user, updateProfile } = useAuth()
@@ -16,6 +13,38 @@ export default function ChannelPage({ onNavigate }) {
   const rank = getCreatorRanking(user?.id)
   const [code, setCode] = useState('')
   const [emotes, setEmotes] = useState(() => listEmotes(user?.id))
+  const bannerRef = useRef(null)
+  const avatarRef = useRef(null)
+
+  const readImage = (file, maxW, cb) => {
+    if (!file || !file.type.startsWith('image/')) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const img = new Image()
+      img.onload = () => {
+        const scale = Math.min(1, maxW / img.width)
+        const w = Math.round(img.width * scale)
+        const h = Math.round(img.height * scale)
+        const canvas = document.createElement('canvas')
+        canvas.width = w
+        canvas.height = h
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, w, h)
+        cb(canvas.toDataURL('image/jpeg', 0.72))
+      }
+      img.src = reader.result
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const onBanner = (e) => {
+    const f = e.target.files?.[0]
+    readImage(f, 1280, (data) => updateProfile({ bannerUrl: data }))
+  }
+  const onAvatar = (e) => {
+    const f = e.target.files?.[0]
+    readImage(f, 256, (data) => updateProfile({ avatarUrl: data }))
+  }
 
   const add = (e) => {
     e.preventDefault()
@@ -26,37 +55,57 @@ export default function ChannelPage({ onNavigate }) {
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-lg mx-auto">
-      <PageHeader title="Channel" onBack={() => onNavigate?.('home')} />
-      <div className="rounded-2xl border border-zinc-800 bg-[#121218] p-5 space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="h-14 w-14 rounded-full bg-[#007ACC]/25 text-[#007ACC] flex items-center justify-center text-xl font-bold">
-            {(user?.displayName || '?')[0].toUpperCase()}
+    <div className="max-w-[1000px] mx-auto">
+      <div className="px-4 pt-4">
+        <PageHeader title="Channel" onBack={() => onNavigate?.('home')} />
+      </div>
+
+      <div className="relative mx-4 h-36 sm:h-44 rounded-xl overflow-hidden bg-gradient-to-r from-zinc-900 via-zinc-800 to-[#007ACC]/30 border border-zinc-800">
+        {user?.bannerUrl ? <img src={user.bannerUrl} alt="" className="h-full w-full object-cover" /> : null}
+        <button type="button" onClick={() => bannerRef.current?.click()} className="absolute bottom-2 right-2 h-8 px-3 rounded-lg bg-black/60 border border-zinc-700 text-xs text-zinc-200 flex items-center gap-1.5">
+          <Camera className="h-3.5 w-3.5" /> Banner
+        </button>
+        <input ref={bannerRef} type="file" accept="image/*" className="hidden" onChange={onBanner} />
+      </div>
+
+      <div className="px-4 sm:px-6 -mt-10 relative flex flex-col sm:flex-row sm:items-end gap-4">
+        <div className="relative shrink-0">
+          <div className="h-24 w-24 rounded-full border-4 border-[#0b0b0f] bg-[#121218] overflow-hidden flex items-center justify-center text-3xl font-bold text-[#007ACC]">
+            {user?.avatarUrl ? <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" /> : (user?.displayName || '?')[0].toUpperCase()}
           </div>
-          <div>
-            <p className="text-zinc-100 font-medium">{user?.displayName}</p>
-            <p className="text-xs text-zinc-500">@{user?.handle}</p>
-          </div>
+          <button type="button" onClick={() => avatarRef.current?.click()} className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-[#007ACC] text-white flex items-center justify-center border-2 border-[#0b0b0f]" title="Change avatar">
+            <Camera className="h-3.5 w-3.5" />
+          </button>
+          <input ref={avatarRef} type="file" accept="image/*" className="hidden" onChange={onAvatar} />
         </div>
-        <div className="grid grid-cols-3 gap-2 text-center text-xs">
-          <div className="rounded-lg bg-[#0b0b0f] border border-zinc-800 p-2">
-            <p className="text-[#007ACC] font-semibold">{getSubscriberCount(user?.id)}</p>
-            <p className="text-zinc-500">Subs</p>
-          </div>
-          <div className="rounded-lg bg-[#0b0b0f] border border-zinc-800 p-2">
-            <p className="text-[#007ACC] font-semibold">{a.views}</p>
-            <p className="text-zinc-500">Views</p>
-          </div>
-          <div className="rounded-lg bg-[#0b0b0f] border border-zinc-800 p-2">
-            <p className="text-[#007ACC] font-semibold">{rank ? `#${rank}` : '—'}</p>
-            <p className="text-zinc-500">Rank</p>
-          </div>
+        <div className="flex-1 pb-1 min-w-0">
+          <h2 className="text-xl font-semibold text-zinc-100 truncate">{user?.displayName}</h2>
+          <p className="text-sm text-zinc-500">@{user?.handle}</p>
+          <p className="text-xs text-zinc-500 mt-1">
+            {getSubscriberCount(user?.id)} subscribers
+            {rank ? ` · Rank #${rank}` : ''}
+            {user?.creatorStatus === 'approved' ? ' · Creator' : ''}
+          </p>
         </div>
-        <p className="text-xs text-zinc-500">
-          Premium membership for fans: fixed <span className="text-[#007ACC]">${PREMIUM_PRICE}/mo</span> (not customizable).
-        </p>
+      </div>
+
+      <div className="px-4 sm:px-6 mt-6 grid sm:grid-cols-4 gap-2 text-center text-xs">
+        {[['Views', a.views], ['Clips', a.clips], ['Watch hrs', a.watchHours], ['Subs', a.subscribers]].map(([label, val]) => (
+          <div key={label} className="rounded-xl border border-zinc-800 bg-[#121218] p-3">
+            <p className="text-[#007ACC] font-semibold text-lg">{val}</p>
+            <p className="text-zinc-500">{label}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="px-4 sm:px-6 mt-6 space-y-4 pb-10">
+        <label className="block text-xs text-[#007ACC]">
+          Bio
+          <textarea defaultValue={user?.bio || ''} onBlur={(e) => updateProfile({ bio: e.target.value.slice(0, 280) })} rows={3} maxLength={280} placeholder="Tell viewers about your channel" className="mt-1 w-full rounded-xl border border-zinc-800 bg-[#121218] px-3 py-2 text-sm text-zinc-100" />
+        </label>
+        <p className="text-xs text-zinc-500">Fan premium is fixed at <span className="text-[#007ACC]">${PREMIUM_PRICE}/mo</span>.</p>
         {user?.creatorStatus === 'approved' && (
-          <div>
+          <div className="rounded-xl border border-zinc-800 bg-[#121218] p-4">
             <p className="text-xs text-[#007ACC] mb-2">Subscriber emotes</p>
             <form onSubmit={add} className="flex gap-2">
               <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="emoteCode" className="flex-1 h-9 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100" />
@@ -69,10 +118,6 @@ export default function ChannelPage({ onNavigate }) {
             </div>
           </div>
         )}
-        <label className="block text-xs text-[#007ACC]">
-          Bio
-          <textarea defaultValue={user?.bio || ''} onBlur={(e) => updateProfile({ bio: e.target.value })} rows={3} className="mt-1 w-full rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 py-2 text-sm text-zinc-100" />
-        </label>
       </div>
     </div>
   )
