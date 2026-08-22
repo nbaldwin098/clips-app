@@ -14,7 +14,7 @@ export default function CreatorDashboard({ onOpenImport, onNavigate, onOpenUploa
     <div className="p-4 md:p-6 max-w-4xl mx-auto">
       <h1 className="text-xl font-semibold text-slate-900 mb-2">Creator Studio</h1>
       <p className="text-sm text-slate-500 mb-6">
-        Shorts, long-form, and live — you keep 100% of the membership price you set.
+        Build fans for yourself — not for a homepage. Follow is free; memberships are optional and 100% of the list price is yours.
       </p>
 
       {showOnboarding && (
