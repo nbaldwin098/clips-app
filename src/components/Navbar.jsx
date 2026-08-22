@@ -18,9 +18,10 @@ export default function Navbar({
           type="button"
           onClick={onToggleSidebar}
           className="h-9 w-9 flex items-center justify-center rounded-lg text-[#007ACC] hover:bg-zinc-800 hover:text-[#23A9F2]"
+          style={{ color: '#007ACC' }}
           aria-label="Menu"
         >
-          <Menu className="h-5 w-5" />
+          <Menu className="h-5 w-5 text-[#007ACC]" color="#007ACC" stroke="#007ACC" />
         </button>
 
         <button
