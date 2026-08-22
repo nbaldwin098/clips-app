@@ -7,6 +7,7 @@ import ShortsFeed from './components/ShortsFeed'
 import LiveView from './components/LiveView'
 import CreatorDashboard from './components/CreatorDashboard'
 import CreatorWallet from './components/CreatorWallet'
+import SettingsPage from './components/SettingsPage'
 import ImportShortModal from './components/ImportShortModal'
 import CostSimulatorModal from './components/CostSimulatorModal'
 
@@ -27,28 +28,33 @@ function AppShell() {
         onOpenCostSim={openCost}
       />
       <div className="flex">
-        <Sidebar
-          currentView={view}
-          onNavigate={setView}
-          onOpenImport={openImport}
-          onOpenCostSim={openCost}
-        />
+        {view !== 'settings' && (
+          <Sidebar
+            currentView={view}
+            onNavigate={setView}
+            onOpenImport={openImport}
+            onOpenCostSim={openCost}
+          />
+        )}
         <main className="flex-1 min-w-0">
-          {view === 'home' && <HomeFeed />}
-          {view === 'shorts' && <ShortsFeed />}
+          {view === 'home' && <HomeFeed onNavigate={setView} onOpenImport={openImport} />}
+          {view === 'shorts' && <ShortsFeed onOpenImport={openImport} />}
           {view === 'live' && <LiveView />}
           {view === 'dashboard' && (
             <CreatorDashboard onOpenImport={openImport} onOpenCostSim={openCost} />
           )}
           {view === 'wallet' && <CreatorWallet />}
+          {view === 'settings' && <SettingsPage />}
           {view === 'explore' && (
-            <div className="p-8 text-center text-slate-500 text-sm">
-              Explore and search will surface titles, tags, and creator handles.
+            <div className="p-8 text-center">
+              <p className="text-sm font-medium text-slate-700">Explore</p>
+              <p className="mt-1 text-xs text-slate-500">Search results will surface real titles, tags, and handles only.</p>
             </div>
           )}
           {(view === 'history' || view === 'watch-later' || view === 'liked') && (
-            <div className="p-8 text-center text-slate-500 text-sm">
-              Library views are scaffolded for the MVP.
+            <div className="p-8 text-center">
+              <p className="text-sm font-medium text-slate-700">Library</p>
+              <p className="mt-1 text-xs text-slate-500">No items yet. Activity is recorded only for authenticated sessions.</p>
             </div>
           )}
         </main>
