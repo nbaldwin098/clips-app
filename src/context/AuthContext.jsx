@@ -25,17 +25,32 @@ export function AuthProvider({ children }) {
     lsSet('mode', mode)
   }, [mode])
 
-  const login = useCallback((email = 'viewer@clips.local') => {
+  const login = useCallback((payload = {}) => {
+    const email =
+      typeof payload === 'string'
+        ? payload
+        : payload.email || 'viewer@clips.local'
+    const displayName =
+      typeof payload === 'object' && payload.displayName
+        ? payload.displayName
+        : email.split('@')[0] || 'Viewer'
+    const provider =
+      typeof payload === 'object' && payload.provider ? payload.provider : 'email'
     const existing = lsGet('user', null)
-    const next = existing && existing.email === email
-      ? existing
-      : {
-          ...DEFAULT_USER,
-          id: `user_${Date.now()}`,
-          email,
-          displayName: email.split('@')[0] || 'Viewer',
-          handle: (email.split('@')[0] || 'viewer').toLowerCase().replace(/[^a-z0-9_]/g, ''),
-        }
+    const next =
+      existing && existing.email === email
+        ? { ...existing, provider }
+        : {
+            ...DEFAULT_USER,
+            id: `user_${Date.now()}`,
+            email,
+            displayName,
+            handle: displayName
+              .toLowerCase()
+              .replace(/[^a-z0-9_]/g, '')
+              .slice(0, 24) || 'user',
+            provider,
+          }
     setUser(next)
     setMode('viewer')
   }, [])

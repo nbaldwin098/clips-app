@@ -37,9 +37,21 @@ function AppShell() {
     }
   }, [isAuthenticated, user?.id])
 
-  const openImport = () => setImportOpen(true)
   const openAuth = () => setAuthOpen(true)
-  const openUpload = () => setUploadOpen(true)
+  const openImport = () => {
+    if (!isAuthenticated) {
+      setAuthOpen(true)
+      return
+    }
+    setImportOpen(true)
+  }
+  const openUpload = () => {
+    if (!isAuthenticated) {
+      setAuthOpen(true)
+      return
+    }
+    setUploadOpen(true)
+  }
 
   const showSidebar = !view.startsWith('legal-') && view !== 'settings' && view !== 'help'
 
