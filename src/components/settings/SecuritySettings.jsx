@@ -1,11 +1,50 @@
 import { useState } from 'react'
-import { Shield, Smartphone, Monitor, Key } from 'lucide-react'
+import { Smartphone, Monitor, Key } from 'lucide-react'
+import { lsGet, lsRemove } from '../../lib/storage'
+import { useAuth } from '../../context/AuthContext'
 
 export default function SecuritySettings() {
+  const { logout } = useAuth()
   const [twoFactor, setTwoFactor] = useState(false)
   const [sessions] = useState([
     { id: 1, device: 'Current browser', location: 'Active now', current: true },
   ])
+
+  const exportData = () => {
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      user: lsGet('user'),
+      settings: lsGet('settings', {}),
+      imports: lsGet('imports', []),
+      liked: lsGet('liked', []),
+      saved: lsGet('saved', []),
+      history: lsGet('watchHistory', []),
+      taste: lsGet('taste_profiles', {}),
+    }
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'clips-data-export.json'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const clearLocal = () => {
+    if (!confirm('Clear all local Clips data on this device? You will be signed out.')) return
+    lsRemove('user')
+    lsRemove('mode')
+    lsRemove('imports')
+    lsRemove('liked')
+    lsRemove('saved')
+    lsRemove('settings')
+    lsRemove('watchHistory')
+    try {
+      localStorage.removeItem('clips_taste_profiles')
+      localStorage.removeItem('taste_profiles')
+    } catch {}
+    logout()
+  }
 
   return (
     <div className="space-y-8">
@@ -62,7 +101,8 @@ export default function SecuritySettings() {
         <div className="flex flex-wrap gap-3">
           <button className="h-9 px-4 rounded-lg border border-slate-200 text-sm text-slate-700 hover:bg-slate-50">Deactivate account</button>
           <button className="h-9 px-4 rounded-lg border border-red-200 text-sm text-red-600 hover:bg-red-50">Delete account</button>
-          <button className="h-9 px-4 rounded-lg border border-slate-200 text-sm text-slate-700 hover:bg-slate-50">Export my data</button>
+          <button onClick={exportData} className="h-9 px-4 rounded-lg border border-slate-200 text-sm text-slate-700 hover:bg-slate-50">Export my data</button>
+          <button onClick={clearLocal} className="h-9 px-4 rounded-lg border border-red-200 text-sm text-red-600 hover:bg-red-50">Clear local data</button>
         </div>
       </section>
     </div>
