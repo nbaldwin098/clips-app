@@ -50,6 +50,13 @@ export function AuthProvider({ children }) {
       typeof payload === 'object' && payload.displayName
         ? payload.displayName
         : email.split('@')[0] || 'Viewer'
+    const handleFromPayload =
+      typeof payload === 'object' && payload.handle
+        ? String(payload.handle)
+            .toLowerCase()
+            .replace(/[^a-z0-9_]/g, '')
+            .slice(0, 24)
+        : ''
     const provider =
       typeof payload === 'object' && payload.provider ? payload.provider : 'email'
 
@@ -58,17 +65,24 @@ export function AuthProvider({ children }) {
     const existing = sanitizeUser(lsGet('user', null))
     const next =
       existing && existing.email === email
-        ? { ...existing, provider: 'email' }
+        ? {
+            ...existing,
+            provider: 'email',
+            ...(payload.displayName ? { displayName } : {}),
+            ...(handleFromPayload ? { handle: handleFromPayload } : {}),
+          }
         : {
             ...DEFAULT_USER,
             id: `user_${Date.now()}`,
             email,
             displayName,
             handle:
+              handleFromPayload ||
               displayName
                 .toLowerCase()
                 .replace(/[^a-z0-9_]/g, '')
-                .slice(0, 24) || 'user',
+                .slice(0, 24) ||
+              'user',
             provider: 'email',
           }
     setUser(next)
