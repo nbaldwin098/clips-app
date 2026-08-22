@@ -14,10 +14,6 @@ const DEFAULT_USER = {
 
 function sanitizeUser(u) {
   if (!u || typeof u !== 'object') return null
-  if (u.provider === 'apple') return null
-  if (typeof u.displayName === 'string' && /apple\s*user/i.test(u.displayName)) return null
-  if (typeof u.email === 'string' && /privaterelay\.appleid\.com/i.test(u.email)) return null
-  if (typeof u.email === 'string' && /^apple_\d+@/i.test(u.email)) return null
   return u
 }
 
@@ -50,40 +46,28 @@ export function AuthProvider({ children }) {
       typeof payload === 'object' && payload.displayName
         ? payload.displayName
         : email.split('@')[0] || 'Viewer'
-    const handleFromPayload =
-      typeof payload === 'object' && payload.handle
-        ? String(payload.handle)
-            .toLowerCase()
-            .replace(/[^a-z0-9_]/g, '')
-            .slice(0, 24)
-        : ''
     const provider =
       typeof payload === 'object' && payload.provider ? payload.provider : 'email'
-
-    if (provider === 'apple') return
 
     const existing = sanitizeUser(lsGet('user', null))
     const next =
       existing && existing.email === email
-        ? {
-            ...existing,
-            provider: 'email',
-            ...(payload.displayName ? { displayName } : {}),
-            ...(handleFromPayload ? { handle: handleFromPayload } : {}),
-          }
+        ? { ...existing, provider, displayName }
         : {
             ...DEFAULT_USER,
             id: `user_${Date.now()}`,
             email,
             displayName,
             handle:
-              handleFromPayload ||
+              (typeof payload === 'object' && payload.handle
+                ? String(payload.handle).toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24)
+                : '') ||
               displayName
                 .toLowerCase()
                 .replace(/[^a-z0-9_]/g, '')
                 .slice(0, 24) ||
               'user',
-            provider: 'email',
+            provider,
           }
     setUser(next)
     setMode('viewer')
