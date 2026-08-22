@@ -1,126 +1,31 @@
-import { useState } from 'react'
-import { Upload, Radio, Film, Settings, Sparkles } from 'lucide-react'
-import { ALGORITHM_META } from '../lib/algorithmEngine'
+import { Upload, Radio, Link2, BarChart3 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { lsGet } from '../lib/storage'
-import CreatorOnboarding from './CreatorOnboarding'
+import PageHeader from './PageHeader'
 
-export default function CreatorDashboard({ onOpenImport, onNavigate, onOpenUpload }) {
+export default function CreatorDashboard({ onOpenImport, onOpenUpload, onNavigate }) {
   const { user } = useAuth()
-  const hasPrice = !!lsGet('creator_sub_price', null)?.amount
-  const [showOnboarding, setShowOnboarding] = useState(!hasPrice)
-
+  const clips = lsGet('user_clips', []).filter((c) => c.creatorId === user?.id || c.userId === user?.id)
+  const live = lsGet(`live_state_${user?.id}`, null)
   return (
-    <div className="p-4 md:p-6 max-w-4xl mx-auto">
-      <h1 className="text-xl font-semibold text-slate-900 mb-2">Creator Studio</h1>
-      <p className="text-sm text-slate-500 mb-6">
-        Build fans for yourself — not for a homepage. Follow is free; memberships are optional and 100% of the list price is yours.
-      </p>
-
-      {showOnboarding && (
-        <CreatorOnboarding
-          onOpenImport={onOpenImport}
-          onNavigate={onNavigate}
-          onDone={() => setShowOnboarding(false)}
-        />
-      )}
-
-      {!showOnboarding && hasPrice && (
-        <div className="mb-6 rounded-xl border border-slate-200 bg-[#EBF4FA]/50 px-4 py-3 text-sm text-slate-700 flex flex-wrap items-center justify-between gap-2">
-          <span>
-            Membership: <strong>${Number(lsGet('creator_sub_price').amount).toFixed(2)}/mo</strong> ·
-            you receive 100% of that price
-          </span>
-          <button
-            type="button"
-            onClick={() => setShowOnboarding(true)}
-            className="text-[#2C729B] text-xs font-medium hover:underline"
-          >
-            Edit setup
-          </button>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <button
-          onClick={onOpenImport}
-          className="flex items-start gap-4 p-5 rounded-2xl border border-slate-200/80 bg-white text-left hover:border-[#2C729B]/40 hover:shadow-md transition-all card-lift"
-        >
-          <div className="h-10 w-10 rounded-xl bg-[#EBF4FA] flex items-center justify-center text-[#2C729B]">
-            <Upload className="h-5 w-5" />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-slate-900">Import Short (recommended)</h3>
-            <p className="mt-1 text-xs text-slate-500 leading-relaxed">
-              Paste a public link. Metadata + URL only. Source labeled; cross-posts allowed.
-            </p>
-          </div>
-        </button>
-
-        <button
-          type="button"
-          onClick={onOpenUpload}
-          className="flex items-start gap-4 p-5 rounded-2xl border border-slate-200/80 bg-white text-left hover:border-[#2C729B]/40 hover:shadow-md transition-all card-lift"
-        >
-          <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500">
-            <Film className="h-5 w-5" />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-slate-900">Upload file (optional)</h3>
-            <p className="mt-1 text-xs text-slate-500 leading-relaxed">
-              Only if you need a copy on Clips. Prefer Import to save time and cost.
-            </p>
-          </div>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onNavigate?.('settings')}
-          className="flex items-start gap-4 p-5 rounded-2xl border border-slate-200/80 bg-white text-left hover:border-[#2C729B]/40 hover:shadow-md transition-all card-lift"
-        >
-          <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500">
-            <Radio className="h-5 w-5" />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-slate-900">Go live</h3>
-            <p className="mt-1 text-xs text-slate-500 leading-relaxed">
-              RTMP key under Live / Settings. No fake viewer counts.
-            </p>
-          </div>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onNavigate?.('wallet')}
-          className="flex items-start gap-4 p-5 rounded-2xl border border-slate-200/80 bg-white text-left hover:border-[#2C729B]/40 hover:shadow-md transition-all card-lift"
-        >
-          <div className="h-10 w-10 rounded-xl bg-[#EBF4FA] flex items-center justify-center text-[#2C729B]">
-            <Settings className="h-5 w-5" />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-slate-900">Wallet & Stripe</h3>
-            <p className="mt-1 text-xs text-slate-500 leading-relaxed">
-              Real payouts need free backend + secret key next.
-            </p>
-          </div>
-        </button>
+    <div className="p-4 md:p-6 max-w-[1000px] mx-auto">
+      <PageHeader title="Studio" subtitle="Manage clips, live, and channel" onBack={() => onNavigate('home')} />
+      <div className="grid sm:grid-cols-3 gap-3 mb-6">
+        <button type="button" onClick={onOpenUpload} className="rounded-xl border border-zinc-800 bg-[#121218] p-4 text-left hover:border-[#007ACC]"><Upload className="h-5 w-5 text-[#007ACC]" /><p className="mt-2 text-sm text-zinc-100">Upload / create</p></button>
+        <button type="button" onClick={onOpenImport} className="rounded-xl border border-zinc-800 bg-[#121218] p-4 text-left hover:border-[#007ACC]"><Link2 className="h-5 w-5 text-[#007ACC]" /><p className="mt-2 text-sm text-zinc-100">Import link</p></button>
+        <button type="button" onClick={() => onNavigate('live')} className="rounded-xl border border-zinc-800 bg-[#121218] p-4 text-left hover:border-[#007ACC]"><Radio className="h-5 w-5 text-[#007ACC]" /><p className="mt-2 text-sm text-zinc-100">Go live</p><p className="text-xs text-zinc-500">{live?.isLive ? 'Live now' : 'OBS + quality'}</p></button>
       </div>
-
-      <section className="mt-10 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
-        <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="h-4 w-4 text-[#2C729B]" />
-          <h2 className="text-sm font-semibold text-slate-900">{ALGORITHM_META.name}</h2>
+      <div className="rounded-xl border border-zinc-800 bg-[#121218] p-4 mb-4">
+        <div className="flex items-center gap-2 mb-2"><BarChart3 className="h-4 w-4 text-[#007ACC]" /><h2 className="text-sm text-zinc-100">Overview</h2></div>
+        <div className="grid grid-cols-3 gap-3 text-center">
+          <div><p className="text-lg text-[#007ACC] font-semibold">{clips.length}</p><p className="text-[10px] text-zinc-500">Clips</p></div>
+          <div><p className="text-lg text-[#007ACC] font-semibold">{live?.isLive ? '1' : '0'}</p><p className="text-[10px] text-zinc-500">Live</p></div>
+          <div><p className="text-lg text-[#007ACC] font-semibold">$0</p><p className="text-[10px] text-zinc-500">Wallet</p></div>
         </div>
-        <ul className="text-sm text-slate-600 space-y-1.5 list-disc pl-5">
-          {ALGORITHM_META.principles.map((p) => (
-            <li key={p}>{p}</li>
-          ))}
-        </ul>
-      </section>
-
-      {user?.handle && (
-        <p className="mt-6 text-xs text-slate-400">Signed in as @{user.handle}</p>
-      )}
+      </div>
+      <h2 className="text-sm font-medium text-[#007ACC] mb-2">Your clips</h2>
+      {clips.length === 0 ? <p className="text-xs text-zinc-500">No clips yet.</p> : clips.map((c) => <div key={c.id} className="rounded-lg border border-zinc-800 bg-[#121218] px-3 py-2 text-sm text-zinc-300 mb-1">{c.title}</div>)}
+      <button type="button" onClick={() => onNavigate('wallet')} className="mt-6 text-sm text-[#007ACC]">Open wallet →</button>
     </div>
   )
 }
