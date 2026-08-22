@@ -28,6 +28,7 @@ import AdminPortal from './components/AdminPortal'
 import CreatorsPage from './components/CreatorsPage'
 import AnalyticsPage from './components/AnalyticsPage'
 import ChannelPage from './components/ChannelPage'
+import ProfilePage from './components/ProfilePage'
 import SubscriptionsPage from './components/SubscriptionsPage'
 import PlaylistsPage from './components/PlaylistsPage'
 import CommunityPage from './components/CommunityPage'
@@ -43,7 +44,7 @@ const KNOWN_VIEWS = new Set([
   'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
   'explore', 'history', 'liked', 'watch-later', 'library', 'help', 'about',
   'notifications', 'sounds', 'checkout', 'creator-apply', 'support', 'admin',
-  'analytics', 'channel',
+  'analytics', 'channel', 'profile',
   'subscriptions', 'playlists', 'community', 'studio-tools', 'stream-settings',
   'legal-tos', 'legal-privacy', 'legal-creator', 'legal-community',
 ])
@@ -56,6 +57,7 @@ function AppShell() {
   const [uploadOpen, setUploadOpen] = useState(false)
   const [checkoutOpen, setCheckoutOpen] = useState(false)
   const [checkoutTarget, setCheckoutTarget] = useState({ id: null, handle: '' })
+  const [profileTarget, setProfileTarget] = useState({ handle: '', userId: null })
   const [sidebarOpen, setSidebarOpen] = useState(() => lsGet('sidebar_open', true) !== false)
 
   useEffect(() => {
@@ -71,6 +73,12 @@ function AppShell() {
     if (!isAuthenticated) { setAuthOpen(true); return }
     setUploadOpen(true)
   }
+  const openProfile = (handle, userId = null) => {
+    setProfileTarget({ handle: String(handle || '').replace(/^@/, ''), userId })
+    setView('profile')
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }) } catch {}
+  }
+  if (typeof window !== 'undefined') window.__clipsOpenProfile = openProfile
   const openCheckout = (creatorId, creatorHandle) => {
     if (!isAuthenticated) { setAuthOpen(true); return }
     setCheckoutTarget({ id: creatorId || null, handle: creatorHandle || '' })
@@ -122,6 +130,7 @@ function AppShell() {
       case 'wallet': return <CreatorWallet onNavigate={navigate} />
       case 'analytics': return <AnalyticsPage onNavigate={navigate} />
       case 'channel': return <ChannelPage onNavigate={navigate} />
+      case 'profile': return <ProfilePage onNavigate={navigate} profileHandle={profileTarget.handle} profileUserId={profileTarget.userId} />
       case 'subscriptions': return <SubscriptionsPage onNavigate={navigate} onOpenAuth={openAuth} />
       case 'playlists': return <PlaylistsPage onNavigate={navigate} onOpenAuth={openAuth} />
       case 'community': return <CommunityPage onNavigate={navigate} onOpenAuth={openAuth} />
