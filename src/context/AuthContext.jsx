@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { lsGet, lsSet, lsRemove } from '../lib/storage'
-import { indexUser } from '../lib/moderation'
+import { indexUser, validateHandle, normalizeHandle } from '../lib/moderation'
 
 const AuthContext = createContext(null)
 
@@ -52,25 +52,33 @@ export function AuthProvider({ children }) {
       typeof payload === 'object' && payload.provider ? payload.provider : 'email'
 
     const existing = sanitizeUser(lsGet('user', null))
+    let handleRaw =
+      (typeof payload === 'object' && payload.handle) || displayName || 'user'
+    let v = validateHandle(handleRaw, {
+      currentUserId: existing?.email === email ? existing.id : null,
+    })
+    if (!v.ok) {
+      let base = normalizeHandle(handleRaw) || 'user'
+      if (base.length < 3) base = 'user'
+      for (let i = 0; i < 50; i++) {
+        const tryH = (i === 0 ? base : `${base}${i}`).slice(0, 24)
+        v = validateHandle(tryH, {
+          currentUserId: existing?.email === email ? existing.id : null,
+        })
+        if (v.ok) break
+      }
+    }
     const next =
       existing && existing.email === email
-        ? { ...existing, provider, displayName }
+        ? { ...existing, provider, displayName, handle: existing.handle || v.handle }
         : {
             ...DEFAULT_USER,
             id: `user_${Date.now()}`,
             email,
             displayName,
-            handle:
-              (typeof payload === 'object' && payload.handle
-                ? String(payload.handle).toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24)
-                : '') ||
-              displayName
-                .toLowerCase()
-                .replace(/[^a-z0-9_]/g, '')
-                .slice(0, 24) ||
-              'user',
+            handle: v.handle,
             provider,
-            creatorStatus: existing?.creatorStatus || 'none',
+            creatorStatus: 'none',
           }
     setUser(next)
     setMode('viewer')
@@ -87,7 +95,12 @@ export function AuthProvider({ children }) {
   const updateProfile = useCallback((partial) => {
     setUser((prev) => {
       if (!prev) return prev
-      const next = { ...prev, ...partial }
+      let next = { ...prev, ...partial }
+      if (partial.handle != null) {
+        const v = validateHandle(partial.handle, { currentUserId: prev.id })
+        if (!v.ok) throw new Error(v.error || 'Invalid handle')
+        next.handle = v.handle
+      }
       lsSet('user', next)
       try { indexUser(next) } catch {}
       return next
@@ -97,12 +110,7 @@ export function AuthProvider({ children }) {
   const enableCreatorMode = useCallback(() => {
     setUser((prev) => {
       if (!prev) return prev
-      const next = {
-        ...prev,
-        isCreator: true,
-        handle: prev.handle || 'creator',
-        displayName: prev.displayName || 'Creator',
-      }
+      const next = { ...prev, isCreator: true }
       lsSet('user', next)
       return next
     })
@@ -110,20 +118,6 @@ export function AuthProvider({ children }) {
   }, [])
 
   const switchMode = useCallback((next) => {
-    if (next === 'creator') {
-      setUser((prev) => {
-        if (!prev) return prev
-        if (prev.isCreator) return prev
-        const updated = {
-          ...prev,
-          isCreator: true,
-          handle: prev.handle || 'creator',
-          displayName: prev.displayName || 'Creator',
-        }
-        lsSet('user', updated)
-        return updated
-      })
-    }
     setMode(next)
   }, [])
 
