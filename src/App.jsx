@@ -21,6 +21,7 @@ import AuthModal from './components/AuthModal'
 import UploadModal from './components/UploadModal'
 import SoundsPage from './components/SoundsPage'
 import CheckoutPage from './components/CheckoutPage'
+import CheckoutModal from './components/CheckoutModal'
 import CreatorApplyPage from './components/CreatorApplyPage'
 import SupportPage from './components/SupportPage'
 import AdminPortal from './components/AdminPortal'
@@ -31,6 +32,7 @@ import SubscriptionsPage from './components/SubscriptionsPage'
 import PlaylistsPage from './components/PlaylistsPage'
 import CommunityPage from './components/CommunityPage'
 import StudioToolsPage from './components/StudioToolsPage'
+import StreamSettingsPage from './components/StreamSettingsPage'
 import {
   TermsOfService, PrivacyPolicy, CreatorAgreement, CommunityGuidelines,
 } from './components/legal/LegalPages'
@@ -42,7 +44,7 @@ const KNOWN_VIEWS = new Set([
   'explore', 'history', 'liked', 'watch-later', 'library', 'help', 'about',
   'notifications', 'sounds', 'checkout', 'creator-apply', 'support', 'admin',
   'analytics', 'channel',
-  'subscriptions', 'playlists', 'community', 'studio-tools',
+  'subscriptions', 'playlists', 'community', 'studio-tools', 'stream-settings',
   'legal-tos', 'legal-privacy', 'legal-creator', 'legal-community',
 ])
 
@@ -52,6 +54,8 @@ function AppShell() {
   const [importOpen, setImportOpen] = useState(false)
   const [authOpen, setAuthOpen] = useState(false)
   const [uploadOpen, setUploadOpen] = useState(false)
+  const [checkoutOpen, setCheckoutOpen] = useState(false)
+  const [checkoutTarget, setCheckoutTarget] = useState({ id: null, handle: '' })
   const [sidebarOpen, setSidebarOpen] = useState(() => lsGet('sidebar_open', true) !== false)
 
   useEffect(() => {
@@ -67,6 +71,11 @@ function AppShell() {
     if (!isAuthenticated) { setAuthOpen(true); return }
     setUploadOpen(true)
   }
+  const openCheckout = (creatorId, creatorHandle) => {
+    if (!isAuthenticated) { setAuthOpen(true); return }
+    setCheckoutTarget({ id: creatorId || null, handle: creatorHandle || '' })
+    setCheckoutOpen(true)
+  }
   const navigate = (next) => {
     try {
       const id = next === 'shorts' ? 'clips' : String(next || 'home')
@@ -78,13 +87,12 @@ function AppShell() {
   }
 
   const lockedCreator = (v) =>
-    (v === 'dashboard' || v === 'wallet' || v === 'analytics' || v === 'studio-tools') &&
+    (v === 'dashboard' || v === 'wallet' || v === 'analytics' || v === 'studio-tools' || v === 'stream-settings') &&
     isAuthenticated &&
     user?.creatorStatus !== 'approved'
 
   const renderMain = () => {
     if (!KNOWN_VIEWS.has(view)) return <NotFoundPage onNavigate={navigate} />
-
     if (lockedCreator(view)) {
       return (
         <div className="p-8 max-w-md mx-auto text-center">
@@ -109,7 +117,7 @@ function AppShell() {
       case 'creators': return <CreatorsPage />
       case 'clips':
       case 'shorts': return <ShortsFeed />
-      case 'live': return <LiveView onNavigate={navigate} onOpenAuth={openAuth} />
+      case 'live': return <LiveView onNavigate={navigate} onOpenAuth={openAuth} onOpenCheckout={openCheckout} />
       case 'dashboard': return <CreatorDashboard onOpenImport={openImport} onOpenUpload={openUpload} onNavigate={navigate} />
       case 'wallet': return <CreatorWallet onNavigate={navigate} />
       case 'analytics': return <AnalyticsPage onNavigate={navigate} />
@@ -118,13 +126,14 @@ function AppShell() {
       case 'playlists': return <PlaylistsPage onNavigate={navigate} onOpenAuth={openAuth} />
       case 'community': return <CommunityPage onNavigate={navigate} onOpenAuth={openAuth} />
       case 'studio-tools': return <StudioToolsPage onNavigate={navigate} />
+      case 'stream-settings': return <StreamSettingsPage onNavigate={navigate} />
       case 'settings': return <SettingsPage onNavigate={navigate} />
       case 'explore': return <ExplorePage />
       case 'sounds': return <SoundsPage onOpenAuth={openAuth} />
-      case 'checkout': return <CheckoutPage onNavigate={navigate} />
+      case 'checkout': return <CheckoutPage onNavigate={navigate} onOpenQuick={() => openCheckout(null, null)} />
       case 'creator-apply': return <CreatorApplyPage onOpenAuth={openAuth} />
       case 'support': return <SupportPage onOpenAuth={openAuth} />
-      case 'admin': return <AdminPortal />
+      case 'admin': return <AdminPortal onNavigate={navigate} />
       case 'history': return <LibraryPage initialTab="history" />
       case 'liked': return <LibraryPage initialTab="liked" />
       case 'watch-later': return <LibraryPage initialTab="saved" />
@@ -150,6 +159,7 @@ function AppShell() {
       <ImportShortModal open={importOpen} onClose={() => setImportOpen(false)} />
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
       <UploadModal open={uploadOpen} onClose={() => setUploadOpen(false)} />
+      <CheckoutModal open={checkoutOpen} onClose={() => setCheckoutOpen(false)} creatorId={checkoutTarget.id} creatorHandle={checkoutTarget.handle} />
     </div>
   )
 }
