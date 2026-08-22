@@ -73,6 +73,11 @@ export default function Sidebar({ currentView, onNavigate, open, onClose }) {
 
       <div className="mx-3 border-t border-zinc-800" />
       <div className="p-2 space-y-0.5">
+        <NavBtn active={currentView === 'subscriptions'} onClick={() => go('subscriptions')} icon={Users} label="Subscriptions" />
+      </div>
+
+      <div className="mx-3 border-t border-zinc-800" />
+      <div className="p-2 space-y-0.5">
         <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Creator</p>
         {isApprovedCreator && (
           <>
@@ -81,22 +86,20 @@ export default function Sidebar({ currentView, onNavigate, open, onClose }) {
             <NavBtn active={currentView === 'analytics'} onClick={() => go('analytics')} icon={BarChart3} label="Analytics" />
           </>
         )}
-
         <NavBtn active={currentView === 'creators'} onClick={() => go('creators')} icon={Users} label="All creators" />
-
-        <p className="px-3 pt-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Recommended creators</p>
-        {recommendedCreators.length === 0 ? (
-          <p className="px-3 text-[11px] text-zinc-600 leading-snug">None yet — empty until approved creators post.</p>
-        ) : (
-          recommendedCreators.map((c) => (
-            <button key={c.id} type="button" onClick={() => go('creators')} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left hover:bg-zinc-800/80">
-              <span className="h-7 w-7 rounded-full bg-[#007ACC]/20 text-[#007ACC] flex items-center justify-center text-xs font-semibold shrink-0">{(c.displayName || '?')[0].toUpperCase()}</span>
-              <span className="min-w-0">
-                <span className="block text-xs text-zinc-200 truncate">{c.displayName}</span>
-                <span className="block text-[10px] text-zinc-500 truncate">@{c.handle}</span>
-              </span>
-            </button>
-          ))
+        {recommendedCreators.length > 0 && (
+          <>
+            <p className="px-3 pt-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Recommended creators</p>
+            {recommendedCreators.map((c) => (
+              <button key={c.id} type="button" onClick={() => go('creators')} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left hover:bg-zinc-800/80">
+                <span className="h-7 w-7 rounded-full bg-[#007ACC]/20 text-[#007ACC] flex items-center justify-center text-xs font-semibold shrink-0">{(c.displayName || '?')[0].toUpperCase()}</span>
+                <span className="min-w-0">
+                  <span className="block text-xs text-zinc-200 truncate">{c.displayName}</span>
+                  <span className="block text-[10px] text-zinc-500 truncate">@{c.handle}</span>
+                </span>
+              </button>
+            ))}
+          </>
         )}
       </div>
 
