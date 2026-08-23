@@ -3,6 +3,7 @@ import { uploadImageToSupabase } from './mediaUpload'
 import { isSupabaseConfigured } from './supabaseClient'
 import { pushContentRecord, notifyContentChanged } from './contentSync'
 import { processImageFile, storeMediaBlob } from './videoStorage'
+import { hasStableImage, hiddenBrokenIds } from './catalogHealth'
 
 // Defensively strip raw storage/database error text that may have been saved
 // into `description` by an earlier build, so it never renders on a card.
@@ -39,7 +40,8 @@ export function pickImmediatePhotoSrc(pic, { full = false } = {}) {
 }
 
 export function getPicsFeed() {
-  const all = (getImports() || []).filter((i) => i && i.type === 'pic')
+  const hidden = hiddenBrokenIds()
+  const all = (getImports() || []).filter((i) => i && i.type === 'pic' && hasStableImage(i) && !hidden.has(i.id))
   return all
     .map((raw) => ({
       id: raw.id,

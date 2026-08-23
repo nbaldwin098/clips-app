@@ -7,8 +7,7 @@ import {
 } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { useAuth } from '../context/AuthContext'
-import { listIndexedUsers } from '../lib/moderation'
-import { lsGet } from '../lib/storage'
+import { listPopularCreators } from '../lib/contentService'
 
 const itemCls = (active) =>
   cn(
@@ -35,16 +34,7 @@ export default function Sidebar({ currentView, onNavigate, open, onClose }) {
     if (typeof window !== 'undefined' && window.innerWidth < 768) onClose?.()
   }
 
-  const recommendedCreators = useMemo(() => {
-    const users = listIndexedUsers().filter((u) => u.creatorStatus === 'approved' || u.isCreator)
-    const clips = lsGet('user_clips', [])
-    const count = {}
-    for (const c of clips) {
-      const id = c.creatorId || c.userId
-      if (id) count[id] = (count[id] || 0) + 1
-    }
-    return users.map((u) => ({ ...u, n: count[u.id] || 0 })).sort((a, b) => b.n - a.n).slice(0, 5)
-  }, [currentView, user?.id])
+  const recommendedCreators = useMemo(() => listPopularCreators(5), [currentView, user?.id])
 
   const body = (
     <div className="flex flex-col h-full text-white">

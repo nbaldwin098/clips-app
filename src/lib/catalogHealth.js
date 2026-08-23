@@ -1,0 +1,74 @@
+/**
+ * Drop dead and fake catalog rows so gray tiles and sample clips cannot
+ * come back on refresh. Local cache is the UI source; cloud pull must
+ * use the same rules or merge will resurrect junk.
+ */
+import { lsGet, lsSet, removeImport } from './storage'
+
+const HIDDEN_KEY = 'hidden_broken_media'
+
+export function isHttpUrl(url) {
+  const u = String(url || '')
+  return u.startsWith('https://') || u.startsWith('http://')
+}
+
+export function isDataImageUrl(url) {
+  return String(url || '').startsWith('data:image/')
+}
+
+export function isBlobUrl(url) {
+  return String(url || '').startsWith('blob:')
+}
+
+export function isReferenceItem(item) {
+  if (!item) return true
+  if (item.reference === true) return true
+  if (item.origin === 'reference') return true
+  const id = String(item.id || '')
+  const creator = String(item.creatorId || item.userId || '')
+  return id.startsWith('ref-short-') || creator.startsWith('ref-creator-')
+}
+
+export function hasStableImage(item) {
+  return [item?.mediaUrl, item?.thumbUrl, item?.sourceUrl].some((u) => isHttpUrl(u) || isDataImageUrl(u))
+}
+
+export function hasPlayableVideo(item) {
+  return [item?.mediaUrl, item?.sourceUrl].some((u) => isHttpUrl(u) || isBlobUrl(u))
+}
+
+export function isFeedable(item) {
+  if (!item || isReferenceItem(item)) return false
+  if (item.type === 'pic') return hasStableImage(item)
+  return hasPlayableVideo(item)
+}
+
+export function hiddenBrokenIds() {
+  const list = lsGet(HIDDEN_KEY, [])
+  return new Set(Array.isArray(list) ? list : [])
+}
+
+export function hideBrokenMedia(id) {
+  if (!id) return
+  const next = hiddenBrokenIds()
+  next.add(id)
+  lsSet(HIDDEN_KEY, [...next])
+  removeImport(id)
+}
+
+export function purgeDeadCatalog() {
+  const hidden = hiddenBrokenIds()
+  const list = lsGet('imports', []) || []
+  if (!Array.isArray(list)) {
+    lsSet('imports', [])
+    return 0
+  }
+  const next = list.filter((row) => {
+    if (!row?.id || hidden.has(row.id)) return false
+    if (isReferenceItem(row)) return false
+    if (row.type === 'pic' && !hasStableImage(row)) return false
+    return true
+  })
+  if (next.length !== list.length) lsSet('imports', next)
+  return list.length - next.length
+}

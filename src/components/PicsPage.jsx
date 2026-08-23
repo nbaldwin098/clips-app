@@ -2,12 +2,13 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { ImagePlus, X, Share2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getPicsFeed, publishPhoto, pickImmediatePhotoSrc, isHttpUrl, isDataImageUrl } from '../lib/picsService'
-import { subscribeContentUpdates } from '../lib/contentSync'
+import { subscribeContentUpdates, deleteContentRecord } from '../lib/contentSync'
+import { hideBrokenMedia } from '../lib/catalogHealth'
 import { getMediaBlobUrl } from '../lib/videoStorage'
 import { copyShareUrl, replaceHash } from '../lib/routes'
 import ShortsStage, { ShortsCard } from './ShortsStage'
 
-function PicImage({ pic, className, alt = '', full = false, fill = false }) {
+function PicImage({ pic, className, alt = '', full = false, fill = false, onUnplayable }) {
   const immediate = pickImmediatePhotoSrc(pic, { full })
   const [recovered, setRecovered] = useState(null)
   const [failed, setFailed] = useState(false)
@@ -21,9 +22,13 @@ function PicImage({ pic, className, alt = '', full = false, fill = false }) {
       if (isHttpUrl(immediate)) return
       if (!full && isDataImageUrl(immediate)) return
       const idbUrl = await getMediaBlobUrl(pic.id)
-      if (!alive || !idbUrl) return
-      objectUrl = idbUrl
-      setRecovered(idbUrl)
+      if (!alive) return
+      if (idbUrl) {
+        objectUrl = idbUrl
+        setRecovered(idbUrl)
+        return
+      }
+      if (!immediate) onUnplayable?.(pic.id)
     }
     recover()
 
@@ -31,7 +36,7 @@ function PicImage({ pic, className, alt = '', full = false, fill = false }) {
       alive = false
       if (objectUrl) URL.revokeObjectURL(objectUrl)
     }
-  }, [pic.id, immediate, full])
+  }, [pic.id, immediate, full, onUnplayable])
 
   const onError = async () => {
     const idbUrl = await getMediaBlobUrl(pic.id)
@@ -47,11 +52,10 @@ function PicImage({ pic, className, alt = '', full = false, fill = false }) {
       return
     }
     setFailed(true)
+    onUnplayable?.(pic.id)
   }
 
-  if (failed || !src) {
-    return <div className={fill ? 'absolute inset-0 bg-zinc-800' : `bg-zinc-800 ${className || ''}`} />
-  }
+  if (failed || !src) return null
 
   if (fill) {
     return (
@@ -125,6 +129,11 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
 
   const skipAutoOpen = useRef(false)
   const refresh = useCallback(() => setItems(getPicsFeed()), [])
+  const dropBroken = useCallback((id) => {
+    hideBrokenMedia(id)
+    deleteContentRecord(id, user)
+    refresh()
+  }, [user, refresh])
   useEffect(() => subscribeContentUpdates(refresh), [refresh])
 
   useEffect(() => {
@@ -238,7 +247,7 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
               onClick={() => openAt(index)}
               className="relative block w-full aspect-square overflow-hidden bg-zinc-800 group focus:outline-none"
             >
-              <PicImage key={pic.id} pic={pic} fill />
+              <PicImage key={pic.id} pic={pic} fill onUnplayable={dropBroken} />
               <div className="pointer-events-none absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
             </button>
           ))}

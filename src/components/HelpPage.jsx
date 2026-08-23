@@ -1,5 +1,44 @@
+import { useState } from 'react'
+import { SETUP_SCRIPTS } from '../data/supabaseScripts'
+
+function CopyScript({ script }) {
+  const [copied, setCopied] = useState(false)
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(script.sql)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {}
+  }
+  return (
+    <div className="rounded-xl border border-[#26262c] bg-[#121218] p-4 space-y-2">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-white">{script.title}</p>
+          <p className="text-[11px] text-zinc-500">Step {script.id} · do not type this name into SQL</p>
+        </div>
+        <button
+          type="button"
+          onClick={copy}
+          className="h-9 px-3 rounded-lg bg-white text-black text-xs font-semibold"
+        >
+          {copied ? 'Copied' : 'Copy SQL'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function HelpPage() {
   const faqs = [
+    {
+      q: 'The SQL editor said trailing junk after 0005',
+      a: 'You typed the file name. Postgres tried to read 0005 as a number. On this page, tap Copy SQL, paste the whole script into Supabase → SQL, then Run. Do that for 0005, 0006, and 0007.',
+    },
+    {
+      q: 'How do I sign in?',
+      a: 'Email and password always work. Apple and Microsoft appear when those providers are on in Supabase. CapCut cannot sign people into Clips — it is an editor. Export from CapCut, then upload here.',
+    },
     {
       q: 'Why is the feed empty?',
       a: 'Clips does not show fabricated videos. Content appears after real imports or uploads from signed-in users.',
@@ -14,7 +53,7 @@ export default function HelpPage() {
     },
     {
       q: 'How does discovery work?',
-      a: 'Recommended ranks by completion, rewatches, shares, and skips — not follower count. Clips has Recommended and Following. Sounds and tags open pages of matching videos and clips.',
+      a: 'Recommended ranks like classic TikTok For You: watch completion and rewatches first, then shares, saves, comments, likes. Early skips bury a post. Follower count does not help. New posts get a short testing boost so a first upload can appear. Clips has Recommended and Following — no Shorts label.',
     },
     {
       q: 'What is a zero-storage import?',
@@ -44,7 +83,21 @@ export default function HelpPage() {
 
   return (
     <div className="p-4 md:p-6 max-w-3xl mx-auto">
-      <h1 className="text-xl font-semibold text-white mb-6">Help</h1>
+      <h1 className="text-xl font-semibold text-white mb-2">Help</h1>
+      <p className="text-sm text-[#adadb8] mb-6">
+        To update the database, copy the script — never type the file name.
+      </p>
+
+      <section className="mb-8 space-y-3">
+        <h2 className="text-sm font-semibold text-white">Supabase SQL — copy and run</h2>
+        <p className="text-xs text-zinc-500">
+          Open Supabase → SQL Editor. Tap Copy SQL below. Paste. Run. Repeat for each step. 0007 deletes pics that cannot load.
+        </p>
+        {SETUP_SCRIPTS.map((script) => (
+          <CopyScript key={script.id} script={script} />
+        ))}
+      </section>
+
       <div className="space-y-3">
         {faqs.map((f) => (
           <details

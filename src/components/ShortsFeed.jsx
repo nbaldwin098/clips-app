@@ -9,7 +9,6 @@ import { recordView, toggleVote, getVotes, getUserVote, isSubscribed, toggleSubs
 import { listComments } from '../lib/youtubeParity'
 import { recordInteraction } from '../lib/algorithmEngine'
 import { copyShareUrl } from '../lib/routes'
-import { withReferenceShorts } from '../lib/referenceShorts'
 import { useContentSyncTick } from '../lib/useContentSync'
 import CommentsPanel from './CommentsPanel'
 import ShortsStage, { ShortsCard } from './ShortsStage'
@@ -251,7 +250,7 @@ function ClipSlide({
           type="button"
           onClick={(e) => { e.stopPropagation(); onBack?.() }}
           className="h-10 w-10 rounded-full text-white flex items-center justify-center"
-          aria-label="Back to Shorts"
+          aria-label="Back to clips"
         >
           <ChevronLeft className="h-7 w-7 drop-shadow" />
         </button>
@@ -343,8 +342,7 @@ export default function ShortsFeed({
   const { user } = useAuth()
   const syncTick = useContentSyncTick()
   const [tab, setTab] = useState('recommended')
-  const realRecommended = useMemo(() => getShortsFeed(user?.id || null), [user?.id, syncTick])
-  const recommended = useMemo(() => withReferenceShorts(realRecommended), [realRecommended])
+  const recommended = useMemo(() => getShortsFeed(user?.id || null), [user?.id, syncTick])
   const following = useMemo(() => getFollowingFeed(user?.id, { shortsOnly: true }), [user?.id, syncTick])
   const items = tab === 'following' ? following : recommended
   const [activeIdx, setActiveIdx] = useState(0)
@@ -367,20 +365,6 @@ export default function ShortsFeed({
   }
 
   if (!inPlayer) {
-    if (tab === 'following' && following.length === 0) {
-      return (
-        <div className="h-full overflow-y-auto bg-[#0f0f0f]">
-          <div className="px-3 py-3 flex items-center justify-between">
-            <h1 className="text-xl font-semibold text-white">Shorts</h1>
-            <div className="flex gap-1 rounded-full bg-white/10 p-1">
-              <button type="button" onClick={() => setTab('recommended')} className="h-7 px-3 rounded-full text-[11px] font-semibold text-white/70">Recommended</button>
-              <button type="button" className="h-7 px-3 rounded-full text-[11px] font-semibold bg-white text-black">Following</button>
-            </div>
-          </div>
-          <p className="px-4 pt-10 text-sm text-zinc-400 text-center">Follow creators to fill this shelf.</p>
-        </div>
-      )
-    }
     return (
       <ShortsGrid
         items={tab === 'following' ? following : recommended}

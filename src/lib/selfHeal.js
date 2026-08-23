@@ -4,6 +4,7 @@
  */
 import { lsGet, lsSet, lsRemove } from './storage'
 import { safeHttpUrl } from './safeUrl'
+import { purgeDeadCatalog } from './catalogHealth'
 
 function isRecord(v) {
   return !!v && typeof v === 'object' && !Array.isArray(v)
@@ -58,6 +59,7 @@ export function healLocalState() {
   try {
     const imports = lsGet('imports', [])
     if (!Array.isArray(imports)) lsSet('imports', [])
+    else purgeDeadCatalog()
   } catch {
     try { lsSet('imports', []) } catch {}
   }

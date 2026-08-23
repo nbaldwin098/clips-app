@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { MoreVertical, PlaySquare, Share2 } from 'lucide-react'
+import { MoreVertical, Share2 } from 'lucide-react'
 import { copyShareUrl } from '../lib/routes'
-import { isRecentShort } from '../lib/referenceShorts'
+import { isRecentShort } from '../lib/mediaMeta'
 import { safeMediaUrl } from '../lib/safeUrl'
 
 function GridThumb({ item }) {
@@ -80,19 +80,12 @@ function ShortTile({ item, onOpen }) {
   )
 }
 
-/** YouTube Shorts browse: 2 columns on phones, 5 on a computer. */
 export default function ShortsGrid({ items, onOpen, tab = 'recommended', onTab }) {
   return (
     <div className="h-full overflow-y-auto bg-[#0f0f0f]">
-      <div className="sticky top-0 z-10 bg-[#0f0f0f]/95 backdrop-blur px-3 py-3 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="h-7 w-7 rounded-md bg-white text-black flex items-center justify-center">
-            <PlaySquare className="h-4 w-4" />
-          </span>
-          <h1 className="text-xl font-semibold text-white">Shorts</h1>
-        </div>
+      <div className="sticky top-0 z-10 bg-[#0f0f0f]/95 backdrop-blur px-3 py-3">
         {onTab ? (
-          <div className="flex gap-1 rounded-full bg-white/10 p-1">
+          <div className="flex gap-1 rounded-full bg-white/10 p-1 w-fit">
             {['recommended', 'following'].map((id) => (
               <button
                 key={id}
@@ -108,11 +101,17 @@ export default function ShortsGrid({ items, onOpen, tab = 'recommended', onTab }
           </div>
         ) : null}
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 p-2 pb-16">
-        {items.map((item) => (
-          <ShortTile key={item.id} item={item} onOpen={onOpen} />
-        ))}
-      </div>
+      {items.length === 0 ? (
+        <p className="px-4 pt-10 text-sm text-zinc-400 text-center">
+          {tab === 'following' ? 'Follow creators to fill this shelf.' : 'No clips yet'}
+        </p>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 p-2 pb-16">
+          {items.map((item) => (
+            <ShortTile key={item.id} item={item} onOpen={onOpen} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

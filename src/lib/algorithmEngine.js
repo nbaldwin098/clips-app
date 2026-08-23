@@ -169,6 +169,7 @@ export function recordInteraction(userId, event) {
   }
 
   saveTaste(userId, taste)
+  bumpCatalogEngagement(event.contentId, event.type)
 
   appendWatchHistory(userId, {
     contentId: event.contentId,
@@ -355,12 +356,21 @@ export function rankForUser(shorts = [], userId = 'anon') {
 
     let score = quality * 0.40 + sat * 0.25 + aff * 24 + vel * 9 + fresh * 12
 
-    // Epsilon-Greedy Exploration slot (15% chance to surface fresh discoveries)
-    if (Math.random() < EXPLORATION_RATE) {
-      score += 10 + Math.random() * 14
+    const views = Number(eng.views || itemViews || 0)
+    const ageH = Math.max(0.1, (Date.now() - new Date(item.createdAt || item.publishedAt || 0).getTime()) / 3600000)
+    if (views < 40 && ageH < 168) {
+      score += 16 * fresh
     }
 
-    // Gentle tie-breaker to prevent hash lock
+    const samples = (eng.completes || 0) + (eng.skips || 0) + (eng.earlySkips || 0)
+    if (samples >= 6) {
+      score -= ((eng.earlySkips || 0) / samples) * 36
+    }
+
+    // Session-stable exploration — does not reshuffle on every render
+    const explore = explorationRoll(userId, item.id)
+    if (explore < EXPLORATION_RATE) score += 12 + explore * 8
+
     score += (index % 7) * 0.01
 
     return { item, score }
@@ -406,12 +416,38 @@ export function getTrendingSearches(limit = 8) {
     .sort((a, b) => b[1] - a[1])
     .slice(0, limit)
     .map(([q, count]) => ({ query: q, count }))
-  if (ranked.length < 4) {
-    for (const s of ['valorant', 'clips', 'live', 'tutorial', 'comedy', 'music', 'gaming', 'irl']) {
-      if (!ranked.find((r) => r.query === s)) ranked.push({ query: s, count: 0 })
-    }
-  }
   return ranked.slice(0, limit)
+}
+
+function explorationRoll(userId, contentId) {
+  const salt = typeof window !== 'undefined'
+    ? (window.__clipsExploreSalt || (window.__clipsExploreSalt = Date.now()))
+    : 1
+  const s = `${userId}|${contentId}|${salt}`
+  let h = 2166136261
+  for (let i = 0; i < s.length; i += 1) h = Math.imul(h ^ s.charCodeAt(i), 16777619)
+  return (h >>> 0) / 4294967295
+}
+
+function bumpCatalogEngagement(contentId, type) {
+  if (!contentId || !type) return
+  const list = lsGet('imports', []) || []
+  const row = list.find((x) => x?.id === contentId)
+  if (!row) return
+  const eng = { ...(row.engagement || {}) }
+  if (type === 'complete') eng.completes = (eng.completes || 0) + 1
+  else if (type === 'loop') eng.loops = (eng.loops || 0) + 1
+  else if (type === 'share') eng.shares = (eng.shares || 0) + 1
+  else if (type === 'save') eng.saves = (eng.saves || 0) + 1
+  else if (type === 'comment') eng.comments = (eng.comments || 0) + 1
+  else if (type === 'like' || type === 'upvote') eng.likes = (eng.likes || 0) + 1
+  else if (type === 'early_skip') eng.earlySkips = (eng.earlySkips || 0) + 1
+  else if (type === 'skip') eng.skips = (eng.skips || 0) + 1
+  else return
+  const watches = (eng.completes || 0) + (eng.skips || 0) + (eng.earlySkips || 0)
+  if (watches) eng.completionRate = (eng.completes || 0) / watches
+  row.engagement = eng
+  lsSet('imports', list)
 }
 
 export function suggestSearches(prefix = '', limit = 6) {
