@@ -18,6 +18,7 @@ import {
   Shield,
   Scale,
   BookOpen,
+  ListVideo,
   LifeBuoy,
   ShieldCheck,
   X,
@@ -182,6 +183,7 @@ export default function CollapsibleSidebar({
             <NavBtn collapsed={collapsed} active={currentView === 'history'} onClick={() => go('history')} icon={History} label="History" />
             <NavBtn collapsed={collapsed} active={currentView === 'watch-later'} onClick={() => go('watch-later')} icon={Clock} label="Watch later" />
             <NavBtn collapsed={collapsed} active={currentView === 'liked'} onClick={() => go('liked')} icon={ThumbsUp} label="Liked" />
+            <NavBtn collapsed={collapsed} active={currentView === 'playlists'} onClick={() => go('playlists')} icon={ListVideo} label="Playlists" />
           </div>
         )}
 

@@ -6,7 +6,7 @@ export default function HelpPage() {
     },
     {
       q: 'How do I upload a video, clip, or go live?',
-      a: 'Use the white + in the navbar. Choose Video or Clip to upload a file (you can add a sound there), or Go live to start a broadcast. Studio can still import a public link.',
+      a: 'Use the white + in the navbar. Choose Video or Clip to upload a file, add a sound and tags, or Go live. Studio can still import a public link. Copy link on a watch page to share that video or clip.',
     },
     {
       q: 'Can I watch without an account?',
@@ -14,7 +14,7 @@ export default function HelpPage() {
     },
     {
       q: 'How does discovery work?',
-      a: 'A learning machine ranks by completion, rewatches, shares, and skips. Weights adapt per viewer. Follower count is never a ranking factor.',
+      a: 'Recommended ranks by completion, rewatches, shares, and skips — not follower count. Clips has Recommended and Following. Sounds and tags open pages of matching videos and clips.',
     },
     {
       q: 'What is a zero-storage import?',

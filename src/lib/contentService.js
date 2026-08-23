@@ -5,6 +5,8 @@ import { storeMediaBlob, processVideoFile } from './videoStorage'
 import { uploadVideoToSupabase } from './mediaUpload'
 import { isSupabaseConfigured } from './supabaseClient'
 import { pushContentRecord, notifyContentChanged } from './contentSync'
+import { getSubscriptionsForUser } from './engagement'
+import { getPicsFeed } from './picsService'
 
 const VIEW_KEY = 'clips_content_views'
 const PIN_KEY = 'clips_pinned_by_creator'
@@ -97,7 +99,7 @@ export function normalizeItem(raw) {
     origin: raw.origin || raw.platform || 'user',
     storedBytes: raw.storedBytes ?? 0,
     durationSec: raw.durationSec || 0,
-    tags: raw.tags || [],
+    tags: Array.isArray(raw.tags) ? raw.tags : [],
     views: raw.views || 0,
     creatorId: raw.creatorId || raw.userId,
     userId: raw.userId || raw.creatorId,
@@ -140,21 +142,99 @@ export function getShortsFeed(userId = null) {
   return getHomeFeed(userId).filter((i) => i.type === 'short')
 }
 
-export function getExplore(query = '') {
-  const all = withViewCounts(getImports().map(normalizeItem)).filter((i) => i.type !== 'pic')
-  const q = query.trim().toLowerCase()
-  if (!q) return sortNewestWithPins(all, null)
-  return sortNewestWithPins(
-    all.filter(
-      (i) =>
-        i.title.toLowerCase().includes(q) ||
-        i.description.toLowerCase().includes(q) ||
-        String(i.handle || '').toLowerCase().includes(q) ||
-        String(i.soundTitle || '').toLowerCase().includes(q) ||
-        (i.tags || []).some((t) => String(t).toLowerCase().includes(q))
-    ),
-    null
+function matchesQuery(i, q) {
+  if (!q) return true
+  return (
+    i.title.toLowerCase().includes(q) ||
+    (i.description || '').toLowerCase().includes(q) ||
+    String(i.handle || '').toLowerCase().includes(q) ||
+    String(i.soundTitle || '').toLowerCase().includes(q) ||
+    (i.tags || []).some((t) => String(t).toLowerCase().includes(q))
   )
+}
+
+function filterByKind(items, kind = 'all') {
+  if (kind === 'video') return items.filter((i) => i.type === 'video')
+  if (kind === 'clip' || kind === 'short') return items.filter((i) => i.type === 'short')
+  if (kind === 'pic') return items.filter((i) => i.type === 'pic')
+  return items
+}
+
+export function getExplore(query = '', kind = 'all') {
+  const catalog = withViewCounts(getImports().map(normalizeItem))
+  const pics = getPicsFeed().map((p) => normalizeItem({ ...p, type: 'pic' })).filter(Boolean)
+  const seen = new Set()
+  const all = []
+  for (const i of [...catalog, ...pics]) {
+    if (!i?.id || seen.has(i.id)) continue
+    seen.add(i.id)
+    all.push(i)
+  }
+  const q = query.trim().toLowerCase()
+  const filtered = filterByKind(all, kind).filter((i) => matchesQuery(i, q))
+  return sortNewestWithPins(filtered, null)
+}
+
+export function getRelated(item, limit = 8) {
+  if (!item?.id) return []
+  const pool = withViewCounts(getImports().map(normalizeItem)).filter((i) => i.id !== item.id && i.type !== 'pic')
+  const tags = new Set((item.tags || []).map((t) => String(t).toLowerCase()))
+  const scored = pool.map((i) => {
+    let score = 0
+    if (i.type === item.type) score += 3
+    if (item.soundId && i.soundId === item.soundId) score += 6
+    if (item.soundTitle && i.soundTitle && i.soundTitle === item.soundTitle) score += 4
+    if (item.handle && i.handle && String(i.handle).toLowerCase() === String(item.handle).toLowerCase()) score += 2
+    for (const t of i.tags || []) {
+      if (tags.has(String(t).toLowerCase())) score += 2
+    }
+    return { i, score }
+  })
+  return scored
+    .sort((a, b) => b.score - a.score || new Date(b.i.createdAt) - new Date(a.i.createdAt))
+    .slice(0, limit)
+    .map((x) => x.i)
+}
+
+export function getBySound(soundId, soundTitle) {
+  const all = withViewCounts(getImports().map(normalizeItem)).filter((i) => i.type !== 'pic')
+  return all.filter((i) => {
+    if (soundId && i.soundId === soundId) return true
+    if (soundTitle && i.soundTitle && String(i.soundTitle) === String(soundTitle)) return true
+    return false
+  })
+}
+
+export function getByTag(tag) {
+  const t = String(tag || '').trim().toLowerCase().replace(/^#/, '')
+  if (!t) return []
+  const all = withViewCounts(getImports().map(normalizeItem))
+  return all.filter((i) => {
+    if ((i.tags || []).some((x) => String(x).toLowerCase() === t)) return true
+    return String(i.title || '').toLowerCase().includes(t)
+  })
+}
+
+export function getFollowingFeed(userId, { shortsOnly = false } = {}) {
+  if (!userId) return []
+  const ids = new Set(getSubscriptionsForUser(userId))
+  const feed = getHomeFeed(userId).filter((i) => ids.has(i.creatorId) || ids.has(i.userId))
+  return shortsOnly ? feed.filter((i) => i.type === 'short') : feed
+}
+
+export function listCatalogTags(limit = 24) {
+  const counts = {}
+  for (const i of getImports().map(normalizeItem)) {
+    for (const t of i.tags || []) {
+      const key = String(t || '').trim()
+      if (!key) continue
+      counts[key] = (counts[key] || 0) + 1
+    }
+  }
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([tag, count]) => ({ tag, count }))
 }
 
 export function getById(id) {
@@ -201,7 +281,7 @@ export function importUserLink(url, actor = null) {
   return { ok: true, item: normalizeItem(record), error: null }
 }
 
-export async function publishLocalMedia(file, actor = null, { type = null, title = null, description = null, sound = null } = {}) {
+export async function publishLocalMedia(file, actor = null, { type = null, title = null, description = null, sound = null, tags = [] } = {}) {
   if (!file) return { ok: false, item: null, error: 'Choose a video file.' }
   try {
     const processed = await processVideoFile(file)
@@ -237,6 +317,10 @@ export async function publishLocalMedia(file, actor = null, { type = null, title
       String(file.name || 'Untitled').replace(/\.[^.]+$/, '') ||
       'Untitled'
     const finalDescription = description != null ? String(description).trim() : ''
+    const cleanTags = (Array.isArray(tags) ? tags : String(tags || '').split(/[,#]/))
+      .map((t) => String(t || '').trim())
+      .filter(Boolean)
+      .slice(0, 8)
 
     const record = {
       id,
@@ -252,6 +336,7 @@ export async function publishLocalMedia(file, actor = null, { type = null, title
       durationSec: processed.durationSec,
       width: processed.width,
       height: processed.height,
+      tags: cleanTags,
       createdAt: new Date().toISOString(),
       engagement: {
         completionRate: 0, loops: 0, shares: 0, comments: 0, saves: 0, earlySkips: 0, likes: 0,

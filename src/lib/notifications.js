@@ -241,7 +241,7 @@ export function notifyNewLike(contentId, actorId) {
     title: `${labelFor(actorId, 'Someone')} liked ${item.title || 'your clip'}`,
     actorId,
     contentId,
-    view: 'dashboard',
+    view: 'watch',
   })
 }
 
@@ -259,7 +259,7 @@ export function notifyNewComment({ contentId, actorId, text, parentAuthorId = nu
       body: snippet,
       actorId,
       contentId,
-      view: 'dashboard',
+      view: 'watch',
     })
   }
   if (parentAuthorId && parentAuthorId !== ownerId) {

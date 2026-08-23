@@ -67,18 +67,29 @@ function PicImage({ pic, className, alt = '', full = false, fill = false }) {
 }
 
 /** Grid of all pics · click one → full-screen vertical scroll through the set */
-export default function PicsPage({ onOpenAuth }) {
+export default function PicsPage({ onOpenAuth, initialPicId }) {
   const { user, isAuthenticated } = useAuth()
   const inputRef = useRef(null)
   const viewerRef = useRef(null)
   const [items, setItems] = useState(() => getPicsFeed())
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [viewerIndex, setViewerIndex] = useState(null) // null = closed
+  const [viewerIndex, setViewerIndex] = useState(() => {
+    if (!initialPicId) return null
+    const list = getPicsFeed()
+    const idx = list.findIndex((p) => p.id === initialPicId)
+    return idx >= 0 ? idx : null
+  })
 
   const refresh = useCallback(() => setItems(getPicsFeed()), [])
 
   useEffect(() => subscribeContentUpdates(refresh), [refresh])
+
+  useEffect(() => {
+    if (!initialPicId) return
+    const idx = items.findIndex((p) => p.id === initialPicId)
+    if (idx >= 0) setViewerIndex(idx)
+  }, [initialPicId, items])
 
   const onPick = async (e) => {
     const file = e.target.files?.[0]
@@ -112,7 +123,13 @@ export default function PicsPage({ onOpenAuth }) {
     inputRef.current?.click()
   }
 
-  const openAt = (index) => setViewerIndex(index)
+  const openAt = (index) => {
+    setViewerIndex(index)
+    const pic = items[index]
+    if (pic && typeof window !== 'undefined') {
+      window.history.replaceState(null, '', `${window.location.pathname}#/pic/${encodeURIComponent(pic.id)}`)
+    }
+  }
 
   // Jump scroller to the tapped image when opening
   useEffect(() => {
@@ -173,7 +190,12 @@ export default function PicsPage({ onOpenAuth }) {
           <button
             type="button"
             className="absolute top-4 right-4 z-30 h-10 w-10 rounded-full bg-white/10 text-white flex items-center justify-center"
-            onClick={() => setViewerIndex(null)}
+            onClick={() => {
+              setViewerIndex(null)
+              if (typeof window !== 'undefined') {
+                window.history.replaceState(null, '', `${window.location.pathname}#/pics`)
+              }
+            }}
             aria-label="Close"
           >
             <X className="h-5 w-5" />

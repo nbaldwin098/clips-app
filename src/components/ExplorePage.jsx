@@ -1,28 +1,22 @@
-import { useMemo } from 'react'
-import { getExplore } from '../lib/contentService'
-import { listIndexedUsers } from '../lib/moderation'
+import { useMemo, useState } from 'react'
+import { getExplore, listCatalogTags } from '../lib/contentService'
 import { useContentSyncTick } from '../lib/useContentSync'
+import { cn } from '../lib/utils'
 import MediaShelves from './MediaShelves'
 
-export default function ExplorePage({ onPlayItem, initialQuery = '' }) {
+const KINDS = [
+  { id: 'all', label: 'All' },
+  { id: 'video', label: 'Videos' },
+  { id: 'clip', label: 'Clips' },
+  { id: 'pic', label: 'Pics' },
+]
+
+export default function ExplorePage({ onPlayItem, onOpenPic, onOpenTag, initialQuery = '' }) {
   const syncTick = useContentSyncTick()
   const q = String(initialQuery || '').trim()
-  const results = useMemo(() => getExplore(q), [q, syncTick])
-  const creators = useMemo(() => {
-    const needle = q.toLowerCase()
-    if (!needle) return []
-    return listIndexedUsers()
-      .filter((u) => {
-        const handle = String(u.handle || '').toLowerCase()
-        const name = String(u.displayName || '').toLowerCase()
-        return handle.includes(needle) || name.includes(needle)
-      })
-      .slice(0, 8)
-  }, [q, syncTick])
-
-  const openProfile = (creator) => {
-    if (typeof window !== 'undefined') window.__clipsOpenProfile?.(creator.handle, creator.id)
-  }
+  const [kind, setKind] = useState('all')
+  const results = useMemo(() => getExplore(q, kind), [q, kind, syncTick])
+  const tags = useMemo(() => listCatalogTags(16), [syncTick])
 
   return (
     <div className="p-4 md:p-6 max-w-[1400px] mx-auto space-y-6">
@@ -30,35 +24,44 @@ export default function ExplorePage({ onPlayItem, initialQuery = '' }) {
         {q ? `Results for “${q}”` : 'Explore'}
       </h1>
 
-      {creators.length > 0 && (
-        <section className="space-y-2">
-          <h2 className="text-sm font-semibold text-zinc-300">Creators</h2>
-          {creators.map((c) => (
+      <div className="flex flex-wrap gap-1.5">
+        {KINDS.map((k) => (
+          <button
+            key={k.id}
+            type="button"
+            onClick={() => setKind(k.id)}
+            className={cn(
+              'h-8 px-3 rounded-full text-xs font-medium border',
+              kind === k.id ? 'bg-white text-black border-white' : 'border-zinc-800 text-zinc-400'
+            )}
+          >
+            {k.label}
+          </button>
+        ))}
+      </div>
+
+      {!q && tags.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {tags.map((t) => (
             <button
-              key={c.id}
+              key={t.tag}
               type="button"
-              onClick={() => openProfile(c)}
-              className="w-full flex items-center gap-3 rounded-xl border border-zinc-800 bg-[#121218] px-4 py-3 text-left hover:border-zinc-600"
+              onClick={() => onOpenTag?.(t.tag)}
+              className="h-7 px-2.5 rounded-full bg-zinc-900 border border-zinc-800 text-[11px] text-zinc-300"
             >
-              <span className="h-10 w-10 rounded-full bg-white/10 text-white flex items-center justify-center text-sm font-semibold overflow-hidden">
-                {c.avatarUrl ? <img src={c.avatarUrl} alt="" className="h-full w-full object-cover" /> : (c.displayName || '?')[0]?.toUpperCase()}
-              </span>
-              <span className="min-w-0">
-                <span className="block text-sm text-zinc-100 truncate">{c.displayName}</span>
-                <span className="block text-xs text-zinc-500">@{c.handle}</span>
-              </span>
+              #{t.tag}
             </button>
           ))}
-        </section>
+        </div>
       )}
 
-      {results.length === 0 && creators.length === 0 ? (
+      {results.length === 0 ? (
         <p className="text-sm text-zinc-500 text-center py-12">
           {q ? 'No matches.' : 'Nothing here yet.'}
         </p>
-      ) : results.length > 0 ? (
-        <MediaShelves items={results} onPlayItem={onPlayItem} />
-      ) : null}
+      ) : (
+        <MediaShelves items={results} onPlayItem={onPlayItem} onOpenPic={onOpenPic} />
+      )}
     </div>
   )
 }

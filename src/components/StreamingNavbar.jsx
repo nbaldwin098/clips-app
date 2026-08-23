@@ -144,7 +144,7 @@ export default function StreamingNavbar({
               value={searchQuery || ''}
               onChange={(e) => onSearchChange?.(e.target.value)}
               onFocus={() => handleNav('explore')}
-              placeholder="Search your clips and creators..."
+              placeholder="Search videos, clips, and pics..."
               className="w-full h-9 rounded-full border border-[#272730] bg-[#16161d] pl-9 pr-4 text-sm text-zinc-100 placeholder:text-zinc-500 transition-all focus:bg-[#1a1a23] focus:border-white/40 focus:outline-none focus:ring-1 focus:ring-white"
             />
           </div>

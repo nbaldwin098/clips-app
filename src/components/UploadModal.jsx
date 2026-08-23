@@ -4,14 +4,15 @@ import { useAuth } from '../context/AuthContext'
 import { publishLocalMedia } from '../lib/contentService'
 import SoundPicker from './SoundPicker'
 
-export default function UploadModal({ open, onClose, initialKind = 'video', onOpenAuth }) {
+export default function UploadModal({ open, onClose, initialKind = 'video', initialSound = null, onOpenAuth }) {
   const { user, isAuthenticated } = useAuth()
   const inputRef = useRef(null)
   const [file, setFile] = useState(null)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [kind, setKind] = useState(initialKind === 'short' ? 'short' : 'video')
-  const [sound, setSound] = useState(null)
+  const [sound, setSound] = useState(initialSound)
+  const [tags, setTags] = useState('')
   const [status, setStatus] = useState('idle')
   const [meta, setMeta] = useState(null)
   const [error, setError] = useState('')
@@ -24,7 +25,8 @@ export default function UploadModal({ open, onClose, initialKind = 'video', onOp
     setTitle('')
     setDescription('')
     setKind(initialKind === 'short' ? 'short' : 'video')
-    setSound(null)
+    setSound(initialSound)
+    setTags('')
     setStatus('idle')
     setMeta(null)
     setError('')
@@ -61,6 +63,7 @@ export default function UploadModal({ open, onClose, initialKind = 'video', onOp
         title: title.trim().slice(0, 120),
         description: description.trim().slice(0, 5000),
         sound,
+        tags: tags.split(/[,#]/).map((t) => t.trim()).filter(Boolean),
       })
       if (!published.ok) {
         setError(published.error || 'Could not save this file.')
@@ -107,6 +110,10 @@ export default function UploadModal({ open, onClose, initialKind = 'video', onOp
           </label>
           <label className="block text-xs text-zinc-400">Description
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} maxLength={5000} className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0e0e10] px-3 py-2 text-sm text-white" placeholder="Tell viewers more…" />
+          </label>
+
+          <label className="block text-xs text-zinc-400">Tags
+            <input value={tags} onChange={(e) => setTags(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-zinc-700 bg-[#0e0e10] px-3 text-sm text-white" placeholder="music, gaming, comedy" />
           </label>
 
           <SoundPicker value={sound} onChange={setSound} onOpenAuth={onOpenAuth} />

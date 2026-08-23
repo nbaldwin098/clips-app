@@ -85,6 +85,9 @@ export function deleteComment(contentId, commentId) {
 export function listPlaylists(userId) {
   return (lsGet(K.playlists, []) || []).filter((p) => !userId || p.userId === userId)
 }
+export function getPlaylist(playlistId) {
+  return (lsGet(K.playlists, []) || []).find((p) => p.id === playlistId) || null
+}
 export function createPlaylist({ userId, title, visibility = 'public' }) {
   const list = lsGet(K.playlists, [])
   const row = { id: id('pl'), userId, title: String(title).slice(0, 150), visibility, items: [], collaborative: false, createdAt: new Date().toISOString() }

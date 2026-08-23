@@ -15,7 +15,6 @@ import HistoryPage from './components/HistoryPage'
 import LikedPage from './components/LikedPage'
 import WatchLaterPage from './components/WatchLaterPage'
 import StatsPage from './components/StatsPage'
-import VideoPlayerModal from './components/VideoPlayerModal'
 import ExplorePage from './components/ExplorePage'
 import HelpPage from './components/HelpPage'
 import AboutPage from './components/AboutPage'
@@ -43,6 +42,10 @@ import CommunityPage from './components/CommunityPage'
 import StudioToolsPage from './components/StudioToolsPage'
 import StreamSettingsPage from './components/StreamSettingsPage'
 import ContentRulesPage from './components/ContentRulesPage'
+import WatchPage from './components/WatchPage'
+import SoundPage from './components/SoundPage'
+import TagPage from './components/TagPage'
+import MiniPlayer from './components/MiniPlayer'
 import {
   TermsOfService, PrivacyPolicy, CreatorAgreement, CommunityGuidelines,
 } from './components/legal/LegalPages'
@@ -51,6 +54,8 @@ import { lsGet, lsSet } from './lib/storage'
 import { syncContentFromCloud } from './lib/contentSync'
 import { installRuntimeGuards } from './lib/selfHeal'
 import { isAdminSession } from './lib/moderation'
+import { getById } from './lib/contentService'
+import { parseRoute, pushHash } from './lib/routes'
 
 const KNOWN_VIEWS = new Set([
   'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
@@ -59,20 +64,23 @@ const KNOWN_VIEWS = new Set([
   'analytics', 'channel', 'profile', 'content-rules',
   'subscriptions', 'playlists', 'community', 'studio-tools', 'stream-settings',
   'legal-tos', 'legal-privacy', 'legal-creator', 'legal-community',
+  'watch', 'sound', 'tag',
 ])
 
 function AppShell() {
   const { user, isAuthenticated } = useAuth()
   const [view, setView] = useState('home')
+  const [routeId, setRouteId] = useState('')
   const [importOpen, setImportOpen] = useState(false)
   const [authOpen, setAuthOpen] = useState(false)
   const [uploadOpen, setUploadOpen] = useState(false)
   const [uploadKind, setUploadKind] = useState('video')
+  const [uploadSound, setUploadSound] = useState(null)
   const [checkoutOpen, setCheckoutOpen] = useState(false)
   const [checkoutTarget, setCheckoutTarget] = useState({ id: null, handle: '' })
   const [profileTarget, setProfileTarget] = useState({ handle: '', userId: null })
-  const [activePlayItem, setActivePlayItem] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [miniItem, setMiniItem] = useState(null)
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => lsGet('sidebar_collapsed', false) === true)
   const [chatCollapsed, setChatCollapsed] = useState(() => lsGet('chat_collapsed', false) === true)
@@ -86,9 +94,6 @@ function AppShell() {
 
   useEffect(() => installRuntimeGuards(), [])
 
-  // Pull the shared content catalog (videos/clips other devices & users have
-  // published) into the local cache on load and periodically thereafter.
-  // No-ops entirely when Supabase isn't configured.
   useEffect(() => {
     syncContentFromCloud()
     const interval = setInterval(syncContentFromCloud, 45_000)
@@ -99,6 +104,118 @@ function AppShell() {
       window.removeEventListener('focus', onFocus)
     }
   }, [])
+
+  const applyRoute = (hash) => {
+    const { kind, id } = parseRoute(hash)
+    if (kind === 'watch' && id) {
+      setMiniItem(null)
+      setRouteId(id)
+      setView('watch')
+      return
+    }
+    if (kind === 'sound' && id) {
+      setRouteId(id)
+      setView('sound')
+      return
+    }
+    if (kind === 'tag' && id) {
+      setRouteId(id)
+      setView('tag')
+      return
+    }
+    if (kind === 'profile') {
+      setProfileTarget({ handle: String(id || '').replace(/^@/, ''), userId: null })
+      setView('profile')
+      return
+    }
+    if (kind === 'playlist' && id) {
+      setRouteId(id)
+      setView('playlists')
+      return
+    }
+    if (kind === 'pic' && id) {
+      setRouteId(id)
+      setView('pics')
+      return
+    }
+    if (KNOWN_VIEWS.has(kind)) {
+      setView(kind === 'shorts' ? 'clips' : kind)
+      setRouteId(id || '')
+    }
+  }
+
+  useEffect(() => {
+    applyRoute(window.location.hash)
+    const onPop = () => applyRoute(window.location.hash)
+    window.addEventListener('popstate', onPop)
+    window.addEventListener('hashchange', onPop)
+    return () => {
+      window.removeEventListener('popstate', onPop)
+      window.removeEventListener('hashchange', onPop)
+    }
+  }, [])
+
+  const dockWatchIfNeeded = (leavingWatch) => {
+    if (!leavingWatch) return
+    const current = getById(routeId)
+    if (current?.type === 'video') setMiniItem(current)
+  }
+
+  const navigate = (next, id = '') => {
+    try {
+      const dest = next === 'shorts' ? 'clips' : String(next || 'home')
+      dockWatchIfNeeded(view === 'watch' && dest !== 'watch')
+      setView(dest)
+      const nextId = dest === 'profile' ? (id || profileTarget.handle) : id
+      setRouteId(nextId || '')
+      if (dest === 'profile') {
+        pushHash('profile', nextId)
+      } else {
+        pushHash(dest, nextId)
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } catch {
+      setView('home')
+    }
+  }
+
+  const openWatch = (itemOrId) => {
+    const item = typeof itemOrId === 'string' ? getById(itemOrId) : itemOrId
+    if (!item) return
+    if (item.type === 'pic') {
+      openPic(item)
+      return
+    }
+    setMiniItem(null)
+    setRouteId(item.id)
+    setView('watch')
+    pushHash('watch', item.id)
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }) } catch {}
+  }
+
+  const openSound = (key) => {
+    dockWatchIfNeeded(view === 'watch')
+    const id = String(key || '')
+    setRouteId(id)
+    setView('sound')
+    pushHash('sound', id)
+  }
+
+  const openTag = (tag) => {
+    dockWatchIfNeeded(view === 'watch')
+    const id = String(tag || '').replace(/^#/, '')
+    setRouteId(id)
+    setView('tag')
+    pushHash('tag', id)
+  }
+
+  const openPic = (pic) => {
+    const id = typeof pic === 'string' ? pic : pic?.id
+    if (!id) return
+    setRouteId(id)
+    setView('pics')
+    pushHash('pic', id)
+  }
 
   const openAuth = () => setAuthOpen(true)
   const openImport = () => {
@@ -129,24 +246,28 @@ function AppShell() {
     }
   }
   const openProfile = (handle, userId = null) => {
+    dockWatchIfNeeded(view === 'watch')
     setProfileTarget({ handle: String(handle || '').replace(/^@/, ''), userId })
     setView('profile')
+    pushHash('profile', String(handle || '').replace(/^@/, ''))
     try { window.scrollTo({ top: 0, behavior: 'smooth' }) } catch {}
   }
-  if (typeof window !== 'undefined') window.__clipsOpenProfile = openProfile
+  if (typeof window !== 'undefined') {
+    window.__clipsOpenProfile = openProfile
+    window.__clipsOpenSound = openSound
+    window.__clipsOpenTag = openTag
+    window.__clipsOpenWatch = openWatch
+  }
   const openCheckout = (creatorId, creatorHandle) => {
     if (!isAuthenticated) { setAuthOpen(true); return }
     setCheckoutTarget({ id: creatorId || null, handle: creatorHandle || '' })
     setCheckoutOpen(true)
   }
-  const navigate = (next) => {
-    try {
-      const id = next === 'shorts' ? 'clips' : String(next || 'home')
-      setView(id)
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-    } catch {
-      setView('home')
-    }
+  const useSound = (sound) => {
+    if (!isAuthenticated) { setAuthOpen(true); return }
+    setUploadSound(sound)
+    setUploadKind('short')
+    setUploadOpen(true)
   }
 
   const focusLiveStream = (entry) => setFocusedLiveStream(entry)
@@ -214,10 +335,41 @@ function AppShell() {
       return <AdminPortal onNavigate={navigate} />
 
     switch (view) {
-      case 'home': return <HomeFeed onPlayItem={setActivePlayItem} />
+      case 'home': return <HomeFeed onPlayItem={openWatch} onOpenPic={openPic} />
       case 'creators': return <CreatorsPage />
       case 'clips':
-      case 'shorts': return <ShortsFeed onPlayItem={setActivePlayItem} />
+      case 'shorts':
+        return (
+          <ShortsFeed
+            onOpenAuth={openAuth}
+            onOpenProfile={openProfile}
+            onOpenSound={openSound}
+            focusId={routeId}
+          />
+        )
+      case 'watch':
+        return (
+          <WatchPage
+            itemId={routeId}
+            onBack={() => navigate('home')}
+            onPlayItem={openWatch}
+            onOpenSound={openSound}
+            onOpenTag={openTag}
+            onOpenProfile={openProfile}
+            onOpenAuth={openAuth}
+          />
+        )
+      case 'sound':
+        return (
+          <SoundPage
+            soundKey={routeId}
+            onNavigate={navigate}
+            onPlayItem={openWatch}
+            onUseSound={useSound}
+          />
+        )
+      case 'tag':
+        return <TagPage tag={routeId} onNavigate={navigate} onPlayItem={openWatch} />
       case 'live':
         return (
           <LiveView
@@ -230,15 +382,15 @@ function AppShell() {
       case 'wallet': return <CreatorWallet onNavigate={navigate} />
       case 'analytics': return <AnalyticsPage onNavigate={navigate} />
       case 'channel': return <ChannelPage onNavigate={navigate} />
-      case 'profile': return <ProfilePage onNavigate={navigate} profileHandle={profileTarget.handle} profileUserId={profileTarget.userId} onPlayItem={setActivePlayItem} />
+      case 'profile': return <ProfilePage onNavigate={navigate} profileHandle={profileTarget.handle} profileUserId={profileTarget.userId} onPlayItem={openWatch} onOpenPic={openPic} />
       case 'subscriptions': return <SubscriptionsPage onNavigate={navigate} onOpenAuth={openAuth} />
-      case 'playlists': return <PlaylistsPage onNavigate={navigate} onOpenAuth={openAuth} />
+      case 'playlists': return <PlaylistsPage onNavigate={navigate} onOpenAuth={openAuth} onPlayItem={openWatch} onOpenPic={openPic} playlistId={routeId} />
       case 'community': return <CommunityPage onNavigate={navigate} onOpenAuth={openAuth} />
       case 'studio-tools': return <StudioToolsPage onNavigate={navigate} />
       case 'stream-settings': return <StreamSettingsPage onNavigate={navigate} />
       case 'settings': return <SettingsPage onNavigate={navigate} />
-      case 'explore': return <ExplorePage onPlayItem={setActivePlayItem} initialQuery={searchQuery} />
-      case 'pics': return <PicsPage onOpenAuth={openAuth} />
+      case 'explore': return <ExplorePage onPlayItem={openWatch} onOpenPic={openPic} onOpenTag={openTag} initialQuery={searchQuery} />
+      case 'pics': return <PicsPage onOpenAuth={openAuth} initialPicId={routeId} />
       case 'checkout': return <CheckoutPage onNavigate={navigate} creatorId={checkoutTarget.id} />
       case 'creator-apply': return <CreatorApplyPage onOpenAuth={openAuth} />
       case 'advertise': return <AdvertisePage onNavigate={navigate} />
@@ -246,14 +398,14 @@ function AppShell() {
       case 'support': return <SupportPage onOpenAuth={openAuth} />
       case 'admin': return <AdminPortal onNavigate={navigate} />
       case 'content-rules': return <ContentRulesPage />
-      case 'history': return <HistoryPage onNavigate={navigate} onPlayItem={setActivePlayItem} />
-      case 'liked': return <LikedPage onNavigate={navigate} onPlayItem={setActivePlayItem} />
-      case 'watch-later': return <WatchLaterPage onNavigate={navigate} onPlayItem={setActivePlayItem} />
+      case 'history': return <HistoryPage onNavigate={navigate} onPlayItem={openWatch} />
+      case 'liked': return <LikedPage onNavigate={navigate} onPlayItem={openWatch} />
+      case 'watch-later': return <WatchLaterPage onNavigate={navigate} onPlayItem={openWatch} />
       case 'stats': return <StatsPage onNavigate={navigate} />
       case 'library': return <LibraryPage />
       case 'help': return <HelpPage />
       case 'about': return <AboutPage />
-      case 'notifications': return <NotificationsPage onNavigate={navigate} />
+      case 'notifications': return <NotificationsPage onNavigate={navigate} onOpenWatch={openWatch} />
       case 'legal-tos': return <TermsOfService />
       case 'legal-privacy': return <PrivacyPolicy />
       case 'legal-creator': return <CreatorAgreement />
@@ -273,7 +425,10 @@ function AppShell() {
         onToggleSidebar={toggleSidebar}
         currentView={view}
         searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
+        onSearchChange={(q) => {
+          setSearchQuery(q)
+          if (view !== 'explore') navigate('explore')
+        }}
       />
 
       <div className="flex flex-1 min-h-0 relative">
@@ -304,12 +459,21 @@ function AppShell() {
 
       <ImportShortModal open={importOpen} onClose={() => setImportOpen(false)} />
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
-      <UploadModal key={uploadKind} open={uploadOpen} initialKind={uploadKind} onClose={() => setUploadOpen(false)} onOpenAuth={openAuth} />
+      <UploadModal
+        key={`${uploadKind}-${uploadSound?.id || 'none'}`}
+        open={uploadOpen}
+        initialKind={uploadKind}
+        initialSound={uploadSound}
+        onClose={() => { setUploadOpen(false); setUploadSound(null) }}
+        onOpenAuth={openAuth}
+      />
       <CheckoutModal open={checkoutOpen} onClose={() => setCheckoutOpen(false)} creatorId={checkoutTarget.id} creatorHandle={checkoutTarget.handle} />
-      {activePlayItem && (
-        <ErrorBoundary>
-          <VideoPlayerModal item={activePlayItem} onClose={() => setActivePlayItem(null)} />
-        </ErrorBoundary>
+      {miniItem && view !== 'watch' && (
+        <MiniPlayer
+          item={miniItem}
+          onExpand={() => openWatch(miniItem)}
+          onClose={() => setMiniItem(null)}
+        />
       )}
     </div>
   )
