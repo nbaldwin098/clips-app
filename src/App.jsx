@@ -413,7 +413,7 @@ function AppShell() {
       case 'stream-settings': return <StreamSettingsPage onNavigate={navigate} />
       case 'settings': return <SettingsPage onNavigate={navigate} />
       case 'explore': return <ExplorePage onPlayItem={openWatch} onOpenPic={openPic} onOpenTag={openTag} initialQuery={searchQuery} onApplyQuery={setSearchQuery} />
-      case 'pics': return <PicsPage onOpenAuth={openAuth} initialPicId={routeId} />
+      case 'pics': return <PicsPage onOpenAuth={openAuth} onOpenProfile={openProfile} initialPicId={routeId} />
       case 'checkout': return <CheckoutPage onNavigate={navigate} creatorId={checkoutTarget.id} returnParams={routeParams} />
       case 'creator-apply': return <CreatorApplyPage onOpenAuth={openAuth} />
       case 'advertise': return <AdvertisePage onNavigate={navigate} />
@@ -438,9 +438,10 @@ function AppShell() {
   }
 
   const isLiveView = view === 'live'
+  const lockStage = view === 'clips' || view === 'shorts' || view === 'pics'
 
   return (
-    <div className="min-h-screen bg-[#09090c] text-zinc-100 flex flex-col selection:bg-white selection:text-black">
+    <div className={`${lockStage ? 'h-dvh overflow-hidden' : 'min-h-screen'} bg-[#09090c] text-zinc-100 flex flex-col selection:bg-white selection:text-black`}>
       <StreamingNavbar
         onNavigate={navigate}
         onOpenAuth={openAuth}
@@ -467,7 +468,7 @@ function AppShell() {
           focusedStreamUserId={focusedLiveStream?.userId}
         />
 
-        <main className="flex-1 min-w-0 overflow-y-auto bg-[#09090c]">{renderMain()}</main>
+        <main className={`flex-1 min-h-0 min-w-0 bg-[#09090c] ${lockStage ? 'overflow-hidden' : 'overflow-y-auto'}`}>{renderMain()}</main>
 
         {isLiveView && (
           <LiveChatPanel
