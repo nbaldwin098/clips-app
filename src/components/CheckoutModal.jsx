@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { X, Heart } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { PREMIUM_PRICE, isPremiumSub } from '../lib/engagement'
+import { getStripePaymentLink } from '../lib/stripeConfig'
 import { startPremiumCheckout } from '../lib/checkout'
+import { openSafeUrl } from '../lib/safeUrl'
 
 export default function CheckoutModal({ open, onClose, creatorId, creatorHandle }) {
   const { user, isAuthenticated } = useAuth()
@@ -10,17 +12,23 @@ export default function CheckoutModal({ open, onClose, creatorId, creatorHandle 
   const [busy, setBusy] = useState(false)
   const target = creatorId || user?.id
   const already = user && target ? isPremiumSub(user.id, target) : false
+  const hasLink = !!getStripePaymentLink()
 
   if (!open) return null
 
-  const pay = () => {
+  const pay = async () => {
     if (!isAuthenticated || !target) {
       setStatus('Sign in first.')
       return
     }
     setBusy(true)
-    const result = startPremiumCheckout({ already })
+    const result = await startPremiumCheckout({
+      already,
+      email: user?.email || '',
+      reference: target,
+    })
     setStatus(result.message)
+    if (result.url) openSafeUrl(result.url)
     setBusy(false)
   }
 
@@ -35,7 +43,7 @@ export default function CheckoutModal({ open, onClose, creatorId, creatorHandle 
           <h2 className="text-sm font-semibold">Premium membership</h2>
         </div>
         <p className="mt-2 text-xs text-zinc-500">
-          {creatorHandle ? `Support @${creatorHandle}` : 'Support this channel'} · ${PREMIUM_PRICE}/month list price
+          {creatorHandle ? `Support @${creatorHandle}` : 'Support this channel'} · ${PREMIUM_PRICE}/month
         </p>
         <p className="mt-4 text-3xl font-semibold text-white">
           ${PREMIUM_PRICE}<span className="text-sm text-zinc-500 font-normal">/mo</span>
@@ -43,13 +51,13 @@ export default function CheckoutModal({ open, onClose, creatorId, creatorHandle 
         <ul className="mt-3 text-xs text-zinc-400 space-y-1 list-disc list-inside">
           <li>Badge in chat</li>
           <li>Subscriber emotes</li>
-          <li>No charge until Stripe PaymentIntent is live</li>
+          <li>{hasLink ? 'Pays on Stripe Checkout' : 'Uses the Render publishable key — add a Payment Link to charge'}</li>
         </ul>
         {already ? (
           <p className="mt-4 text-sm text-white">You already have premium on this channel.</p>
         ) : (
           <button type="button" disabled={busy || !isAuthenticated} onClick={pay} className="mt-5 w-full h-11 rounded-xl bg-white text-black font-bold text-sm disabled:opacity-40 hover:bg-zinc-200 transition-all">
-            {!isAuthenticated ? 'Sign in to subscribe' : busy ? 'Working…' : `Subscribe $${PREMIUM_PRICE}/mo`}
+            {!isAuthenticated ? 'Sign in to subscribe' : busy ? 'Working…' : hasLink ? `Pay $${PREMIUM_PRICE}/mo on Stripe` : `Subscribe $${PREMIUM_PRICE}/mo`}
           </button>
         )}
         {status && <p className="mt-3 text-[11px] text-zinc-500">{status}</p>}

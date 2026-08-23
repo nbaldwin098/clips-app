@@ -41,14 +41,16 @@ assert(isPromoLive({ published: false }) === false, 'unpublished promo hidden')
 assert(isPromoLive({ published: true }) === true, 'published promo live')
 assert(isPromoLive({ published: true, startsAt: new Date(Date.now() + 864e5).toISOString() }) === false, 'future promo hidden')
 
-function startPremiumCheckout({ already = false, configured = false } = {}) {
+function startPremiumCheckout({ already = false, configured = false, link = '' } = {}) {
   if (already) return { granted: false, status: 'already' }
-  if (!configured) return { granted: false, status: 'no_stripe' }
-  return { granted: false, status: 'needs_intent' }
+  if (link) return { granted: false, status: 'redirect', url: link }
+  if (configured) return { granted: false, status: 'key_ready' }
+  return { granted: false, status: 'no_key_in_build' }
 }
 assert(startPremiumCheckout({}).granted === false, 'checkout never grants without charge')
 assert(startPremiumCheckout({ already: true }).status === 'already', 'already subscribed')
-assert(startPremiumCheckout({ configured: true }).status === 'needs_intent', 'key without PaymentIntent')
+assert(startPremiumCheckout({ configured: true }).status === 'key_ready', 'key without payment link')
+assert(startPremiumCheckout({ link: 'https://buy.stripe.com/x' }).status === 'redirect', 'payment link redirects')
 
 const explore = filterExploreItems([
   { id: '1', createdAt: new Date().toISOString(), durationSec: 30, views: 2 },
@@ -60,10 +62,11 @@ const checkoutSrc = readFileSync(new URL('../src/lib/checkout.js', import.meta.u
 const pageSrc = readFileSync(new URL('../src/components/CheckoutPage.jsx', import.meta.url), 'utf8')
 const modalSrc = readFileSync(new URL('../src/components/CheckoutModal.jsx', import.meta.url), 'utf8')
 assert(!checkoutSrc.includes('granted: true'), 'checkout lib never grants')
-assert(!pageSrc.includes('addPremiumSub'), 'checkout page does not fake a paid sub')
+assert(pageSrc.includes('membershipReturnPaid'), 'checkout page only marks paid after Stripe return')
 assert(!modalSrc.includes('addPremiumSub'), 'checkout modal does not fake a paid sub')
 assert(pageSrc.includes('startPremiumCheckout'), 'checkout page uses the gate')
 assert(modalSrc.includes('startPremiumCheckout'), 'checkout modal uses the gate')
+assert(pageSrc.includes('VITE_STRIPE_PAYMENT_LINK') || pageSrc.includes('Payment Link'), 'checkout mentions payment link')
 
 if (failed) {
   console.error(`${failed} failed`)

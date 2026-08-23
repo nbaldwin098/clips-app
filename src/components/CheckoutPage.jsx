@@ -1,24 +1,39 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { PREMIUM_PRICE, isPremiumSub } from '../lib/engagement'
-import { isStripeConfigured, stripeMode } from '../lib/stripeConfig'
+import { PREMIUM_PRICE, isPremiumSub, addPremiumSub } from '../lib/engagement'
+import { isStripeConfigured, stripeMode, getStripePaymentLink, membershipReturnPaid } from '../lib/stripeConfig'
 import { startPremiumCheckout } from '../lib/checkout'
+import { openSafeUrl } from '../lib/safeUrl'
 import PageHeader from './PageHeader'
 
-export default function CheckoutPage({ onNavigate, creatorId }) {
+export default function CheckoutPage({ onNavigate, creatorId, returnParams = {} }) {
   const { user, isAuthenticated } = useAuth()
   const [status, setStatus] = useState('')
   const target = creatorId || user?.id
   const already = user && target ? isPremiumSub(user.id, target) : false
   const configured = isStripeConfigured()
+  const hasLink = !!getStripePaymentLink()
 
-  const pay = () => {
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id || !target) return
+    const search = typeof window !== 'undefined' ? window.location.search : ''
+    if (!membershipReturnPaid(returnParams, search)) return
+    addPremiumSub(user.id, target)
+    setStatus('Stripe sent you back here. Premium is marked on this device. A webhook will confirm the charge later.')
+  }, [isAuthenticated, user?.id, target, returnParams])
+
+  const pay = async () => {
     if (!isAuthenticated) {
       setStatus('Sign in first.')
       return
     }
-    const result = startPremiumCheckout({ already })
+    const result = await startPremiumCheckout({
+      already,
+      email: user?.email || '',
+      reference: target,
+    })
     setStatus(result.message)
+    if (result.url) openSafeUrl(result.url)
   }
 
   return (
@@ -29,16 +44,18 @@ export default function CheckoutPage({ onNavigate, creatorId }) {
         <ul className="text-xs text-zinc-400 space-y-1 list-disc list-inside">
           <li>Subscriber badge in chat</li>
           <li>Creator emotes</li>
-          <li>Creator keeps list price — when Stripe actually charges</li>
+          <li>Creator keeps list price</li>
         </ul>
         <p className="text-[11px] text-zinc-500">
-          Stripe: {configured ? `key present (${stripeMode()})` : 'not connected'} · premium is not granted until a real charge succeeds
+          {configured
+            ? `Stripe ${stripeMode()} publishable key is on this deploy${hasLink ? ' · Payment Link ready' : ' · add VITE_STRIPE_PAYMENT_LINK to charge cards'}`
+            : 'This build did not receive VITE_STRIPE_PUBLISHABLE_KEY — Render has it after a redeploy'}
         </p>
         {already ? (
           <p className="text-sm text-white">You already have premium on this channel.</p>
         ) : (
           <button type="button" disabled={!isAuthenticated} onClick={pay} className="w-full h-11 rounded-lg bg-white text-black text-sm font-medium disabled:opacity-40">
-            {isAuthenticated ? `Subscribe $${PREMIUM_PRICE}/mo` : 'Sign in to subscribe'}
+            {isAuthenticated ? (hasLink ? `Pay $${PREMIUM_PRICE}/mo on Stripe` : `Subscribe $${PREMIUM_PRICE}/mo`) : 'Sign in to subscribe'}
           </button>
         )}
         {status && <p className="text-xs text-zinc-400">{status}</p>}

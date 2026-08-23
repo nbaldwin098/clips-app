@@ -414,7 +414,7 @@ function AppShell() {
       case 'settings': return <SettingsPage onNavigate={navigate} />
       case 'explore': return <ExplorePage onPlayItem={openWatch} onOpenPic={openPic} onOpenTag={openTag} initialQuery={searchQuery} onApplyQuery={setSearchQuery} />
       case 'pics': return <PicsPage onOpenAuth={openAuth} initialPicId={routeId} />
-      case 'checkout': return <CheckoutPage onNavigate={navigate} creatorId={checkoutTarget.id} />
+      case 'checkout': return <CheckoutPage onNavigate={navigate} creatorId={checkoutTarget.id} returnParams={routeParams} />
       case 'creator-apply': return <CreatorApplyPage onOpenAuth={openAuth} />
       case 'advertise': return <AdvertisePage onNavigate={navigate} />
       case 'advertiser-portal': return <AdvertiserPortal onNavigate={navigate} />

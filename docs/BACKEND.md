@@ -82,7 +82,8 @@ Only when they want a copy on Clips. Client compresses toward 720p first.
 |-------|-------------|
 | Auth + DB | Supabase free |
 | Stripe secret | Edge Function env STRIPE_SECRET_KEY |
-| Publishable | Render VITE_STRIPE_PUBLISHABLE_KEY |
+| Publishable | Render `VITE_STRIPE_PUBLISHABLE_KEY` (name must be exact, then redeploy) |
+| Payment Link | Optional Render `VITE_STRIPE_PAYMENT_LINK` (`https://buy.stripe.com/...`) |
 | Owned media | R2 / B2 later |
 | Live | MediaMTX later |
 

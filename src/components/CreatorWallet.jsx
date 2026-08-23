@@ -21,7 +21,7 @@ export default function CreatorWallet({ onNavigate }) {
           <>
             <p className="text-sm text-zinc-200">Stripe is not connected.</p>
             <p className="text-xs text-zinc-500">
-              There is no payout balance to show. Set VITE_STRIPE_PUBLISHABLE_KEY and Stripe Connect before taking or sending money. {user?.email}
+              This build did not receive VITE_STRIPE_PUBLISHABLE_KEY. On Render that name must be exact, then redeploy. Payouts still need Stripe Connect. {user?.email}
             </p>
           </>
         )}

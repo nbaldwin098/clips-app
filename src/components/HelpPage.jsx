@@ -38,7 +38,7 @@ export default function HelpPage() {
     },
     {
       q: 'Can I pay for premium now?',
-      a: 'Follow is free. Paid subscribe needs Stripe. Until a PaymentIntent is connected, checkout will not grant premium or charge a card.',
+      a: 'Follow is free. The Stripe publishable key lives on Render as VITE_STRIPE_PUBLISHABLE_KEY. To charge $5/mo, add a Payment Link as VITE_STRIPE_PAYMENT_LINK and set its success URL to https://calabi.us/#/checkout?paid=1, then Manual Deploy.',
     },
   ]
 
