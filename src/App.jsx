@@ -83,6 +83,24 @@ function AppShell() {
     if (!isAuthenticated) { setAuthOpen(true); return }
     setUploadOpen(true)
   }
+  const openCreate = (kind) => {
+    if (!isAuthenticated) { setAuthOpen(true); return }
+    if (kind === 'video') {
+      setUploadOpen(true)
+      return
+    }
+    if (kind === 'clip') {
+      setImportOpen(true)
+      return
+    }
+    if (kind === 'live') {
+      if (user?.creatorStatus !== 'approved') {
+        navigate('creator-apply')
+        return
+      }
+      navigate('live')
+    }
+  }
   const openProfile = (handle, userId = null) => {
     setProfileTarget({ handle: String(handle || '').replace(/^@/, ''), userId })
     setView('profile')
@@ -168,8 +186,6 @@ function AppShell() {
       case 'live':
         return (
           <LiveView
-            onNavigate={navigate}
-            onOpenAuth={openAuth}
             onOpenCheckout={openCheckout}
             focusedStream={focusedLiveStream}
             onFocusStream={focusLiveStream}
@@ -214,7 +230,7 @@ function AppShell() {
       <StreamingNavbar
         onNavigate={navigate}
         onOpenAuth={openAuth}
-        onOpenUpload={openImport}
+        onCreate={openCreate}
         onToggleSidebar={toggleSidebar}
         currentView={view}
         searchQuery={searchQuery}

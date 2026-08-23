@@ -5,6 +5,10 @@ export default function HelpPage() {
       a: 'Clips does not show fabricated videos. Content appears after real imports or uploads from signed-in users.',
     },
     {
+      q: 'How do I upload a video, clip, or go live?',
+      a: 'Use the white + in the navbar. Choose Video to upload a file, Clip to paste a short link, or Go live to start a broadcast. There is no separate sign-in button on Live.',
+    },
+    {
       q: 'Can I watch without an account?',
       a: 'Yes. Sign in is required to comment, post, upload, import, or go live.',
     },

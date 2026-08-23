@@ -43,7 +43,7 @@ export default function ImportShortModal({ open, onClose }) {
       />
       <div className="relative w-full max-w-md rounded-2xl bg-white shadow-2xl border border-slate-200">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-          <h2 className="text-base font-semibold text-slate-900">Import Short</h2>
+          <h2 className="text-base font-semibold text-slate-900">Import clip</h2>
           <button
             onClick={() => {
               reset()

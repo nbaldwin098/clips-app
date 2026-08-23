@@ -1,5 +1,7 @@
 import { useState, useRef } from 'react'
 import { X, Upload, Film } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
+import { publishLocalMedia } from '../lib/contentService'
 
 /**
  * Client-side compression path (MVP shell).
@@ -7,9 +9,11 @@ import { X, Upload, Film } from 'lucide-react'
  * before any network request. Full ffmpeg.wasm / MediaRecorder pipeline is next.
  */
 export default function UploadModal({ open, onClose }) {
+  const { user } = useAuth()
   const inputRef = useRef(null)
   const [status, setStatus] = useState('idle')
   const [meta, setMeta] = useState(null)
+  const [error, setError] = useState('')
 
   if (!open) return null
 
@@ -18,6 +22,7 @@ export default function UploadModal({ open, onClose }) {
     if (!f) return
     setStatus('reading')
     setMeta(null)
+    setError('')
     try {
       const url = URL.createObjectURL(f)
       const video = document.createElement('video')
@@ -27,6 +32,15 @@ export default function UploadModal({ open, onClose }) {
         video.onloadedmetadata = resolve
         video.onerror = reject
       })
+      const published = publishLocalMedia(f, user, {
+        type: video.duration && video.duration <= 90 ? 'short' : 'video',
+      })
+      if (!published.ok) {
+        setError(published.error || 'Could not save this file.')
+        setStatus('error')
+        URL.revokeObjectURL(url)
+        return
+      }
       setMeta({
         name: f.name,
         sizeMb: Math.round((f.size / (1024 * 1024)) * 10) / 10,
@@ -38,6 +52,7 @@ export default function UploadModal({ open, onClose }) {
       setStatus('ready')
     } catch {
       setStatus('error')
+      setError('Could not read this file.')
     }
   }
 
@@ -46,14 +61,14 @@ export default function UploadModal({ open, onClose }) {
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
         <div className="relative w-full max-w-md rounded-2xl bg-[#14141d] shadow-2xl border border-[#2c2c3c]">
           <div className="flex items-center justify-between px-5 py-4 border-b border-[#252535]">
-            <h2 className="text-base font-semibold text-white">Upload Stream / Video</h2>
+            <h2 className="text-base font-semibold text-white">Upload video</h2>
             <button onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-zinc-800">
               <X className="h-4 w-4 text-zinc-400" />
             </button>
           </div>
           <div className="p-5 space-y-4">
             <p className="text-sm text-zinc-400 leading-relaxed">
-              Upload past broadcasts or clips. Inspected locally before stream publishing.
+              Upload a video from this device. It is saved to your library on this browser.
             </p>
             <input ref={inputRef} type="file" accept="video/*" className="hidden" onChange={onPick} />
             <button
@@ -62,10 +77,10 @@ export default function UploadModal({ open, onClose }) {
             >
               <Upload className="h-6 w-6 text-white" />
               <span className="text-sm font-medium text-zinc-200">Choose video file</span>
-              <span className="text-xs text-zinc-500">Inspected locally only</span>
+              <span className="text-xs text-zinc-500">Saved on this device</span>
             </button>
             {status === 'reading' && <p className="text-sm text-zinc-400">Reading metadata…</p>}
-            {status === 'error' && <p className="text-sm text-red-400">Could not read this file.</p>}
+            {status === 'error' && <p className="text-sm text-red-400">{error || 'Could not read this file.'}</p>}
             {meta && (
               <div className="rounded-lg border border-[#303042] bg-[#1a1a28] p-3 text-sm space-y-1">
                 <div className="flex items-center gap-2 font-medium text-white">
@@ -74,7 +89,7 @@ export default function UploadModal({ open, onClose }) {
                 </div>
                 <p className="text-xs text-zinc-400">{meta.sizeMb} MB · {meta.width}×{meta.height} · {meta.duration}s</p>
                 <p className="text-xs text-white mt-2">
-                  Ready to broadcast to channel vods!
+                  Saved to your library. It will show on Recommended and Clips.
                 </p>
               </div>
             )}

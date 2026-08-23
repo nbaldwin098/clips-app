@@ -27,7 +27,7 @@ function formatElapsed(startedAt) {
   return `${hrs}h ${mins % 60}m ago`
 }
 
-export default function LiveView({ onNavigate, onOpenAuth, onOpenCheckout, focusedStream, onFocusStream }) {
+export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream }) {
   const { user, isAuthenticated } = useAuth()
   const approved = user?.creatorStatus === 'approved'
 
@@ -195,7 +195,7 @@ export default function LiveView({ onNavigate, onOpenAuth, onOpenCheckout, focus
           <div className="rounded-2xl border border-[#23232c] bg-[#121218] px-6 py-10 text-center">
             <Radio className="h-6 w-6 mx-auto text-white" />
             <p className="mt-4 text-sm text-zinc-200">No one is live right now</p>
-            <p className="mt-1 text-xs text-zinc-500">Streams show up here the moment a creator goes live.</p>
+            <p className="mt-1 text-xs text-zinc-500">Start a broadcast from the + button. Streams appear here when someone is live.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -224,23 +224,7 @@ export default function LiveView({ onNavigate, onOpenAuth, onOpenCheckout, focus
         )}
       </div>
 
-      {/* Go Live controls for the current user */}
-      {!isAuthenticated ? (
-        <p className="text-sm text-zinc-400">
-          <button type="button" onClick={onOpenAuth} className="font-medium text-white underline underline-offset-2">Sign in</button> to go live after approval.
-        </p>
-      ) : !approved ? (
-        <div className="rounded-2xl border border-[#23232c] bg-[#121218] p-5">
-          <p className="text-sm text-zinc-200">Live requires approved creator status.</p>
-          <button
-            type="button"
-            onClick={() => onNavigate?.('creator-apply')}
-            className="mt-3 h-10 px-4 rounded-lg text-sm font-bold bg-white text-black"
-          >
-            Apply to become a creator
-          </button>
-        </div>
-      ) : (
+      {isAuthenticated && approved && (
         <section className="rounded-2xl border border-[#23232c] bg-[#121218] p-5 space-y-3">
           <h2 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
             <Key className="h-4 w-4 text-white" /> Go live

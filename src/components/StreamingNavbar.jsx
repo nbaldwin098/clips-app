@@ -13,6 +13,8 @@ import {
   Compass,
   Tv,
   SlidersHorizontal,
+  Film,
+  Clapperboard,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { cn } from '../lib/utils'
@@ -21,7 +23,7 @@ import { subscribeNotifications, unreadCount } from '../lib/notifications'
 export default function StreamingNavbar({
   onNavigate,
   onOpenAuth,
-  onOpenUpload,
+  onCreate,
   onToggleSidebar,
   currentView,
   searchQuery,
@@ -29,13 +31,18 @@ export default function StreamingNavbar({
 }) {
   const { user, isAuthenticated, logout } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
   const [unread, setUnread] = useState(0)
   const menuRef = useRef(null)
+  const createRef = useRef(null)
 
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
         setMenuOpen(false)
+      }
+      if (createRef.current && !createRef.current.contains(e.target)) {
+        setCreateOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -144,15 +151,49 @@ export default function StreamingNavbar({
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={onOpenUpload}
-            className="flex h-9 items-center gap-1.5 px-3 rounded-lg text-xs font-bold bg-white text-black hover:bg-zinc-200 active:scale-95 transition-all"
-            title="Upload or import a clip"
-          >
-            <Plus className="h-4 w-4 stroke-[3]" />
-            <span className="hidden md:inline">Create</span>
-          </button>
+          <div className="relative" ref={createRef}>
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false)
+                setCreateOpen((o) => !o)
+              }}
+              className="flex h-9 w-9 items-center justify-center text-white hover:text-zinc-300 active:scale-90 transition-transform"
+              title="Upload a video, clip, or go live"
+              aria-label="Create"
+              aria-expanded={createOpen}
+            >
+              <Plus className="h-6 w-6 stroke-[2.5]" />
+            </button>
+            {createOpen && (
+              <div className="absolute right-0 mt-2 w-52 rounded-xl border border-[#2d2d38] bg-[#14141b] shadow-2xl py-1 z-50">
+                <p className="px-3.5 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+                  Create
+                </p>
+                {[
+                  { id: 'video', label: 'Video', hint: 'Upload a longer video', Icon: Film },
+                  { id: 'clip', label: 'Clip', hint: 'Import a short', Icon: Clapperboard },
+                  { id: 'live', label: 'Go live', hint: 'Start a broadcast', Icon: Radio },
+                ].map(({ id, label, hint, Icon }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => {
+                      setCreateOpen(false)
+                      onCreate?.(id)
+                    }}
+                    className="w-full flex items-start gap-2.5 px-3.5 py-2 text-left hover:bg-[#1f1f2a]"
+                  >
+                    <Icon className="h-4 w-4 text-white mt-0.5 shrink-0" />
+                    <span>
+                      <span className="block text-xs font-semibold text-white">{label}</span>
+                      <span className="block text-[11px] text-zinc-500">{hint}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           {isAuthenticated ? (
             <>

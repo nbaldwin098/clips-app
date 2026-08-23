@@ -179,6 +179,41 @@ export function importUserLink(url, actor = null) {
   return { ok: true, item: normalizeItem(record), error: null }
 }
 
+export function publishLocalMedia(file, actor = null, { type = 'video' } = {}) {
+  if (!file) return { ok: false, item: null, error: 'Choose a video file.' }
+  const mediaUrl = URL.createObjectURL(file)
+  const kind = type === 'short' || type === 'clip' ? 'short' : 'video'
+  const record = {
+    id: `local_${Date.now()}`,
+    type: kind,
+    title: String(file.name || 'Untitled').replace(/\.[^.]+$/, '') || 'Untitled',
+    description: 'Uploaded from this device.',
+    sourceUrl: mediaUrl,
+    mediaUrl,
+    origin: 'upload',
+    storedBytes: file.size || 0,
+    createdAt: new Date().toISOString(),
+    engagement: {
+      completionRate: 0, loops: 0, shares: 0, comments: 0, saves: 0, earlySkips: 0, likes: 0,
+    },
+    views: 0,
+  }
+  if (actor?.id) {
+    record.creatorId = actor.id
+    record.userId = actor.id
+    record.handle = actor.handle
+  }
+  saveImport(record)
+  if (actor?.id) {
+    notifyFollowersOfUpload({
+      creatorId: actor.id,
+      handle: actor.handle,
+      title: record.title,
+    })
+  }
+  return { ok: true, item: normalizeItem(record), error: null }
+}
+
 export function recordContentView(id) {
   const views = readViews()
   views[id] = (views[id] || 0) + 1
