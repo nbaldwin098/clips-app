@@ -71,9 +71,6 @@ export default function SettingsPage({ onNavigate }) {
 
       <div className="mt-6 rounded-2xl border border-zinc-800 bg-[#121218] p-5 space-y-3">
         <p className="text-xs font-medium text-white">Watch history</p>
-        <p className="text-[11px] text-zinc-500">
-          Like YouTube: history improves Recommended. Turn off to stop saving new watches.
-        </p>
         <label className="flex items-center gap-2 text-sm text-zinc-200">
           <input
             type="checkbox"

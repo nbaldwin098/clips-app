@@ -24,7 +24,7 @@ export default function CheckoutPage({ onNavigate, creatorId }) {
 
   return (
     <div className="p-4 md:p-6 max-w-md mx-auto">
-      <PageHeader title="Premium" subtitle={`Fixed $${PREMIUM_PRICE}/month`} onBack={() => onNavigate?.('home')} />
+      <PageHeader title="Premium" onBack={() => onNavigate?.('home')} />
       <div className="rounded-2xl border border-zinc-800 bg-[#121218] p-5 space-y-4">
         <p className="text-3xl font-semibold text-white">${PREMIUM_PRICE}<span className="text-sm text-zinc-500 font-normal">/mo</span></p>
         <ul className="text-xs text-zinc-400 space-y-1 list-disc list-inside">
@@ -32,11 +32,9 @@ export default function CheckoutPage({ onNavigate, creatorId }) {
           <li>Creator emotes</li>
           <li>Support the channel</li>
         </ul>
-        <p className="text-[11px] text-zinc-500">Stripe: {configured ? `configured (${mode})` : 'not configured — local record only'}</p>
         <button type="button" disabled={!isAuthenticated} onClick={pay} className="w-full h-11 rounded-lg bg-white text-black text-sm font-medium disabled:opacity-40">
           {isAuthenticated ? `Subscribe $${PREMIUM_PRICE}/mo` : 'Sign in to subscribe'}
         </button>
-        {status && <p className="text-xs text-zinc-400">{status}</p>}
       </div>
     </div>
   )

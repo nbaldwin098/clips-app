@@ -216,7 +216,7 @@ function AppShell() {
       case 'creator-apply': return <CreatorApplyPage onOpenAuth={openAuth} />
       case 'advertise': return <AdvertisePage onNavigate={navigate} />
       case 'advertiser-portal': return <AdvertiserPortal onNavigate={navigate} />
-      case 'support': return <SupportPage onOpenAuth={openAuth} />
+      case 'support': return <SupportPage onOpenAuth={openAuth} onNavigate={navigate} />
       case 'admin': return <AdminPortal onNavigate={navigate} />
       case 'content-rules': return <ContentRulesPage />
       case 'history': return <HistoryPage onNavigate={navigate} onPlayItem={setActivePlayItem} />

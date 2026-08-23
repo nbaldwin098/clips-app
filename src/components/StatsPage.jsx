@@ -88,33 +88,23 @@ export default function StatsPage({ onNavigate }) {
   const numLiveStreamers = liveBoard.length
 
   const stats = [
-    { label: 'Total Users', value: totalUsers, icon: Users, hint: 'Registered platform accounts' },
-    { label: 'Total Views', value: totalViews.toLocaleString(), icon: Eye, hint: 'Verified watch impressions' },
-    { label: 'Total Likes', value: totalLikes.toLocaleString(), icon: ThumbsUp, hint: 'Positive community votes' },
-    { label: 'Total Dislikes', value: totalDislikes.toLocaleString(), icon: ThumbsDown, hint: 'Negative feedback votes' },
-    { label: 'Approved Creators', value: totalCreators, icon: ShieldCheck, hint: 'Verified & monetized creators' },
-    { label: 'Subscribers', value: totalSubscribers.toLocaleString(), icon: UserCheck, hint: 'Channel follower relationships' },
-    { label: 'Premium Subscribers', value: totalPremiumSubs.toLocaleString(), icon: Crown, hint: '$5/mo 100%-payout members' },
-    { label: 'Number of Clips', value: numClips, icon: Clapperboard, hint: 'Vertical short-form media' },
-    { label: 'Number of Videos', value: numVideos, icon: Film, hint: 'Standard 1080p long-form videos' },
-    { label: 'Active Live Streamers', value: numLiveStreamers, icon: Radio, hint: 'Broadcasting live right now' },
-    { label: 'Clips Catalog Duration', value: `${clipDurationHours} hrs`, icon: Clock, hint: 'Total length of all clips in hours' },
-    { label: 'Videos Catalog Duration', value: `${videoDurationHours} hrs`, icon: Clock, hint: 'Total length of all videos in hours' },
+    { label: 'Total Users', value: totalUsers, icon: Users, hint: 'Registered accounts' },
+    { label: 'Total Views', value: totalViews.toLocaleString(), icon: Eye, hint: 'Verified impressions' },
+    { label: 'Total Likes', value: totalLikes.toLocaleString(), icon: ThumbsUp, hint: 'Positive votes' },
+    { label: 'Total Dislikes', value: totalDislikes.toLocaleString(), icon: ThumbsDown, hint: 'Negative votes' },
+    { label: 'Approved Creators', value: totalCreators, icon: ShieldCheck, hint: 'Verified creators' },
+    { label: 'Subscribers', value: totalSubscribers.toLocaleString(), icon: UserCheck, hint: 'Followers' },
+    { label: 'Premium Subscribers', value: totalPremiumSubs.toLocaleString(), icon: Crown, hint: '$5/mo members' },
+    { label: 'Number of Clips', value: numClips, icon: Clapperboard, hint: '9:16 vertical clips' },
+    { label: 'Number of Videos', value: numVideos, icon: Film, hint: '16:9 standard videos' },
+    { label: 'Active Live Streamers', value: numLiveStreamers, icon: Radio, hint: 'Broadcasting live' },
+    { label: 'Clips Catalog Duration', value: `${clipDurationHours} hrs`, icon: Clock, hint: 'Total length of clips' },
+    { label: 'Videos Catalog Duration', value: `${videoDurationHours} hrs`, icon: Clock, hint: 'Total length of videos' },
   ]
 
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6">
       <PageHeader title="Platform Stats" onBack={() => onNavigate?.('home')} />
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs text-zinc-500">
-            Real-time verified platform telemetry and content catalog metrics. No fabricated numbers.
-          </p>
-        </div>
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 text-white text-[11px] font-semibold border border-white/20">
-          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" /> Live Telemetry
-        </div>
-      </div>
 
       {/* Grid of Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
@@ -137,13 +127,13 @@ export default function StatsPage({ onNavigate }) {
         ))}
       </div>
 
-      {/* Architectural Guarantee Box */}
+      {/* Transparency Guarantee Box */}
       <div className="rounded-2xl border border-zinc-800/80 bg-[#14141d] p-5 text-xs text-zinc-400 space-y-2">
         <div className="flex items-center gap-2 text-white font-semibold text-sm">
-          <Sparkles className="h-4 w-4 text-white" /> Zero-Storage & Pure Transparency Guarantee
+          <Sparkles className="h-4 w-4 text-white" /> Pure Transparency Guarantee
         </div>
         <p className="leading-relaxed">
-          Every number shown here is aggregated dynamically from real client interactions, registered users, and active zero-storage video links. Clips never fabricates creators, streams, subscriber counts, or view bot traffic.
+          Every number shown here is aggregated dynamically from real client interactions, registered users, and active video links. Clips never fabricates creators, streams, subscriber counts, or view bot traffic.
         </p>
       </div>
     </div>

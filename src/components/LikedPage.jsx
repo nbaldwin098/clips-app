@@ -15,9 +15,6 @@ export default function LikedPage({ onNavigate, onPlayItem }) {
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto">
       <PageHeader title="Liked" onBack={() => onNavigate?.('home')} />
-      <p className="text-xs text-zinc-500 mb-6">
-        All clips and videos you have given a thumbs up to ({likedItems.length}).
-      </p>
 
       {likedItems.length === 0 ? (
         <div className="rounded-2xl border border-zinc-800 bg-[#121218] px-6 py-16 text-center">

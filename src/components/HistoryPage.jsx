@@ -54,9 +54,6 @@ export default function HistoryPage({ onNavigate, onPlayItem }) {
           )
         }
       />
-      <p className="text-xs text-zinc-500 mb-6">
-        Clips and videos you have watched. Re-watches improve your personalized Recommended feed.
-      </p>
 
       {!isAuthenticated ? (
         <div className="rounded-2xl border border-zinc-800 bg-[#121218] px-6 py-14 text-center text-sm text-zinc-500">

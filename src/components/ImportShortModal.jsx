@@ -55,15 +55,12 @@ export default function ImportShortModal({ open, onClose }) {
           </button>
         </div>
         <div className="p-5 space-y-4">
-          <p className="text-sm text-slate-600">
-            Paste a public short link. Only metadata and a reference URL are stored — not the video file.
-          </p>
           <div className="relative">
             <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://www.tiktok.com/@… or youtube.com/shorts/…"
+              placeholder="Paste clip URL…"
               className="w-full h-10 rounded-lg border border-slate-200 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black"
             />
           </div>
@@ -95,9 +92,8 @@ export default function ImportShortModal({ open, onClose }) {
             onClick={handleParse}
             className="w-full h-10 rounded-lg bg-black text-white text-sm font-medium hover:bg-zinc-800"
           >
-            Import link
+            Import
           </button>
-          <p className="text-[11px] text-zinc-500 text-center">Paste a public YouTube Shorts, TikTok, or similar link.</p>
         </div>
       </div>
     </div>

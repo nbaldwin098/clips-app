@@ -151,7 +151,6 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
             </div>
             <h2 className="text-white text-lg font-bold">{focusedStream.displayName}</h2>
             <p className="text-zinc-400 text-sm mt-1 max-w-md">{focusedStream.title}</p>
-            <p className="text-zinc-600 text-xs mt-3">Live chat is available on the right. Video preview isn't part of this build.</p>
           </div>
           <div className="p-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#23232c]">
             <div className="text-sm text-zinc-400">

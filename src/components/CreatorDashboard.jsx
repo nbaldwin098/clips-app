@@ -10,7 +10,7 @@ export default function CreatorDashboard({ onOpenImport, onOpenUpload, onNavigat
   const live = lsGet(`live_state_${user?.id}`, null)
   return (
     <div className="p-4 md:p-6 max-w-[1000px] mx-auto">
-      <PageHeader title="Studio" subtitle="Manage clips, live, and channel" onBack={() => onNavigate('home')} />
+      <PageHeader title="Studio" onBack={() => onNavigate('home')} />
       <div className="grid sm:grid-cols-3 gap-3 mb-6">
         <button type="button" onClick={onOpenUpload} className="rounded-xl border border-zinc-800 bg-[#121218] p-4 text-left hover:border-white"><Upload className="h-5 w-5 text-white" /><p className="mt-2 text-sm text-zinc-100">Upload / create</p></button>
         <button type="button" onClick={onOpenImport} className="rounded-xl border border-zinc-800 bg-[#121218] p-4 text-left hover:border-white"><Link2 className="h-5 w-5 text-white" /><p className="mt-2 text-sm text-zinc-100">Import link</p></button>

@@ -40,7 +40,6 @@ export default function HomeFeed({ onPlayItem }) {
     <div className="p-4 md:p-6 max-w-[1200px] mx-auto w-full space-y-10">
       <div>
         <h1 className="text-lg font-semibold text-zinc-100">Recommended</h1>
-        <p className="text-xs text-zinc-500 mt-0.5">Videos · YouTube layout · Clips · Shorts layout</p>
       </div>
 
       {items.length === 0 ? (
@@ -49,7 +48,6 @@ export default function HomeFeed({ onPlayItem }) {
             <Sparkles className="h-6 w-6 text-white" />
           </div>
           <p className="mt-4 text-sm font-medium text-zinc-200">No posts yet</p>
-          <p className="mt-1.5 text-xs text-zinc-500 max-w-md mx-auto">Upload with a title and description from +.</p>
         </div>
       ) : (
         <>

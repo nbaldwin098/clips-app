@@ -2,7 +2,6 @@ import { useState, useRef } from 'react'
 import { X, Upload, Film } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { publishLocalMedia } from '../lib/contentService'
-import { isSupabaseConfigured } from '../lib/supabaseClient'
 
 export default function UploadModal({ open, onClose }) {
   const { user, isAuthenticated } = useAuth()
@@ -87,16 +86,11 @@ export default function UploadModal({ open, onClose }) {
           </button>
         </div>
         <div className="p-5 space-y-4">
-          <p className="text-sm text-zinc-400">
-            {isSupabaseConfigured()
-              ? 'Title + description required. File becomes a Clips link when Storage is up.'
-              : 'Title + description required. File stays on this device until Storage is connected.'}
-          </p>
           {!isAuthenticated && <p className="text-xs text-amber-400">Sign in first.</p>}
 
           <div className="flex gap-2">
-            <button type="button" onClick={() => setKind('short')} className={`flex-1 h-9 rounded-lg text-xs font-medium ${kind === 'short' ? 'bg-white text-black' : 'border border-zinc-700 text-zinc-400'}`}>Clip (Shorts-style)</button>
-            <button type="button" onClick={() => setKind('video')} className={`flex-1 h-9 rounded-lg text-xs font-medium ${kind === 'video' ? 'bg-white text-black' : 'border border-zinc-700 text-zinc-400'}`}>Video (YouTube-style)</button>
+            <button type="button" onClick={() => setKind('short')} className={`flex-1 h-9 rounded-lg text-xs font-medium ${kind === 'short' ? 'bg-white text-black' : 'border border-zinc-700 text-zinc-400'}`}>Clip (9:16 Vertical · 1080×1920)</button>
+            <button type="button" onClick={() => setKind('video')} className={`flex-1 h-9 rounded-lg text-xs font-medium ${kind === 'video' ? 'bg-white text-black' : 'border border-zinc-700 text-zinc-400'}`}>Video (16:9 Landscape · 1920×1080)</button>
           </div>
 
           <label className="block text-xs text-zinc-400">Title

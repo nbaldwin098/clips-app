@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { createTicket, listTickets } from '../lib/moderation'
 import { notifyNewTicket } from '../lib/notifications'
+import PageHeader from './PageHeader'
 
-export default function SupportPage({ onOpenAuth }) {
+export default function SupportPage({ onOpenAuth, onNavigate }) {
   const { user, isAuthenticated } = useAuth()
   const [subject, setSubject] = useState('')
   const [body, setBody] = useState('')
@@ -27,10 +28,7 @@ export default function SupportPage({ onOpenAuth }) {
 
   return (
     <div className="p-4 md:p-6 max-w-lg mx-auto space-y-6">
-      <div>
-        <h1 className="text-lg font-semibold text-white">Customer support</h1>
-        <p className="text-xs text-zinc-500 mt-1">Report issues, appeals, payment questions. Tickets go to the admin portal.</p>
-      </div>
+      <PageHeader title="Support" onBack={() => onNavigate?.('home')} />
 
       {!isAuthenticated ? (
         <p className="text-sm text-zinc-400">

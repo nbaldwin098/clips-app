@@ -6,7 +6,7 @@ export default function HelpPage() {
     },
     {
       q: 'How do I upload a video, clip, or go live?',
-      a: 'Use the white + in the navbar. Choose Video to upload a file, Clip to paste a short link, or Go live to start a broadcast. There is no separate sign-in button on Live.',
+      a: 'Use the + in the navbar. Choose Video to upload a file, Clip to paste a short link, or Go live to start a broadcast.',
     },
     {
       q: 'Can I watch without an account?',

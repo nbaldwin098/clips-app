@@ -206,7 +206,7 @@ export default function CollapsibleSidebar({
           )}
           <NavBtn collapsed={collapsed} active={currentView === 'creators'} onClick={() => go('creators')} icon={Users} label="All creators" />
           {!collapsed && recommendedCreators.length === 0 && (
-            <p className="px-2.5 text-[11px] text-zinc-600 pt-1">No approved creators yet.</p>
+            <p className="px-2.5 text-[11px] text-zinc-600 pt-1">No creators yet.</p>
           )}
           {!collapsed && recommendedCreators.length > 0 && (
             <>

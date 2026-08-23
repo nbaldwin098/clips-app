@@ -23,8 +23,7 @@ export default function SoundsPage({ onOpenAuth }) {
 
   return (
     <div className="p-4 md:p-6 max-w-[900px] mx-auto w-full">
-      <h1 className="text-lg font-semibold text-white">Sounds</h1>
-      <p className="text-xs text-zinc-500 mt-1 mb-4">Free library + create your own (you must own rights).</p>
+      <h1 className="text-lg font-semibold text-white mb-4">Sounds</h1>
       <form onSubmit={create} className="mb-6 rounded-xl border border-zinc-800 bg-[#121218] p-4 space-y-3">
         <p className="text-xs text-white flex items-center gap-1"><Plus className="h-3.5 w-3.5" /> Create sound</p>
         <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Sound name" className="w-full h-10 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100" />

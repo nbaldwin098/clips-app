@@ -11,7 +11,6 @@ export default function ExplorePage({ onPlayItem }) {
     <div className="p-4 md:p-6 max-w-[1400px] mx-auto space-y-6">
       <div>
         <h1 className="text-lg font-semibold text-zinc-100">Explore</h1>
-        <p className="text-xs text-zinc-500 mt-0.5">Search titles and tags from real imports</p>
       </div>
 
       <div className="relative max-w-xl">
@@ -26,7 +25,7 @@ export default function ExplorePage({ onPlayItem }) {
 
       {results.length === 0 ? (
         <p className="text-sm text-zinc-500 text-center py-12">
-          {q ? 'No matches.' : 'Nothing to explore yet — import content to fill the catalog.'}
+          {q ? 'No matches.' : 'No items found.'}
         </p>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">

@@ -24,7 +24,7 @@ export default function SubscriptionsPage({ onNavigate, onOpenAuth }) {
 
   return (
     <div className="p-4 md:p-6 max-w-[900px] mx-auto">
-      <PageHeader title="Subscriptions" subtitle="Channels you subscribe to" onBack={() => onNavigate?.('home')} />
+      <PageHeader title="Subscriptions" onBack={() => onNavigate?.('home')} />
       {channels.length === 0 ? (
         <div className="rounded-2xl border border-zinc-800 bg-[#121218] px-6 py-12 text-center">
           <Users className="h-8 w-8 text-white mx-auto" />

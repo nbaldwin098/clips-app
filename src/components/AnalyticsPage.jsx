@@ -18,7 +18,7 @@ export default function AnalyticsPage({ onNavigate }) {
   ]
   return (
     <div className="p-4 md:p-6 max-w-[1000px] mx-auto">
-      <PageHeader title="Analytics" subtitle="Watch time, engagement, growth" onBack={() => onNavigate?.('dashboard')} />
+      <PageHeader title="Analytics" onBack={() => onNavigate?.('dashboard')} />
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {cards.map((c) => (
           <div key={c.label} className="rounded-xl border border-zinc-800 bg-[#121218] p-4">
@@ -27,7 +27,6 @@ export default function AnalyticsPage({ onNavigate }) {
           </div>
         ))}
       </div>
-      <p className="mt-6 text-xs text-zinc-500">Premium is fixed at ${PREMIUM_PRICE}/month. Metrics from this device until API is connected.</p>
     </div>
   )
 }

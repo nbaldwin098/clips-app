@@ -29,12 +29,10 @@ export default function CreatorsPage() {
   return (
     <div className="p-4 md:p-6 max-w-[900px] mx-auto">
       <h1 className="text-lg font-semibold text-white">Creators</h1>
-      <p className="text-xs text-zinc-500 mt-1 mb-5">Recommended by the learning algorithm. Empty until creators are approved and post.</p>
       {ranked.length === 0 ? (
         <div className="rounded-2xl border border-zinc-800 bg-[#121218] px-6 py-16 text-center">
           <Users className="h-8 w-8 text-white mx-auto" />
-          <p className="mt-4 text-sm text-zinc-200">No creators to recommend yet</p>
-          <p className="mt-1.5 text-xs text-zinc-500 max-w-sm mx-auto">When people apply, get approved, and publish clips, they appear here ranked by engagement — not follower count.</p>
+          <p className="mt-4 text-sm text-zinc-200">No creators yet</p>
         </div>
       ) : (
         <div className="space-y-2">
