@@ -3,13 +3,15 @@ import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getHomeFeed } from '../lib/contentService'
 import { recordInteraction } from '../lib/algorithmEngine'
+import { useContentSyncTick } from '../lib/useContentSync'
 import ContentCard from './ContentCard'
 
 const PAGE = 4
 
 export default function HomeFeed({ onPlayItem }) {
   const { user } = useAuth()
-  const items = useMemo(() => getHomeFeed(user?.id || null), [user?.id])
+  const syncTick = useContentSyncTick()
+  const items = useMemo(() => getHomeFeed(user?.id || null), [user?.id, syncTick])
   const [offset, setOffset] = useState(0)
 
   const videos = items.filter((i) => i.type === 'video')

@@ -3,6 +3,7 @@ import { ImagePlus, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getPicsFeed, publishPhoto } from '../lib/picsService'
 import { isSupabaseConfigured } from '../lib/supabaseClient'
+import { subscribeContentUpdates } from '../lib/contentSync'
 
 /** Grid of all pics · click one → full-screen vertical scroll through the set */
 export default function PicsPage({ onOpenAuth }) {
@@ -15,6 +16,8 @@ export default function PicsPage({ onOpenAuth }) {
   const [viewerIndex, setViewerIndex] = useState(null) // null = closed
 
   const refresh = useCallback(() => setItems(getPicsFeed()), [])
+
+  useEffect(() => subscribeContentUpdates(refresh), [refresh])
 
   const onPick = async (e) => {
     const file = e.target.files?.[0]

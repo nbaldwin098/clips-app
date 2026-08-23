@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import { getExplore } from '../lib/contentService'
+import { useContentSyncTick } from '../lib/useContentSync'
 import ContentCard from './ContentCard'
 
 export default function ExplorePage({ onPlayItem }) {
   const [q, setQ] = useState('')
-  const results = useMemo(() => getExplore(q), [q])
+  const syncTick = useContentSyncTick()
+  const results = useMemo(() => getExplore(q), [q, syncTick])
 
   return (
     <div className="p-4 md:p-6 max-w-[1400px] mx-auto space-y-6">

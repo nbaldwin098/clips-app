@@ -2,15 +2,17 @@ import { useMemo } from 'react'
 import { Clock } from 'lucide-react'
 import { getSaved } from '../lib/storage'
 import { getById } from '../lib/contentService'
+import { useContentSyncTick } from '../lib/useContentSync'
 import ContentCard from './ContentCard'
 import PageHeader from './PageHeader'
 
 export default function WatchLaterPage({ onNavigate, onPlayItem }) {
-  const savedIds = useMemo(() => getSaved(), [])
+  const syncTick = useContentSyncTick()
+  const savedIds = useMemo(() => getSaved(), [syncTick])
 
   const savedItems = useMemo(() => {
     return savedIds.map((id) => getById(id)).filter(Boolean)
-  }, [savedIds])
+  }, [savedIds, syncTick])
 
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto">

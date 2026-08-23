@@ -49,6 +49,7 @@ import {
 } from './components/legal/LegalPages'
 import { startSession } from './lib/algorithmEngine'
 import { lsGet, lsSet } from './lib/storage'
+import { syncContentFromCloud } from './lib/contentSync'
 
 const KNOWN_VIEWS = new Set([
   'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
@@ -80,6 +81,20 @@ function AppShell() {
   useEffect(() => {
     if (isAuthenticated && user?.id) startSession(user.id)
   }, [isAuthenticated, user?.id])
+
+  // Pull the shared content catalog (videos/clips other devices & users have
+  // published) into the local cache on load and periodically thereafter.
+  // No-ops entirely when Supabase isn't configured.
+  useEffect(() => {
+    syncContentFromCloud()
+    const interval = setInterval(syncContentFromCloud, 45_000)
+    const onFocus = () => syncContentFromCloud()
+    window.addEventListener('focus', onFocus)
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('focus', onFocus)
+    }
+  }, [])
 
   const openAuth = () => setAuthOpen(true)
   const openImport = () => {
