@@ -117,13 +117,33 @@ export function getImports() {
  * incoming record overrides them, so a record this device is still
  * mid-publish on never gets clobbered by a stale/partial cloud copy.
  */
+function isStableUrl(url) {
+  const u = String(url || '')
+  return u.startsWith('https://') || u.startsWith('http://') || u.startsWith('data:')
+}
+
+function isDeadUrl(url) {
+  const u = String(url || '')
+  return !u || u.startsWith('blob:')
+}
+
+function pickMergedUrl(incoming, existing) {
+  if (isDeadUrl(incoming) && isStableUrl(existing)) return existing
+  return incoming || existing || ''
+}
+
 export function mergeImports(records) {
   if (!records?.length) return getImports()
   const local = getImports()
   const byId = new Map(local.map((r) => [r.id, r]))
   for (const rec of records) {
     if (!rec?.id) continue
-    byId.set(rec.id, { ...byId.get(rec.id), ...rec })
+    const prev = byId.get(rec.id) || {}
+    const next = { ...prev, ...rec }
+    next.mediaUrl = pickMergedUrl(rec.mediaUrl, prev.mediaUrl)
+    next.sourceUrl = pickMergedUrl(rec.sourceUrl, prev.sourceUrl || prev.mediaUrl)
+    next.thumbUrl = pickMergedUrl(rec.thumbUrl, prev.thumbUrl)
+    byId.set(rec.id, next)
   }
   const merged = [...byId.values()]
     .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))

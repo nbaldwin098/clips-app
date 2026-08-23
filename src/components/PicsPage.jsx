@@ -1,9 +1,71 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { ImagePlus, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { getPicsFeed, publishPhoto } from '../lib/picsService'
+import { getPicsFeed, publishPhoto, pickImmediatePhotoSrc, isHttpUrl, isDataImageUrl } from '../lib/picsService'
 import { isSupabaseConfigured } from '../lib/supabaseClient'
 import { subscribeContentUpdates } from '../lib/contentSync'
+import { getMediaBlobUrl } from '../lib/videoStorage'
+
+function PicImage({ pic, className, alt = '', full = false, fill = false }) {
+  const immediate = pickImmediatePhotoSrc(pic, { full })
+  const [recovered, setRecovered] = useState(null)
+  const [failed, setFailed] = useState(false)
+  const src = recovered || immediate
+
+  useEffect(() => {
+    let alive = true
+    let objectUrl = null
+
+    const recover = async () => {
+      if (isHttpUrl(immediate)) return
+      if (!full && isDataImageUrl(immediate)) return
+      const idbUrl = await getMediaBlobUrl(pic.id)
+      if (!alive || !idbUrl) return
+      objectUrl = idbUrl
+      setRecovered(idbUrl)
+    }
+    recover()
+
+    return () => {
+      alive = false
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [pic.id, immediate, full])
+
+  const onError = async () => {
+    const idbUrl = await getMediaBlobUrl(pic.id)
+    if (idbUrl && idbUrl !== src) {
+      setRecovered(idbUrl)
+      return
+    }
+    const fallback = [pic.thumbUrl, pic.mediaUrl, pic.sourceUrl].find(
+      (u) => u && u !== src && (isHttpUrl(u) || isDataImageUrl(u))
+    )
+    if (fallback) {
+      setRecovered(fallback)
+      return
+    }
+    setFailed(true)
+  }
+
+  if (failed || !src) {
+    return <div className={fill ? 'absolute inset-0 bg-zinc-800' : `bg-zinc-800 ${className || ''}`} />
+  }
+
+  if (fill) {
+    return (
+      <img
+        src={src}
+        alt={alt}
+        className="absolute inset-0 h-full w-full object-cover"
+        onError={onError}
+        decoding="async"
+      />
+    )
+  }
+
+  return <img src={src} alt={alt} className={className} onError={onError} decoding="async" />
+}
 
 /** Grid of all pics · click one → full-screen vertical scroll through the set */
 export default function PicsPage({ onOpenAuth }) {
@@ -75,7 +137,6 @@ export default function PicsPage({ onOpenAuth }) {
       <div className="sticky top-0 z-10 border-b border-zinc-800/80 bg-[#09090c]/95 backdrop-blur px-4 py-3 flex items-center justify-between gap-3">
         <div>
           <h1 className="text-lg font-semibold text-zinc-100">Pics</h1>
-          <p className="text-[11px] text-zinc-500">All photos · click one · scroll through</p>
         </div>
         <button type="button" onClick={openUpload} disabled={busy} className="h-9 px-3 rounded-lg bg-white text-black text-sm font-semibold disabled:opacity-60 inline-flex items-center gap-1.5">
           <ImagePlus className="h-4 w-4" />
@@ -97,25 +158,17 @@ export default function PicsPage({ onOpenAuth }) {
       ) : (
         /* tight mosaic — no titles, names, or captions */
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-0.5 p-0.5 pb-20">
-          {items.map((pic, index) => {
-            const src = pic.mediaUrl || pic.thumbUrl || pic.sourceUrl
-            return (
-              <button
-                key={pic.id}
-                type="button"
-                onClick={() => openAt(index)}
-                className="relative aspect-square overflow-hidden bg-zinc-900 group focus:outline-none"
-              >
-                <img
-                  src={src}
-                  alt=""
-                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  loading="lazy"
-                />
-                <div className="pointer-events-none absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-              </button>
-            )
-          })}
+          {items.map((pic, index) => (
+            <button
+              key={pic.id}
+              type="button"
+              onClick={() => openAt(index)}
+              className="relative block w-full aspect-square overflow-hidden bg-zinc-800 group focus:outline-none"
+            >
+              <PicImage key={pic.id} pic={pic} fill />
+              <div className="pointer-events-none absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+            </button>
+          ))}
         </div>
       )}
 
@@ -131,7 +184,7 @@ export default function PicsPage({ onOpenAuth }) {
             <X className="h-5 w-5" />
           </button>
           <p className="absolute top-5 left-1/2 -translate-x-1/2 z-30 text-[11px] text-white/50 pointer-events-none">
-            Scroll · {viewerIndex + 1}/{items.length}
+            {viewerIndex + 1}/{items.length}
           </p>
           <div
             ref={viewerRef}
@@ -144,14 +197,11 @@ export default function PicsPage({ onOpenAuth }) {
               if (idx !== viewerIndex && idx >= 0 && idx < items.length) setViewerIndex(idx)
             }}
           >
-            {items.map((pic) => {
-              const src = pic.mediaUrl || pic.thumbUrl || pic.sourceUrl
-              return (
-                <div key={pic.id} className="h-full w-full snap-start snap-always flex items-center justify-center shrink-0">
-                  <img src={src} alt="" className="max-h-full max-w-full object-contain" />
-                </div>
-              )
-            })}
+            {items.map((pic) => (
+              <div key={pic.id} className="relative h-full w-full snap-start snap-always flex items-center justify-center shrink-0 bg-black">
+                <PicImage pic={pic} full className="max-h-full max-w-full w-auto h-auto object-contain" />
+              </div>
+            ))}
           </div>
         </div>
       )}
