@@ -7,6 +7,7 @@ import { listAdApplications, approveAdApplication, rejectAdApplication } from '.
 import { lsGet, lsSet } from '../lib/storage'
 import { useAuth } from '../context/AuthContext'
 import { ORG, OPS_CHECKLIST, applicationsAreOpen, applicationsWindowLabel } from '../lib/orgConfig'
+import AdminPromos from './AdminPromos'
 
 export default function AdminPortal() {
   const { user } = useAuth()
@@ -76,7 +77,7 @@ export default function AdminPortal() {
         <button type="button" onClick={() => { adminLogout(); setUnlocked(false) }} className="text-xs text-zinc-500">Sign out admin</button>
       </div>
       <div className="flex flex-wrap gap-2 mb-4">
-        {[['ops','Ops'],['applications','Creator Apps'],['ads','Ad Apps'],['tickets','Support'],['users','Users'],['content','Content'],['live','Live']].map(([id,label]) => (
+        {[['ops','Ops'],['promos','Promos'],['applications','Creator Apps'],['ads','Ad Apps'],['tickets','Support'],['users','Users'],['content','Content'],['live','Live']].map(([id,label]) => (
           <button key={id} type="button" onClick={() => setTab(id)} className={`h-8 px-3 rounded-full text-xs ${tab===id?'bg-white text-black':'border border-zinc-800 text-zinc-400'}`}>{label}</button>
         ))}
       </div>
@@ -109,6 +110,8 @@ export default function AdminPortal() {
           </div>
         </div>
       )}
+
+      {tab === 'promos' && <AdminPromos />}
 
       {tab==='ads' && (
         <div className="space-y-3">

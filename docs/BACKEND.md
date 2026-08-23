@@ -32,6 +32,7 @@ isn't enough on its own, the exact pieces below all have to be in place:
    - `supabase/migrations/0004_profiles.sql` — profiles + admin/creator
      roles. After it runs, promote yourself once:
      `update public.profiles set role = 'admin', creator_status = 'approved' where id = '<your auth uuid>';`
+   - `supabase/migrations/0005_site_promos.sql` — admin promo banners visible on every device.
    None of these will error if run more than once (all use `if not
    exists` / `drop policy if exists`).
    Also set `VITE_ADMIN_CODE` (no default password ships in the app) and

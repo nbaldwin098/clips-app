@@ -2,48 +2,66 @@ import { useMemo } from 'react'
 import { Users } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getSubscriptionsForUser } from '../lib/engagement'
+import { getFollowingFeed } from '../lib/contentService'
 import { listIndexedUsers } from '../lib/moderation'
+import { useContentSyncTick } from '../lib/useContentSync'
 import PageHeader from './PageHeader'
+import MediaShelves from './MediaShelves'
 
-export default function SubscriptionsPage({ onNavigate, onOpenAuth }) {
+export default function SubscriptionsPage({ onNavigate, onOpenAuth, onPlayItem, onOpenPic, onOpenProfile }) {
   const { user, isAuthenticated } = useAuth()
+  const syncTick = useContentSyncTick()
   const channels = useMemo(() => {
     if (!user?.id) return []
     const ids = getSubscriptionsForUser(user.id)
     const index = Object.fromEntries(listIndexedUsers().map((u) => [u.id, u]))
     return ids.map((id) => index[id] || { id, displayName: 'Creator', handle: id.slice(0, 8) })
-  }, [user?.id])
+  }, [user?.id, syncTick])
+  const uploads = useMemo(() => (user?.id ? getFollowingFeed(user.id) : []), [user?.id, syncTick])
 
   if (!isAuthenticated) {
     return (
       <div className="p-6 max-w-md mx-auto text-sm text-zinc-400">
-        <button type="button" onClick={onOpenAuth} className="text-white font-medium">Sign in</button> to see subscriptions.
+        <button type="button" onClick={onOpenAuth} className="text-white font-medium">Sign in</button> to see following uploads.
       </div>
     )
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-[900px] mx-auto">
-      <PageHeader title="Subscriptions" subtitle="Channels you subscribe to" onBack={() => onNavigate?.('home')} />
+    <div className="p-4 md:p-6 max-w-[1200px] mx-auto space-y-8">
+      <PageHeader title="Following" subtitle="Uploads from people you follow" onBack={() => onNavigate?.('home')} />
+
       {channels.length === 0 ? (
         <div className="rounded-2xl border border-zinc-800 bg-[#121218] px-6 py-12 text-center">
           <Users className="h-8 w-8 text-white mx-auto" />
-          <p className="mt-4 text-sm text-zinc-200">No subscriptions yet</p>
+          <p className="mt-4 text-sm text-zinc-200">Not following anyone yet</p>
+          <p className="mt-1 text-xs text-zinc-500">Follow a creator on their profile or a watch page.</p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="flex gap-3 overflow-x-auto pb-1">
           {channels.map((c) => (
-            <div key={c.id} className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-[#121218] px-4 py-3">
-              <div className="h-10 w-10 rounded-full bg-white/20 text-white flex items-center justify-center text-sm font-semibold overflow-hidden">
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => onOpenProfile?.(c.handle, c.id)}
+              className="shrink-0 w-28 text-center"
+            >
+              <div className="h-12 w-12 mx-auto rounded-full bg-white/20 text-white flex items-center justify-center text-sm font-semibold overflow-hidden">
                 {c.avatarUrl ? <img src={c.avatarUrl} alt="" className="h-full w-full object-cover" /> : (c.displayName || '?')[0].toUpperCase()}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-zinc-100 truncate">{c.displayName}</p>
-                <p className="text-xs text-zinc-500">@{c.handle}</p>
-              </div>
-            </div>
+              <p className="mt-1.5 text-xs text-zinc-100 truncate">{c.displayName}</p>
+              <p className="text-[10px] text-zinc-500 truncate">@{c.handle}</p>
+            </button>
           ))}
         </div>
+      )}
+
+      {uploads.length === 0 ? (
+        channels.length > 0 ? (
+          <p className="text-sm text-zinc-500 text-center py-10">People you follow have not posted on this device yet.</p>
+        ) : null
+      ) : (
+        <MediaShelves items={uploads} onPlayItem={onPlayItem} onOpenPic={onOpenPic} />
       )}
     </div>
   )

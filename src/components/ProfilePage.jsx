@@ -3,7 +3,9 @@ import PageHeader from './PageHeader'
 import MediaShelves from './MediaShelves'
 import { useAuth } from '../context/AuthContext'
 import { listIndexedUsers } from '../lib/moderation'
-import { getCreatorContent, togglePin, isPinned } from '../lib/contentService'
+import { getCreatorPublicContent, togglePin, isPinned } from '../lib/contentService'
+import { listPlaylists } from '../lib/youtubeParity'
+import { lsGet } from '../lib/storage'
 import { getPicsFeed } from '../lib/picsService'
 import { getSubscriberCount, getCreatorRanking, toggleSubscribe, isSubscribed } from '../lib/engagement'
 import { useContentSyncTick } from '../lib/useContentSync'
@@ -22,7 +24,12 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
   const creatorId = found?.id || profileUserId || null
   const [tick, setTick] = useState(0)
   const syncTick = useContentSyncTick()
-  const items = useMemo(() => getCreatorContent(creatorId, handle), [creatorId, handle, tick, syncTick])
+  const items = useMemo(() => getCreatorPublicContent(creatorId, handle), [creatorId, handle, tick, syncTick])
+  const playlists = useMemo(() => (creatorId ? listPlaylists(creatorId) : []), [creatorId, tick, syncTick])
+  const liveEntry = useMemo(() => {
+    const board = (lsGet('live_board', []) || []).filter((b) => b.isLive)
+    return board.find((b) => (creatorId && b.userId === creatorId) || (handle && String(b.handle || '').toLowerCase() === handle)) || null
+  }, [creatorId, handle, tick, syncTick])
   const pics = useMemo(() => {
     return getPicsFeed().filter((p) => {
       if (creatorId && (p.creatorId === creatorId)) return true
@@ -33,7 +40,7 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
   const [tab, setTab] = useState('videos')
   const videos = items.filter((i) => i.type === 'video')
   const clips = items.filter((i) => i.type === 'short')
-  const tabItems = tab === 'pics' ? pics : tab === 'clips' ? clips : videos
+  const tabItems = tab === 'pics' ? pics : tab === 'clips' ? clips : tab === 'playlists' || tab === 'live' ? [] : videos
   const displayName = found?.displayName || handle || 'Creator'
   const avatar = found?.avatarUrl || (isSelf ? user?.avatarUrl : null)
   const banner = found?.bannerUrl || (isSelf ? user?.bannerUrl : null)
@@ -83,6 +90,8 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
           { id: 'videos', label: `Videos ${videos.length}` },
           { id: 'clips', label: `Clips ${clips.length}` },
           { id: 'pics', label: `Pics ${pics.length}` },
+          { id: 'live', label: liveEntry ? 'Live now' : 'Live' },
+          { id: 'playlists', label: `Playlists ${playlists.length}` },
         ].map((t) => (
           <button
             key={t.id}
@@ -98,7 +107,37 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
         ))}
       </div>
       <div className="px-4 mt-4">
-        {tabItems.length === 0 ? (
+        {tab === 'live' ? (
+          liveEntry ? (
+            <div className="rounded-2xl border border-zinc-800 bg-[#121218] p-5">
+              <p className="text-xs font-bold uppercase tracking-wider text-red-400">Live</p>
+              <p className="text-sm text-white mt-2">{liveEntry.title}</p>
+              {liveEntry.category ? <p className="text-xs text-zinc-500 mt-1">{liveEntry.category}</p> : null}
+              <p className="text-xs text-zinc-600 mt-3">Live video ingest is not connected. This is a presence listing only.</p>
+              <button type="button" onClick={() => onNavigate?.('live')} className="mt-4 h-9 px-4 rounded-lg bg-white text-black text-xs font-bold">Open Live</button>
+            </div>
+          ) : (
+            <p className="text-sm text-zinc-500 py-12 text-center border border-zinc-800 rounded-2xl bg-[#121218]">Not live right now.</p>
+          )
+        ) : tab === 'playlists' ? (
+          playlists.length === 0 ? (
+            <p className="text-sm text-zinc-500 py-12 text-center border border-zinc-800 rounded-2xl bg-[#121218]">No playlists yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {playlists.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => onNavigate?.('playlists', p.id)}
+                  className="w-full text-left rounded-xl border border-zinc-800 bg-[#121218] px-4 py-3"
+                >
+                  <p className="text-sm text-white">{p.title}</p>
+                  <p className="text-xs text-zinc-500">{(p.items || []).length} items</p>
+                </button>
+              ))}
+            </div>
+          )
+        ) : tabItems.length === 0 ? (
           <p className="text-sm text-zinc-500 py-12 text-center border border-zinc-800 rounded-2xl bg-[#121218]">Nothing in this tab yet.</p>
         ) : (
           <MediaShelves

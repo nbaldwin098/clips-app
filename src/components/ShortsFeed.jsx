@@ -17,7 +17,7 @@ function resolvePlayUrl(item) {
 }
 
 function ClipSlide({
-  item, active, muted, onToggleMute, user, onOpenAuth, onOpenProfile, onOpenSound,
+  item, active, muted, onToggleMute, user, onOpenAuth, onOpenProfile, onOpenSound, onStitch,
 }) {
   const videoRef = useRef(null)
   const [src, setSrc] = useState(() => resolvePlayUrl(item))
@@ -27,7 +27,10 @@ function ClipSlide({
   const [views, setViews] = useState(() => getViews(item.id))
   const [heartBurst, setHeartBurst] = useState(false)
   const [commentsOpen, setCommentsOpen] = useState(false)
+  const [progress, setProgress] = useState(0)
   const lastTap = useRef(0)
+  const lastTime = useRef(0)
+  const looped = useRef(false)
 
   useEffect(() => {
     let cancelled = false
@@ -159,6 +162,22 @@ function ClipSlide({
             loop
             muted={muted}
             preload={active ? 'auto' : 'metadata'}
+            onTimeUpdate={(e) => {
+              const el = e.target
+              if (!el?.duration) return
+              setProgress(el.currentTime / el.duration)
+              if (el.currentTime + 0.35 < lastTime.current && user?.id && !looped.current) {
+                looped.current = true
+                recordInteraction(user.id, {
+                  contentId: item.id,
+                  type: 'loop',
+                  tags: item.tags || [],
+                  creatorId: item.creatorId || item.userId,
+                })
+                setTimeout(() => { looped.current = false }, 400)
+              }
+              lastTime.current = el.currentTime
+            }}
             onError={() => {
               getMediaBlobUrl(item.id).then((idb) => {
                 if (idb) {
@@ -220,6 +239,20 @@ function ClipSlide({
         <button type="button" onClick={onToggleMute} className="h-11 w-11 rounded-full bg-black/45 backdrop-blur flex items-center justify-center text-white">
           {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
         </button>
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); if (!user?.id) { onOpenAuth?.(); return } onStitch?.(item) }}
+          className="flex flex-col items-center gap-1"
+          title="Stitch this clip"
+        >
+          <span className="h-11 w-11 rounded-full bg-black/45 backdrop-blur flex items-center justify-center text-white">
+            <Clapperboard className="h-5 w-5" />
+          </span>
+          <span className="text-[10px] text-white">Stitch</span>
+        </button>
+      </div>
+      <div className="absolute inset-x-0 bottom-0 z-10 h-0.5 bg-white/20">
+        <div className="h-full bg-white" style={{ width: `${Math.round((progress || 0) * 100)}%` }} />
       </div>
 
       {commentsOpen && (
@@ -239,7 +272,7 @@ function ClipSlide({
   )
 }
 
-export default function ShortsFeed({ onOpenAuth, onOpenProfile, onOpenSound, focusId }) {
+export default function ShortsFeed({ onOpenAuth, onOpenProfile, onOpenSound, onStitch, focusId }) {
   const { user } = useAuth()
   const syncTick = useContentSyncTick()
   const [tab, setTab] = useState('recommended')
@@ -328,6 +361,7 @@ export default function ShortsFeed({ onOpenAuth, onOpenProfile, onOpenSound, foc
                 onOpenAuth={onOpenAuth}
                 onOpenProfile={onOpenProfile}
                 onOpenSound={onOpenSound}
+                onStitch={onStitch}
               />
             </div>
           ))}

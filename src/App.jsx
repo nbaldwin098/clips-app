@@ -54,8 +54,10 @@ import { lsGet, lsSet } from './lib/storage'
 import { syncContentFromCloud } from './lib/contentSync'
 import { installRuntimeGuards } from './lib/selfHeal'
 import { isAdminSession } from './lib/moderation'
-import { getById } from './lib/contentService'
+import { getById, flushScheduledPublishes } from './lib/contentService'
 import { parseRoute, pushHash } from './lib/routes'
+import { syncPromotionsFromCloud } from './lib/promotions'
+import PromoBanner from './components/PromoBanner'
 
 const KNOWN_VIEWS = new Set([
   'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
@@ -76,6 +78,8 @@ function AppShell() {
   const [uploadOpen, setUploadOpen] = useState(false)
   const [uploadKind, setUploadKind] = useState('video')
   const [uploadSound, setUploadSound] = useState(null)
+  const [uploadStitch, setUploadStitch] = useState(null)
+  const [routeParams, setRouteParams] = useState({})
   const [checkoutOpen, setCheckoutOpen] = useState(false)
   const [checkoutTarget, setCheckoutTarget] = useState({ id: null, handle: '' })
   const [profileTarget, setProfileTarget] = useState({ handle: '', userId: null })
@@ -96,8 +100,17 @@ function AppShell() {
 
   useEffect(() => {
     syncContentFromCloud()
-    const interval = setInterval(syncContentFromCloud, 45_000)
-    const onFocus = () => syncContentFromCloud()
+    flushScheduledPublishes()
+    syncPromotionsFromCloud()
+    const interval = setInterval(() => {
+      syncContentFromCloud()
+      flushScheduledPublishes()
+      syncPromotionsFromCloud()
+    }, 45_000)
+    const onFocus = () => {
+      syncContentFromCloud()
+      flushScheduledPublishes()
+    }
     window.addEventListener('focus', onFocus)
     return () => {
       clearInterval(interval)
@@ -106,7 +119,8 @@ function AppShell() {
   }, [])
 
   const applyRoute = (hash) => {
-    const { kind, id } = parseRoute(hash)
+    const { kind, id, params } = parseRoute(hash)
+    setRouteParams(params || {})
     if (kind === 'watch' && id) {
       setMiniItem(null)
       setRouteId(id)
@@ -269,6 +283,12 @@ function AppShell() {
     setUploadKind('short')
     setUploadOpen(true)
   }
+  const openStitch = (item) => {
+    if (!isAuthenticated) { setAuthOpen(true); return }
+    setUploadStitch(item)
+    setUploadKind('short')
+    setUploadOpen(true)
+  }
 
   const focusLiveStream = (entry) => setFocusedLiveStream(entry)
   const selectLiveStreamFromSidebar = (entry) => {
@@ -335,7 +355,7 @@ function AppShell() {
       return <AdminPortal onNavigate={navigate} />
 
     switch (view) {
-      case 'home': return <HomeFeed onPlayItem={openWatch} onOpenPic={openPic} />
+      case 'home': return <HomeFeed onPlayItem={openWatch} onOpenPic={openPic} onNavigate={navigate} />
       case 'creators': return <CreatorsPage />
       case 'clips':
       case 'shorts':
@@ -344,6 +364,7 @@ function AppShell() {
             onOpenAuth={openAuth}
             onOpenProfile={openProfile}
             onOpenSound={openSound}
+            onStitch={openStitch}
             focusId={routeId}
           />
         )
@@ -351,12 +372,14 @@ function AppShell() {
         return (
           <WatchPage
             itemId={routeId}
+            startAt={Number(routeParams.t) || 0}
             onBack={() => navigate('home')}
             onPlayItem={openWatch}
             onOpenSound={openSound}
             onOpenTag={openTag}
             onOpenProfile={openProfile}
             onOpenAuth={openAuth}
+            onStitch={openStitch}
           />
         )
       case 'sound':
@@ -383,13 +406,13 @@ function AppShell() {
       case 'analytics': return <AnalyticsPage onNavigate={navigate} />
       case 'channel': return <ChannelPage onNavigate={navigate} />
       case 'profile': return <ProfilePage onNavigate={navigate} profileHandle={profileTarget.handle} profileUserId={profileTarget.userId} onPlayItem={openWatch} onOpenPic={openPic} />
-      case 'subscriptions': return <SubscriptionsPage onNavigate={navigate} onOpenAuth={openAuth} />
+      case 'subscriptions': return <SubscriptionsPage onNavigate={navigate} onOpenAuth={openAuth} onPlayItem={openWatch} onOpenPic={openPic} onOpenProfile={openProfile} />
       case 'playlists': return <PlaylistsPage onNavigate={navigate} onOpenAuth={openAuth} onPlayItem={openWatch} onOpenPic={openPic} playlistId={routeId} />
       case 'community': return <CommunityPage onNavigate={navigate} onOpenAuth={openAuth} />
       case 'studio-tools': return <StudioToolsPage onNavigate={navigate} />
       case 'stream-settings': return <StreamSettingsPage onNavigate={navigate} />
       case 'settings': return <SettingsPage onNavigate={navigate} />
-      case 'explore': return <ExplorePage onPlayItem={openWatch} onOpenPic={openPic} onOpenTag={openTag} initialQuery={searchQuery} />
+      case 'explore': return <ExplorePage onPlayItem={openWatch} onOpenPic={openPic} onOpenTag={openTag} initialQuery={searchQuery} onApplyQuery={setSearchQuery} />
       case 'pics': return <PicsPage onOpenAuth={openAuth} initialPicId={routeId} />
       case 'checkout': return <CheckoutPage onNavigate={navigate} creatorId={checkoutTarget.id} />
       case 'creator-apply': return <CreatorApplyPage onOpenAuth={openAuth} />
@@ -430,6 +453,7 @@ function AppShell() {
           if (view !== 'explore') navigate('explore')
         }}
       />
+      <PromoBanner onNavigate={navigate} onOpenWatch={openWatch} />
 
       <div className="flex flex-1 min-h-0 relative">
         <CollapsibleSidebar
@@ -460,11 +484,12 @@ function AppShell() {
       <ImportShortModal open={importOpen} onClose={() => setImportOpen(false)} />
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
       <UploadModal
-        key={`${uploadKind}-${uploadSound?.id || 'none'}`}
+        key={`${uploadKind}-${uploadSound?.id || 'none'}-${uploadStitch?.id || 'none'}`}
         open={uploadOpen}
         initialKind={uploadKind}
         initialSound={uploadSound}
-        onClose={() => { setUploadOpen(false); setUploadSound(null) }}
+        initialStitch={uploadStitch}
+        onClose={() => { setUploadOpen(false); setUploadSound(null); setUploadStitch(null) }}
         onOpenAuth={openAuth}
       />
       <CheckoutModal open={checkoutOpen} onClose={() => setCheckoutOpen(false)} creatorId={checkoutTarget.id} creatorHandle={checkoutTarget.handle} />

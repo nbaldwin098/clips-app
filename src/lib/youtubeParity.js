@@ -162,10 +162,19 @@ export function clearSearchHistory() { lsSet(K.searchHist, []) }
 export function listDrafts(userId) { return (lsGet(K.drafts, []) || []).filter((d) => d.userId === userId) }
 export function saveDraft(draft) {
   const list = lsGet(K.drafts, [])
-  const row = { id: id('draft'), ...draft, updatedAt: new Date().toISOString() }
-  list.unshift(row)
-  lsSet(K.drafts, list.slice(0, 100))
+  const existing = draft?.id ? list.find((d) => d.id === draft.id) : null
+  const row = {
+    id: existing?.id || id('draft'),
+    ...existing,
+    ...draft,
+    updatedAt: new Date().toISOString(),
+  }
+  const next = [row, ...list.filter((d) => d.id !== row.id)].slice(0, 100)
+  lsSet(K.drafts, next)
   return row
+}
+export function deleteDraft(draftId) {
+  lsSet(K.drafts, (lsGet(K.drafts, []) || []).filter((d) => d.id !== draftId))
 }
 export function scheduleContent(item) {
   const list = lsGet(K.scheduled, [])
@@ -175,6 +184,9 @@ export function scheduleContent(item) {
   return row
 }
 export function listScheduled(userId) { return (lsGet(K.scheduled, []) || []).filter((s) => s.userId === userId) }
+export function deleteScheduled(schedId) {
+  lsSet(K.scheduled, (lsGet(K.scheduled, []) || []).filter((s) => s.id !== schedId))
+}
 export function setChapters(contentId, chapters) {
   const all = lsGet(K.chapters, {})
   all[contentId] = chapters.map((c) => ({ title: String(c.title).slice(0, 100), t: Number(c.t) || 0 }))

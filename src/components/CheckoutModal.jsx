@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { X, Heart } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { PREMIUM_PRICE, addPremiumSub, isPremiumSub } from '../lib/engagement'
-import { isStripeConfigured, stripeMode } from '../lib/stripeConfig'
+import { PREMIUM_PRICE, isPremiumSub } from '../lib/engagement'
+import { startPremiumCheckout } from '../lib/checkout'
 
 export default function CheckoutModal({ open, onClose, creatorId, creatorHandle }) {
   const { user, isAuthenticated } = useAuth()
@@ -10,29 +10,18 @@ export default function CheckoutModal({ open, onClose, creatorId, creatorHandle 
   const [busy, setBusy] = useState(false)
   const target = creatorId || user?.id
   const already = user && target ? isPremiumSub(user.id, target) : false
-  const configured = isStripeConfigured()
 
   if (!open) return null
 
-  const pay = async () => {
+  const pay = () => {
     if (!isAuthenticated || !target) {
       setStatus('Sign in first.')
       return
     }
     setBusy(true)
-    setStatus('Processing…')
-    try {
-      addPremiumSub(user.id, target)
-      setStatus(
-        configured
-          ? `Premium active. Stripe (${stripeMode()}) charges when server PaymentIntent is connected.`
-          : `Premium recorded at $${PREMIUM_PRICE}/mo for this device.`
-      )
-    } catch (e) {
-      setStatus(String(e.message || e))
-    } finally {
-      setBusy(false)
-    }
+    const result = startPremiumCheckout({ already })
+    setStatus(result.message)
+    setBusy(false)
   }
 
   return (
@@ -46,7 +35,7 @@ export default function CheckoutModal({ open, onClose, creatorId, creatorHandle 
           <h2 className="text-sm font-semibold">Premium membership</h2>
         </div>
         <p className="mt-2 text-xs text-zinc-500">
-          {creatorHandle ? `Support @${creatorHandle}` : 'Support this channel'} · fixed ${PREMIUM_PRICE}/month
+          {creatorHandle ? `Support @${creatorHandle}` : 'Support this channel'} · ${PREMIUM_PRICE}/month list price
         </p>
         <p className="mt-4 text-3xl font-semibold text-white">
           ${PREMIUM_PRICE}<span className="text-sm text-zinc-500 font-normal">/mo</span>
@@ -54,7 +43,7 @@ export default function CheckoutModal({ open, onClose, creatorId, creatorHandle 
         <ul className="mt-3 text-xs text-zinc-400 space-y-1 list-disc list-inside">
           <li>Badge in chat</li>
           <li>Subscriber emotes</li>
-          <li>Creator keeps list price</li>
+          <li>No charge until Stripe PaymentIntent is live</li>
         </ul>
         {already ? (
           <p className="mt-4 text-sm text-white">You already have premium on this channel.</p>

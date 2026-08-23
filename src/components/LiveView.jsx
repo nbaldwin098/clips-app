@@ -5,6 +5,7 @@ import { lsGet, lsSet } from '../lib/storage'
 import { toggleSubscribe, isSubscribed, getSubscriberCount } from '../lib/engagement'
 import { notifyFollowersWentLive } from '../lib/notifications'
 import { cn } from '../lib/utils'
+import { LIVE_CATEGORIES } from '../lib/mediaMeta'
 
 function ensureStreamKey(userId) {
   const keyName = `stream_key_${userId || 'anon'}`
@@ -34,6 +35,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
   const [copied, setCopied] = useState('')
   const [isLive, setIsLive] = useState(false)
   const [title, setTitle] = useState('')
+  const [category, setCategory] = useState('Just chatting')
   const [liveNow, setLiveNow] = useState(() => (lsGet('live_board', []) || []).filter((b) => b.isLive))
   const [, setTick] = useState(0)
 
@@ -50,6 +52,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
     if (state?.isLive) {
       setIsLive(true)
       setTitle(state.title || '')
+      setCategory(state.category || 'Just chatting')
     }
   }, [user?.id])
 
@@ -81,6 +84,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
     const payload = {
       isLive: true,
       title: title.trim() || 'Live on Clips',
+      category,
       startedAt: new Date().toISOString(),
       userId: user.id,
       handle: user.handle,
@@ -150,7 +154,10 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
             </div>
             <h2 className="text-white text-lg font-bold">{focusedStream.displayName}</h2>
             <p className="text-zinc-400 text-sm mt-1 max-w-md">{focusedStream.title}</p>
-            <p className="text-zinc-600 text-xs mt-3">Chat is on this device only. Live video ingest is not connected yet — this is a presence stage, not a broadcast.</p>
+            {focusedStream.category ? <p className="text-zinc-500 text-xs mt-1">{focusedStream.category}</p> : null}
+            <p className="text-zinc-500 text-xs mt-4 max-w-lg">
+              Stream health: not connected. No ingest server is receiving video. Viewers see this presence stage only — not a live picture.
+            </p>
           </div>
           <div className="p-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#23232c]">
             <div className="text-sm text-zinc-400">
@@ -174,10 +181,11 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
                 type="button"
                 onClick={() => onOpenCheckout?.(focusedStream.userId, focusedStream.handle)}
                 disabled={!isAuthenticated || focusedStream.userId === user?.id}
-                className="flex items-center gap-1.5 h-9 px-4 rounded-lg text-xs font-bold bg-white text-black disabled:opacity-40"
+                className="flex items-center gap-1.5 h-9 px-3 rounded-lg text-xs text-zinc-500 hover:text-zinc-300 disabled:opacity-40"
+                title="Paid subscribe needs Stripe — not connected"
               >
                 <Gift className="h-3.5 w-3.5" />
-                Subscribe
+                Paid
               </button>
             </div>
           </div>
@@ -216,7 +224,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
                   <span className="text-[10px] text-zinc-500 ml-auto">{formatElapsed(s.startedAt)}</span>
                 </div>
                 <p className="text-sm text-zinc-100 font-medium truncate">{s.title}</p>
-                <p className="text-xs text-zinc-500 mt-0.5">@{s.handle}</p>
+                <p className="text-xs text-zinc-500 mt-0.5">@{s.handle}{s.category ? ` · ${s.category}` : ''}</p>
               </button>
             ))}
           </div>
@@ -235,6 +243,17 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
             placeholder="Stream title"
             className="w-full h-10 rounded-lg border border-[#272734] bg-[#0e0e10] px-3 text-sm text-zinc-100"
           />
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            disabled={isLive}
+            className="w-full h-10 rounded-lg border border-[#272734] bg-[#0e0e10] px-3 text-sm text-zinc-100"
+          >
+            {LIVE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <p className="text-[11px] text-zinc-500">
+            Ingest is not connected. Going live lists you here. It does not start a video stream, clip-from-live, VOD, or raids.
+          </p>
           <code className="block text-xs bg-[#0e0e10] border border-[#272734] rounded-lg px-3 py-2 text-zinc-300">{rtmpUrl}</code>
           <div className="flex gap-2">
             <code className="flex-1 text-xs bg-[#0e0e10] border border-[#272734] rounded-lg px-3 py-2 text-zinc-300 break-all">{streamKey}</code>

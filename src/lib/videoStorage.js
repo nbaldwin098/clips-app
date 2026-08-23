@@ -46,6 +46,22 @@ export async function storeMediaBlob(id, file) {
   }
 }
 
+export async function getMediaFile(id) {
+  try {
+    const db = await openDB()
+    if (!db) return null
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE_NAME, 'readonly')
+      const store = tx.objectStore(STORE_NAME)
+      const req = store.get(id)
+      req.onsuccess = () => resolve(req.result?.file || null)
+      req.onerror = () => resolve(null)
+    })
+  } catch {
+    return null
+  }
+}
+
 export async function getMediaBlobUrl(id) {
   try {
     const db = await openDB()

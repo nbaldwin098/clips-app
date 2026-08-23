@@ -26,7 +26,19 @@ export default function HelpPage() {
     },
     {
       q: 'How do I report copyright infringement?',
-      a: 'Email a complete DMCA notice to copyright@platform.internal. See Settings → Copyright & DMCA.',
+      a: 'Email a complete DMCA notice to copyright@calabi.us. See Settings → Copyright & DMCA.',
+    },
+    {
+      q: 'Watch page keys?',
+      a: 'k play/pause, j/l skip 10s, f fullscreen, m mute, c captions, n next, t theater, p picture-in-picture, 0–9 seek. Copy at time shares a resume link.',
+    },
+    {
+      q: 'Drafts, schedule, stitch, captions?',
+      a: 'Upload can save a draft, schedule a publish, add chapters, paste captions, and stitch a clip. Studio tools lists unpublished items. Captions are manual — there is no auto speech-to-text.',
+    },
+    {
+      q: 'Can I pay for premium now?',
+      a: 'Follow is free. Paid subscribe needs Stripe. Until a PaymentIntent is connected, checkout will not grant premium or charge a card.',
     },
   ]
 

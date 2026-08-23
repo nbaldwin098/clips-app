@@ -47,6 +47,7 @@ export const OPS_CHECKLIST = [
   'Confirm Render deploy is green',
   'Spot-check feed for stolen or abusive content',
   'Verify Supabase Storage free-tier usage',
+  'Review the live promo banner (Admin → Promos) — unpublish if the campaign ended',
 ]
 
 export const CONTENT_RULES_SHORT = [
