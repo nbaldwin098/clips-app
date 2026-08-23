@@ -3,7 +3,7 @@ import PageHeader from './PageHeader'
 import { useAuth } from '../context/AuthContext'
 import {
   getSubscriberCount, getCreatorAnalytics, getCreatorRanking,
-  listEmotes, addEmote, PREMIUM_PRICE,
+  listEmotes, addEmote, getMembershipPrice, setMembershipPrice,
 } from '../lib/engagement'
 import { Camera } from 'lucide-react'
 
@@ -12,6 +12,7 @@ export default function ChannelPage({ onNavigate }) {
   const a = getCreatorAnalytics(user?.id)
   const rank = getCreatorRanking(user?.id)
   const [code, setCode] = useState('')
+  const [price, setPrice] = useState(() => getMembershipPrice(user?.id))
   const [emotes, setEmotes] = useState(() => listEmotes(user?.id))
   const bannerRef = useRef(null)
   const avatarRef = useRef(null)
@@ -103,7 +104,22 @@ export default function ChannelPage({ onNavigate }) {
           Bio
           <textarea defaultValue={user?.bio || ''} onBlur={(e) => updateProfile({ bio: e.target.value.slice(0, 280) })} rows={3} maxLength={280} placeholder="Tell viewers about your channel" className="mt-1 w-full rounded-xl border border-zinc-800 bg-[#121218] px-3 py-2 text-sm text-zinc-100" />
         </label>
-        <p className="text-xs text-zinc-500">Fan premium is fixed at <span className="text-white">${PREMIUM_PRICE}/mo</span>.</p>
+        <label className="block text-xs text-white">
+          Membership list price (USD / month)
+          <input
+            type="number"
+            min="1"
+            max="50"
+            step="0.01"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            onBlur={() => { if (user?.id) setPrice(setMembershipPrice(user.id, price)) }}
+            className="mt-1 w-32 h-9 rounded-lg border border-zinc-800 bg-[#121218] px-3 text-sm text-zinc-100"
+          />
+          <span className="block mt-1 text-zinc-500 font-normal">
+            Checkout shows this number. A Stripe Payment Link still has its own price in the Stripe dashboard — match them. Payouts are not live yet.
+          </span>
+        </label>
         {user?.creatorStatus === 'approved' && (
           <div className="rounded-xl border border-zinc-800 bg-[#121218] p-4">
             <p className="text-xs text-white mb-2">Subscriber emotes</p>

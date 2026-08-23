@@ -1,6 +1,7 @@
 import { lsGet, lsSet } from './storage'
 import { notifyNewLike, notifyNewSubscriber, notifyPremium, notifyMentions } from './notifications'
 import { notifyContentChanged } from './contentSync'
+import { pushFollow, pushVote } from './graphSync'
 
 const LIKES = 'engagement_likes'
 const USER_VOTES = 'engagement_votes'
@@ -43,6 +44,7 @@ export function toggleVote(userId, contentId, direction) {
   if (mine[contentId] === 'up') liked.add(contentId)
   else liked.delete(contentId)
   lsSet('liked', [...liked])
+  pushVote(userId, contentId, mine[contentId] || null)
   if (becameUp) notifyNewLike(contentId, userId)
   notifyContentChanged()
   return cur
@@ -95,11 +97,29 @@ export function toggleSubscribe(userId, creatorId, { notify = true } = {}) {
   all[creatorId] = list
   lsSet(SUBS, all)
   const subscribed = list.includes(userId)
+  pushFollow(userId, creatorId, subscribed)
   if (notify && subscribed) notifyNewSubscriber(creatorId, userId)
   return subscribed
 }
 
 export const PREMIUM_PRICE = 5
+const PRICE_KEY = 'membership_price'
+
+export function getMembershipPrice(creatorId) {
+  const n = Number((lsGet(PRICE_KEY, {}) || {})[creatorId])
+  if (n >= 1 && n <= 50) return Math.round(n * 100) / 100
+  return PREMIUM_PRICE
+}
+
+export function setMembershipPrice(creatorId, amount) {
+  if (!creatorId) return PREMIUM_PRICE
+  const n = Number(amount)
+  if (!(n >= 1 && n <= 50)) return getMembershipPrice(creatorId)
+  const all = lsGet(PRICE_KEY, {}) || {}
+  all[creatorId] = Math.round(n * 100) / 100
+  lsSet(PRICE_KEY, all)
+  return all[creatorId]
+}
 
 export function isPremiumSub(userId, creatorId) {
   return (lsGet(`premium_${creatorId}`, []) || []).includes(userId)

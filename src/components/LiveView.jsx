@@ -5,6 +5,7 @@ import { lsGet, lsSet } from '../lib/storage'
 import { toggleSubscribe, isSubscribed, getSubscriberCount } from '../lib/engagement'
 import { notifyFollowersWentLive } from '../lib/notifications'
 import { cn } from '../lib/utils'
+import { LIVE_CATEGORIES } from '../lib/mediaMeta'
 
 function ensureStreamKey(userId) {
   const keyName = `stream_key_${userId || 'anon'}`
@@ -34,6 +35,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
   const [copied, setCopied] = useState('')
   const [isLive, setIsLive] = useState(false)
   const [title, setTitle] = useState('')
+  const [category, setCategory] = useState('Just chatting')
   const [liveNow, setLiveNow] = useState(() => (lsGet('live_board', []) || []).filter((b) => b.isLive))
   const [, setTick] = useState(0)
 
@@ -50,6 +52,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
     if (state?.isLive) {
       setIsLive(true)
       setTitle(state.title || '')
+      setCategory(state.category || 'Just chatting')
     }
   }, [user?.id])
 
@@ -81,6 +84,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
     const payload = {
       isLive: true,
       title: title.trim() || 'Live on Clips',
+      category,
       startedAt: new Date().toISOString(),
       userId: user.id,
       handle: user.handle,
@@ -128,8 +132,11 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
       <div>
         <h1 className="text-lg font-semibold text-white flex items-center gap-2">
           <Radio className="h-5 w-5 text-white" />
-          Live
+          Live lobby
         </h1>
+        <p className="mt-1 text-xs text-zinc-500">
+          Live video is not on yet. This page is a presence lobby — name, category, and chat. There is no picture, HLS, or OBS ingest.
+        </p>
       </div>
 
       {/* Focused Stage — only renders for a real selected live stream */}
@@ -137,9 +144,9 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
         <div className="rounded-2xl border border-[#23232c] bg-[#121218] overflow-hidden">
           <div className="relative aspect-video w-full bg-gradient-to-br from-[#1a1a24] to-[#0c0c10] flex flex-col items-center justify-center text-center p-6">
             <div className="absolute top-3 left-3 flex items-center gap-2">
-              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#eb0400] text-white font-extrabold text-xs uppercase tracking-wider live-badge-glow">
-                <Radio className="h-3.5 w-3.5 animate-pulse" />
-                LIVE
+              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-white/15 text-white font-extrabold text-xs uppercase tracking-wider">
+                <Radio className="h-3.5 w-3.5" />
+                Lobby
               </span>
               <span className="px-2 py-1 rounded bg-black/50 text-zinc-300 text-xs font-medium">
                 {formatElapsed(focusedStream.startedAt)}
@@ -150,7 +157,10 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
             </div>
             <h2 className="text-white text-lg font-bold">{focusedStream.displayName}</h2>
             <p className="text-zinc-400 text-sm mt-1 max-w-md">{focusedStream.title}</p>
-            <p className="text-zinc-600 text-xs mt-3">Live chat is available on the right. Video preview isn't part of this build.</p>
+            {focusedStream.category ? <p className="text-zinc-500 text-xs mt-1">{focusedStream.category}</p> : null}
+            <p className="text-zinc-500 text-xs mt-4 max-w-lg">
+              Stream health: not connected. No ingest server is receiving video. Viewers see this presence stage only — not a live picture.
+            </p>
           </div>
           <div className="p-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#23232c]">
             <div className="text-sm text-zinc-400">
@@ -174,10 +184,11 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
                 type="button"
                 onClick={() => onOpenCheckout?.(focusedStream.userId, focusedStream.handle)}
                 disabled={!isAuthenticated || focusedStream.userId === user?.id}
-                className="flex items-center gap-1.5 h-9 px-4 rounded-lg text-xs font-bold bg-white text-black disabled:opacity-40"
+                className="flex items-center gap-1.5 h-9 px-3 rounded-lg text-xs text-zinc-500 hover:text-zinc-300 disabled:opacity-40"
+                title="Paid subscribe needs Stripe — not connected"
               >
                 <Gift className="h-3.5 w-3.5" />
-                Subscribe
+                Paid
               </button>
             </div>
           </div>
@@ -187,14 +198,14 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
       {/* Real "Live Now" list */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-zinc-200">Live now ({liveNow.length})</h2>
+          <h2 className="text-sm font-semibold text-zinc-200">In the lobby ({liveNow.length})</h2>
         </div>
 
         {liveNow.length === 0 ? (
           <div className="rounded-2xl border border-[#23232c] bg-[#121218] px-6 py-10 text-center">
             <Radio className="h-6 w-6 mx-auto text-white" />
-            <p className="mt-4 text-sm text-zinc-200">No one is live right now</p>
-            <p className="mt-1 text-xs text-zinc-500">Start a broadcast from the + button. Streams appear here when someone is live.</p>
+            <p className="mt-4 text-sm text-zinc-200">No one is in the lobby</p>
+            <p className="mt-1 text-xs text-zinc-500">Approved creators can list themselves here. That is not a video stream.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -212,11 +223,11 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
               >
                 <div className="flex items-center gap-2 mb-2">
                   <span className="h-2 w-2 rounded-full bg-[#eb0400] animate-pulse" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-red-400">LIVE</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Lobby</span>
                   <span className="text-[10px] text-zinc-500 ml-auto">{formatElapsed(s.startedAt)}</span>
                 </div>
                 <p className="text-sm text-zinc-100 font-medium truncate">{s.title}</p>
-                <p className="text-xs text-zinc-500 mt-0.5">@{s.handle}</p>
+                <p className="text-xs text-zinc-500 mt-0.5">@{s.handle}{s.category ? ` · ${s.category}` : ''}</p>
               </button>
             ))}
           </div>
@@ -226,7 +237,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
       {isAuthenticated && approved && (
         <section className="rounded-2xl border border-[#23232c] bg-[#121218] p-5 space-y-3">
           <h2 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
-            <Key className="h-4 w-4 text-white" /> Go live
+            <Key className="h-4 w-4 text-white" /> List me in the lobby
           </h2>
           <input
             value={title}
@@ -235,7 +246,19 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
             placeholder="Stream title"
             className="w-full h-10 rounded-lg border border-[#272734] bg-[#0e0e10] px-3 text-sm text-zinc-100"
           />
-          <code className="block text-xs bg-[#0e0e10] border border-[#272734] rounded-lg px-3 py-2 text-zinc-300">{rtmpUrl}</code>
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            disabled={isLive}
+            className="w-full h-10 rounded-lg border border-[#272734] bg-[#0e0e10] px-3 text-sm text-zinc-100"
+          >
+            {LIVE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <p className="text-[11px] text-zinc-500">
+            Ingest is not connected. This lists you in the lobby. It does not start a video stream, clip-from-live, VOD, or raids. The key below is unused until a real ingest server exists.
+          </p>
+          <p className="text-[11px] text-zinc-600">Ingest URL — reserved, not receiving video</p>
+          <code className="block text-xs bg-[#0e0e10] border border-[#272734] rounded-lg px-3 py-2 text-zinc-500">{rtmpUrl}</code>
           <div className="flex gap-2">
             <code className="flex-1 text-xs bg-[#0e0e10] border border-[#272734] rounded-lg px-3 py-2 text-zinc-300 break-all">{streamKey}</code>
             <button
@@ -248,7 +271,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
           </div>
           {!isLive ? (
             <button type="button" onClick={goLive} className="inline-flex items-center gap-2 h-11 px-5 rounded-lg bg-red-600 text-white text-sm font-medium">
-              <Play className="h-4 w-4" /> Go live
+              <Play className="h-4 w-4" /> List me
             </button>
           ) : (
             <button type="button" onClick={endLive} className="inline-flex items-center gap-2 h-11 px-5 rounded-lg border border-zinc-600 text-zinc-200 text-sm">

@@ -48,7 +48,7 @@ function timeAgo(iso) {
   return `${Math.floor(hours / 24)}d ago`
 }
 
-export default function NotificationsPage({ onNavigate }) {
+export default function NotificationsPage({ onNavigate, onOpenWatch }) {
   const { user, isAuthenticated } = useAuth()
   const [items, setItems] = useState([])
 
@@ -99,7 +99,8 @@ export default function NotificationsPage({ onNavigate }) {
                 type="button"
                 onClick={() => {
                   markNotificationRead(user.id, it.id)
-                  if (it.view && onNavigate) onNavigate(it.view)
+                  if (it.contentId && onOpenWatch) onOpenWatch(it.contentId)
+                  else if (it.view && onNavigate) onNavigate(it.view)
                 }}
                 className={cn(
                   'w-full text-left rounded-xl border px-4 py-3 transition-colors',

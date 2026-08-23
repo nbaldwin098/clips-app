@@ -18,6 +18,7 @@ import {
   Shield,
   Scale,
   BookOpen,
+  ListVideo,
   LifeBuoy,
   ShieldCheck,
   X,
@@ -141,11 +142,11 @@ export default function CollapsibleSidebar({
           {!collapsed && (
             <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-1 flex items-center gap-1.5">
               <span className="h-1.5 w-1.5 rounded-full bg-[#eb0400]" />
-              Live now ({liveNow.length})
+              Lobby ({liveNow.length})
             </p>
           )}
           {liveNow.length === 0 ? (
-            !collapsed && <p className="px-2.5 text-[11px] text-zinc-600">No one is live right now.</p>
+            !collapsed && <p className="px-2.5 text-[11px] text-zinc-600">Live video is not on yet. Lobby is empty.</p>
           ) : (
             liveNow.map((s) => (
               <button
@@ -156,7 +157,7 @@ export default function CollapsibleSidebar({
                   'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left transition-colors',
                   focusedStreamUserId === s.userId ? 'bg-[#1f1f28]' : 'hover:bg-[#181820]'
                 )}
-                title={collapsed ? `${s.displayName} · LIVE` : undefined}
+                title={collapsed ? `${s.displayName} · Lobby` : undefined}
               >
                 <span className="relative shrink-0">
                   <span className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold border-2 border-[#eb0400] bg-white/10 text-white">
@@ -182,12 +183,13 @@ export default function CollapsibleSidebar({
             <NavBtn collapsed={collapsed} active={currentView === 'history'} onClick={() => go('history')} icon={History} label="History" />
             <NavBtn collapsed={collapsed} active={currentView === 'watch-later'} onClick={() => go('watch-later')} icon={Clock} label="Watch later" />
             <NavBtn collapsed={collapsed} active={currentView === 'liked'} onClick={() => go('liked')} icon={ThumbsUp} label="Liked" />
+            <NavBtn collapsed={collapsed} active={currentView === 'playlists'} onClick={() => go('playlists')} icon={ListVideo} label="Playlists" />
           </div>
         )}
 
         {!collapsed && (
           <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
-            <NavBtn collapsed={collapsed} active={currentView === 'subscriptions'} onClick={() => go('subscriptions')} icon={Users} label="Subscriptions" />
+            <NavBtn collapsed={collapsed} active={currentView === 'subscriptions'} onClick={() => go('subscriptions')} icon={Users} label="Following" />
           </div>
         )}
 

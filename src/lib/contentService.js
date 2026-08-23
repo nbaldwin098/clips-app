@@ -1,10 +1,15 @@
-import { getImports, saveImport, parseExternalShort, lsGet, lsSet } from './storage'
+import { getImports, saveImport, updateImport, removeImport, parseExternalShort, lsGet, lsSet } from './storage'
 import { rankForUser } from './algorithmEngine'
 import { notifyFollowersOfUpload } from './notifications'
 import { storeMediaBlob, processVideoFile } from './videoStorage'
 import { uploadVideoToSupabase } from './mediaUpload'
 import { isSupabaseConfigured } from './supabaseClient'
 import { pushContentRecord, notifyContentChanged } from './contentSync'
+import { getSubscriptionsForUser } from './engagement'
+import { getPicsFeed } from './picsService'
+import { mergeTags, isReleased } from './mediaMeta'
+import { getReferenceShort } from './referenceShorts'
+import { setChapters, setCaptions, deleteScheduled } from './youtubeParity'
 
 const VIEW_KEY = 'clips_content_views'
 const PIN_KEY = 'clips_pinned_by_creator'
@@ -76,6 +81,14 @@ export function getCreatorContent(creatorId, handle = null) {
   return sortNewestWithPins(filtered, creatorId)
 }
 
+export function getCreatorPublicContent(creatorId, handle = null) {
+  return getCreatorContent(creatorId, handle).filter((i) => isReleased(i))
+}
+
+export function getCreatorUnreleased(creatorId, handle = null) {
+  return getCreatorContent(creatorId, handle).filter((i) => !isReleased(i))
+}
+
 // Defensively strip raw storage/database error text that may have been saved
 // into `description` by an earlier build, so it never renders on a card.
 const LEAKED_ERROR_PATTERN = /row-level security|violates|local only\s*—/i
@@ -97,7 +110,7 @@ export function normalizeItem(raw) {
     origin: raw.origin || raw.platform || 'user',
     storedBytes: raw.storedBytes ?? 0,
     durationSec: raw.durationSec || 0,
-    tags: raw.tags || [],
+    tags: Array.isArray(raw.tags) ? raw.tags : [],
     views: raw.views || 0,
     creatorId: raw.creatorId || raw.userId,
     userId: raw.userId || raw.creatorId,
@@ -108,12 +121,23 @@ export function normalizeItem(raw) {
     hosted: !!raw.hosted,
     soundId: raw.soundId || raw.engagement?.soundId || null,
     soundTitle: raw.soundTitle || raw.engagement?.soundTitle || null,
+    stitchOf: raw.stitchOf || null,
+    chapters: Array.isArray(raw.chapters) ? raw.chapters : [],
+    captionsText: raw.captionsText || '',
+    scheduledFor: raw.scheduledFor || null,
+    status: raw.status || 'published',
+    category: raw.category || null,
+    publishedAt: raw.publishedAt || null,
   }
+}
+
+function onlyReleased(items) {
+  return (items || []).filter((i) => isReleased(i))
 }
 
 export function getHomeFeed(userId = null) {
   const imports = getImports().map((i) => ({ ...i, type: i.type || 'short' }))
-  let merged = withViewCounts(imports.map(normalizeItem)).filter((i) => i.type !== 'pic')
+  let merged = onlyReleased(withViewCounts(imports.map(normalizeItem)).filter((i) => i.type !== 'pic'))
   merged = merged.map((i) => {
     const cid = i.creatorId || i.userId
     return { ...i, pinned: cid ? isPinned(cid, i.id) : false }
@@ -137,29 +161,138 @@ export function getHomeFeed(userId = null) {
 }
 
 export function getShortsFeed(userId = null) {
-  return getHomeFeed(userId).filter((i) => i.type === 'short')
+  const shorts = getHomeFeed(null).filter((i) => i.type === 'short')
+  if (userId && typeof rankForUser === 'function') {
+    try { return rankForUser(shorts, userId) } catch { return shorts }
+  }
+  return shorts
 }
 
-export function getExplore(query = '') {
-  const all = withViewCounts(getImports().map(normalizeItem)).filter((i) => i.type !== 'pic')
-  const q = query.trim().toLowerCase()
-  if (!q) return sortNewestWithPins(all, null)
-  return sortNewestWithPins(
-    all.filter(
-      (i) =>
-        i.title.toLowerCase().includes(q) ||
-        i.description.toLowerCase().includes(q) ||
-        String(i.handle || '').toLowerCase().includes(q) ||
-        String(i.soundTitle || '').toLowerCase().includes(q) ||
-        (i.tags || []).some((t) => String(t).toLowerCase().includes(q))
-    ),
-    null
+function matchesQuery(i, q) {
+  if (!q) return true
+  return (
+    i.title.toLowerCase().includes(q) ||
+    (i.description || '').toLowerCase().includes(q) ||
+    String(i.handle || '').toLowerCase().includes(q) ||
+    String(i.soundTitle || '').toLowerCase().includes(q) ||
+    (i.tags || []).some((t) => String(t).toLowerCase().includes(q))
   )
+}
+
+function filterByKind(items, kind = 'all') {
+  if (kind === 'video') return items.filter((i) => i.type === 'video')
+  if (kind === 'clip' || kind === 'short') return items.filter((i) => i.type === 'short')
+  if (kind === 'pic') return items.filter((i) => i.type === 'pic')
+  return items
+}
+
+export function getExplore(query = '', kind = 'all') {
+  const catalog = onlyReleased(withViewCounts(getImports().map(normalizeItem)))
+  const pics = getPicsFeed().map((p) => normalizeItem({ ...p, type: 'pic' })).filter(Boolean)
+  const seen = new Set()
+  const all = []
+  for (const i of [...catalog, ...pics]) {
+    if (!i?.id || seen.has(i.id)) continue
+    seen.add(i.id)
+    all.push(i)
+  }
+  const q = query.trim().toLowerCase()
+  const filtered = filterByKind(all, kind).filter((i) => matchesQuery(i, q))
+  return sortNewestWithPins(filtered, null)
+}
+
+export function getRelated(item, limit = 8) {
+  if (!item?.id) return []
+  const pool = onlyReleased(withViewCounts(getImports().map(normalizeItem))).filter((i) => i.id !== item.id && i.type !== 'pic')
+  const tags = new Set((item.tags || []).map((t) => String(t).toLowerCase()))
+  const scored = pool.map((i) => {
+    let score = 0
+    if (i.type === item.type) score += 3
+    if (item.soundId && i.soundId === item.soundId) score += 6
+    if (item.soundTitle && i.soundTitle && i.soundTitle === item.soundTitle) score += 4
+    if (item.handle && i.handle && String(i.handle).toLowerCase() === String(item.handle).toLowerCase()) score += 2
+    for (const t of i.tags || []) {
+      if (tags.has(String(t).toLowerCase())) score += 2
+    }
+    return { i, score }
+  })
+  return scored
+    .sort((a, b) => b.score - a.score || new Date(b.i.createdAt) - new Date(a.i.createdAt))
+    .slice(0, limit)
+    .map((x) => x.i)
+}
+
+export function getMoreFromCreator(item, limit = 8) {
+  if (!item) return []
+  return getCreatorPublicContent(item.creatorId, item.handle)
+    .filter((i) => i.id !== item.id && i.type !== 'pic')
+    .slice(0, limit)
+}
+
+export function getWatchQueue(item) {
+  if (!item) return { prev: null, next: null, queue: [] }
+  const more = getMoreFromCreator(item, 20)
+  const related = getRelated(item, 12)
+  const seen = new Set([item.id])
+  const queue = []
+  for (const i of [...more, ...related]) {
+    if (!i || seen.has(i.id)) continue
+    seen.add(i.id)
+    queue.push(i)
+  }
+  const creatorVids = getCreatorPublicContent(item.creatorId, item.handle).filter((i) => i.type === item.type)
+  const idx = creatorVids.findIndex((i) => i.id === item.id)
+  const prev = idx >= 0 ? (creatorVids[idx + 1] || null) : null
+  const next = (idx > 0 ? creatorVids[idx - 1] : null) || queue[0] || related[0] || null
+  return { prev, next, queue }
+}
+
+export function getBySound(soundId, soundTitle) {
+  const all = onlyReleased(withViewCounts(getImports().map(normalizeItem))).filter((i) => i.type !== 'pic')
+  return all.filter((i) => {
+    if (soundId && i.soundId === soundId) return true
+    if (soundTitle && i.soundTitle && String(i.soundTitle) === String(soundTitle)) return true
+    return false
+  })
+}
+
+export function getByTag(tag) {
+  const t = String(tag || '').trim().toLowerCase().replace(/^#/, '')
+  if (!t) return []
+  const all = onlyReleased(withViewCounts(getImports().map(normalizeItem)))
+  return all.filter((i) => {
+    if ((i.tags || []).some((x) => String(x).toLowerCase() === t)) return true
+    return String(i.title || '').toLowerCase().includes(t)
+  })
+}
+
+export function getFollowingFeed(userId, { shortsOnly = false } = {}) {
+  if (!userId) return []
+  const ids = new Set(getSubscriptionsForUser(userId))
+  const feed = getHomeFeed(userId).filter((i) => ids.has(i.creatorId) || ids.has(i.userId))
+  return shortsOnly ? feed.filter((i) => i.type === 'short') : feed
+}
+
+export function listCatalogTags(limit = 24) {
+  const counts = {}
+  for (const i of getImports().map(normalizeItem)) {
+    for (const t of i.tags || []) {
+      const key = String(t || '').trim()
+      if (!key) continue
+      counts[key] = (counts[key] || 0) + 1
+    }
+  }
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([tag, count]) => ({ tag, count }))
 }
 
 export function getById(id) {
   const fromImport = getImports().find((i) => i.id === id)
   if (fromImport) return normalizeItem(withViewCounts([fromImport])[0])
+  const reference = getReferenceShort(id)
+  if (reference) return { ...reference }
   return null
 }
 
@@ -201,7 +334,10 @@ export function importUserLink(url, actor = null) {
   return { ok: true, item: normalizeItem(record), error: null }
 }
 
-export async function publishLocalMedia(file, actor = null, { type = null, title = null, description = null, sound = null } = {}) {
+export async function publishLocalMedia(file, actor = null, {
+  type = null, title = null, description = null, sound = null, tags = [],
+  stitchOf = null, chapters = [], captionsText = '', scheduledFor = null, status = 'published',
+} = {}) {
   if (!file) return { ok: false, item: null, error: 'Choose a video file.' }
   try {
     const processed = await processVideoFile(file)
@@ -237,6 +373,13 @@ export async function publishLocalMedia(file, actor = null, { type = null, title
       String(file.name || 'Untitled').replace(/\.[^.]+$/, '') ||
       'Untitled'
     const finalDescription = description != null ? String(description).trim() : ''
+    const cleanTags = mergeTags(tags, finalDescription)
+    const cleanChapters = (Array.isArray(chapters) ? chapters : [])
+      .map((c) => ({ title: String(c.title || '').trim().slice(0, 80), t: Number(c.t) || 0 }))
+      .filter((c) => c.title)
+    const when = scheduledFor ? new Date(scheduledFor).getTime() : 0
+    const isFuture = when && when > Date.now()
+    const finalStatus = status === 'draft' ? 'draft' : (isFuture ? 'scheduled' : 'published')
 
     const record = {
       id,
@@ -252,6 +395,7 @@ export async function publishLocalMedia(file, actor = null, { type = null, title
       durationSec: processed.durationSec,
       width: processed.width,
       height: processed.height,
+      tags: cleanTags,
       createdAt: new Date().toISOString(),
       engagement: {
         completionRate: 0, loops: 0, shares: 0, comments: 0, saves: 0, earlySkips: 0, likes: 0,
@@ -261,6 +405,12 @@ export async function publishLocalMedia(file, actor = null, { type = null, title
       views: 0,
       soundId: sound?.id || null,
       soundTitle: sound?.title || null,
+      stitchOf: stitchOf || null,
+      chapters: cleanChapters,
+      captionsText: String(captionsText || '').slice(0, 20000),
+      scheduledFor: isFuture ? new Date(when).toISOString() : null,
+      status: finalStatus,
+      publishedAt: finalStatus === 'published' ? new Date().toISOString() : null,
     }
 
     if (actor?.id) {
@@ -270,10 +420,14 @@ export async function publishLocalMedia(file, actor = null, { type = null, title
     }
 
     saveImport(record)
+    if (cleanChapters.length) setChapters(id, cleanChapters)
+    if (record.captionsText) setCaptions(id, [{ lang: 'en', text: record.captionsText }])
     notifyContentChanged()
-    pushContentRecord(record, actor).catch(() => {})
+    if (finalStatus === 'published') {
+      pushContentRecord(record, actor).catch(() => {})
+    }
 
-    if (actor?.id) {
+    if (actor?.id && finalStatus === 'published') {
       notifyFollowersOfUpload({
         creatorId: actor.id,
         handle: actor.handle,
@@ -281,10 +435,52 @@ export async function publishLocalMedia(file, actor = null, { type = null, title
       })
     }
 
-    return { ok: true, item: normalizeItem(record), error: null, hosted }
+    return { ok: true, item: normalizeItem(record), error: null, hosted, status: finalStatus }
   } catch (err) {
     return { ok: false, item: null, error: err?.message || 'Could not process video file.' }
   }
+}
+
+export function publishDraftItem(id) {
+  const raw = getImports().find((i) => i.id === id)
+  if (!raw) return { ok: false, error: 'Draft not found.' }
+  const next = {
+    ...raw,
+    status: 'published',
+    publishedAt: new Date().toISOString(),
+    scheduledFor: null,
+  }
+  saveImport(next)
+  notifyContentChanged()
+  pushContentRecord(next, raw.creatorId ? { id: raw.creatorId, handle: raw.handle } : null).catch(() => {})
+  if (raw.creatorId) {
+    notifyFollowersOfUpload({ creatorId: raw.creatorId, handle: raw.handle, title: raw.title })
+  }
+  return { ok: true, item: normalizeItem(next) }
+}
+
+export function deleteCatalogItem(id) {
+  if (!id) return
+  removeImport(id)
+  notifyContentChanged()
+}
+
+export function flushScheduledPublishes() {
+  const now = Date.now()
+  let changed = false
+  for (const raw of getImports()) {
+    if (raw.status !== 'scheduled') continue
+    const when = new Date(raw.scheduledFor || 0).getTime()
+    if (!when || when > now) continue
+    updateImport(raw.id, { status: 'published', publishedAt: new Date().toISOString() })
+    if (raw.creatorId) {
+      notifyFollowersOfUpload({ creatorId: raw.creatorId, handle: raw.handle, title: raw.title })
+    }
+    deleteScheduled(raw.schedId)
+    changed = true
+  }
+  if (changed) notifyContentChanged()
+  return changed
 }
 
 export function recordContentView(id) {

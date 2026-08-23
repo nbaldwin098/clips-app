@@ -15,6 +15,7 @@ export default function CreatorDashboard({ onOpenImport, onOpenUpload, onNavigat
         <button type="button" onClick={onOpenUpload} className="rounded-xl border border-zinc-800 bg-[#121218] p-4 text-left hover:border-white"><Upload className="h-5 w-5 text-white" /><p className="mt-2 text-sm text-zinc-100">Upload / create</p></button>
         <button type="button" onClick={onOpenImport} className="rounded-xl border border-zinc-800 bg-[#121218] p-4 text-left hover:border-white"><Link2 className="h-5 w-5 text-white" /><p className="mt-2 text-sm text-zinc-100">Import link</p></button>
         <button type="button" onClick={() => onNavigate('live')} className="rounded-xl border border-zinc-800 bg-[#121218] p-4 text-left hover:border-white"><Radio className="h-5 w-5 text-white" /><p className="mt-2 text-sm text-zinc-100">Go live</p><p className="text-xs text-zinc-500">{live?.isLive ? 'Live now' : 'OBS + quality'}</p></button>
+        <button type="button" onClick={() => onNavigate('studio-tools')} className="rounded-xl border border-zinc-800 bg-[#121218] p-4 text-left hover:border-white"><BarChart3 className="h-5 w-5 text-white" /><p className="mt-2 text-sm text-zinc-100">Studio tools</p><p className="text-xs text-zinc-500">Drafts and schedule</p></button>
       </div>
       <div className="rounded-xl border border-zinc-800 bg-[#121218] p-4 mb-4">
         <div className="flex items-center gap-2 mb-2"><BarChart3 className="h-4 w-4 text-white" /><h2 className="text-sm text-zinc-100">Overview</h2></div>

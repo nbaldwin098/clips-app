@@ -3,12 +3,16 @@ import PageHeader from './PageHeader'
 import MediaShelves from './MediaShelves'
 import { useAuth } from '../context/AuthContext'
 import { listIndexedUsers } from '../lib/moderation'
-import { getCreatorContent, togglePin, isPinned } from '../lib/contentService'
+import { getCreatorPublicContent, togglePin, isPinned } from '../lib/contentService'
+import { listPlaylists } from '../lib/youtubeParity'
+import { lsGet } from '../lib/storage'
+import { getPicsFeed } from '../lib/picsService'
 import { getSubscriberCount, getCreatorRanking, toggleSubscribe, isSubscribed } from '../lib/engagement'
 import { useContentSyncTick } from '../lib/useContentSync'
 import { Pin } from 'lucide-react'
+import { cn } from '../lib/utils'
 
-export default function ProfilePage({ onNavigate, profileHandle, profileUserId, onPlayItem }) {
+export default function ProfilePage({ onNavigate, profileHandle, profileUserId, onPlayItem, onOpenPic }) {
   const { user, isAuthenticated } = useAuth()
   const handle = String(profileHandle || '').toLowerCase().replace(/^@/, '')
   const users = listIndexedUsers()
@@ -20,7 +24,23 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
   const creatorId = found?.id || profileUserId || null
   const [tick, setTick] = useState(0)
   const syncTick = useContentSyncTick()
-  const items = useMemo(() => getCreatorContent(creatorId, handle), [creatorId, handle, tick, syncTick])
+  const items = useMemo(() => getCreatorPublicContent(creatorId, handle), [creatorId, handle, tick, syncTick])
+  const playlists = useMemo(() => (creatorId ? listPlaylists(creatorId) : []), [creatorId, tick, syncTick])
+  const liveEntry = useMemo(() => {
+    const board = (lsGet('live_board', []) || []).filter((b) => b.isLive)
+    return board.find((b) => (creatorId && b.userId === creatorId) || (handle && String(b.handle || '').toLowerCase() === handle)) || null
+  }, [creatorId, handle, tick, syncTick])
+  const pics = useMemo(() => {
+    return getPicsFeed().filter((p) => {
+      if (creatorId && (p.creatorId === creatorId)) return true
+      if (handle && String(p.handle || '').toLowerCase() === handle) return true
+      return false
+    })
+  }, [creatorId, handle, tick, syncTick])
+  const [tab, setTab] = useState('videos')
+  const videos = items.filter((i) => i.type === 'video')
+  const clips = items.filter((i) => i.type === 'short')
+  const tabItems = tab === 'pics' ? pics : tab === 'clips' ? clips : tab === 'playlists' || tab === 'live' ? [] : videos
   const displayName = found?.displayName || handle || 'Creator'
   const avatar = found?.avatarUrl || (isSelf ? user?.avatarUrl : null)
   const banner = found?.bannerUrl || (isSelf ? user?.bannerUrl : null)
@@ -50,7 +70,7 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
         <div className="flex-1 min-w-[160px] pb-1">
           <h1 className="text-xl font-semibold text-zinc-100">{displayName}</h1>
           <p className="text-sm text-zinc-500">@{handle || found?.handle || 'user'}</p>
-          <p className="text-xs text-zinc-500 mt-1">{subs} subscribers{rank != null ? ` · Rank #${rank}` : ''} · {items.length} videos</p>
+          <p className="text-xs text-zinc-500 mt-1">{subs} followers{rank != null ? ` · Rank #${rank}` : ''} · {videos.length} videos · {clips.length} clips · {pics.length} pics</p>
         </div>
         <div className="flex gap-2 pb-1">
           {isSelf ? (
@@ -58,20 +78,72 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
           ) : (
             isAuthenticated && creatorId && (
               <button type="button" onClick={() => { toggleSubscribe(user.id, creatorId); setTick((t) => t + 1) }} className={`h-9 px-4 rounded-full text-xs font-medium ${subscribed ? 'border border-zinc-700 text-zinc-300' : 'bg-white text-black'}`}>
-                {subscribed ? 'Subscribed' : 'Subscribe'}
+                {subscribed ? 'Following' : 'Follow'}
               </button>
             )
           )}
         </div>
       </div>
       {bio && <p className="px-4 mt-4 text-sm text-zinc-400 max-w-2xl">{bio}</p>}
-      <div className="px-4 mt-6">
-        {items.length === 0 ? (
-          <p className="text-sm text-zinc-500 py-12 text-center border border-zinc-800 rounded-2xl bg-[#121218]">Nothing on this profile yet.</p>
+      <div className="px-4 mt-6 flex gap-1.5">
+        {[
+          { id: 'videos', label: `Videos ${videos.length}` },
+          { id: 'clips', label: `Clips ${clips.length}` },
+          { id: 'pics', label: `Pics ${pics.length}` },
+          { id: 'live', label: liveEntry ? 'Live now' : 'Live' },
+          { id: 'playlists', label: `Playlists ${playlists.length}` },
+        ].map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setTab(t.id)}
+            className={cn(
+              'h-8 px-3 rounded-full text-xs font-medium border',
+              tab === t.id ? 'bg-white text-black border-white' : 'border-zinc-800 text-zinc-400'
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <div className="px-4 mt-4">
+        {tab === 'live' ? (
+          liveEntry ? (
+            <div className="rounded-2xl border border-zinc-800 bg-[#121218] p-5">
+              <p className="text-xs font-bold uppercase tracking-wider text-red-400">Live</p>
+              <p className="text-sm text-white mt-2">{liveEntry.title}</p>
+              {liveEntry.category ? <p className="text-xs text-zinc-500 mt-1">{liveEntry.category}</p> : null}
+              <p className="text-xs text-zinc-600 mt-3">Live video ingest is not connected. This is a presence listing only.</p>
+              <button type="button" onClick={() => onNavigate?.('live')} className="mt-4 h-9 px-4 rounded-lg bg-white text-black text-xs font-bold">Open Live</button>
+            </div>
+          ) : (
+            <p className="text-sm text-zinc-500 py-12 text-center border border-zinc-800 rounded-2xl bg-[#121218]">Not live right now.</p>
+          )
+        ) : tab === 'playlists' ? (
+          playlists.length === 0 ? (
+            <p className="text-sm text-zinc-500 py-12 text-center border border-zinc-800 rounded-2xl bg-[#121218]">No playlists yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {playlists.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => onNavigate?.('playlists', p.id)}
+                  className="w-full text-left rounded-xl border border-zinc-800 bg-[#121218] px-4 py-3"
+                >
+                  <p className="text-sm text-white">{p.title}</p>
+                  <p className="text-xs text-zinc-500">{(p.items || []).length} items</p>
+                </button>
+              ))}
+            </div>
+          )
+        ) : tabItems.length === 0 ? (
+          <p className="text-sm text-zinc-500 py-12 text-center border border-zinc-800 rounded-2xl bg-[#121218]">Nothing in this tab yet.</p>
         ) : (
           <MediaShelves
-            items={items}
+            items={tabItems}
             onPlayItem={onPlayItem}
+            onOpenPic={onOpenPic}
             pinOverlay={(item) => (
               <>
                 {(item.pinned || isPinned(creatorId, item.id)) && (

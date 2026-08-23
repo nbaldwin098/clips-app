@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { ThumbsUp, ThumbsDown, MessageCircle, Flag, Share2, Bookmark, Play, Music } from 'lucide-react'
+import { ThumbsUp, ThumbsDown, MessageCircle, Flag, Share2, Bookmark, Play, Music, ListPlus } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import {
   getVotes, getUserVote, toggleVote, getViews, recordView, getSubscriberCount,
@@ -7,10 +7,14 @@ import {
 import { recordInteraction } from '../lib/algorithmEngine'
 import { toggleSaved, getSaved } from '../lib/storage'
 import { notifyContentChanged } from '../lib/contentSync'
+import { getWatchProgress } from '../lib/watchProgress'
+import { copyShareUrl } from '../lib/routes'
+import { formatPostedAt } from '../lib/mediaMeta'
 import { cn } from '../lib/utils'
 import { openSafeUrl } from '../lib/safeUrl'
 import CommentsPanel from './CommentsPanel'
 import ReportModal from './ReportModal'
+import PlaylistPicker from './PlaylistPicker'
 
 /** video = YouTube row card; short = Shorts-style vertical */
 export default function ContentCard({ item, onOpen, variant }) {
@@ -23,6 +27,9 @@ export default function ContentCard({ item, onOpen, variant }) {
   const [pulse, setPulse] = useState(null)
   const [showComments, setShowComments] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
+  const [playlistOpen, setPlaylistOpen] = useState(false)
+  const progress = user?.id ? getWatchProgress(user.id, item?.id) : null
+  const resumeRatio = progress && !progress.completed ? (progress.lastRatio || progress.watchRatio || 0) : 0
   const viewStartTime = useRef(null)
 
   const mode = variant || (item?.type === 'video' ? 'video' : 'short')
@@ -81,13 +88,10 @@ export default function ContentCard({ item, onOpen, variant }) {
 
   const handleShare = async (e) => {
     e.stopPropagation()
-    const url = item.sourceUrl || window.location.href
     try {
-      if (navigator.clipboard) {
-        await navigator.clipboard.writeText(url)
-        setCopied(true)
-        setTimeout(() => setCopied(false), 2000)
-      }
+      await copyShareUrl('watch', item.id)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
       if (user?.id) {
         recordInteraction(user.id, { contentId: item.id, type: 'share', tags: item.tags || [], creatorId: item.creatorId || item.userId })
       }
@@ -123,6 +127,9 @@ export default function ContentCard({ item, onOpen, variant }) {
       <button type="button" onClick={handleSave} className={cn('inline-flex items-center justify-center h-8 w-8 rounded-full border shrink-0', isSaved ? 'border-white text-white' : 'border-zinc-800 text-zinc-400')}>
         <Bookmark className={cn('h-3.5 w-3.5', isSaved && 'fill-current')} />
       </button>
+      <button type="button" onClick={(e) => { e.stopPropagation(); setPlaylistOpen(true) }} className="inline-flex items-center justify-center h-8 w-8 rounded-full border border-zinc-800 text-zinc-400 shrink-0" title="Playlist">
+        <ListPlus className="h-3.5 w-3.5" />
+      </button>
       <button type="button" onClick={handleShare} className="inline-flex items-center justify-center h-8 w-8 rounded-full border border-zinc-800 text-zinc-400 shrink-0" title={copied ? 'Copied' : 'Share'}>
         <Share2 className="h-3.5 w-3.5" />
       </button>
@@ -151,17 +158,33 @@ export default function ContentCard({ item, onOpen, variant }) {
                 {Math.floor(item.durationSec / 60)}:{String(Math.floor(item.durationSec % 60)).padStart(2, '0')}
               </span>
             )}
+            {resumeRatio > 0.05 && (
+              <div className="absolute bottom-0 inset-x-0 h-1 bg-black/50">
+                <div className="h-full bg-white" style={{ width: `${Math.round(resumeRatio * 100)}%` }} />
+              </div>
+            )}
           </div>
           <div className="flex gap-3 pt-3">
-            <div className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center text-xs font-bold shrink-0">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); window.__clipsOpenProfile?.(item.handle, item.creatorId || item.userId) }}
+              className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center text-xs font-bold shrink-0"
+            >
               {(item.creatorName || item.handle || '?')[0]?.toUpperCase()}
-            </div>
+            </button>
             <div className="min-w-0">
               <p className="text-sm font-semibold text-zinc-100 line-clamp-2 leading-snug">{item.title || 'Untitled'}</p>
-              <p className="text-xs text-zinc-500 mt-1">{handle}{subs > 0 ? ` · ${subs} subscribers` : ''}</p>
-              <p className="text-xs text-zinc-500">{views} views</p>
+              <p className="text-xs text-zinc-500 mt-1">
+                <button type="button" onClick={(e) => { e.stopPropagation(); window.__clipsOpenProfile?.(item.handle, item.creatorId || item.userId) }} className="hover:text-white">
+                  {handle}
+                </button>
+                {subs > 0 ? ` · ${subs} followers` : ''}
+              </p>
+              <p className="text-xs text-zinc-500">{views} views{item.createdAt ? ` · ${formatPostedAt(item.createdAt)}` : ''}</p>
               {item.soundTitle ? (
-                <p className="text-xs text-zinc-500 mt-1 inline-flex items-center gap-1"><Music className="h-3 w-3" />{item.soundTitle}</p>
+                <button type="button" onClick={(e) => { e.stopPropagation(); window.__clipsOpenSound?.(item.soundId || item.soundTitle) }} className="text-xs text-zinc-500 mt-1 inline-flex items-center gap-1 hover:text-white">
+                  <Music className="h-3 w-3" />{item.soundTitle}
+                </button>
               ) : null}
             </div>
           </div>
@@ -169,6 +192,7 @@ export default function ContentCard({ item, onOpen, variant }) {
         {actions}
         {showComments && <div className="px-3 pb-3"><CommentsPanel contentId={item.id} creatorId={item.creatorId || item.userId} /></div>}
         <ReportModal open={reportOpen} onClose={() => setReportOpen(false)} target={{ id: item.id, contentId: item.id, userId: item.creatorId || item.userId, handle: item.handle }} />
+        <PlaylistPicker open={playlistOpen} onClose={() => setPlaylistOpen(false)} contentId={item.id} />
       </div>
     )
   }
@@ -187,18 +211,29 @@ export default function ContentCard({ item, onOpen, variant }) {
               {Math.floor(item.durationSec / 60)}:{String(Math.floor(item.durationSec % 60)).padStart(2, '0')}
             </span>
           )}
+          {resumeRatio > 0.05 && (
+            <div className="absolute bottom-0 inset-x-0 h-1 bg-black/50">
+              <div className="h-full bg-white" style={{ width: `${Math.round(resumeRatio * 100)}%` }} />
+            </div>
+          )}
         </div>
         <div className="pt-2 px-0.5">
           <p className="text-xs font-semibold text-zinc-100 line-clamp-2 leading-snug">{item.title || 'Untitled'}</p>
-          <p className="text-[11px] text-zinc-500 mt-0.5">{handle} · {views} views</p>
+          <p className="text-[11px] text-zinc-500 mt-0.5">
+            <button type="button" onClick={(e) => { e.stopPropagation(); window.__clipsOpenProfile?.(item.handle, item.creatorId || item.userId) }} className="hover:text-white">{handle}</button>
+            {' · '}{views} views{item.createdAt ? ` · ${formatPostedAt(item.createdAt)}` : ''}
+          </p>
           {item.soundTitle ? (
-            <p className="text-[11px] text-zinc-500 mt-0.5 inline-flex items-center gap-1"><Music className="h-3 w-3" />{item.soundTitle}</p>
+            <button type="button" onClick={(e) => { e.stopPropagation(); window.__clipsOpenSound?.(item.soundId || item.soundTitle) }} className="text-[11px] text-zinc-500 mt-0.5 inline-flex items-center gap-1 hover:text-white">
+              <Music className="h-3 w-3" />{item.soundTitle}
+            </button>
           ) : null}
         </div>
       </button>
       {actions}
       {showComments && <div className="px-3 pb-3"><CommentsPanel contentId={item.id} creatorId={item.creatorId || item.userId} /></div>}
       <ReportModal open={reportOpen} onClose={() => setReportOpen(false)} target={{ id: item.id, contentId: item.id, userId: item.creatorId || item.userId, handle: item.handle }} />
+      <PlaylistPicker open={playlistOpen} onClose={() => setPlaylistOpen(false)} contentId={item.id} />
     </div>
   )
 }

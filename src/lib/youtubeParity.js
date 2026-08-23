@@ -1,5 +1,6 @@
 import { lsGet, lsSet } from './storage'
 import { notifyNewComment, notifyFollowersOfPost, DEFAULT_NOTIF_PREFS } from './notifications'
+import { pushComment, pushPlaylist } from './graphSync'
 
 const K = {
   comments: 'yt_comments', playlists: 'yt_playlists', posts: 'yt_posts', notifPrefs: 'yt_notif_prefs',
@@ -47,6 +48,7 @@ export function addComment(contentId, { userId, handle, text, parentId = null })
     parentAuthorId: parent?.userId || null,
     held,
   })
+  pushComment(contentId, row)
   return row
 }
 export function toggleCommentLike(contentId, commentId, userId) {
@@ -59,6 +61,7 @@ export function toggleCommentLike(contentId, commentId, userId) {
   if (i >= 0) { c.likedBy.splice(i, 1); c.likes = Math.max(0, (c.likes || 0) - 1) }
   else { c.likedBy.push(userId); c.likes = (c.likes || 0) + 1 }
   lsSet(K.comments, all)
+  pushComment(contentId, c)
   return c
 }
 export function pinComment(contentId, commentId) {
@@ -66,6 +69,8 @@ export function pinComment(contentId, commentId) {
   const list = all[contentId] || []
   for (const c of list) c.pinned = c.id === commentId ? !c.pinned : false
   lsSet(K.comments, all)
+  const changed = list.find((c) => c.id === commentId)
+  if (changed) pushComment(contentId, changed)
   return list
 }
 export function heartComment(contentId, commentId) {
@@ -74,22 +79,32 @@ export function heartComment(contentId, commentId) {
   if (!c) return null
   c.hearted = !c.hearted
   lsSet(K.comments, all)
+  pushComment(contentId, c)
   return c
 }
 export function deleteComment(contentId, commentId) {
   const all = lsGet(K.comments, {})
   const c = (all[contentId] || []).find((x) => x.id === commentId)
-  if (c) c.deleted = true
-  lsSet(K.comments, all)
+  if (c) {
+    c.deleted = true
+    lsSet(K.comments, all)
+    pushComment(contentId, c)
+  } else {
+    lsSet(K.comments, all)
+  }
 }
 export function listPlaylists(userId) {
   return (lsGet(K.playlists, []) || []).filter((p) => !userId || p.userId === userId)
+}
+export function getPlaylist(playlistId) {
+  return (lsGet(K.playlists, []) || []).find((p) => p.id === playlistId) || null
 }
 export function createPlaylist({ userId, title, visibility = 'public' }) {
   const list = lsGet(K.playlists, [])
   const row = { id: id('pl'), userId, title: String(title).slice(0, 150), visibility, items: [], collaborative: false, createdAt: new Date().toISOString() }
   list.unshift(row)
   lsSet(K.playlists, list)
+  pushPlaylist(row)
   return row
 }
 export function addToPlaylist(playlistId, contentId) {
@@ -98,6 +113,7 @@ export function addToPlaylist(playlistId, contentId) {
   if (!p) return null
   if (!p.items.includes(contentId)) p.items.push(contentId)
   lsSet(K.playlists, list)
+  pushPlaylist(p)
   return p
 }
 export function removeFromPlaylist(playlistId, contentId) {
@@ -106,6 +122,7 @@ export function removeFromPlaylist(playlistId, contentId) {
   if (!p) return null
   p.items = (p.items || []).filter((id) => id !== contentId)
   lsSet(K.playlists, list)
+  pushPlaylist(p)
   return p
 }
 export function listPosts(creatorId) {
@@ -159,10 +176,19 @@ export function clearSearchHistory() { lsSet(K.searchHist, []) }
 export function listDrafts(userId) { return (lsGet(K.drafts, []) || []).filter((d) => d.userId === userId) }
 export function saveDraft(draft) {
   const list = lsGet(K.drafts, [])
-  const row = { id: id('draft'), ...draft, updatedAt: new Date().toISOString() }
-  list.unshift(row)
-  lsSet(K.drafts, list.slice(0, 100))
+  const existing = draft?.id ? list.find((d) => d.id === draft.id) : null
+  const row = {
+    id: existing?.id || id('draft'),
+    ...existing,
+    ...draft,
+    updatedAt: new Date().toISOString(),
+  }
+  const next = [row, ...list.filter((d) => d.id !== row.id)].slice(0, 100)
+  lsSet(K.drafts, next)
   return row
+}
+export function deleteDraft(draftId) {
+  lsSet(K.drafts, (lsGet(K.drafts, []) || []).filter((d) => d.id !== draftId))
 }
 export function scheduleContent(item) {
   const list = lsGet(K.scheduled, [])
@@ -172,6 +198,9 @@ export function scheduleContent(item) {
   return row
 }
 export function listScheduled(userId) { return (lsGet(K.scheduled, []) || []).filter((s) => s.userId === userId) }
+export function deleteScheduled(schedId) {
+  lsSet(K.scheduled, (lsGet(K.scheduled, []) || []).filter((s) => s.id !== schedId))
+}
 export function setChapters(contentId, chapters) {
   const all = lsGet(K.chapters, {})
   all[contentId] = chapters.map((c) => ({ title: String(c.title).slice(0, 100), t: Number(c.t) || 0 }))

@@ -111,6 +111,25 @@ export function getImports() {
   return Array.isArray(list) ? list.filter((row) => row && typeof row === 'object') : []
 }
 
+export function updateImport(id, patch) {
+  if (!id) return null
+  const list = getImports()
+  let found = null
+  const next = list.map((r) => {
+    if (r.id !== id) return r
+    found = { ...r, ...patch }
+    return found
+  })
+  if (!found) return null
+  lsSet('imports', next)
+  return found
+}
+
+export function removeImport(id) {
+  if (!id) return
+  lsSet('imports', getImports().filter((r) => r.id !== id))
+}
+
 /**
  * Merge a batch of records (typically pulled from the cloud catalog) into
  * the local import cache. Existing local fields are preserved unless the
