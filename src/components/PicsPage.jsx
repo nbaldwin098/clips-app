@@ -1,17 +1,18 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { ImagePlus, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getPicsFeed, publishPhoto } from '../lib/picsService'
 import { isSupabaseConfigured } from '../lib/supabaseClient'
 
-/** Pure photo wall — no titles/names on the grid. Hover zooms; click opens lightbox. */
+/** Grid of all pics · click one → full-screen vertical scroll through the set */
 export default function PicsPage({ onOpenAuth }) {
   const { user, isAuthenticated } = useAuth()
   const inputRef = useRef(null)
+  const viewerRef = useRef(null)
   const [items, setItems] = useState(() => getPicsFeed())
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [lightbox, setLightbox] = useState(null)
+  const [viewerIndex, setViewerIndex] = useState(null) // null = closed
 
   const refresh = useCallback(() => setItems(getPicsFeed()), [])
 
@@ -47,12 +48,31 @@ export default function PicsPage({ onOpenAuth }) {
     inputRef.current?.click()
   }
 
+  const openAt = (index) => setViewerIndex(index)
+
+  // Jump scroller to the tapped image when opening
+  useEffect(() => {
+    if (viewerIndex == null || !viewerRef.current) return
+    const el = viewerRef.current
+    const h = el.clientHeight || 1
+    el.scrollTop = viewerIndex * h
+  }, [viewerIndex])
+
+  useEffect(() => {
+    if (viewerIndex == null) return
+    const onKey = (e) => {
+      if (e.key === 'Escape') setViewerIndex(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [viewerIndex])
+
   return (
     <div className="min-h-full bg-[#09090c]">
       <div className="sticky top-0 z-10 border-b border-zinc-800/80 bg-[#09090c]/95 backdrop-blur px-4 py-3 flex items-center justify-between gap-3">
         <div>
           <h1 className="text-lg font-semibold text-zinc-100">Pics</h1>
-          <p className="text-[11px] text-zinc-500">Photos only · hover to peek · click to open</p>
+          <p className="text-[11px] text-zinc-500">All photos · click one · scroll through</p>
         </div>
         <button type="button" onClick={openUpload} disabled={busy} className="h-9 px-3 rounded-lg bg-white text-black text-sm font-semibold disabled:opacity-60 inline-flex items-center gap-1.5">
           <ImagePlus className="h-4 w-4" />
@@ -72,40 +92,64 @@ export default function PicsPage({ onOpenAuth }) {
           <button type="button" onClick={openUpload} className="mt-4 h-9 px-4 rounded-lg bg-white text-black text-sm font-semibold">Upload first pic</button>
         </div>
       ) : (
-        <div className="columns-2 sm:columns-3 md:columns-4 gap-1 p-1 pb-20">
-          {items.map((pic) => {
+        /* tight mosaic — no titles, names, or captions */
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-0.5 p-0.5 pb-20">
+          {items.map((pic, index) => {
             const src = pic.mediaUrl || pic.thumbUrl || pic.sourceUrl
             return (
               <button
                 key={pic.id}
                 type="button"
-                onClick={() => setLightbox(pic)}
-                className="mb-1 w-full break-inside-avoid relative overflow-hidden bg-zinc-900 group focus:outline-none"
+                onClick={() => openAt(index)}
+                className="relative aspect-square overflow-hidden bg-zinc-900 group focus:outline-none"
               >
                 <img
                   src={src}
                   alt=""
-                  className="w-full block object-cover transition-transform duration-300 group-hover:scale-105"
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                   loading="lazy"
                 />
-                <div className="pointer-events-none absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors" />
+                <div className="pointer-events-none absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
               </button>
             )
           })}
         </div>
       )}
 
-      {lightbox && (
-        <div className="fixed inset-0 z-[120] bg-black/90 flex items-center justify-center p-3" onClick={() => setLightbox(null)}>
-          <button type="button" className="absolute top-4 right-4 h-10 w-10 rounded-full bg-white/10 text-white flex items-center justify-center" onClick={() => setLightbox(null)} aria-label="Close">
+      {/* Full-screen vertical scroll through all pics */}
+      {viewerIndex != null && (
+        <div className="fixed inset-0 z-[120] bg-black">
+          <button
+            type="button"
+            className="absolute top-4 right-4 z-30 h-10 w-10 rounded-full bg-white/10 text-white flex items-center justify-center"
+            onClick={() => setViewerIndex(null)}
+            aria-label="Close"
+          >
             <X className="h-5 w-5" />
           </button>
-          <img
-            src={lightbox.mediaUrl || lightbox.thumbUrl || lightbox.sourceUrl}
-            alt=""
-            className="max-h-[92vh] max-w-full object-contain"
-            onClick={(e) => e.stopPropagation()}
-          />
+          <p className="absolute top-5 left-1/2 -translate-x-1/2 z-30 text-[11px] text-white/50 pointer-events-none">
+            Scroll · {viewerIndex + 1}/{items.length}
+          </p>
+          <div
+            ref={viewerRef}
+            className="h-full w-full overflow-y-scroll snap-y snap-mandatory"
+            style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+            onScroll={(e) => {
+              const el = e.currentTarget
+              const h = el.clientHeight || 1
+              const idx = Math.round(el.scrollTop / h)
+              if (idx !== viewerIndex && idx >= 0 && idx < items.length) setViewerIndex(idx)
+            }}
+          >
+            {items.map((pic) => {
+              const src = pic.mediaUrl || pic.thumbUrl || pic.sourceUrl
+              return (
+                <div key={pic.id} className="h-full w-full snap-start snap-always flex items-center justify-center shrink-0">
+                  <img src={src} alt="" className="max-h-full max-w-full object-contain" />
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
     </div>
