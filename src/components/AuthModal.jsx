@@ -2,27 +2,28 @@ import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
-/** Email + password only (sign up also asks display name + handle). */
 export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
-  const { login } = useAuth()
+  const { login, backend } = useAuth()
   const [mode, setMode] = useState(initialMode)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [handle, setHandle] = useState('')
   const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
 
   useEffect(() => {
     if (open) {
       setMode(initialMode)
       setError('')
       setPassword('')
+      setBusy(false)
     }
   }, [open, initialMode])
 
   if (!open) return null
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault()
     setError('')
     const mail = email.trim().toLowerCase()
@@ -42,33 +43,49 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
         return
       }
       if (h.length < 3) {
-        setError('Handle must be at least 3 characters.')
+        setError('Username must be at least 3 characters.')
         return
       }
-      login({ email: mail, displayName: name, handle: h, provider: 'email' })
-    } else {
-      login({ email: mail, displayName: mail.split('@')[0], provider: 'email' })
     }
-    setEmail('')
-    setPassword('')
-    setDisplayName('')
-    setHandle('')
-    onClose()
+    setBusy(true)
+    try {
+      const result = await login({
+        email: mail,
+        password,
+        mode,
+        displayName: displayName.trim() || mail.split('@')[0],
+        handle: handle.trim().toLowerCase().replace(/[^a-z0-9_]/g, '') || undefined,
+      })
+      if (result?.pendingEmailConfirm) {
+        setError('Check your email to confirm, then sign in.')
+        setMode('signin')
+        setBusy(false)
+        return
+      }
+      onClose?.()
+    } catch (err) {
+      setError(err?.message || 'Sign in failed.')
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-      <div className="relative w-full max-w-sm rounded-2xl bg-[#121218] shadow-2xl border border-zinc-800">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
-          <h2 className="text-base font-semibold text-[#007ACC]">
-            {mode === 'signin' ? 'Sign in' : 'Create account'}
-          </h2>
-          <button type="button" onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-zinc-800">
-            <X className="h-4 w-4 text-[#007ACC]" />
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4">
+      <div className="w-full max-w-md rounded-2xl border border-[#2f2f37] bg-[#1f1f23] shadow-2xl">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#2f2f37]">
+          <div>
+            <h2 className="text-lg font-semibold text-[#efeff1]">
+              {mode === 'signin' ? 'Sign in' : 'Create account'}
+            </h2>
+            <p className="text-[10px] text-zinc-500 mt-0.5">
+              {backend === 'supabase' ? 'Synced across devices' : 'Local this device'}
+            </p>
+          </div>
+          <button type="button" onClick={onClose} className="text-zinc-400 hover:text-white">
+            <X className="h-5 w-5" />
           </button>
         </div>
-
         <div className="p-5">
           <form onSubmit={submit} className="space-y-3">
             {mode === 'signup' && (
@@ -77,18 +94,22 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
                   <span className="text-xs font-medium text-[#007ACC]">Display name</span>
                   <input
                     value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    className="mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100 focus:outline-none focus:ring-1 focus:ring-[#007ACC]"
+                    onChange={(e) => {
+                      const v = e.target.value
+                      setDisplayName(v)
+                      if (!handle.trim()) setHandle(v.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24))
+                    }}
+                    className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-[#007ACC]"
                   />
                 </label>
                 <label className="block">
-                  <span className="text-xs font-medium text-[#007ACC]">Handle</span>
+                  <span className="text-xs font-medium text-[#007ACC]">Username</span>
                   <div className="mt-1 flex">
-                    <span className="h-10 flex items-center px-3 rounded-l-lg border border-r-0 border-zinc-800 bg-zinc-900 text-sm text-[#007ACC]">@</span>
+                    <span className="inline-flex items-center h-10 px-3 rounded-l-lg border border-r-0 border-[#2f2f37] bg-[#18181b] text-zinc-500 text-sm">@</span>
                     <input
                       value={handle}
-                      onChange={(e) => setHandle(e.target.value.replace(/\s/g, '').toLowerCase())}
-                      className="h-10 flex-1 rounded-r-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100 focus:outline-none focus:ring-1 focus:ring-[#007ACC]"
+                      onChange={(e) => setHandle(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24))}
+                      className="h-10 flex-1 rounded-r-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-[#007ACC]"
                     />
                   </div>
                 </label>
@@ -96,45 +117,25 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
             )}
             <label className="block">
               <span className="text-xs font-medium text-[#007ACC]">Email</span>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100 focus:outline-none focus:ring-1 focus:ring-[#007ACC]"
-                autoComplete="email"
-              />
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-[#007ACC]" autoComplete="email" />
             </label>
             <label className="block">
               <span className="text-xs font-medium text-[#007ACC]">Password</span>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100 focus:outline-none focus:ring-1 focus:ring-[#007ACC]"
-                autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-              />
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-[#007ACC]" autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} />
             </label>
+            {mode === 'signup' && (
+              <p className="text-[11px] text-zinc-500">Tip: use your name or brand as @username so people recognize your public profile.</p>
+            )}
             {error && <p className="text-sm text-red-400">{error}</p>}
-            <button type="submit" className="w-full h-10 rounded-lg bg-[#007ACC] text-white text-sm font-medium hover:bg-[#0098ff]">
-              {mode === 'signin' ? 'Sign in' : 'Create account'}
+            <button type="submit" disabled={busy} className="w-full h-10 rounded-lg bg-[#007ACC] text-white text-sm font-medium hover:bg-[#0098ff] disabled:opacity-60">
+              {busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}
             </button>
           </form>
-
           <p className="text-xs text-zinc-500 text-center mt-4">
             {mode === 'signin' ? (
-              <>
-                No account?{' '}
-                <button type="button" className="text-[#007ACC] font-medium" onClick={() => setMode('signup')}>
-                  Sign up
-                </button>
-              </>
+              <>No account? <button type="button" className="text-[#007ACC] font-medium" onClick={() => setMode('signup')}>Sign up</button></>
             ) : (
-              <>
-                Have an account?{' '}
-                <button type="button" className="text-[#007ACC] font-medium" onClick={() => setMode('signin')}>
-                  Sign in
-                </button>
-              </>
+              <>Have an account? <button type="button" className="text-[#007ACC] font-medium" onClick={() => setMode('signin')}>Sign in</button></>
             )}
           </p>
         </div>

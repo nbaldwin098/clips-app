@@ -1,17 +1,13 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { lsGet, lsSet, lsRemove } from '../lib/storage'
 import { indexUser, validateHandle, normalizeHandle } from '../lib/moderation'
+import { getSupabase, isSupabaseConfigured } from '../lib/supabaseClient'
+import { pullWatchProgressFromCloud } from '../lib/watchProgress'
 
 const AuthContext = createContext(null)
-
 const DEFAULT_USER = {
-  id: 'user_local',
-  email: '',
-  displayName: 'Viewer',
-  handle: 'viewer',
-  isCreator: false,
-  creatorStatus: 'none',
-  avatar: null,
+  id: 'user_local', email: '', displayName: 'Viewer', handle: 'viewer',
+  isCreator: false, creatorStatus: 'none', avatar: null,
 }
 
 function sanitizeUser(u) {
@@ -33,81 +29,181 @@ function pickUniqueHandle(raw, exceptUserId = null) {
   return `user${Date.now().toString(36).slice(-6)}`
 }
 
+function mapSbUser(sbUser, meta = {}) {
+  const email = sbUser.email || meta.email || ''
+  const handle =
+    meta.handle || sbUser.user_metadata?.handle || pickUniqueHandle(email.split('@')[0] || 'user')
+  const displayName =
+    meta.displayName || sbUser.user_metadata?.display_name || email.split('@')[0] || 'Viewer'
+  return {
+    ...DEFAULT_USER,
+    id: sbUser.id,
+    email,
+    displayName,
+    handle: String(handle).toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24) || 'user',
+    provider: 'supabase',
+    creatorStatus: meta.creatorStatus || sbUser.user_metadata?.creator_status || 'none',
+    isCreator: !!(meta.isCreator || sbUser.user_metadata?.is_creator),
+    isPlatformAdmin: String(handle).toLowerCase() === 'cs1',
+    avatarUrl: meta.avatarUrl || sbUser.user_metadata?.avatar_url || null,
+    bannerUrl: meta.bannerUrl || null,
+    bio: meta.bio || '',
+  }
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => sanitizeUser(lsGet('user', null)))
   const [mode, setMode] = useState(() => lsGet('mode', 'viewer'))
+  const [authReady, setAuthReady] = useState(!isSupabaseConfigured())
 
   useEffect(() => {
     if (user) lsSet('user', user)
     else lsRemove('user')
   }, [user])
+  useEffect(() => { lsSet('mode', mode) }, [mode])
 
   useEffect(() => {
-    lsSet('mode', mode)
-  }, [mode])
-
-  useEffect(() => {
-    const raw = lsGet('user', null)
-    if (raw && !sanitizeUser(raw)) {
-      lsRemove('user')
-      setUser(null)
-      setMode('viewer')
-    }
+    let unsub = () => {}
+    ;(async () => {
+      if (!isSupabaseConfigured()) { setAuthReady(true); return }
+      try {
+        const sb = await getSupabase()
+        if (!sb) { setAuthReady(true); return }
+        const { data: { session } } = await sb.auth.getSession()
+        if (session?.user) {
+          const mapped = mapSbUser(session.user)
+          if (mapped.handle === 'cs1') {
+            mapped.creatorStatus = 'approved'
+            mapped.isCreator = true
+            mapped.isPlatformAdmin = true
+          }
+          setUser(mapped)
+          try { indexUser(mapped) } catch {}
+          try { await pullWatchProgressFromCloud(mapped.id) } catch {}
+        }
+        const { data } = sb.auth.onAuthStateChange(async (_event, sess) => {
+          if (sess?.user) {
+            const mapped = mapSbUser(sess.user)
+            if (mapped.handle === 'cs1') {
+              mapped.creatorStatus = 'approved'
+              mapped.isCreator = true
+              mapped.isPlatformAdmin = true
+            }
+            setUser(mapped)
+            try { indexUser(mapped) } catch {}
+            try { await pullWatchProgressFromCloud(mapped.id) } catch {}
+          } else {
+            setUser((prev) => (prev?.provider === 'supabase' ? null : prev))
+          }
+        })
+        unsub = () => data.subscription.unsubscribe()
+      } catch (e) {
+        console.warn('[Clips] Supabase session restore failed', e)
+      } finally {
+        setAuthReady(true)
+      }
+    })()
+    return () => unsub()
   }, [])
 
   useEffect(() => {
     if (!user) return
     const h = String(user.handle || '').toLowerCase()
     if (h === 'cs1' && (user.creatorStatus !== 'approved' || !user.isPlatformAdmin)) {
-      const next = {
-        ...user,
-        creatorStatus: 'approved',
-        isCreator: true,
-        isPlatformAdmin: true,
-      }
+      const next = { ...user, creatorStatus: 'approved', isCreator: true, isPlatformAdmin: true }
       setUser(next)
       lsSet('user', next)
       try { indexUser(next) } catch {}
     }
   }, [user?.id, user?.handle, user?.creatorStatus, user?.isPlatformAdmin])
 
-  const login = useCallback((payload = {}) => {
-    const email =
-      typeof payload === 'string' ? payload : payload.email || 'viewer@clips.local'
+  const login = useCallback(async (payload = {}) => {
+    const email = typeof payload === 'string' ? payload : payload.email || ''
+    const password = typeof payload === 'object' ? payload.password || '' : ''
     const displayName =
       typeof payload === 'object' && payload.displayName
         ? payload.displayName
         : email.split('@')[0] || 'Viewer'
-    const provider =
-      typeof payload === 'object' && payload.provider ? payload.provider : 'email'
+    const modeAuth = typeof payload === 'object' && payload.mode === 'signup' ? 'signup' : 'signin'
+    const handleRaw = (typeof payload === 'object' && payload.handle) || displayName || 'user'
+
+    if (isSupabaseConfigured() && email && password) {
+      const sb = await getSupabase()
+      if (sb) {
+        if (modeAuth === 'signup') {
+          const handle = pickUniqueHandle(handleRaw)
+          const { data, error } = await sb.auth.signUp({
+            email: email.trim().toLowerCase(),
+            password,
+            options: { data: { display_name: displayName, handle } },
+          })
+          if (error) throw new Error(error.message)
+          if (data.user) {
+            const mapped = mapSbUser(data.user, { displayName, handle })
+            if (mapped.handle === 'cs1') {
+              mapped.creatorStatus = 'approved'
+              mapped.isCreator = true
+              mapped.isPlatformAdmin = true
+            }
+            setUser(mapped)
+            setMode('viewer')
+            try { indexUser(mapped) } catch {}
+            return mapped
+          }
+          return { pendingEmailConfirm: true, email }
+        }
+        const { data, error } = await sb.auth.signInWithPassword({
+          email: email.trim().toLowerCase(),
+          password,
+        })
+        if (error) throw new Error(error.message)
+        const mapped = mapSbUser(data.user, { displayName })
+        if (mapped.handle === 'cs1') {
+          mapped.creatorStatus = 'approved'
+          mapped.isCreator = true
+          mapped.isPlatformAdmin = true
+        }
+        setUser(mapped)
+        setMode('viewer')
+        try { indexUser(mapped) } catch {}
+        try { await pullWatchProgressFromCloud(mapped.id) } catch {}
+        return mapped
+      }
+    }
 
     const existing = sanitizeUser(lsGet('user', null))
     if (existing && existing.email === email) {
-      const next = { ...existing, provider, displayName }
+      const next = { ...existing, displayName }
       setUser(next)
       setMode('viewer')
       try { indexUser(next) } catch {}
-      return
+      return next
     }
-
-    const handle = pickUniqueHandle(
-      (typeof payload === 'object' && payload.handle) || displayName || 'user'
-    )
+    const handle = pickUniqueHandle(handleRaw)
     const next = {
       ...DEFAULT_USER,
       id: `user_${Date.now()}`,
       email,
       displayName,
       handle,
-      provider,
-      creatorStatus: 'none',
+      provider: 'local',
+      creatorStatus: handle === 'cs1' ? 'approved' : 'none',
+      isCreator: handle === 'cs1',
+      isPlatformAdmin: handle === 'cs1',
     }
     setUser(next)
     setMode('viewer')
     try { indexUser(next) } catch {}
+    return next
   }, [])
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      if (isSupabaseConfigured()) {
+        const sb = await getSupabase()
+        if (sb) await sb.auth.signOut()
+      }
+    } catch {}
     setUser(null)
     setMode('viewer')
     lsRemove('user')
@@ -141,14 +237,14 @@ export function AuthProvider({ children }) {
     setMode('creator')
   }, [])
 
-  const switchMode = useCallback((next) => {
-    setMode(next)
-  }, [])
+  const switchMode = useCallback((next) => { setMode(next) }, [])
 
   const value = {
     user,
     isAuthenticated: !!user,
     mode,
+    authReady,
+    backend: isSupabaseConfigured() ? 'supabase' : 'local',
     login,
     logout,
     updateProfile,
