@@ -29,7 +29,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { lsGet } from '../lib/storage'
-import { listIndexedUsers } from '../lib/moderation'
+import { listPopularCreators } from '../lib/contentService'
 import { cn } from '../lib/utils'
 
 const itemCls = (active) =>
@@ -83,19 +83,7 @@ export default function CollapsibleSidebar({
 
   const isApprovedCreator = user?.creatorStatus === 'approved'
 
-  const recommendedCreators = (() => {
-    const users = listIndexedUsers().filter((u) => u.creatorStatus === 'approved' || u.isCreator)
-    const clips = [...(lsGet('imports', []) || []), ...(lsGet('user_clips', []) || [])]
-    const count = {}
-    for (const c of clips) {
-      const id = c.creatorId || c.userId
-      if (id) count[id] = (count[id] || 0) + 1
-    }
-    return users
-      .map((u) => ({ ...u, n: count[u.id] || 0 }))
-      .sort((a, b) => b.n - a.n)
-      .slice(0, 5)
-  })()
+  const recommendedCreators = listPopularCreators(5)
 
   const go = (id) => {
     onNavigate(id)
@@ -204,7 +192,7 @@ export default function CollapsibleSidebar({
           )}
           <NavBtn collapsed={collapsed} active={currentView === 'creators'} onClick={() => go('creators')} icon={Users} label="All creators" />
           {!collapsed && recommendedCreators.length === 0 && (
-            <p className="px-2.5 text-[11px] text-zinc-600 pt-1">No approved creators yet.</p>
+            <p className="px-2.5 text-[11px] text-zinc-600 pt-1">No one has posted yet.</p>
           )}
           {!collapsed && recommendedCreators.length > 0 && (
             <>

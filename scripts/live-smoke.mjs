@@ -2,7 +2,6 @@
 import { readFileSync } from 'node:fs'
 import { extractHashtags, mergeTags, parseClock, parseCaptionCues, isReleased, filterExploreItems } from '../src/lib/mediaMeta.js'
 import { parseRoute, buildHash } from '../src/lib/routes.js'
-import { getReferenceShorts, withReferenceShorts, getReferenceShort } from '../src/lib/referenceShorts.js'
 
 let failed = 0
 function assert(cond, msg) {
@@ -82,12 +81,21 @@ assert(aboutSrc.includes('Payouts are not live'), 'about does not promise payout
 assert(aboutSrc.includes('Live video is not on yet'), 'about labels live honestly')
 
 const authSrc = readFileSync(new URL('../src/components/AuthModal.jsx', import.meta.url), 'utf8')
-assert(authSrc.includes('Continue with Google'), 'google sign-in button')
-assert(authSrc.includes('loginWithGoogle'), 'google handler wired')
+assert(!authSrc.includes('Continue with Google'), 'google sign-in removed')
+assert(authSrc.includes('Continue with Apple'), 'apple sign-in button')
+assert(authSrc.includes('Continue with Microsoft'), 'microsoft sign-in button')
+assert(authSrc.includes('loginWithOAuth'), 'oauth handler wired')
+assert(authSrc.includes('CapCut is an editor'), 'capcut is not a fake login')
 
 const shortsSrc = readFileSync(new URL('../src/components/ShortsFeed.jsx', import.meta.url), 'utf8')
 assert(shortsSrc.includes('onStitch'), 'stitch on clip player')
 assert(shortsSrc.includes('early_skip'), 'reel skip trains For You')
+assert(!shortsSrc.includes('withReferenceShorts'), 'sample clips not mixed into feed')
+
+const gridSrc = readFileSync(new URL('../src/components/ShortsGrid.jsx', import.meta.url), 'utf8')
+assert(!gridSrc.includes('>Shorts<'), 'clips page has no Shorts title')
+assert(gridSrc.includes('Recommended'), 'clips recommended tab')
+assert(gridSrc.includes('Following'), 'clips following tab')
 
 const liveSrc = readFileSync(new URL('../src/components/LiveView.jsx', import.meta.url), 'utf8')
 assert(liveSrc.includes('Live lobby'), 'live page is a lobby')
@@ -98,12 +106,24 @@ assert(mig.includes('create table if not exists public.follows'), 'social graph 
 const graphSrc = readFileSync(new URL('../src/lib/graphSync.js', import.meta.url), 'utf8')
 assert(graphSrc.includes('export async function syncGraphFromCloud'), 'cloud graph pull')
 
-const refs = getReferenceShorts()
-assert(refs.length >= 10, 'reference shorts catalog')
-assert(refs.every((s) => s.reference === true && s.type === 'short' && /^https:/.test(s.mediaUrl)), 'reference shorts are https shorts')
-assert(getReferenceShort(refs[0].id)?.id === refs[0].id, 'reference short by id')
-assert(withReferenceShorts([]).length === refs.length, 'reference fill when catalog empty')
-assert(withReferenceShorts([{ id: refs[0].id, type: 'short' }]).filter((s) => s.id === refs[0].id).length === 1, 'reference does not duplicate real id')
+const helpSrc = readFileSync(new URL('../src/components/HelpPage.jsx', import.meta.url), 'utf8')
+assert(helpSrc.includes('never type the file name'), 'help says not to type the sql filename')
+assert(helpSrc.includes('Copy SQL'), 'help has copy buttons for sql')
+
+const algoSrc = readFileSync(new URL('../src/lib/algorithmEngine.js', import.meta.url), 'utf8')
+assert(algoSrc.includes('explorationRoll'), 'for you exploration is session-stable')
+assert(!algoSrc.includes('Math.random()'), 'ranker does not reshuffle every render')
+assert(algoSrc.includes('bumpCatalogEngagement'), 'watch signals write back onto posts')
+assert(!algoSrc.includes('valorant'), 'search does not invent trending queries')
+
+const creatorsSrc = readFileSync(new URL('../src/components/CreatorsPage.jsx', import.meta.url), 'utf8')
+assert(creatorsSrc.includes('listPopularCreators'), 'creators page ranks people who posted')
+
+const healthSrc = readFileSync(new URL('../src/lib/catalogHealth.js', import.meta.url), 'utf8')
+assert(healthSrc.includes('purgeDeadCatalog'), 'dead pics and sample clips are purged')
+
+const purgeSql = readFileSync(new URL('../supabase/migrations/0007_purge_dead_media.sql', import.meta.url), 'utf8')
+assert(purgeSql.includes("type = 'pic'"), 'sql removes unplayable pics')
 
 if (failed) {
   console.error(`${failed} failed`)

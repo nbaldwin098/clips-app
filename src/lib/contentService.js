@@ -1,5 +1,5 @@
 import { getImports, saveImport, updateImport, removeImport, parseExternalShort, lsGet, lsSet } from './storage'
-import { rankForUser } from './algorithmEngine'
+import { rankForUser, computeContentQuality, computeVelocity } from './algorithmEngine'
 import { notifyFollowersOfUpload } from './notifications'
 import { storeMediaBlob, processVideoFile } from './videoStorage'
 import { uploadVideoToSupabase } from './mediaUpload'
@@ -8,8 +8,9 @@ import { pushContentRecord, notifyContentChanged } from './contentSync'
 import { getSubscriptionsForUser } from './engagement'
 import { getPicsFeed } from './picsService'
 import { mergeTags, isReleased } from './mediaMeta'
-import { getReferenceShort } from './referenceShorts'
 import { setChapters, setCaptions, deleteScheduled } from './youtubeParity'
+import { isFeedable, isReferenceItem } from './catalogHealth'
+import { listIndexedUsers } from './moderation'
 
 const VIEW_KEY = 'clips_content_views'
 const PIN_KEY = 'clips_pinned_by_creator'
@@ -137,7 +138,7 @@ function onlyReleased(items) {
 
 export function getHomeFeed(userId = null) {
   const imports = getImports().map((i) => ({ ...i, type: i.type || 'short' }))
-  let merged = onlyReleased(withViewCounts(imports.map(normalizeItem)).filter((i) => i.type !== 'pic'))
+  let merged = onlyReleased(withViewCounts(imports.map(normalizeItem)).filter((i) => i.type !== 'pic' && isFeedable(i)))
   merged = merged.map((i) => {
     const cid = i.creatorId || i.userId
     return { ...i, pinned: cid ? isPinned(cid, i.id) : false }
@@ -147,25 +148,73 @@ export function getHomeFeed(userId = null) {
     if (!a.pinned && b.pinned) return 1
     return new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
   })
-  if (userId && typeof rankForUser === 'function') {
-    try {
-      const ranked = rankForUser(merged, userId)
-      const pins = ranked.filter((i) => i.pinned)
-      const rest = ranked.filter((i) => !i.pinned)
-      return [...pins, ...rest]
-    } catch {
-      return merged
-    }
+  try {
+    const ranked = rankForUser(merged, userId || 'anon')
+    const pins = ranked.filter((i) => i.pinned)
+    const rest = ranked.filter((i) => !i.pinned)
+    return [...pins, ...rest]
+  } catch {
+    return merged
   }
-  return merged
 }
 
 export function getShortsFeed(userId = null) {
-  const shorts = getHomeFeed(null).filter((i) => i.type === 'short')
-  if (userId && typeof rankForUser === 'function') {
-    try { return rankForUser(shorts, userId) } catch { return shorts }
+  const shorts = getHomeFeed(null).filter((i) => i.type === 'short' && isFeedable(i) && !isReferenceItem(i))
+  try { return rankForUser(shorts, userId || 'anon') } catch { return shorts }
+}
+
+export function listPopularCreators(limit = 24) {
+  const indexed = Object.fromEntries(listIndexedUsers().map((u) => [u.id, u]))
+  const by = {}
+  for (const raw of getImports()) {
+    const item = normalizeItem(raw)
+    if (!item || !isReleased(item) || !isFeedable(item) || isReferenceItem(item)) continue
+    const id = item.creatorId || item.userId
+    if (!id) continue
+    const meta = indexed[id] || {}
+    if (!by[id]) {
+      by[id] = {
+        id,
+        handle: item.handle || meta.handle || '',
+        displayName: meta.displayName || item.displayName || item.handle || 'Creator',
+        avatarUrl: meta.avatarUrl || item.avatarUrl || null,
+        items: [],
+      }
+    }
+    by[id].items.push(item)
+    if (item.handle) by[id].handle = item.handle
+    if (meta.displayName) by[id].displayName = meta.displayName
+    if (meta.avatarUrl) by[id].avatarUrl = meta.avatarUrl
   }
-  return shorts
+  return Object.values(by)
+    .map((c) => {
+      let views = 0
+      let qualitySum = 0
+      let newest = 0
+      for (const item of c.items) {
+        const v = (readViews()[item.id] || item.views || 0)
+        views += v
+        qualitySum += computeContentQuality(item.engagement || {}, { isOriginal: true })
+        newest = Math.max(newest, new Date(item.createdAt || 0).getTime())
+      }
+      const n = c.items.length
+      const quality = n ? qualitySum / n : 0
+      const ageH = Math.max(0.5, (Date.now() - (newest || Date.now())) / 3600000)
+      const vel = computeVelocity({ completionRate: quality / 100, loops: 0, shares: 0 }, ageH)
+      const fresh = 0.5 + 0.5 * Math.exp(-ageH / 36)
+      const score = quality * 0.45 + Math.min(vel, 20) * 2 + Math.min(n, 30) * 2 + views * 0.05 + fresh * 10
+      return {
+        ...c,
+        clipCount: c.items.filter((i) => i.type === 'short').length,
+        videoCount: c.items.filter((i) => i.type === 'video').length,
+        picCount: c.items.filter((i) => i.type === 'pic').length,
+        postCount: n,
+        views,
+        score,
+      }
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
 }
 
 function matchesQuery(i, q) {
@@ -187,8 +236,8 @@ function filterByKind(items, kind = 'all') {
 }
 
 export function getExplore(query = '', kind = 'all') {
-  const catalog = onlyReleased(withViewCounts(getImports().map(normalizeItem)))
-  const pics = getPicsFeed().map((p) => normalizeItem({ ...p, type: 'pic' })).filter(Boolean)
+  const catalog = onlyReleased(withViewCounts(getImports().map(normalizeItem))).filter(isFeedable)
+  const pics = getPicsFeed().map((p) => normalizeItem({ ...p, type: 'pic' })).filter((p) => p && isFeedable(p))
   const seen = new Set()
   const all = []
   for (const i of [...catalog, ...pics]) {
@@ -290,10 +339,8 @@ export function listCatalogTags(limit = 24) {
 
 export function getById(id) {
   const fromImport = getImports().find((i) => i.id === id)
-  if (fromImport) return normalizeItem(withViewCounts([fromImport])[0])
-  const reference = getReferenceShort(id)
-  if (reference) return { ...reference }
-  return null
+  if (!fromImport || isReferenceItem(fromImport) || !isFeedable(fromImport)) return null
+  return normalizeItem(withViewCounts([fromImport])[0])
 }
 
 export function listImportsNormalized() {

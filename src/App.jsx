@@ -102,18 +102,18 @@ function AppShell() {
   useEffect(() => installRuntimeGuards(), [])
 
   useEffect(() => {
-    syncContentFromCloud()
+    syncContentFromCloud(user)
     flushScheduledPublishes()
     syncPromotionsFromCloud()
     syncGraphFromCloud().catch(() => {})
     const interval = setInterval(() => {
-      syncContentFromCloud()
+      syncContentFromCloud(user)
       flushScheduledPublishes()
       syncPromotionsFromCloud()
       syncGraphFromCloud().catch(() => {})
     }, 45_000)
     const onFocus = () => {
-      syncContentFromCloud()
+      syncContentFromCloud(user)
       flushScheduledPublishes()
       syncGraphFromCloud().catch(() => {})
     }
@@ -122,7 +122,7 @@ function AppShell() {
       clearInterval(interval)
       window.removeEventListener('focus', onFocus)
     }
-  }, [])
+  }, [user])
 
   const applyRoute = (hash) => {
     const { kind, id, params } = parseRoute(hash)

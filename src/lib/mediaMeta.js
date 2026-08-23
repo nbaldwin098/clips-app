@@ -25,6 +25,12 @@ export function mergeTags(manual, description) {
   return [...new Set([...fromManual, ...extractHashtags(description)])].slice(0, 12)
 }
 
+export function isRecentShort(item, hours = 72) {
+  const t = new Date(item?.publishedAt || item?.createdAt || 0).getTime()
+  if (!t) return false
+  return Date.now() - t < hours * 3600 * 1000
+}
+
 export function formatPostedAt(iso) {
   if (!iso) return ''
   const d = new Date(iso)

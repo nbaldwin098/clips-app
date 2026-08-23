@@ -262,15 +262,17 @@ export function AuthProvider({ children }) {
     lsSet('mode', 'viewer')
   }, [])
 
-  const loginWithGoogle = useCallback(async () => {
+  const loginWithOAuth = useCallback(async (provider) => {
+    const labels = { apple: 'Apple', azure: 'Microsoft' }
+    if (!labels[provider]) throw new Error('That sign-in is not available.')
     if (!isSupabaseConfigured()) {
-      throw new Error('Google sign-in needs Supabase on this deploy.')
+      throw new Error(`${labels[provider]} sign-in needs Supabase on this deploy.`)
     }
     const sb = await getSupabase()
     if (!sb) throw new Error('Could not reach auth.')
     const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined
     const { error } = await sb.auth.signInWithOAuth({
-      provider: 'google',
+      provider,
       options: { redirectTo },
     })
     if (error) throw new Error(error.message)
@@ -314,7 +316,7 @@ export function AuthProvider({ children }) {
     authReady,
     backend: isSupabaseConfigured() ? 'supabase' : 'local',
     login,
-    loginWithGoogle,
+    loginWithOAuth,
     logout,
     updateProfile,
     enableCreatorMode,

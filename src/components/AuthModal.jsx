@@ -5,7 +5,7 @@ import { getSupabase, isSupabaseConfigured } from '../lib/supabaseClient'
 import { listIndexedUsers } from '../lib/moderation'
 
 export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
-  const { login, loginWithGoogle, backend } = useAuth()
+  const { login, loginWithOAuth, backend } = useAuth()
   const [mode, setMode] = useState(initialMode) // signin | signup | forgot-pass | forgot-user
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -164,23 +164,34 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
         <div className="p-5">
           {(mode === 'signin' || mode === 'signup') && backend === 'supabase' && (
             <>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={async () => {
-                  setError('')
-                  setBusy(true)
-                  try {
-                    await loginWithGoogle()
-                  } catch (err) {
-                    setError(err?.message || 'Google sign-in is not turned on in Supabase yet.')
-                    setBusy(false)
-                  }
-                }}
-                className="w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] text-sm font-semibold text-white hover:bg-[#18181b] disabled:opacity-60"
-              >
-                Continue with Google
-              </button>
+              <div className="space-y-2">
+                {[
+                  { id: 'apple', label: 'Continue with Apple' },
+                  { id: 'azure', label: 'Continue with Microsoft' },
+                ].map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    disabled={busy}
+                    onClick={async () => {
+                      setError('')
+                      setBusy(true)
+                      try {
+                        await loginWithOAuth(p.id)
+                      } catch (err) {
+                        setError(err?.message || `${p.label.replace('Continue with ', '')} sign-in is not turned on in Supabase yet.`)
+                        setBusy(false)
+                      }
+                    }}
+                    className="w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] text-sm font-semibold text-white hover:bg-[#18181b] disabled:opacity-60"
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-[11px] text-zinc-500">
+                CapCut is an editor, not a sign-in. Export the file, then upload here.
+              </p>
               <div className="my-4 flex items-center gap-3 text-[10px] uppercase tracking-wider text-zinc-600">
                 <span className="h-px flex-1 bg-[#2f2f37]" />
                 or email

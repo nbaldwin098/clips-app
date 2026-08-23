@@ -16,6 +16,7 @@
  */
 import { mergeImports } from './storage'
 import { getSupabase, isSupabaseConfigured } from './supabaseClient'
+import { isFeedable, isReferenceItem, hasStableImage, purgeDeadCatalog } from './catalogHealth'
 
 const TABLE = 'videos'
 const SYNC_EVENT = 'clips-content-sync'
@@ -111,6 +112,12 @@ export async function pushContentRecord(record, actor) {
   }
 }
 
+function keepCloudRow(row) {
+  if (!row?.id || isReferenceItem(row)) return false
+  if (row.type === 'pic') return hasStableImage(row)
+  return isFeedable(row)
+}
+
 /** Pull the most recent catalog rows from Supabase (read is public, no sign-in required). */
 export async function pullContentRecords(limit = PULL_LIMIT) {
   if (!isSupabaseConfigured()) return []
@@ -123,19 +130,46 @@ export async function pullContentRecords(limit = PULL_LIMIT) {
       .order('created_at', { ascending: false })
       .limit(limit)
     if (error || !data) return []
-    return data.map(fromRow)
+    return data.map(fromRow).filter(keepCloudRow)
   } catch {
     return []
   }
 }
 
-/** Pull + merge into the local cache, then notify any subscribed pages. Returns rows pulled. */
-export async function syncContentFromCloud() {
-  const rows = await pullContentRecords()
-  if (rows.length) {
-    mergeImports(rows)
-    notifyContentChanged()
+export async function deleteContentRecord(id, actor) {
+  if (!id || !actor?.id || actor.provider !== 'supabase' || !isSupabaseConfigured()) return false
+  try {
+    const sb = await getSupabase()
+    if (!sb) return false
+    const { error } = await sb.from(TABLE).delete().eq('id', id).eq('creator_id', actor.id)
+    return !error
+  } catch {
+    return false
   }
+}
+
+async function deleteOwnedDeadRows(actor) {
+  if (!actor?.id || actor.provider !== 'supabase' || !isSupabaseConfigured()) return
+  const sb = await getSupabase()
+  if (!sb) return
+  try {
+    const { data } = await sb.from(TABLE).select('id, type, media_url, source_url, thumb_url, origin').eq('creator_id', actor.id)
+    for (const row of data || []) {
+      const mapped = fromRow(row)
+      if (keepCloudRow(mapped)) continue
+      await sb.from(TABLE).delete().eq('id', row.id).eq('creator_id', actor.id)
+    }
+  } catch {}
+}
+
+/** Pull + merge into the local cache, then notify any subscribed pages. Returns rows pulled. */
+export async function syncContentFromCloud(actor = null) {
+  purgeDeadCatalog()
+  if (actor) await deleteOwnedDeadRows(actor)
+  const rows = await pullContentRecords()
+  if (rows.length) mergeImports(rows)
+  purgeDeadCatalog()
+  notifyContentChanged()
   return rows
 }
 
