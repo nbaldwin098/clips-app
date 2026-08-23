@@ -25,6 +25,7 @@ import {
   Music,
   Bell,
   Activity,
+  Megaphone,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { lsGet } from '../lib/storage'
@@ -241,6 +242,7 @@ export default function CollapsibleSidebar({
                 {isAuthenticated && user?.creatorStatus !== 'approved' && (
                   <NavBtn collapsed={collapsed} active={currentView === 'creator-apply'} onClick={() => go('creator-apply')} icon={ShieldCheck} label="Apply to create" />
                 )}
+                <NavBtn collapsed={collapsed} active={currentView === 'advertise' || currentView === 'advertiser-portal'} onClick={() => go('advertise')} icon={Megaphone} label="Advertise with us" />
                 <NavBtn collapsed={collapsed} active={currentView === 'about'} onClick={() => go('about')} icon={BookOpen} label="About" />
                 <NavBtn collapsed={collapsed} active={currentView === 'help'} onClick={() => go('help')} icon={HelpCircle} label="Help" />
                 <NavBtn collapsed={collapsed} active={currentView === 'legal-tos'} onClick={() => go('legal-tos')} icon={FileText} label="Terms of Service" />

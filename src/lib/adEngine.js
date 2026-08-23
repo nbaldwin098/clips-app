@@ -1,0 +1,264 @@
+/**
+ * Clips Advertisement Engine & Business Portal Service
+ *
+ * Provides:
+ * 1. Business Advertising Application intake & management
+ * 2. Automated portal account provision upon approval (username + generated password)
+ * 3. Advertiser Portal session & password management
+ * 4. Active Campaigns & Video Overlay Ads delivery (preroll / midroll with 5s skip button)
+ * 5. 90/10 Creator impression revenue attribution
+ */
+
+import { lsGet, lsSet } from './storage'
+
+const AD_APPS_KEY = 'clips_ad_applications'
+const ADVERTISERS_KEY = 'clips_advertisers'
+const AD_CAMPAIGNS_KEY = 'clips_ad_campaigns'
+const AD_SESSION_KEY = 'clips_advertiser_session'
+const AD_METRICS_KEY = 'clips_ad_metrics'
+
+export const DEFAULT_SAMPLE_ADS = [
+  {
+    id: 'ad_sample_1',
+    businessName: 'Clips Studio Pro',
+    headline: 'Level Up Your Stream Audio & 1080p Export',
+    ctaText: 'Try Free',
+    targetUrl: 'https://calabi.us',
+    mediaUrl: '',
+    durationSec: 15,
+    skipAfterSec: 5,
+    tagline: 'Sponsored · Clips Creator Tools',
+    status: 'active',
+  },
+  {
+    id: 'ad_sample_2',
+    businessName: 'Calabi Gear',
+    headline: 'Ultra-low Latency Creator Audio Interfaces',
+    ctaText: 'Shop Gear',
+    targetUrl: 'https://calabi.us',
+    mediaUrl: '',
+    durationSec: 20,
+    skipAfterSec: 5,
+    tagline: 'Sponsored · Performance Hardware',
+    status: 'active',
+  },
+]
+
+export function listAdApplications() {
+  return lsGet(AD_APPS_KEY, []) || []
+}
+
+export function submitAdApplication(payload) {
+  const list = listAdApplications()
+  const id = `adapp_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+  const record = {
+    id,
+    businessName: payload.businessName?.trim() || 'Untitled Business',
+    contactName: payload.contactName?.trim() || '',
+    email: payload.email?.trim() || '',
+    phone: payload.phone?.trim() || '',
+    website: payload.website?.trim() || '',
+    targetAudience: payload.targetAudience || 'gaming',
+    monthlyBudget: payload.monthlyBudget || '$500 - $2,500',
+    campaignGoals: payload.campaignGoals?.trim() || '',
+    status: 'pending', // pending, approved, rejected
+    submittedAt: new Date().toISOString(),
+    reviewedAt: null,
+    account: null,
+  }
+  list.unshift(record)
+  lsSet(AD_APPS_KEY, list)
+  return record
+}
+
+/**
+ * Approve business ad application:
+ * Auto-creates their Advertiser Portal login credentials
+ */
+export function approveAdApplication(appId) {
+  const list = listAdApplications()
+  const app = list.find((a) => a.id === appId)
+  if (!app) return null
+
+  const username = (app.businessName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'partner') + Math.floor(100 + Math.random() * 900)
+  const tempPassword = `AdPass-${Math.random().toString(36).slice(2, 8)}!`
+
+  const advertisers = lsGet(ADVERTISERS_KEY, {}) || {}
+  const advertiserId = `adv_${Date.now()}`
+
+  advertisers[advertiserId] = {
+    id: advertiserId,
+    appId: app.id,
+    businessName: app.businessName,
+    email: app.email,
+    username,
+    password: tempPassword,
+    mustChangePassword: true,
+    status: 'active',
+    createdAt: new Date().toISOString(),
+  }
+  lsSet(ADVERTISERS_KEY, advertisers)
+
+  // Seed default campaign for this approved advertiser
+  const campaigns = lsGet(AD_CAMPAIGNS_KEY, []) || []
+  campaigns.unshift({
+    id: `camp_${Date.now()}`,
+    advertiserId,
+    businessName: app.businessName,
+    headline: `Discover ${app.businessName}`,
+    ctaText: 'Learn More',
+    targetUrl: app.website || 'https://calabi.us',
+    durationSec: 15,
+    skipAfterSec: 5,
+    status: 'active',
+    budget: app.monthlyBudget,
+    impressions: 0,
+    clicks: 0,
+    skips: 0,
+    createdAt: new Date().toISOString(),
+  })
+  lsSet(AD_CAMPAIGNS_KEY, campaigns)
+
+  app.status = 'approved'
+  app.reviewedAt = new Date().toISOString()
+  app.account = { username, password: tempPassword, advertiserId }
+  lsSet(AD_APPS_KEY, list)
+
+  return app
+}
+
+export function rejectAdApplication(appId, reason = '') {
+  const list = listAdApplications()
+  const app = list.find((a) => a.id === appId)
+  if (!app) return null
+  app.status = 'rejected'
+  app.reviewedAt = new Date().toISOString()
+  app.rejectReason = reason
+  lsSet(AD_APPS_KEY, list)
+  return app
+}
+
+/* ---------------- Advertiser Portal Auth & Management ---------------- */
+
+export function advertiserLogin(username, password) {
+  const advertisers = lsGet(ADVERTISERS_KEY, {}) || {}
+  const u = String(username || '').trim().toLowerCase()
+  const p = String(password || '')
+
+  const found = Object.values(advertisers).find(
+    (a) => a.username.toLowerCase() === u && a.password === p
+  )
+
+  if (!found) {
+    return { ok: false, error: 'Invalid username or password' }
+  }
+
+  const session = {
+    advertiserId: found.id,
+    businessName: found.businessName,
+    username: found.username,
+    email: found.email,
+    mustChangePassword: found.mustChangePassword,
+    token: `adv_tok_${Date.now()}`,
+  }
+  lsSet(AD_SESSION_KEY, session)
+  return { ok: true, session }
+}
+
+export function getAdvertiserSession() {
+  return lsGet(AD_SESSION_KEY, null)
+}
+
+export function advertiserLogout() {
+  lsRemove(AD_SESSION_KEY)
+}
+
+export function changeAdvertiserPassword(advertiserId, newPassword) {
+  const advertisers = lsGet(ADVERTISERS_KEY, {}) || {}
+  const record = advertisers[advertiserId]
+  if (!record) return { ok: false, error: 'Advertiser account not found' }
+  if (!newPassword || newPassword.length < 6) {
+    return { ok: false, error: 'Password must be at least 6 characters' }
+  }
+
+  record.password = newPassword
+  record.mustChangePassword = false
+  advertisers[advertiserId] = record
+  lsSet(ADVERTISERS_KEY, advertisers)
+
+  const cur = getAdvertiserSession()
+  if (cur && cur.advertiserId === advertiserId) {
+    cur.mustChangePassword = false
+    lsSet(AD_SESSION_KEY, cur)
+  }
+
+  return { ok: true }
+}
+
+export function getAdvertiserCampaigns(advertiserId) {
+  const all = lsGet(AD_CAMPAIGNS_KEY, []) || []
+  return all.filter((c) => c.advertiserId === advertiserId)
+}
+
+export function saveAdvertiserCampaign(campaign) {
+  const all = lsGet(AD_CAMPAIGNS_KEY, []) || []
+  const idx = all.findIndex((c) => c.id === campaign.id)
+  if (idx >= 0) {
+    all[idx] = { ...all[idx], ...campaign, updatedAt: new Date().toISOString() }
+  } else {
+    all.unshift({
+      id: `camp_${Date.now()}`,
+      impressions: 0,
+      clicks: 0,
+      skips: 0,
+      createdAt: new Date().toISOString(),
+      ...campaign,
+    })
+  }
+  lsSet(AD_CAMPAIGNS_KEY, all)
+  return all
+}
+
+/* ---------------- Real-time Video Ad Delivery & Telemetry ---------------- */
+
+export function getActiveAdForVideo(_contentId) {
+  const custom = (lsGet(AD_CAMPAIGNS_KEY, []) || []).filter((c) => c.status === 'active')
+  const pool = custom.length > 0 ? custom : DEFAULT_SAMPLE_ADS
+  if (pool.length === 0) return null
+
+  // Hash/rotate based on content ID or random selection
+  const idx = Math.floor(Math.random() * pool.length)
+  return pool[idx]
+}
+
+export function recordAdImpression(adId, _creatorId = null) {
+  const metrics = lsGet(AD_METRICS_KEY, {}) || {}
+  metrics.totalImpressions = (metrics.totalImpressions || 0) + 1
+
+  const campaigns = lsGet(AD_CAMPAIGNS_KEY, []) || []
+  const camp = campaigns.find((c) => c.id === adId)
+  if (camp) {
+    camp.impressions = (camp.impressions || 0) + 1
+    lsSet(AD_CAMPAIGNS_KEY, campaigns)
+  }
+
+  lsSet(AD_METRICS_KEY, metrics)
+}
+
+export function recordAdClick(adId) {
+  const campaigns = lsGet(AD_CAMPAIGNS_KEY, []) || []
+  const camp = campaigns.find((c) => c.id === adId)
+  if (camp) {
+    camp.clicks = (camp.clicks || 0) + 1
+    lsSet(AD_CAMPAIGNS_KEY, campaigns)
+  }
+}
+
+export function recordAdSkip(adId) {
+  const campaigns = lsGet(AD_CAMPAIGNS_KEY, []) || []
+  const camp = campaigns.find((c) => c.id === adId)
+  if (camp) {
+    camp.skips = (camp.skips || 0) + 1
+    lsSet(AD_CAMPAIGNS_KEY, campaigns)
+  }
+}

@@ -3,7 +3,7 @@ import {
   Home, Clapperboard, Radio, Compass, History, Clock, ThumbsUp,
   LayoutDashboard, Wallet, Music, Users, ChevronDown, ChevronRight,
   HelpCircle, FileText, Shield, Scale, BookOpen, Copyright, LifeBuoy,
-  ShieldCheck, BarChart3, X, Activity,
+  ShieldCheck, BarChart3, X, Activity, Megaphone,
 } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { useAuth } from '../context/AuthContext'
@@ -116,6 +116,7 @@ export default function Sidebar({ currentView, onNavigate, open, onClose }) {
             {isAuthenticated && user?.creatorStatus !== 'approved' && (
               <NavBtn active={currentView === 'creator-apply'} onClick={() => go('creator-apply')} icon={ShieldCheck} label="Apply to create" />
             )}
+            <NavBtn active={currentView === 'advertise' || currentView === 'advertiser-portal'} onClick={() => go('advertise')} icon={Megaphone} label="Advertise with us" />
             <NavBtn active={currentView === 'about'} onClick={() => go('about')} icon={BookOpen} label="About" />
             <NavBtn active={currentView === 'help'} onClick={() => go('help')} icon={HelpCircle} label="Help" />
             <NavBtn active={currentView === 'legal-tos'} onClick={() => go('legal-tos')} icon={FileText} label="Terms of Service" />

@@ -29,6 +29,8 @@ import SoundsPage from './components/SoundsPage'
 import CheckoutPage from './components/CheckoutPage'
 import CheckoutModal from './components/CheckoutModal'
 import CreatorApplyPage from './components/CreatorApplyPage'
+import AdvertisePage from './components/AdvertisePage'
+import AdvertiserPortal from './components/AdvertiserPortal'
 import SupportPage from './components/SupportPage'
 import AdminPortal from './components/AdminPortal'
 import CreatorsPage from './components/CreatorsPage'
@@ -49,7 +51,7 @@ import { lsGet, lsSet } from './lib/storage'
 const KNOWN_VIEWS = new Set([
   'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
   'explore', 'history', 'liked', 'watch-later', 'library', 'stats', 'help', 'about',
-  'notifications', 'sounds', 'checkout', 'creator-apply', 'support', 'admin',
+  'notifications', 'sounds', 'checkout', 'creator-apply', 'advertise', 'advertiser-portal', 'support', 'admin',
   'analytics', 'channel', 'profile',
   'subscriptions', 'playlists', 'community', 'studio-tools', 'stream-settings',
   'legal-tos', 'legal-privacy', 'legal-creator', 'legal-community',
@@ -212,6 +214,8 @@ function AppShell() {
       case 'sounds': return <SoundsPage onOpenAuth={openAuth} />
       case 'checkout': return <CheckoutPage onNavigate={navigate} creatorId={checkoutTarget.id} />
       case 'creator-apply': return <CreatorApplyPage onOpenAuth={openAuth} />
+      case 'advertise': return <AdvertisePage onNavigate={navigate} />
+      case 'advertiser-portal': return <AdvertiserPortal onNavigate={navigate} />
       case 'support': return <SupportPage onOpenAuth={openAuth} />
       case 'admin': return <AdminPortal onNavigate={navigate} />
       case 'history': return <HistoryPage onNavigate={navigate} onPlayItem={setActivePlayItem} />

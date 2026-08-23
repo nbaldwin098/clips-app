@@ -3,6 +3,7 @@ import {
   isAdminSession, adminLogin, adminLogout, listApplications, setApplicationStatus,
   listTickets, updateTicket, listIndexedUsers, listImports, listUserClips,
 } from '../lib/moderation'
+import { listAdApplications, approveAdApplication, rejectAdApplication } from '../lib/adEngine'
 import { lsGet, lsSet } from '../lib/storage'
 import { useAuth } from '../context/AuthContext'
 
@@ -35,6 +36,7 @@ export default function AdminPortal() {
   }
 
   const apps = listApplications()
+  const adApps = listAdApplications()
   const tickets = listTickets()
   const users = listIndexedUsers()
   const imports = listImports()
@@ -48,6 +50,16 @@ export default function AdminPortal() {
     refresh()
   }
 
+  const handleApproveAd = (appId) => {
+    approveAdApplication(appId)
+    refresh()
+  }
+
+  const handleRejectAd = (appId) => {
+    rejectAdApplication(appId)
+    refresh()
+  }
+
   return (
     <div className="p-4 md:p-6 max-w-[1100px] mx-auto">
       <div className="flex justify-between mb-4">
@@ -55,10 +67,55 @@ export default function AdminPortal() {
         <button type="button" onClick={() => { adminLogout(); setAuthed(false) }} className="text-xs text-zinc-500">Sign out admin</button>
       </div>
       <div className="flex flex-wrap gap-2 mb-4">
-        {[['applications','Applications'],['tickets','Support'],['users','Users'],['content','Content'],['live','Live']].map(([id,label]) => (
+        {[['applications','Creator Apps'],['ads','Ad Apps'],['tickets','Support'],['users','Users'],['content','Content'],['live','Live']].map(([id,label]) => (
           <button key={id} type="button" onClick={() => setTab(id)} className={`h-8 px-3 rounded-full text-xs ${tab===id?'bg-white text-black':'border border-zinc-800 text-zinc-400'}`}>{label}</button>
         ))}
       </div>
+      {tab==='ads' && (
+        <div className="space-y-3">
+          {adApps.length === 0 ? (
+            <p className="text-xs text-zinc-500">No advertisement applications yet.</p>
+          ) : (
+            adApps.map((a) => (
+              <div key={a.id} className="rounded-xl border border-zinc-800 bg-[#121218] p-4 text-sm space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <span className="font-bold text-white text-base">{a.businessName}</span>
+                    <span className="ml-2 text-xs text-zinc-400">by {a.contactName} ({a.email})</span>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                    a.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400' :
+                    a.status === 'rejected' ? 'bg-red-500/20 text-red-400' : 'bg-amber-500/20 text-amber-400'
+                  }`}>
+                    {a.status}
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-400">{a.website} · Budget: {a.monthlyBudget} · Target: {a.targetAudience}</p>
+                {a.campaignGoals && <p className="text-xs text-zinc-300 italic">"{a.campaignGoals}"</p>}
+                
+                {a.status === 'approved' && a.account && (
+                  <div className="p-3 rounded-lg bg-[#0e0e14] border border-zinc-800 text-xs text-zinc-300 space-y-1">
+                    <p className="font-semibold text-white">Generated Portal Login Credentials:</p>
+                    <p>Username: <code className="bg-white/10 px-1.5 py-0.5 rounded text-white">{a.account.username}</code></p>
+                    <p>Password: <code className="bg-white/10 px-1.5 py-0.5 rounded text-white">{a.account.password}</code></p>
+                  </div>
+                )}
+
+                {a.status === 'pending' && (
+                  <div className="flex gap-2 pt-1">
+                    <button type="button" onClick={() => handleApproveAd(a.id)} className="h-8 px-4 rounded-lg bg-white text-black text-xs font-bold hover:bg-zinc-200">
+                      Approve & Create Portal Account
+                    </button>
+                    <button type="button" onClick={() => handleRejectAd(a.id)} className="h-8 px-3 rounded-lg bg-red-600 text-white text-xs">
+                      Reject
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      )}
       {tab==='applications' && apps.map((a) => (
         <div key={a.id} className="rounded-xl border border-zinc-800 bg-[#121218] p-4 text-sm mb-2">
           <p className="text-zinc-100">{a.displayName} @{a.handle} · {a.status}</p>
