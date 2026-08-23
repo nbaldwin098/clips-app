@@ -1,5 +1,31 @@
 # How backend works for Clips (free path)
 
+## Cross-device sync (required for multi-device/multi-user visibility)
+
+Every browser keeps a local cache (`localStorage`) of the content catalog
+so the app works offline and instantly reflects your own uploads. That
+cache is **not** shared between devices or users on its own — without a
+backend, nothing you upload can ever appear anywhere else. To make uploads
+visible across devices/users:
+
+1. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (Supabase project
+   env vars — see `.env.example`).
+2. Run `supabase/migrations/0001_videos_table.sql` in that project's SQL
+   editor (or `supabase db push`). It creates the shared `videos` table with
+   row-level security: anyone can read, but a row can only be inserted /
+   updated / deleted by the signed-in user who owns it (`creator_id =
+   auth.uid()`).
+3. Sign in with a real Supabase account (not the local-only fallback login
+   that's used when Supabase isn't configured — `AuthModal` shows "Local
+   this device" vs "Synced across devices" so you can tell which one is
+   active).
+
+Once configured, `src/lib/contentSync.js` pushes each publish's metadata
+to that table and pulls the latest rows into every client's local cache on
+load, after publishing, and on a ~45s interval — see
+`src/lib/contentService.js` (`publishLocalMedia`, `importUserLink`) and
+`src/lib/picsService.js` (`publishPhoto`).
+
 ## Content model (what users do)
 
 **Default: link import (recommended)**  
