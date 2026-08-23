@@ -129,7 +129,7 @@ export default function ContentCard({ item, onOpen, variant }) {
     </div>
   )
 
-  // YouTube-style horizontal video card
+  // Standard Video (16:9 Landscape Full HD)
   if (mode === 'video') {
     return (
       <div className="group rounded-xl overflow-hidden w-full">
@@ -170,11 +170,11 @@ export default function ContentCard({ item, onOpen, variant }) {
     )
   }
 
-  // YouTube Shorts-style vertical card
+  // Clip (9:16 Vertical Full HD)
   return (
     <div className="group rounded-2xl border border-zinc-800 bg-[#121218] overflow-hidden hover:border-white/25 transition-all w-full">
       <button type="button" onClick={open} className="w-full text-left">
-        <div className="aspect-[9/16] max-h-[420px] bg-zinc-900 relative overflow-hidden">
+        <div className="aspect-[9/16] bg-zinc-900 relative overflow-hidden">
           {thumb ? (
             <img src={thumb} alt="" className="h-full w-full object-cover" loading="lazy" referrerPolicy="no-referrer" />
           ) : (

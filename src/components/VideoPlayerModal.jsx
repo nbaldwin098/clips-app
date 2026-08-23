@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { X, ExternalLink, Play, Clock, SkipForward, ArrowUpRight, AlertCircle, Loader2 } from 'lucide-react'
+import { X, ExternalLink, Clock, SkipForward, ArrowUpRight, AlertCircle, Loader2 } from 'lucide-react'
 import { getMediaBlobUrl } from '../lib/videoStorage'
 import { parseEmbedUrl } from '../lib/videoEmbed'
 import { recordView, getViews } from '../lib/engagement'
@@ -206,7 +206,7 @@ export default function VideoPlayerModal({ item, onClose }) {
         <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/80 bg-[#15151e] shrink-0">
           <div className="flex items-center gap-2 min-w-0">
             <span className="px-2 py-0.5 rounded bg-white/10 text-[10px] font-bold uppercase tracking-wider text-white shrink-0">
-              {item.type === 'short' ? 'Clip' : 'Video'}
+              {isVertical ? 'Clip (9:16 Vertical)' : 'Video (16:9 1080p)'}
             </span>
             <h2 className="text-sm font-semibold text-zinc-100 truncate">{item.title || 'Untitled'}</h2>
           </div>
@@ -215,7 +215,9 @@ export default function VideoPlayerModal({ item, onClose }) {
           </button>
         </div>
 
-        <div className={`relative w-full bg-black flex items-center justify-center ${isVertical ? 'aspect-[9/16] max-h-[72vh]' : 'aspect-video max-h-[65vh]'} overflow-hidden`}>
+        {/* Player Stage with 5-Second Skippable Ad Overlay */}
+        <div className={`relative w-full bg-black flex items-center justify-center ${isVertical ? 'aspect-[9/16] max-h-[75vh]' : 'aspect-video max-h-[65vh]'} overflow-hidden`}>
+          {/* Active Ad Overlay (Skippable after 5s) */}
           {activeAd && !adDismissed && (
             <div className="absolute inset-0 z-30 bg-black/80 flex flex-col justify-between p-4 sm:p-6">
               <div className="flex items-center justify-between">
@@ -289,16 +291,21 @@ export default function VideoPlayerModal({ item, onClose }) {
 
         <div className="p-4 bg-[#14141c] border-t border-zinc-800/80 space-y-2 overflow-y-auto shrink-0">
           <h3 className="text-base font-semibold text-white">{item.title || 'Untitled'}</h3>
-          <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400">
-            <span className="font-semibold text-zinc-200">@{item.handle || item.creatorName || 'creator'}</span>
-            <span>·</span>
-            <span>{views} views</span>
-            {item.durationSec ? (
-              <>
-                <span>·</span>
-                <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />{item.durationSec}s</span>
-              </>
-            ) : null}
+          <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-400">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-zinc-200">@{item.handle || item.creatorName || 'creator'}</span>
+              <span>·</span>
+              <span>{views} views</span>
+              {item.durationSec ? (
+                <>
+                  <span>·</span>
+                  <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />{item.durationSec}s</span>
+                </>
+              ) : null}
+            </div>
+            <span className="text-[11px] text-zinc-500">
+              {isVertical ? '1080 × 1920 (9:16 Vertical Full HD)' : '1920 × 1080 (16:9 Landscape Full HD)'}
+            </span>
           </div>
           {desc && (
             <div className="rounded-xl bg-zinc-900/80 px-3 py-2 text-xs text-zinc-300">

@@ -82,34 +82,36 @@ export async function processVideoFile(file) {
       video.src = rawUrl
 
       video.onloadedmetadata = () => {
+        const width = video.videoWidth || 1920
+        const height = video.videoHeight || 1080
         const durationSec = Math.round(video.duration * 10) / 10 || 0
 
-        // Seek to 1s or middle to extract a crisp 1080p thumbnail frame
+        // Seek to 1s or middle to extract a crisp thumbnail frame
         const seekTarget = Math.min(1.0, durationSec > 2 ? 1.0 : durationSec / 2)
         video.currentTime = seekTarget
       }
 
       video.onseeked = () => {
         let thumbUrl = ''
+        const width = video.videoWidth || 1920
+        const height = video.videoHeight || 1080
         try {
           const canvas = document.createElement('canvas')
-          // Standardize thumbnail canvas
-          const w = video.videoWidth || 1280
-          const h = video.videoHeight || 720
-          canvas.width = w
-          canvas.height = h
+          // Extract thumbnail preserving exact source dimensions (1920x1080 for standard, 1080x1920 for clips)
+          canvas.width = width
+          canvas.height = height
           const ctx = canvas.getContext('2d')
           if (ctx) {
-            ctx.drawImage(video, 0, 0, w, h)
-            thumbUrl = canvas.toDataURL('image/jpeg', 0.82)
+            ctx.drawImage(video, 0, 0, width, height)
+            thumbUrl = canvas.toDataURL('image/jpeg', 0.85)
           }
         } catch {
           // fallback if tainted
         }
 
         resolve({
-          width: video.videoWidth || 1920,
-          height: video.videoHeight || 1080,
+          width,
+          height,
           durationSec: Math.round(video.duration * 10) / 10 || 0,
           sizeMb: Math.round((file.size / (1024 * 1024)) * 10) / 10,
           thumbUrl,
