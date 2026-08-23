@@ -24,6 +24,7 @@ import {
   X,
   Music,
   Bell,
+  Activity,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { lsGet } from '../lib/storage'
@@ -235,6 +236,7 @@ export default function CollapsibleSidebar({
             </button>
             {moreOpen && (
               <div className="ml-2 space-y-0.5 border-l border-[#23232c] pl-2">
+                <NavBtn collapsed={collapsed} active={currentView === 'stats'} onClick={() => go('stats')} icon={Activity} label="Stats" />
                 <NavBtn collapsed={collapsed} active={currentView === 'support'} onClick={() => go('support')} icon={LifeBuoy} label="Support" />
                 {isAuthenticated && user?.creatorStatus !== 'approved' && (
                   <NavBtn collapsed={collapsed} active={currentView === 'creator-apply'} onClick={() => go('creator-apply')} icon={ShieldCheck} label="Apply to create" />

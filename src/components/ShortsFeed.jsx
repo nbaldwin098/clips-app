@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { getShortsFeed } from '../lib/contentService'
 import ContentCard from './ContentCard'
 
-export default function ShortsFeed() {
+export default function ShortsFeed({ onPlayItem }) {
   const { user } = useAuth()
   const items = useMemo(() => getShortsFeed(user?.id || null), [user?.id])
 
@@ -27,7 +27,7 @@ export default function ShortsFeed() {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
           {items.map((item) => (
-            <ContentCard key={item.id} item={item} />
+            <ContentCard key={item.id} item={item} onOpen={onPlayItem} />
           ))}
         </div>
       )}

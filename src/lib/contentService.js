@@ -1,6 +1,7 @@
 import { getImports, saveImport, parseExternalShort, lsGet, lsSet } from './storage'
 import { rankForUser } from './algorithmEngine'
 import { notifyFollowersOfUpload } from './notifications'
+import { storeMediaBlob, processVideoFile } from './videoStorage'
 
 const VIEW_KEY = 'clips_content_views'
 const PIN_KEY = 'clips_pinned_by_creator'
@@ -179,39 +180,59 @@ export function importUserLink(url, actor = null) {
   return { ok: true, item: normalizeItem(record), error: null }
 }
 
-export function publishLocalMedia(file, actor = null, { type = 'video' } = {}) {
+export async function publishLocalMedia(file, actor = null, { type = null } = {}) {
   if (!file) return { ok: false, item: null, error: 'Choose a video file.' }
-  const mediaUrl = URL.createObjectURL(file)
-  const kind = type === 'short' || type === 'clip' ? 'short' : 'video'
-  const record = {
-    id: `local_${Date.now()}`,
-    type: kind,
-    title: String(file.name || 'Untitled').replace(/\.[^.]+$/, '') || 'Untitled',
-    description: 'Uploaded from this device.',
-    sourceUrl: mediaUrl,
-    mediaUrl,
-    origin: 'upload',
-    storedBytes: file.size || 0,
-    createdAt: new Date().toISOString(),
-    engagement: {
-      completionRate: 0, loops: 0, shares: 0, comments: 0, saves: 0, earlySkips: 0, likes: 0,
-    },
-    views: 0,
+  try {
+    const processed = await processVideoFile(file)
+    const id = `local_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
+
+    // Persist blob in client-side IndexedDB for persistent 1080p playback
+    await storeMediaBlob(id, file)
+
+    const isVertical = processed.height > processed.width
+    const isShortDuration = processed.durationSec && processed.durationSec <= 90
+    const inferredType = type || (isVertical || isShortDuration ? 'short' : 'video')
+
+    const record = {
+      id,
+      type: inferredType,
+      title: String(file.name || 'Untitled').replace(/\.[^.]+$/, '') || 'Untitled',
+      description: `Uploaded 1080p link (${processed.width}x${processed.height}, ${processed.durationSec}s)`,
+      sourceUrl: processed.rawUrl,
+      mediaUrl: processed.rawUrl,
+      thumbUrl: processed.thumbUrl || '',
+      origin: 'upload',
+      storedBytes: file.size || 0,
+      durationSec: processed.durationSec,
+      width: processed.width,
+      height: processed.height,
+      createdAt: new Date().toISOString(),
+      engagement: {
+        completionRate: 0, loops: 0, shares: 0, comments: 0, saves: 0, earlySkips: 0, likes: 0,
+      },
+      views: 0,
+    }
+
+    if (actor?.id) {
+      record.creatorId = actor.id
+      record.userId = actor.id
+      record.handle = actor.handle
+    }
+
+    saveImport(record)
+
+    if (actor?.id) {
+      notifyFollowersOfUpload({
+        creatorId: actor.id,
+        handle: actor.handle,
+        title: record.title,
+      })
+    }
+
+    return { ok: true, item: normalizeItem(record), error: null }
+  } catch (err) {
+    return { ok: false, item: null, error: err?.message || 'Could not process video file.' }
   }
-  if (actor?.id) {
-    record.creatorId = actor.id
-    record.userId = actor.id
-    record.handle = actor.handle
-  }
-  saveImport(record)
-  if (actor?.id) {
-    notifyFollowersOfUpload({
-      creatorId: actor.id,
-      handle: actor.handle,
-      title: record.title,
-    })
-  }
-  return { ok: true, item: normalizeItem(record), error: null }
 }
 
 export function recordContentView(id) {

@@ -11,6 +11,11 @@ import CreatorDashboard from './components/CreatorDashboard'
 import CreatorWallet from './components/CreatorWallet'
 import SettingsPage from './components/SettingsPage'
 import LibraryPage from './components/LibraryPage'
+import HistoryPage from './components/HistoryPage'
+import LikedPage from './components/LikedPage'
+import WatchLaterPage from './components/WatchLaterPage'
+import StatsPage from './components/StatsPage'
+import VideoPlayerModal from './components/VideoPlayerModal'
 import ExplorePage from './components/ExplorePage'
 import HelpPage from './components/HelpPage'
 import AboutPage from './components/AboutPage'
@@ -43,7 +48,7 @@ import { lsGet, lsSet } from './lib/storage'
 
 const KNOWN_VIEWS = new Set([
   'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
-  'explore', 'history', 'liked', 'watch-later', 'library', 'help', 'about',
+  'explore', 'history', 'liked', 'watch-later', 'library', 'stats', 'help', 'about',
   'notifications', 'sounds', 'checkout', 'creator-apply', 'support', 'admin',
   'analytics', 'channel', 'profile',
   'subscriptions', 'playlists', 'community', 'studio-tools', 'stream-settings',
@@ -59,6 +64,7 @@ function AppShell() {
   const [checkoutOpen, setCheckoutOpen] = useState(false)
   const [checkoutTarget, setCheckoutTarget] = useState({ id: null, handle: '' })
   const [profileTarget, setProfileTarget] = useState({ handle: '', userId: null })
+  const [activePlayItem, setActivePlayItem] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
 
   // Layout chrome state — collapsible sidebar + live chat panel, both real UI, no fake data.
@@ -179,10 +185,10 @@ function AppShell() {
       return <AuthRequired title="Channel" description="Sign in." onOpenAuth={openAuth} />
 
     switch (view) {
-      case 'home': return <HomeFeed />
+      case 'home': return <HomeFeed onPlayItem={setActivePlayItem} />
       case 'creators': return <CreatorsPage />
       case 'clips':
-      case 'shorts': return <ShortsFeed />
+      case 'shorts': return <ShortsFeed onPlayItem={setActivePlayItem} />
       case 'live':
         return (
           <LiveView
@@ -208,9 +214,10 @@ function AppShell() {
       case 'creator-apply': return <CreatorApplyPage onOpenAuth={openAuth} />
       case 'support': return <SupportPage onOpenAuth={openAuth} />
       case 'admin': return <AdminPortal onNavigate={navigate} />
-      case 'history': return <LibraryPage initialTab="history" />
-      case 'liked': return <LibraryPage initialTab="liked" />
-      case 'watch-later': return <LibraryPage initialTab="saved" />
+      case 'history': return <HistoryPage onNavigate={navigate} onPlayItem={setActivePlayItem} />
+      case 'liked': return <LikedPage onNavigate={navigate} onPlayItem={setActivePlayItem} />
+      case 'watch-later': return <WatchLaterPage onNavigate={navigate} onPlayItem={setActivePlayItem} />
+      case 'stats': return <StatsPage onNavigate={navigate} />
       case 'library': return <LibraryPage />
       case 'help': return <HelpPage />
       case 'about': return <AboutPage />
@@ -267,6 +274,9 @@ function AppShell() {
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
       <UploadModal open={uploadOpen} onClose={() => setUploadOpen(false)} />
       <CheckoutModal open={checkoutOpen} onClose={() => setCheckoutOpen(false)} creatorId={checkoutTarget.id} creatorHandle={checkoutTarget.handle} />
+      {activePlayItem && (
+        <VideoPlayerModal item={activePlayItem} onClose={() => setActivePlayItem(null)} />
+      )}
     </div>
   )
 }

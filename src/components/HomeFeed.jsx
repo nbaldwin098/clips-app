@@ -7,7 +7,7 @@ import ContentCard from './ContentCard'
 
 const PAGE = 3
 
-export default function HomeFeed() {
+export default function HomeFeed({ onPlayItem }) {
   const { user } = useAuth()
   const items = useMemo(() => getHomeFeed(user?.id || null), [user?.id])
   const [offset, setOffset] = useState(0)
@@ -72,7 +72,7 @@ export default function HomeFeed() {
           </button>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 px-2">
             {visible.map((item, idx) => (
-              <ContentCard key={`${item.id}-${offset}-${idx}`} item={item} />
+              <ContentCard key={`${item.id}-${offset}-${idx}`} item={item} onOpen={onPlayItem} />
             ))}
           </div>
           <button type="button" onClick={() => shift(1)} className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-black/70 border border-zinc-700 text-zinc-200 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:border-white hover:text-white" aria-label="Next">
@@ -80,7 +80,7 @@ export default function HomeFeed() {
           </button>
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
             {items.slice(0, Math.min(items.length, 12)).map((item) => (
-              <ContentCard key={`row-${item.id}`} item={item} />
+              <ContentCard key={`row-${item.id}`} item={item} onOpen={onPlayItem} />
             ))}
           </div>
         </div>

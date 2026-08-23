@@ -3,7 +3,7 @@ import {
   Home, Clapperboard, Radio, Compass, History, Clock, ThumbsUp,
   LayoutDashboard, Wallet, Music, Users, ChevronDown, ChevronRight,
   HelpCircle, FileText, Shield, Scale, BookOpen, Copyright, LifeBuoy,
-  ShieldCheck, BarChart3, X,
+  ShieldCheck, BarChart3, X, Activity,
 } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { useAuth } from '../context/AuthContext'
@@ -111,6 +111,7 @@ export default function Sidebar({ currentView, onNavigate, open, onClose }) {
         </button>
         {moreOpen && (
           <div className="ml-2 space-y-0.5 border-l border-zinc-800 pl-2">
+            <NavBtn active={currentView === 'stats'} onClick={() => go('stats')} icon={Activity} label="Stats" />
             <NavBtn active={currentView === 'support'} onClick={() => go('support')} icon={LifeBuoy} label="Support" />
             {isAuthenticated && user?.creatorStatus !== 'approved' && (
               <NavBtn active={currentView === 'creator-apply'} onClick={() => go('creator-apply')} icon={ShieldCheck} label="Apply to create" />
