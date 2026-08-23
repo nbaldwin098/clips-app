@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { X, ExternalLink, Play, Clock, SkipForward, ArrowUpRight, AlertCircle, Loader2 } from 'lucide-react'
+import { X, ExternalLink, Clock, SkipForward, ArrowUpRight, AlertCircle, Loader2 } from 'lucide-react'
 import { getMediaBlobUrl } from '../lib/videoStorage'
 import { parseEmbedUrl } from '../lib/videoEmbed'
 import { recordView, getViews } from '../lib/engagement'
@@ -7,6 +7,7 @@ import { recordWatchProgress } from '../lib/watchProgress'
 import { recordInteraction } from '../lib/algorithmEngine'
 import { getActiveAdForVideo, recordAdImpression, recordAdClick, recordAdSkip } from '../lib/adEngine'
 import { useAuth } from '../context/AuthContext'
+import { openSafeUrl, safeIframeSrc, safeMediaUrl } from '../lib/safeUrl'
 
 function isHttp(url) {
   return typeof url === 'string' && (url.startsWith('https://') || url.startsWith('http://'))
@@ -166,7 +167,7 @@ export default function VideoPlayerModal({ item, onClose }) {
   const handleAdClick = () => {
     if (activeAd) {
       recordAdClick(activeAd.id)
-      if (activeAd.targetUrl) window.open(activeAd.targetUrl, '_blank', 'noopener,noreferrer')
+      if (activeAd.targetUrl) openSafeUrl(activeAd.targetUrl)
     }
   }
 
@@ -246,22 +247,24 @@ export default function VideoPlayerModal({ item, onClose }) {
             </div>
           )}
 
-          {phase === 'ready' && mode === 'iframe' && playSrc && (
+          {phase === 'ready' && mode === 'iframe' && safeIframeSrc(playSrc) && (
             <iframe
               key={playSrc}
-              src={playSrc}
+              src={safeIframeSrc(playSrc)}
               title={item.title || 'Video'}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
+              sandbox="allow-scripts allow-same-origin allow-presentation"
+              referrerPolicy="strict-origin-when-cross-origin"
               className="w-full h-full border-0"
             />
           )}
 
-          {phase === 'ready' && mode === 'video' && playSrc && (
+          {phase === 'ready' && mode === 'video' && safeMediaUrl(playSrc) && (
             <video
               ref={videoRef}
               key={playSrc}
-              src={playSrc}
+              src={safeMediaUrl(playSrc)}
               controls
               autoPlay
               playsInline

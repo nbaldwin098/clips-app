@@ -1,5 +1,6 @@
 import { lsGet, lsSet } from './storage'
 import { notifyApplicationStatus } from './notifications'
+import { setCreatorStatus } from './profiles'
 
 const ADMIN_KEY = 'clips_admin_session'
 const APPS_KEY = 'creator_applications'
@@ -7,12 +8,13 @@ const TICKETS_KEY = 'support_tickets'
 const USERS_INDEX = 'users_index'
 
 export const PLATFORM_OWNER_HANDLE = 'cs1'
-const DEFAULT_ADMIN_PASSWORD = 'ClipsOps-cs1'
+const ADMIN_SESSION_MS = 8 * 60 * 60 * 1000
 
 const RESERVED = new Set([
   'admin', 'administrator', 'clips', 'support', 'help', 'official', 'youtube',
   'twitch', 'settings', 'login', 'signup', 'api', 'www', 'root', 'null', 'undefined',
   'mod', 'moderator', 'staff', 'system', 'about', 'terms', 'privacy', 'copyright',
+  'cs1',
 ])
 
 export function normalizeHandle(raw) {
@@ -36,31 +38,80 @@ export function validateHandle(raw, { currentUserId = null } = {}) {
   if (!/^[a-z][a-z0-9_]*$/.test(handle)) {
     return { ok: false, handle, error: 'Must start with a letter; only letters, numbers, underscore' }
   }
-  if (RESERVED.has(handle)) return { ok: false, handle, error: 'That handle is reserved' }
+  if (RESERVED.has(handle)) {
+    if (handle === PLATFORM_OWNER_HANDLE && currentUserId) {
+      const ownerId = getPlatformOwnerId()
+      if (ownerId && currentUserId === ownerId) return { ok: true, handle, error: null }
+      const cur = lsGet('user', null)
+      if (cur?.id === currentUserId && cur.provider === 'supabase' && normalizeHandle(cur.handle) === PLATFORM_OWNER_HANDLE) {
+        return { ok: true, handle, error: null }
+      }
+    }
+    return { ok: false, handle, error: 'That handle is reserved' }
+  }
   if (isHandleTaken(handle, currentUserId)) {
     return { ok: false, handle, error: 'That handle is already taken' }
   }
   return { ok: true, handle, error: null }
 }
 
-export function isPlatformOwner(user) {
-  return !!user && String(user.handle || '').toLowerCase() === PLATFORM_OWNER_HANDLE
+export function getPlatformOwnerId() {
+  try {
+    return String(import.meta.env?.VITE_PLATFORM_OWNER_ID || '').trim()
+  } catch {
+    return ''
+  }
 }
 
-export function isAdminSession() {
+export function getAdminCode() {
+  try {
+    return String(import.meta.env?.VITE_ADMIN_CODE || '').trim()
+  } catch {
+    return ''
+  }
+}
+
+/** Owner is a live Supabase user — never a localStorage-only handle. */
+export function isPlatformOwner(user) {
+  if (!user || user.provider !== 'supabase') return false
+  if (user.role === 'admin') return true
+  const ownerId = getPlatformOwnerId()
+  if (ownerId) return user.id === ownerId
+  return String(user.handle || '').toLowerCase() === PLATFORM_OWNER_HANDLE
+}
+
+export function isAdminSession(user) {
+  if (!user || user.provider !== 'supabase') return false
   const s = lsGet(ADMIN_KEY, null)
-  return !!(s && s.ok)
+  if (!s || !s.ok || !s.userId) return false
+  if (s.userId !== user.id) return false
+  if (s.exp && Date.now() > s.exp) {
+    lsSet(ADMIN_KEY, null)
+    return false
+  }
+  return isPlatformOwner(user)
 }
 
 export function adminLogin(code, user) {
+  if (!user || user.provider !== 'supabase') {
+    return { ok: false, error: 'Sign in with a synced account first.' }
+  }
   if (!isPlatformOwner(user)) {
     return { ok: false, error: 'Admin is only available for the platform owner account.' }
   }
-  const expected = import.meta.env?.VITE_ADMIN_CODE || DEFAULT_ADMIN_PASSWORD
-  if (String(code || '') !== String(expected)) {
+  const expected = getAdminCode()
+  if (!expected) {
+    return { ok: false, error: 'Admin code is not configured on the server.' }
+  }
+  if (String(code || '') !== expected) {
     return { ok: false, error: 'Invalid admin password' }
   }
-  lsSet(ADMIN_KEY, { at: Date.now(), ok: true, handle: PLATFORM_OWNER_HANDLE })
+  lsSet(ADMIN_KEY, {
+    at: Date.now(),
+    exp: Date.now() + ADMIN_SESSION_MS,
+    ok: true,
+    userId: user.id,
+  })
   return { ok: true }
 }
 
@@ -96,6 +147,7 @@ export function setApplicationStatus(appId, status, note = '') {
       lsSet(USERS_INDEX, users)
     }
     notifyApplicationStatus(app.userId, status)
+    setCreatorStatus(app.userId, status).catch(() => {})
   }
   return app
 }

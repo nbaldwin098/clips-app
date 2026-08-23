@@ -8,6 +8,7 @@ import {
   pullWatchProgressFromCloud,
 } from '../lib/watchProgress'
 import { getById } from '../lib/contentService'
+import { openSafeUrl } from '../lib/safeUrl'
 import PageHeader from './PageHeader'
 
 export default function HistoryPage({ onNavigate, onPlayItem }) {
@@ -33,7 +34,7 @@ export default function HistoryPage({ onNavigate, onPlayItem }) {
     if (onPlayItem) {
       onPlayItem(full)
     } else if (full.sourceUrl) {
-      window.open(full.sourceUrl, '_blank', 'noopener,noreferrer')
+      openSafeUrl(full.sourceUrl)
     }
   }
 

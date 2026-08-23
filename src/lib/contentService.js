@@ -168,8 +168,11 @@ export function importUserLink(url, actor = null) {
   if (!trimmed) return { ok: false, item: null, error: 'Paste a public short URL.' }
   try {
     const parsed = new URL(trimmed)
-    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
       return { ok: false, item: null, error: 'Use an http or https link.' }
+    }
+    if (/^(javascript|data|vbscript):/i.test(trimmed)) {
+      return { ok: false, item: null, error: 'That link is not allowed.' }
     }
   } catch {
     return { ok: false, item: null, error: 'That is not a valid URL.' }

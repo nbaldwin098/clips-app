@@ -19,7 +19,7 @@ isn't enough on its own, the exact pieces below all have to be in place:
    - In Render: Dashboard → your service → **Environment** tab → add both
      as Environment Variables, then trigger a redeploy (env var changes
      don't apply to an already-running/built instance).
-2. **Run all three migrations** in the Supabase SQL editor (Dashboard →
+2. **Run the SQL migrations** in the Supabase SQL editor (Dashboard →
    SQL Editor → New query → paste → Run), in order:
    - `supabase/migrations/0001_videos_table.sql` — the shared video/clip
      catalog table (what makes uploads visible across devices/users).
@@ -29,8 +29,13 @@ isn't enough on its own, the exact pieces below all have to be in place:
      public `clips` Storage bucket that hosted file uploads need (without
      it, `uploadVideoToSupabase`/`uploadImageToSupabase` fail silently and
      every upload falls back to local-only).
+   - `supabase/migrations/0004_profiles.sql` — profiles + admin/creator
+     roles. After it runs, promote yourself once:
+     `update public.profiles set role = 'admin', creator_status = 'approved' where id = '<your auth uuid>';`
    None of these will error if run more than once (all use `if not
    exists` / `drop policy if exists`).
+   Also set `VITE_ADMIN_CODE` (no default password ships in the app) and
+   `VITE_PLATFORM_OWNER_ID` (your Supabase user UUID) on Render.
 3. **Sign in with a real Supabase account**, not the local-only fallback
    login that's used when Supabase isn't configured — `AuthModal` shows
    "Local this device" vs "Synced across devices" so you can tell which
@@ -39,6 +44,16 @@ isn't enough on its own, the exact pieces below all have to be in place:
    into `main`, and let Render redeploy — until that's merged, the running
    app doesn't have this sync code at all, regardless of how the backend
    itself is configured.
+
+## Security notes (do not skip)
+
+- Never put the Supabase `service_role` key in Render `VITE_*` vars.
+- `VITE_ADMIN_CODE` has **no default** in the app. If it is missing, the
+  admin portal stays locked.
+- `VITE_PLATFORM_OWNER_ID` should be your Supabase Auth user UUID so
+  admin is tied to your account, not a forgeable `@cs1` handle.
+- Privileges (admin / creator) are loaded from `public.profiles` after
+  you run `0004_profiles.sql`. localStorage cannot grant admin anymore.
 
 Once all of the above is true, `src/lib/contentSync.js` pushes each
 publish's metadata to the `videos` table and pulls the latest rows into

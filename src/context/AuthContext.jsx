@@ -1,18 +1,48 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { lsGet, lsSet, lsRemove } from '../lib/storage'
-import { indexUser, validateHandle, normalizeHandle } from '../lib/moderation'
+import { indexUser, validateHandle, normalizeHandle, isPlatformOwner } from '../lib/moderation'
 import { getSupabase, isSupabaseConfigured } from '../lib/supabaseClient'
 import { pullWatchProgressFromCloud } from '../lib/watchProgress'
+import { ensureOwnProfile, privilegesFromProfile } from '../lib/profiles'
+import { hashSecret, verifySecret } from '../lib/secrets'
 
 const AuthContext = createContext(null)
 const DEFAULT_USER = {
   id: 'user_local', email: '', displayName: 'Viewer', handle: 'viewer',
-  isCreator: false, creatorStatus: 'none', avatar: null,
+  isCreator: false, creatorStatus: 'none', avatar: null, role: 'user',
+}
+const PRIVILEGE_KEYS = new Set(['isPlatformAdmin', 'isCreator', 'creatorStatus', 'role', 'id', 'provider'])
+
+function persistableUser(u) {
+  if (!u || typeof u !== 'object') return null
+  return {
+    id: String(u.id || '').slice(0, 80),
+    email: String(u.email || '').slice(0, 200),
+    displayName: String(u.displayName || 'Viewer').slice(0, 80),
+    handle: normalizeHandle(u.handle) || 'viewer',
+    provider: u.provider === 'supabase' ? 'supabase' : 'local',
+    avatarUrl: u.avatarUrl || null,
+    bannerUrl: u.bannerUrl || null,
+    bio: String(u.bio || '').slice(0, 500),
+    passwordHash: u.passwordHash || undefined,
+    isCreator: false,
+    creatorStatus: 'none',
+    isPlatformAdmin: false,
+    role: 'user',
+  }
 }
 
 function sanitizeUser(u) {
-  if (!u || typeof u !== 'object') return null
-  return u
+  const persisted = persistableUser(u)
+  if (!persisted?.id) return null
+  return {
+    ...DEFAULT_USER,
+    ...persisted,
+    isCreator: false,
+    creatorStatus: 'none',
+    isPlatformAdmin: false,
+    role: 'user',
+  }
 }
 
 function pickUniqueHandle(raw, exceptUserId = null) {
@@ -42,12 +72,32 @@ function mapSbUser(sbUser, meta = {}) {
     displayName,
     handle: String(handle).toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24) || 'user',
     provider: 'supabase',
-    creatorStatus: meta.creatorStatus || sbUser.user_metadata?.creator_status || 'none',
-    isCreator: !!(meta.isCreator || sbUser.user_metadata?.is_creator),
-    isPlatformAdmin: String(handle).toLowerCase() === 'cs1',
+    creatorStatus: 'none',
+    isCreator: false,
+    isPlatformAdmin: false,
+    role: 'user',
     avatarUrl: meta.avatarUrl || sbUser.user_metadata?.avatar_url || null,
     bannerUrl: meta.bannerUrl || null,
     bio: meta.bio || '',
+  }
+}
+
+async function hydratePrivileges(mapped) {
+  if (!mapped) return mapped
+  try {
+    const profile = await ensureOwnProfile(mapped)
+    const owner = isPlatformOwner({ ...mapped, role: profile?.role })
+    const priv = privilegesFromProfile(profile, owner)
+    return { ...mapped, ...priv }
+  } catch {
+    const owner = isPlatformOwner(mapped)
+    return {
+      ...mapped,
+      isPlatformAdmin: owner,
+      isCreator: owner,
+      creatorStatus: owner ? 'approved' : 'none',
+      role: owner ? 'admin' : 'user',
+    }
   }
 }
 
@@ -57,7 +107,7 @@ export function AuthProvider({ children }) {
   const [authReady, setAuthReady] = useState(!isSupabaseConfigured())
 
   useEffect(() => {
-    if (user) lsSet('user', user)
+    if (user) lsSet('user', persistableUser(user))
     else lsRemove('user')
   }, [user])
   useEffect(() => { lsSet('mode', mode) }, [mode])
@@ -71,24 +121,16 @@ export function AuthProvider({ children }) {
         if (!sb) { setAuthReady(true); return }
         const { data: { session } } = await sb.auth.getSession()
         if (session?.user) {
-          const mapped = mapSbUser(session.user)
-          if (mapped.handle === 'cs1') {
-            mapped.creatorStatus = 'approved'
-            mapped.isCreator = true
-            mapped.isPlatformAdmin = true
-          }
+          const mapped = await hydratePrivileges(mapSbUser(session.user))
           setUser(mapped)
           try { indexUser(mapped) } catch {}
           try { await pullWatchProgressFromCloud(mapped.id) } catch {}
+        } else {
+          setUser((prev) => (prev?.provider === 'supabase' ? null : sanitizeUser(prev)))
         }
         const { data } = sb.auth.onAuthStateChange(async (_event, sess) => {
           if (sess?.user) {
-            const mapped = mapSbUser(sess.user)
-            if (mapped.handle === 'cs1') {
-              mapped.creatorStatus = 'approved'
-              mapped.isCreator = true
-              mapped.isPlatformAdmin = true
-            }
+            const mapped = await hydratePrivileges(mapSbUser(sess.user))
             setUser(mapped)
             try { indexUser(mapped) } catch {}
             try { await pullWatchProgressFromCloud(mapped.id) } catch {}
@@ -105,31 +147,6 @@ export function AuthProvider({ children }) {
     })()
     return () => unsub()
   }, [])
-
-  useEffect(() => {
-    if (!user) return
-    const h = String(user.handle || '').toLowerCase()
-    if (h === 'cs1' && (user.creatorStatus !== 'approved' || !user.isPlatformAdmin)) {
-      const next = { ...user, creatorStatus: 'approved', isCreator: true, isPlatformAdmin: true }
-      setUser(next)
-      lsSet('user', next)
-      try { indexUser(next) } catch {}
-      return
-    }
-    const indexed = lsGet('users_index', {})[user.id]
-    if (
-      indexed
-      && indexed.creatorStatus
-      && (indexed.creatorStatus !== user.creatorStatus || !!indexed.isCreator !== !!user.isCreator)
-    ) {
-      const next = {
-        ...user,
-        creatorStatus: indexed.creatorStatus,
-        isCreator: indexed.creatorStatus === 'approved' || !!indexed.isCreator,
-      }
-      setUser(next)
-    }
-  }, [user?.id, user?.handle, user?.creatorStatus, user?.isCreator, user?.isPlatformAdmin])
 
   const login = useCallback(async (payload = {}) => {
     const email = typeof payload === 'string' ? payload : payload.email || ''
@@ -153,12 +170,7 @@ export function AuthProvider({ children }) {
           })
           if (error) throw new Error(error.message)
           if (data.user) {
-            const mapped = mapSbUser(data.user, { displayName, handle })
-            if (mapped.handle === 'cs1') {
-              mapped.creatorStatus = 'approved'
-              mapped.isCreator = true
-              mapped.isPlatformAdmin = true
-            }
+            const mapped = await hydratePrivileges(mapSbUser(data.user, { displayName, handle }))
             setUser(mapped)
             setMode('viewer')
             try { indexUser(mapped) } catch {}
@@ -171,29 +183,41 @@ export function AuthProvider({ children }) {
           password,
         })
         if (error) throw new Error(error.message)
-        const mapped = mapSbUser(data.user, { displayName })
-        if (mapped.handle === 'cs1') {
-          mapped.creatorStatus = 'approved'
-          mapped.isCreator = true
-          mapped.isPlatformAdmin = true
-        }
+        const mapped = await hydratePrivileges(mapSbUser(data.user, { displayName }))
         setUser(mapped)
         setMode('viewer')
         try { indexUser(mapped) } catch {}
         try { await pullWatchProgressFromCloud(mapped.id) } catch {}
         return mapped
       }
+      throw new Error('Sign-in is temporarily unavailable. Try again.')
+    }
+
+    if (isSupabaseConfigured()) {
+      throw new Error('Use your synced email and password.')
+    }
+
+    if (!email || !password || password.length < 6) {
+      throw new Error('Email and a password of at least 6 characters are required.')
     }
 
     const existing = sanitizeUser(lsGet('user', null))
     if (existing && existing.email === email) {
-      const next = { ...existing, displayName }
+      const stored = lsGet('user', null)
+      if (!stored?.passwordHash) {
+        throw new Error('This local account cannot be recovered. Create a new one.')
+      }
+      const ok = await verifySecret(password, stored.passwordHash)
+      if (!ok) throw new Error('Invalid email or password')
+      const next = { ...existing, displayName, passwordHash: stored.passwordHash }
       setUser(next)
       setMode('viewer')
       try { indexUser(next) } catch {}
       return next
     }
+
     const handle = pickUniqueHandle(handleRaw)
+    const passwordHash = await hashSecret(password)
     const next = {
       ...DEFAULT_USER,
       id: `user_${Date.now()}`,
@@ -201,9 +225,11 @@ export function AuthProvider({ children }) {
       displayName,
       handle,
       provider: 'local',
-      creatorStatus: handle === 'cs1' ? 'approved' : 'none',
-      isCreator: handle === 'cs1',
-      isPlatformAdmin: handle === 'cs1',
+      passwordHash,
+      creatorStatus: 'none',
+      isCreator: false,
+      isPlatformAdmin: false,
+      role: 'user',
     }
     setUser(next)
     setMode('viewer')
@@ -225,16 +251,19 @@ export function AuthProvider({ children }) {
   }, [])
 
   const updateProfile = useCallback((partial) => {
-    if (partial && partial.handle != null) {
+    if (!partial || typeof partial !== 'object') return
+    const safe = { ...partial }
+    for (const key of PRIVILEGE_KEYS) delete safe[key]
+    if (safe.handle != null) {
       const cur = lsGet('user', null)
-      const v = validateHandle(partial.handle, { currentUserId: cur?.id })
+      const v = validateHandle(safe.handle, { currentUserId: cur?.id })
       if (!v.ok) throw new Error(v.error || 'Invalid handle')
-      partial = { ...partial, handle: v.handle }
+      safe.handle = v.handle
     }
     setUser((prev) => {
       if (!prev) return prev
-      const next = { ...prev, ...partial }
-      lsSet('user', next)
+      const next = { ...prev, ...safe }
+      lsSet('user', persistableUser(next))
       try { indexUser(next) } catch {}
       return next
     })
@@ -242,13 +271,11 @@ export function AuthProvider({ children }) {
 
   const enableCreatorMode = useCallback(() => {
     setUser((prev) => {
-      if (!prev) return prev
-      const next = { ...prev, isCreator: true }
-      lsSet('user', next)
-      try { indexUser(next) } catch {}
-      return next
+      if (prev?.creatorStatus === 'approved') {
+        queueMicrotask(() => setMode('creator'))
+      }
+      return prev
     })
-    setMode('creator')
   }, [])
 
   const switchMode = useCallback((next) => { setMode(next) }, [])

@@ -1,12 +1,13 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { Search } from 'lucide-react'
 import { getExplore } from '../lib/contentService'
 import { useContentSyncTick } from '../lib/useContentSync'
 import ContentCard from './ContentCard'
 
-export default function ExplorePage({ onPlayItem }) {
-  const [q, setQ] = useState('')
+export default function ExplorePage({ onPlayItem, initialQuery = '' }) {
+  const [q, setQ] = useState(initialQuery)
   const syncTick = useContentSyncTick()
+  useEffect(() => { setQ(initialQuery) }, [initialQuery])
   const results = useMemo(() => getExplore(q), [q, syncTick])
 
   return (
