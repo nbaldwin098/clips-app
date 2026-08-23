@@ -75,13 +75,21 @@ export function getCreatorContent(creatorId, handle = null) {
   return sortNewestWithPins(filtered, creatorId)
 }
 
+// Defensively strip raw storage/database error text that may have been saved
+// into `description` by an earlier build, so it never renders on a card.
+const LEAKED_ERROR_PATTERN = /row-level security|violates|local only\s*—/i
+function sanitizeDescription(desc) {
+  const text = String(desc || '')
+  return LEAKED_ERROR_PATTERN.test(text) ? '' : text
+}
+
 export function normalizeItem(raw) {
   if (!raw) return null
   return {
     id: raw.id,
     type: raw.type || 'short',
     title: raw.title || 'Untitled',
-    description: raw.description || '',
+    description: sanitizeDescription(raw.description),
     sourceUrl: raw.sourceUrl || raw.mediaUrl || '',
     mediaUrl: raw.mediaUrl || raw.sourceUrl || '',
     thumbUrl: raw.thumbUrl || '',
@@ -192,21 +200,19 @@ export async function publishLocalMedia(file, actor = null, { type = null, title
     let mediaUrl = processed.rawUrl
     let origin = 'upload-local'
     let hosted = false
-    let storageNote = 'Saved on this device only'
 
-    if (isSupabaseConfigured()) {
-      const up = await uploadVideoToSupabase(file, actor?.id)
+    // Never surface raw storage/database errors to viewers — log internally and
+    // fall back to the zero-storage local link. If the actor isn't signed in,
+    // uploads are local-only by design (no cloud write is even attempted).
+    if (actor?.id && isSupabaseConfigured()) {
+      const up = await uploadVideoToSupabase(file, actor.id)
       if (up.ok && up.publicUrl) {
         mediaUrl = up.publicUrl
         origin = 'upload'
         hosted = true
-        storageNote = 'Hosted link (Supabase Storage)'
       } else if (up.error) {
         console.warn('[Clips] Supabase upload failed, using local link:', up.error)
-        storageNote = `Local only — ${up.error}`
       }
-    } else {
-      storageNote = 'Local only — add Supabase Storage bucket "clips" for shared links'
     }
 
     try {
@@ -220,10 +226,7 @@ export async function publishLocalMedia(file, actor = null, { type = null, title
       (title && String(title).trim()) ||
       String(file.name || 'Untitled').replace(/\.[^.]+$/, '') ||
       'Untitled'
-    const finalDescription =
-      description != null && String(description).trim() !== ''
-        ? String(description).trim()
-        : storageNote
+    const finalDescription = description != null ? String(description).trim() : ''
 
     const record = {
       id,
