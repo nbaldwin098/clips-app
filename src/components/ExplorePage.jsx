@@ -3,7 +3,7 @@ import { Search } from 'lucide-react'
 import { getExplore } from '../lib/contentService'
 import ContentCard from './ContentCard'
 
-export default function ExplorePage() {
+export default function ExplorePage({ onPlayItem }) {
   const [q, setQ] = useState('')
   const results = useMemo(() => getExplore(q), [q])
 
@@ -31,7 +31,7 @@ export default function ExplorePage() {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
           {results.map((item) => (
-            <ContentCard key={item.id} item={item} />
+            <ContentCard key={item.id} item={item} onOpen={onPlayItem} />
           ))}
         </div>
       )}

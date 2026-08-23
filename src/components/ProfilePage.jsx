@@ -7,7 +7,7 @@ import { getCreatorContent, togglePin, isPinned } from '../lib/contentService'
 import { getSubscriberCount, getCreatorRanking, toggleSubscribe, isSubscribed } from '../lib/engagement'
 import { Pin } from 'lucide-react'
 
-export default function ProfilePage({ onNavigate, profileHandle, profileUserId }) {
+export default function ProfilePage({ onNavigate, profileHandle, profileUserId, onPlayItem }) {
   const { user, isAuthenticated } = useAuth()
   const handle = String(profileHandle || '').toLowerCase().replace(/^@/, '')
   const users = listIndexedUsers()
@@ -80,7 +80,7 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId }
                 {isSelf && (
                   <button type="button" onClick={() => onPin(item.id)} className="absolute top-2 right-2 z-10 h-8 w-8 rounded-full bg-black/70 border border-zinc-700 flex items-center justify-center text-white" title="Pin / unpin"><Pin className="h-3.5 w-3.5" /></button>
                 )}
-                <ContentCard item={{ ...item, pinned: isPinned(creatorId, item.id) }} />
+                <ContentCard item={{ ...item, pinned: isPinned(creatorId, item.id) }} onOpen={onPlayItem} />
               </div>
             ))}
           </div>

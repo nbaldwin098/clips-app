@@ -202,14 +202,14 @@ function AppShell() {
       case 'wallet': return <CreatorWallet onNavigate={navigate} />
       case 'analytics': return <AnalyticsPage onNavigate={navigate} />
       case 'channel': return <ChannelPage onNavigate={navigate} />
-      case 'profile': return <ProfilePage onNavigate={navigate} profileHandle={profileTarget.handle} profileUserId={profileTarget.userId} />
+      case 'profile': return <ProfilePage onNavigate={navigate} profileHandle={profileTarget.handle} profileUserId={profileTarget.userId} onPlayItem={setActivePlayItem} />
       case 'subscriptions': return <SubscriptionsPage onNavigate={navigate} onOpenAuth={openAuth} />
       case 'playlists': return <PlaylistsPage onNavigate={navigate} onOpenAuth={openAuth} />
       case 'community': return <CommunityPage onNavigate={navigate} onOpenAuth={openAuth} />
       case 'studio-tools': return <StudioToolsPage onNavigate={navigate} />
       case 'stream-settings': return <StreamSettingsPage onNavigate={navigate} />
       case 'settings': return <SettingsPage onNavigate={navigate} />
-      case 'explore': return <ExplorePage />
+      case 'explore': return <ExplorePage onPlayItem={setActivePlayItem} />
       case 'sounds': return <SoundsPage onOpenAuth={openAuth} />
       case 'pics': return <PicsPage onOpenAuth={openAuth} />
       case 'checkout': return <CheckoutPage onNavigate={navigate} creatorId={checkoutTarget.id} />
