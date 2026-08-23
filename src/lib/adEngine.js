@@ -3,6 +3,8 @@
  * Real campaigns only — no default sample ads blocking playback on empty inventory.
  */
 import { lsGet, lsSet } from './storage'
+import { safeHttpUrl } from './safeUrl'
+import { hashSecret, verifySecret, isHashedSecret } from './secrets'
 
 const AD_APPS_KEY = 'clips_ad_applications'
 const ADVERTISERS_KEY = 'clips_advertisers'
@@ -23,7 +25,7 @@ export function submitAdApplication(payload) {
     contactName: payload.contactName?.trim() || '',
     email: payload.email?.trim() || '',
     phone: payload.phone?.trim() || '',
-    website: payload.website?.trim() || '',
+    website: safeHttpUrl(payload.website) || '',
     targetAudience: payload.targetAudience || 'gaming',
     monthlyBudget: payload.monthlyBudget || '$500 - $2,500',
     campaignGoals: payload.campaignGoals?.trim() || '',
@@ -37,13 +39,14 @@ export function submitAdApplication(payload) {
   return record
 }
 
-export function approveAdApplication(appId) {
+export async function approveAdApplication(appId) {
   const list = listAdApplications()
   const app = list.find((a) => a.id === appId)
   if (!app) return null
 
   const username = (app.businessName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'partner') + Math.floor(100 + Math.random() * 900)
   const tempPassword = `AdPass-${Math.random().toString(36).slice(2, 8)}!`
+  const passwordHash = await hashSecret(tempPassword)
 
   const advertisers = lsGet(ADVERTISERS_KEY, {}) || {}
   const advertiserId = `adv_${Date.now()}`
@@ -54,7 +57,7 @@ export function approveAdApplication(appId) {
     businessName: app.businessName,
     email: app.email,
     username,
-    password: tempPassword,
+    passwordHash,
     mustChangePassword: true,
     status: 'active',
     createdAt: new Date().toISOString(),
@@ -68,7 +71,7 @@ export function approveAdApplication(appId) {
     businessName: app.businessName,
     headline: `Discover ${app.businessName}`,
     ctaText: 'Learn More',
-    targetUrl: app.website || 'https://calabi.us',
+    targetUrl: safeHttpUrl(app.website) || '',
     durationSec: 15,
     skipAfterSec: 5,
     status: 'active',
@@ -98,13 +101,25 @@ export function rejectAdApplication(appId, reason = '') {
   return app
 }
 
-export function advertiserLogin(username, password) {
+export async function advertiserLogin(username, password) {
   const advertisers = lsGet(ADVERTISERS_KEY, {}) || {}
   const u = String(username || '').trim().toLowerCase()
   const p = String(password || '')
-  const found = Object.values(advertisers).find(
-    (a) => a.username.toLowerCase() === u && a.password === p
-  )
+  const matches = Object.values(advertisers).filter((a) => String(a.username || '').toLowerCase() === u)
+  let found = null
+  for (const a of matches) {
+    const stored = a.passwordHash || a.password
+    if (await verifySecret(p, stored)) {
+      found = a
+      if (a.password && !isHashedSecret(a.password) && !a.passwordHash) {
+        a.passwordHash = await hashSecret(p)
+        delete a.password
+        advertisers[a.id] = a
+        lsSet(ADVERTISERS_KEY, advertisers)
+      }
+      break
+    }
+  }
   if (!found) return { ok: false, error: 'Invalid username or password' }
   const session = {
     advertiserId: found.id,
@@ -126,14 +141,15 @@ export function advertiserLogout() {
   lsSet(AD_SESSION_KEY, null)
 }
 
-export function changeAdvertiserPassword(advertiserId, newPassword) {
+export async function changeAdvertiserPassword(advertiserId, newPassword) {
   const advertisers = lsGet(ADVERTISERS_KEY, {}) || {}
   const record = advertisers[advertiserId]
   if (!record) return { ok: false, error: 'Advertiser account not found' }
-  if (!newPassword || newPassword.length < 6) {
-    return { ok: false, error: 'Password must be at least 6 characters' }
+  if (!newPassword || newPassword.length < 8) {
+    return { ok: false, error: 'Password must be at least 8 characters' }
   }
-  record.password = newPassword
+  record.passwordHash = await hashSecret(newPassword)
+  delete record.password
   record.mustChangePassword = false
   advertisers[advertiserId] = record
   lsSet(ADVERTISERS_KEY, advertisers)
@@ -152,9 +168,13 @@ export function getAdvertiserCampaigns(advertiserId) {
 
 export function saveAdvertiserCampaign(campaign) {
   const all = lsGet(AD_CAMPAIGNS_KEY, []) || []
+  const safe = { ...campaign, targetUrl: safeHttpUrl(campaign.targetUrl) || '' }
+  if (campaign.targetUrl && !safe.targetUrl) {
+    throw new Error('Ad link must be a valid https URL.')
+  }
   const idx = all.findIndex((c) => c.id === campaign.id)
   if (idx >= 0) {
-    all[idx] = { ...all[idx], ...campaign, updatedAt: new Date().toISOString() }
+    all[idx] = { ...all[idx], ...safe, updatedAt: new Date().toISOString() }
   } else {
     all.unshift({
       id: `camp_${Date.now()}`,
@@ -162,7 +182,7 @@ export function saveAdvertiserCampaign(campaign) {
       clicks: 0,
       skips: 0,
       createdAt: new Date().toISOString(),
-      ...campaign,
+      ...safe,
     })
   }
   lsSet(AD_CAMPAIGNS_KEY, all)
@@ -171,7 +191,11 @@ export function saveAdvertiserCampaign(campaign) {
 
 /** Only real active campaigns — never invent sample ads that cover the player. */
 export function getActiveAdForVideo(_contentId) {
-  const custom = (lsGet(AD_CAMPAIGNS_KEY, []) || []).filter((c) => c.status === 'active')
+  const custom = (lsGet(AD_CAMPAIGNS_KEY, []) || []).filter((c) => {
+    if (c.status !== 'active') return false
+    if (c.targetUrl && !safeHttpUrl(c.targetUrl)) return false
+    return true
+  })
   if (custom.length === 0) return null
   const idx = Math.floor(Math.random() * custom.length)
   return custom[idx]

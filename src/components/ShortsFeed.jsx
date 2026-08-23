@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { getShortsFeed } from '../lib/contentService'
 import { getMediaBlobUrl } from '../lib/videoStorage'
 import { parseEmbedUrl } from '../lib/videoEmbed'
+import { safeIframeSrc, safeMediaUrl } from '../lib/safeUrl'
 import { recordView, getViews, toggleVote, getVotes, getUserVote } from '../lib/engagement'
 import { recordInteraction } from '../lib/algorithmEngine'
 import { useContentSyncTick } from '../lib/useContentSync'
@@ -106,23 +107,33 @@ function ClipSlide({ item, active, muted, onToggleMute, user }) {
 
   return (
     <section className="relative h-full w-full snap-start snap-always flex items-center justify-center bg-black shrink-0">
-      {isIframe && videoSrc ? (
+      {isIframe && safeIframeSrc(videoSrc) ? (
         <iframe
-          src={active ? videoSrc : undefined}
+          src={active ? safeIframeSrc(videoSrc) : undefined}
           title={item.title || 'Clip'}
           className="absolute inset-0 w-full h-full border-0"
           allow="autoplay; encrypted-media; picture-in-picture"
           allowFullScreen
+          sandbox="allow-scripts allow-same-origin allow-presentation"
+          referrerPolicy="strict-origin-when-cross-origin"
         />
-      ) : videoSrc ? (
+      ) : safeMediaUrl(videoSrc) ? (
         <video
           ref={videoRef}
-          src={videoSrc}
+          src={safeMediaUrl(videoSrc)}
           className="absolute inset-0 w-full h-full object-contain bg-black"
           playsInline
           loop
           muted={muted}
           preload={active ? 'auto' : 'metadata'}
+          onError={() => {
+            getMediaBlobUrl(item.id).then((idb) => {
+              if (idb) {
+                setSrc(idb)
+                setEmbed({ type: 'video', src: idb, platform: 'direct' })
+              }
+            }).catch(() => {})
+          }}
         />
       ) : (
         <div className="text-zinc-500 text-sm">No media</div>

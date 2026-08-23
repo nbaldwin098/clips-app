@@ -33,7 +33,17 @@ function safeParse(raw, fallback) {
 
 export function lsGet(key, fallback = null) {
   if (typeof localStorage === 'undefined') return fallback
-  return safeParse(localStorage.getItem(LS_KEYS[key] || key), fallback)
+  const parsed = safeParse(localStorage.getItem(LS_KEYS[key] || key), fallback)
+  if (Array.isArray(fallback) && !Array.isArray(parsed)) return fallback
+  if (
+    fallback
+    && typeof fallback === 'object'
+    && !Array.isArray(fallback)
+    && (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed))
+  ) {
+    return fallback
+  }
+  return parsed
 }
 
 export function lsSet(key, value) {
@@ -97,7 +107,8 @@ export function saveImport(record) {
 }
 
 export function getImports() {
-  return lsGet('imports', [])
+  const list = lsGet('imports', [])
+  return Array.isArray(list) ? list.filter((row) => row && typeof row === 'object') : []
 }
 
 /**

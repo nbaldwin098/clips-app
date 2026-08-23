@@ -10,8 +10,9 @@ import { ORG, OPS_CHECKLIST, applicationsAreOpen, applicationsWindowLabel } from
 
 export default function AdminPortal() {
   const { user } = useAuth()
-  const [authed, setAuthed] = useState(isAdminSession())
+  const [unlocked, setUnlocked] = useState(false)
   const [code, setCode] = useState('')
+  const authed = unlocked || isAdminSession(user)
   const [err, setErr] = useState('')
   const [tab, setTab] = useState('ops')
   const [, bump] = useState(0)
@@ -25,7 +26,7 @@ export default function AdminPortal() {
         <form onSubmit={(e) => {
           e.preventDefault()
           const result = adminLogin(code.trim(), user)
-          if (result?.ok) { setAuthed(true); setErr('') }
+          if (result?.ok) { setUnlocked(true); setErr('') }
           else setErr(result?.error || 'Invalid code')
         }} className="space-y-3">
           <input type="password" value={code} onChange={(e) => setCode(e.target.value)} className="w-full h-10 rounded-lg border border-zinc-800 bg-[#121218] px-3 text-sm text-zinc-100" placeholder="Admin code" />
@@ -53,8 +54,8 @@ export default function AdminPortal() {
     refresh()
   }
 
-  const handleApproveAd = (appId) => {
-    approveAdApplication(appId)
+  const handleApproveAd = async (appId) => {
+    await approveAdApplication(appId)
     refresh()
   }
 
@@ -72,7 +73,7 @@ export default function AdminPortal() {
             Apps window: {applicationsWindowLabel()} · {applicationsAreOpen() ? 'OPEN' : 'closed'} · pending creators: {pendingApps.length} · open tickets: {openTickets.length}
           </p>
         </div>
-        <button type="button" onClick={() => { adminLogout(); setAuthed(false) }} className="text-xs text-zinc-500">Sign out admin</button>
+        <button type="button" onClick={() => { adminLogout(); setUnlocked(false) }} className="text-xs text-zinc-500">Sign out admin</button>
       </div>
       <div className="flex flex-wrap gap-2 mb-4">
         {[['ops','Ops'],['applications','Creator Apps'],['ads','Ad Apps'],['tickets','Support'],['users','Users'],['content','Content'],['live','Live']].map(([id,label]) => (

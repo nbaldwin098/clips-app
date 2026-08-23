@@ -4,8 +4,9 @@
 export function parseEmbedUrl(url) {
   if (!url || typeof url !== 'string') return null
   const trimmed = url.trim()
+  if (/^(javascript|vbscript|data:text|file|about):/i.test(trimmed)) return null
 
-  if (trimmed.startsWith('blob:') || trimmed.startsWith('data:')) {
+  if (trimmed.startsWith('blob:') || trimmed.startsWith('data:image/') || trimmed.startsWith('data:video/')) {
     return { type: 'video', src: trimmed, platform: 'direct' }
   }
 
@@ -99,8 +100,8 @@ export function parseEmbedUrl(url) {
       return { type: 'video', src: trimmed, platform: 'direct' }
     }
 
-    // Unknown https link — still try as video (many CDNs omit extensions)
-    if (u.protocol === 'https:' || u.protocol === 'http:') {
+    // Unknown https only — never javascript: or other schemes
+    if (u.protocol === 'https:') {
       return { type: 'video', src: trimmed, platform: 'direct' }
     }
   } catch {

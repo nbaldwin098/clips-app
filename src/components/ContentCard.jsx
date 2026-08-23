@@ -7,6 +7,7 @@ import {
 import { recordInteraction } from '../lib/algorithmEngine'
 import { toggleSaved, getSaved } from '../lib/storage'
 import { cn } from '../lib/utils'
+import { openSafeUrl } from '../lib/safeUrl'
 import CommentsPanel from './CommentsPanel'
 import ReportModal from './ReportModal'
 
@@ -58,7 +59,7 @@ export default function ContentCard({ item, onOpen, variant }) {
       })
     }
     if (onOpen) onOpen(item)
-    else if (item.sourceUrl) window.open(item.sourceUrl, '_blank', 'noopener,noreferrer')
+    else if (item.sourceUrl) openSafeUrl(item.sourceUrl)
   }
 
   const vote = (dir, e) => {

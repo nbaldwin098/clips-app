@@ -50,6 +50,8 @@ import {
 import { startSession } from './lib/algorithmEngine'
 import { lsGet, lsSet } from './lib/storage'
 import { syncContentFromCloud } from './lib/contentSync'
+import { installRuntimeGuards } from './lib/selfHeal'
+import { isAdminSession } from './lib/moderation'
 
 const KNOWN_VIEWS = new Set([
   'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
@@ -81,6 +83,8 @@ function AppShell() {
   useEffect(() => {
     if (isAuthenticated && user?.id) startSession(user.id)
   }, [isAuthenticated, user?.id])
+
+  useEffect(() => installRuntimeGuards(), [])
 
   // Pull the shared content catalog (videos/clips other devices & users have
   // published) into the local cache on load and periodically thereafter.
@@ -199,6 +203,14 @@ function AppShell() {
       return <AuthRequired title="Settings" description="Sign in." onOpenAuth={openAuth} />
     if (view === 'channel' && !isAuthenticated)
       return <AuthRequired title="Channel" description="Sign in." onOpenAuth={openAuth} />
+    if (view === 'analytics' && !isAuthenticated)
+      return <AuthRequired title="Analytics" description="Sign in." onOpenAuth={openAuth} />
+    if (view === 'studio-tools' && !isAuthenticated)
+      return <AuthRequired title="Studio" description="Sign in." onOpenAuth={openAuth} />
+    if (view === 'stream-settings' && !isAuthenticated)
+      return <AuthRequired title="Stream settings" description="Sign in." onOpenAuth={openAuth} />
+    if (view === 'admin' && !isAdminSession(user))
+      return <AdminPortal onNavigate={navigate} />
 
     switch (view) {
       case 'home': return <HomeFeed onPlayItem={setActivePlayItem} />
@@ -224,7 +236,7 @@ function AppShell() {
       case 'studio-tools': return <StudioToolsPage onNavigate={navigate} />
       case 'stream-settings': return <StreamSettingsPage onNavigate={navigate} />
       case 'settings': return <SettingsPage onNavigate={navigate} />
-      case 'explore': return <ExplorePage onPlayItem={setActivePlayItem} />
+      case 'explore': return <ExplorePage onPlayItem={setActivePlayItem} initialQuery={searchQuery} />
       case 'sounds': return <SoundsPage onOpenAuth={openAuth} />
       case 'pics': return <PicsPage onOpenAuth={openAuth} />
       case 'checkout': return <CheckoutPage onNavigate={navigate} creatorId={checkoutTarget.id} />
@@ -295,7 +307,9 @@ function AppShell() {
       <UploadModal open={uploadOpen} onClose={() => setUploadOpen(false)} />
       <CheckoutModal open={checkoutOpen} onClose={() => setCheckoutOpen(false)} creatorId={checkoutTarget.id} creatorHandle={checkoutTarget.handle} />
       {activePlayItem && (
-        <VideoPlayerModal item={activePlayItem} onClose={() => setActivePlayItem(null)} />
+        <ErrorBoundary>
+          <VideoPlayerModal item={activePlayItem} onClose={() => setActivePlayItem(null)} />
+        </ErrorBoundary>
       )}
     </div>
   )

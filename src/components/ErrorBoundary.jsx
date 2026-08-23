@@ -3,7 +3,7 @@ import { Component } from 'react'
 export default class ErrorBoundary extends Component {
   constructor(props) {
     super(props)
-    this.state = { hasError: false, message: '' }
+    this.state = { hasError: false, message: '', retried: false }
   }
 
   static getDerivedStateFromError(error) {
@@ -12,6 +12,11 @@ export default class ErrorBoundary extends Component {
 
   componentDidCatch(error, info) {
     console.error('Clips error boundary', error, info)
+    if (!this.state.retried) {
+      window.setTimeout(() => {
+        this.setState({ hasError: false, message: '', retried: true })
+      }, 400)
+    }
   }
 
   goHome = () => {

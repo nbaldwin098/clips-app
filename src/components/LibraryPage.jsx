@@ -9,6 +9,7 @@ import {
   pullWatchProgressFromCloud,
 } from '../lib/watchProgress'
 import { getById } from '../lib/contentService'
+import { openSafeUrl } from '../lib/safeUrl'
 import { subscribeContentUpdates } from '../lib/contentSync'
 
 const TABS = [
@@ -60,7 +61,7 @@ export default function LibraryPage({ initialTab = 'history' }) {
 
   const openLink = (row) => {
     const url = row.sourceUrl || getById(row.contentId)?.sourceUrl
-    if (url) window.open(url, '_blank', 'noopener,noreferrer')
+    if (url) openSafeUrl(url)
   }
 
   return (

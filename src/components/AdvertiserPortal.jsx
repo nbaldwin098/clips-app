@@ -45,10 +45,10 @@ export default function AdvertiserPortal({ onNavigate }) {
     }
   }, [session?.advertiserId])
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault()
     setLoginError('')
-    const res = advertiserLogin(username, password)
+    const res = await advertiserLogin(username, password)
     if (res.ok) {
       setSession(res.session)
       setPassword('')
@@ -62,7 +62,7 @@ export default function AdvertiserPortal({ onNavigate }) {
     setSession(null)
   }
 
-  const handleChangePassword = (e) => {
+  const handleChangePassword = async (e) => {
     e.preventDefault()
     setPwError('')
     setPwMessage('')
@@ -70,7 +70,7 @@ export default function AdvertiserPortal({ onNavigate }) {
       setPwError('Passwords do not match')
       return
     }
-    const res = changeAdvertiserPassword(session.advertiserId, newPassword)
+    const res = await changeAdvertiserPassword(session.advertiserId, newPassword)
     if (res.ok) {
       setPwMessage('Password updated successfully!')
       setSession((s) => ({ ...s, mustChangePassword: false }))
@@ -84,20 +84,24 @@ export default function AdvertiserPortal({ onNavigate }) {
   const handleSaveCampaign = (e) => {
     e.preventDefault()
     if (!session?.advertiserId) return
-    saveAdvertiserCampaign({
-      advertiserId: session.advertiserId,
-      businessName: session.businessName,
-      headline: headline.trim() || 'Sponsored Video Ad',
-      ctaText: ctaText.trim() || 'Learn More',
-      targetUrl: targetUrl.trim() || 'https://calabi.us',
-      durationSec: Number(durationSec) || 15,
-      skipAfterSec: 5,
-      status: 'active',
-    })
-    setCampaigns(getAdvertiserCampaigns(session.advertiserId))
-    setCreateOpen(false)
-    setHeadline('')
-    setTargetUrl('')
+    try {
+      saveAdvertiserCampaign({
+        advertiserId: session.advertiserId,
+        businessName: session.businessName,
+        headline: headline.trim() || 'Sponsored Video Ad',
+        ctaText: ctaText.trim() || 'Learn More',
+        targetUrl: targetUrl.trim(),
+        durationSec: Number(durationSec) || 15,
+        skipAfterSec: 5,
+        status: 'active',
+      })
+      setCampaigns(getAdvertiserCampaigns(session.advertiserId))
+      setCreateOpen(false)
+      setHeadline('')
+      setTargetUrl('')
+    } catch (err) {
+      setPwError(err?.message || 'Could not save campaign.')
+    }
   }
 
   if (!session) {

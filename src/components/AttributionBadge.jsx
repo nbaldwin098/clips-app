@@ -1,4 +1,5 @@
 import { formatAttribution } from '../lib/license'
+import { safeHttpUrl } from '../lib/safeUrl'
 
 export default function AttributionBadge({ item, className = '' }) {
   if (!item?.license && !item?.attribution) return null
@@ -11,9 +12,9 @@ export default function AttributionBadge({ item, className = '' }) {
         {item.license || 'Licensed'}
       </span>
       {item.attribution && <span className="leading-snug">{item.attribution}</span>}
-      {item.sourceUrl && (
+      {safeHttpUrl(item.sourceUrl) && (
         <a
-          href={item.sourceUrl}
+          href={safeHttpUrl(item.sourceUrl)}
           target="_blank"
           rel="noopener noreferrer"
           className="text-white hover:underline"
