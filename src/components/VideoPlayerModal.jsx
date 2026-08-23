@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { X, ExternalLink, Clock, SkipForward, ArrowUpRight, AlertCircle, Loader2 } from 'lucide-react'
+import { X, ExternalLink, Clock, SkipForward, ArrowUpRight, AlertCircle, Loader2, Music } from 'lucide-react'
 import { getMediaBlobUrl } from '../lib/videoStorage'
 import { parseEmbedUrl } from '../lib/videoEmbed'
 import { recordView, getViews } from '../lib/engagement'
@@ -292,6 +292,9 @@ export default function VideoPlayerModal({ item, onClose }) {
 
         <div className="p-4 bg-[#14141c] border-t border-zinc-800/80 space-y-2 overflow-y-auto shrink-0">
           <h3 className="text-base font-semibold text-white">{item.title || 'Untitled'}</h3>
+          {item.soundTitle ? (
+            <p className="text-xs text-zinc-400 inline-flex items-center gap-1"><Music className="h-3 w-3" />{item.soundTitle}</p>
+          ) : null}
           <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400">
             <span className="font-semibold text-zinc-200">@{item.handle || item.creatorName || 'creator'}</span>
             <span>·</span>

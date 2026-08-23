@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import PageHeader from './PageHeader'
-import ContentCard from './ContentCard'
+import MediaShelves from './MediaShelves'
 import { useAuth } from '../context/AuthContext'
 import { listIndexedUsers } from '../lib/moderation'
 import { getCreatorContent, togglePin, isPinned } from '../lib/contentService'
@@ -66,26 +66,23 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
       </div>
       {bio && <p className="px-4 mt-4 text-sm text-zinc-400 max-w-2xl">{bio}</p>}
       <div className="px-4 mt-6">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-medium text-white">Videos</h2>
-          <p className="text-[10px] text-zinc-600">Newest first · pinned on top</p>
-        </div>
         {items.length === 0 ? (
-          <p className="text-sm text-zinc-500 py-12 text-center border border-zinc-800 rounded-2xl bg-[#121218]">No videos on this profile yet.</p>
+          <p className="text-sm text-zinc-500 py-12 text-center border border-zinc-800 rounded-2xl bg-[#121218]">Nothing on this profile yet.</p>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {items.map((item) => (
-              <div key={item.id} className="relative">
+          <MediaShelves
+            items={items}
+            onPlayItem={onPlayItem}
+            pinOverlay={(item) => (
+              <>
                 {(item.pinned || isPinned(creatorId, item.id)) && (
                   <span className="absolute top-2 left-2 z-10 text-[10px] px-1.5 py-0.5 rounded bg-black/70 text-white flex items-center gap-0.5"><Pin className="h-3 w-3" /> Pinned</span>
                 )}
                 {isSelf && (
                   <button type="button" onClick={() => onPin(item.id)} className="absolute top-2 right-2 z-10 h-8 w-8 rounded-full bg-black/70 border border-zinc-700 flex items-center justify-center text-white" title="Pin / unpin"><Pin className="h-3.5 w-3.5" /></button>
                 )}
-                <ContentCard item={{ ...item, pinned: isPinned(creatorId, item.id) }} onOpen={onPlayItem} />
-              </div>
-            ))}
-          </div>
+              </>
+            )}
+          />
         )}
       </div>
     </div>

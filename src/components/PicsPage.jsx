@@ -2,7 +2,6 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { ImagePlus, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getPicsFeed, publishPhoto, pickImmediatePhotoSrc, isHttpUrl, isDataImageUrl } from '../lib/picsService'
-import { isSupabaseConfigured } from '../lib/supabaseClient'
 import { subscribeContentUpdates } from '../lib/contentSync'
 import { getMediaBlobUrl } from '../lib/videoStorage'
 
@@ -146,10 +145,6 @@ export default function PicsPage({ onOpenAuth }) {
       </div>
 
       {error && <p className="px-4 pt-3 text-sm text-red-400">{error}</p>}
-      {!isSupabaseConfigured() && (
-        <p className="px-4 pt-2 text-[11px] text-zinc-600">Storage offline — pics stay on this device until the clips bucket is public.</p>
-      )}
-
       {items.length === 0 ? (
         <div className="m-4 rounded-2xl border border-zinc-800 bg-[#121218] px-6 py-16 text-center">
           <p className="text-sm text-zinc-300">No pics yet</p>

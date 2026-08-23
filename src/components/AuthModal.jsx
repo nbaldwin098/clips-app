@@ -166,7 +166,7 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
             {mode === 'signup' && (
               <>
                 <label className="block">
-                  <span className="text-xs font-medium text-[#007ACC]">Display name</span>
+                  <span className="text-xs font-medium text-zinc-300">Display name</span>
                   <input
                     value={displayName}
                     onChange={(e) => {
@@ -174,17 +174,17 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
                       setDisplayName(v)
                       if (!handle.trim()) setHandle(v.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24))
                     }}
-                    className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-[#007ACC]"
+                    className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-white"
                   />
                 </label>
                 <label className="block">
-                  <span className="text-xs font-medium text-[#007ACC]">Username</span>
+                  <span className="text-xs font-medium text-zinc-300">Username</span>
                   <div className="mt-1 flex">
                     <span className="inline-flex items-center h-10 px-3 rounded-l-lg border border-r-0 border-[#2f2f37] bg-[#18181b] text-zinc-500 text-sm">@</span>
                     <input
                       value={handle}
                       onChange={(e) => setHandle(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24))}
-                      className="h-10 flex-1 rounded-r-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-[#007ACC]"
+                      className="h-10 flex-1 rounded-r-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-white"
                     />
                   </div>
                 </label>
@@ -192,24 +192,24 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
             )}
 
             <label className="block">
-              <span className="text-xs font-medium text-[#007ACC]">Email</span>
+              <span className="text-xs font-medium text-zinc-300">Email</span>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-[#007ACC]"
+                className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-white"
                 autoComplete="email"
               />
             </label>
 
             {(mode === 'signin' || mode === 'signup') && (
               <label className="block">
-                <span className="text-xs font-medium text-[#007ACC]">Password</span>
+                <span className="text-xs font-medium text-zinc-300">Password</span>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-[#007ACC]"
+                  className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-white"
                   autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
                 />
               </label>
@@ -228,7 +228,7 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
             <button
               type="submit"
               disabled={busy}
-              className="w-full h-10 rounded-lg bg-[#007ACC] text-white text-sm font-medium hover:bg-[#0098ff] disabled:opacity-60"
+              className="w-full h-10 rounded-lg bg-white text-black text-sm font-bold hover:bg-zinc-200 disabled:opacity-60"
             >
               {busy
                 ? 'Please wait…'
@@ -244,10 +244,10 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
 
           {mode === 'signin' && (
             <div className="mt-3 flex flex-wrap justify-center gap-x-3 gap-y-1 text-xs text-zinc-500">
-              <button type="button" className="text-[#007ACC] font-medium" onClick={() => { setMode('forgot-pass'); setError(''); setInfo('') }}>
+              <button type="button" className="text-white font-medium" onClick={() => { setMode('forgot-pass'); setError(''); setInfo('') }}>
                 Forgot password?
               </button>
-              <button type="button" className="text-[#007ACC] font-medium" onClick={() => { setMode('forgot-user'); setError(''); setInfo('') }}>
+              <button type="button" className="text-white font-medium" onClick={() => { setMode('forgot-user'); setError(''); setInfo('') }}>
                 Forgot username?
               </button>
             </div>
@@ -255,13 +255,13 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
 
           <p className="text-xs text-zinc-500 text-center mt-4">
             {mode === 'signin' && (
-              <>No account? <button type="button" className="text-[#007ACC] font-medium" onClick={() => setMode('signup')}>Sign up</button></>
+              <>No account? <button type="button" className="text-white font-medium" onClick={() => setMode('signup')}>Sign up</button></>
             )}
             {mode === 'signup' && (
-              <>Have an account? <button type="button" className="text-[#007ACC] font-medium" onClick={() => setMode('signin')}>Sign in</button></>
+              <>Have an account? <button type="button" className="text-white font-medium" onClick={() => setMode('signin')}>Sign in</button></>
             )}
             {(mode === 'forgot-pass' || mode === 'forgot-user') && (
-              <button type="button" className="text-[#007ACC] font-medium" onClick={() => { setMode('signin'); setError(''); setInfo('') }}>
+              <button type="button" className="text-white font-medium" onClick={() => { setMode('signin'); setError(''); setInfo('') }}>
                 Back to sign in
               </button>
             )}

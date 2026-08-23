@@ -206,7 +206,7 @@ export default function ShortsFeed() {
             <Clapperboard className="h-6 w-6 text-white" />
           </div>
           <p className="mt-4 text-sm font-medium text-zinc-200">No clips yet</p>
-          <p className="mt-1.5 text-xs text-zinc-500">Upload a Clip from + — this feed scrolls full-screen like Shorts / TikTok.</p>
+          <p className="mt-1.5 text-xs text-zinc-500">Upload a Clip from +.</p>
         </div>
       </div>
     )

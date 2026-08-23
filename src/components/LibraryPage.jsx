@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from 'react'
 import { Film, Heart, Clock, History, Upload, Play } from 'lucide-react'
 import { getLiked, getSaved, getImports } from '../lib/storage'
+import { getUserUpvotedIds } from '../lib/engagement'
 import { useAuth } from '../context/AuthContext'
 import {
   listWatchHistoryDetailed,
@@ -40,7 +41,8 @@ export default function LibraryPage({ initialTab = 'history' }) {
     if (tab === 'continue') return continueItems
     if (tab === 'history') return historyItems
     if (tab === 'liked') {
-      return getLiked().map((id) => {
+      const ids = [...new Set([...(getLiked() || []), ...getUserUpvotedIds(user?.id)])]
+      return ids.map((id) => {
         const c = getById(id)
         return { contentId: id, title: c?.title || id, sourceUrl: c?.sourceUrl, watchRatio: null }
       })
@@ -57,7 +59,7 @@ export default function LibraryPage({ initialTab = 'history' }) {
       }))
     }
     return []
-  }, [tab, continueItems, historyItems, tick])
+  }, [tab, continueItems, historyItems, tick, user?.id])
 
   const openLink = (row) => {
     const url = row.sourceUrl || getById(row.contentId)?.sourceUrl
