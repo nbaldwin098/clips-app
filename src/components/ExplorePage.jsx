@@ -2,16 +2,18 @@ import { useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import { getExplore } from '../lib/contentService'
 import ContentCard from './ContentCard'
+import ClipsShelf from './ClipsShelf'
 
 export default function ExplorePage({ onPlayItem }) {
   const [q, setQ] = useState('')
   const results = useMemo(() => getExplore(q), [q])
+  const videos = useMemo(() => results.filter((i) => i.type === 'video'), [results])
+  const shorts = useMemo(() => results.filter((i) => i.type !== 'video'), [results])
 
   return (
-    <div className="p-4 md:p-6 max-w-[1400px] mx-auto space-y-6">
+    <div className="p-4 md:p-6 max-w-[1400px] mx-auto space-y-8">
       <div>
         <h1 className="text-lg font-semibold text-zinc-100">Explore</h1>
-        <p className="text-xs text-zinc-500 mt-0.5">Search titles and tags from real imports</p>
       </div>
 
       <div className="relative max-w-xl">
@@ -26,14 +28,23 @@ export default function ExplorePage({ onPlayItem }) {
 
       {results.length === 0 ? (
         <p className="text-sm text-zinc-500 text-center py-12">
-          {q ? 'No matches.' : 'Nothing to explore yet — import content to fill the catalog.'}
+          {q ? 'No matches.' : 'No items found.'}
         </p>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
-          {results.map((item) => (
-            <ContentCard key={item.id} item={item} onOpen={onPlayItem} />
-          ))}
-        </div>
+        <>
+          {shorts.length > 0 && <ClipsShelf items={shorts} onOpen={onPlayItem} title="Clips" />}
+
+          {videos.length > 0 && (
+            <section>
+              <h2 className="text-base font-semibold text-zinc-200 mb-3">Videos</h2>
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
+                {videos.map((item) => (
+                  <ContentCard key={item.id} item={item} onOpen={onPlayItem} variant="video" />
+                ))}
+              </div>
+            </section>
+          )}
+        </>
       )}
     </div>
   )
