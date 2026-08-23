@@ -43,7 +43,7 @@ export default function CreatorOnboarding({ onOpenImport, onDone, onNavigate }) 
   }
 
   return (
-    <div className="rounded-2xl border border-[#2C729B]/25 bg-white p-5 md:p-6 shadow-sm mb-8">
+    <div className="rounded-2xl border border-[#000000]/25 bg-white p-5 md:p-6 shadow-sm mb-8">
       <div className="flex items-center justify-between gap-3 mb-4">
         <div>
           <h2 className="text-base font-semibold text-slate-900">Creator setup</h2>
@@ -53,7 +53,7 @@ export default function CreatorOnboarding({ onOpenImport, onDone, onNavigate }) 
           {[1, 2, 3].map((n) => (
             <div
               key={n}
-              className={`h-1.5 w-8 rounded-full ${step >= n ? 'bg-[#2C729B]' : 'bg-slate-200'}`}
+              className={`h-1.5 w-8 rounded-full ${step >= n ? 'bg-[#000000]' : 'bg-slate-200'}`}
             />
           ))}
         </div>
@@ -62,7 +62,7 @@ export default function CreatorOnboarding({ onOpenImport, onDone, onNavigate }) 
       {step === 1 && (
         <div className="space-y-4">
           <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
-            <DollarSign className="h-4 w-4 text-[#2C729B]" />
+            <DollarSign className="h-4 w-4 text-[#000000]" />
             Set monthly membership price
           </div>
           <p className="text-xs text-slate-500 leading-relaxed">
@@ -76,8 +76,8 @@ export default function CreatorOnboarding({ onOpenImport, onDone, onNavigate }) 
                 onClick={() => setPrice(t)}
                 className={`h-10 px-4 rounded-xl text-sm font-medium border transition-colors ${
                   Number(price) === t
-                    ? 'bg-[#2C729B] text-white border-[#2C729B]'
-                    : 'bg-white text-slate-700 border-slate-200 hover:border-[#2C729B]/40'
+                    ? 'bg-[#000000] text-white border-[#000000]'
+                    : 'bg-white text-slate-700 border-slate-200 hover:border-[#000000]/40'
                 }`}
               >
                 ${t.toFixed(2)}
@@ -101,7 +101,7 @@ export default function CreatorOnboarding({ onOpenImport, onDone, onNavigate }) 
           <button
             type="button"
             onClick={savePrice}
-            className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-[#2C729B] text-white text-sm font-medium hover:bg-[#245F82]"
+            className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-[#000000] text-white text-sm font-medium hover:bg-[#27272a]"
           >
             Save price <ArrowRight className="h-4 w-4" />
           </button>
@@ -111,7 +111,7 @@ export default function CreatorOnboarding({ onOpenImport, onDone, onNavigate }) 
       {step === 2 && (
         <div className="space-y-4">
           <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
-            <Link2 className="h-4 w-4 text-[#2C729B]" />
+            <Link2 className="h-4 w-4 text-[#000000]" />
             Your share link
           </div>
           <p className="text-xs text-slate-500">
@@ -128,14 +128,14 @@ export default function CreatorOnboarding({ onOpenImport, onDone, onNavigate }) 
               onClick={copyLink}
               className="inline-flex items-center gap-1.5 h-10 px-3 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
-              {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+              {copied ? <Check className="h-4 w-4 text-black" /> : <Copy className="h-4 w-4" />}
               {copied ? 'Copied' : 'Copy'}
             </button>
           </div>
           <button
             type="button"
             onClick={() => setStep(3)}
-            className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-[#2C729B] text-white text-sm font-medium hover:bg-[#245F82]"
+            className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-[#000000] text-white text-sm font-medium hover:bg-[#27272a]"
           >
             Next <ArrowRight className="h-4 w-4" />
           </button>
@@ -145,7 +145,7 @@ export default function CreatorOnboarding({ onOpenImport, onDone, onNavigate }) 
       {step === 3 && (
         <div className="space-y-4">
           <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
-            <Upload className="h-4 w-4 text-[#2C729B]" />
+            <Upload className="h-4 w-4 text-[#000000]" />
             Add your first clip
           </div>
           <p className="text-xs text-slate-500 leading-relaxed">
@@ -158,7 +158,7 @@ export default function CreatorOnboarding({ onOpenImport, onDone, onNavigate }) 
                 onOpenImport?.()
                 onDone?.()
               }}
-              className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-[#2C729B] text-white text-sm font-medium hover:bg-[#245F82]"
+              className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-[#000000] text-white text-sm font-medium hover:bg-[#27272a]"
             >
               Import first clip
             </button>

@@ -45,7 +45,7 @@ export default function CommentsPanel({ contentId, creatorId }) {
       {isAuthenticated ? (
         <form onSubmit={submit} className="flex gap-2 mb-4">
           <input value={text} onChange={(e) => setText(e.target.value)} placeholder={replyTo ? 'Write a reply…' : 'Add a comment…'} className="flex-1 h-10 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100" maxLength={5000} />
-          <button type="submit" className="h-10 px-3 rounded-lg bg-[#007ACC] text-white text-xs">Post</button>
+          <button type="submit" className="h-10 px-3 rounded-lg bg-white text-black text-xs">Post</button>
           {replyTo && <button type="button" onClick={() => setReplyTo(null)} className="text-xs text-zinc-500">Cancel</button>}
         </form>
       ) : (
@@ -57,10 +57,10 @@ export default function CommentsPanel({ contentId, creatorId }) {
           return (
             <div key={c.id} className="text-sm">
               <div className="flex gap-2">
-                <button type="button" onClick={() => openProfile(c.handle, c.userId)} className="h-8 w-8 rounded-full bg-[#007ACC]/20 text-[#007ACC] text-xs font-semibold shrink-0">{(c.handle || '?')[0]?.toUpperCase()}</button>
+                <button type="button" onClick={() => openProfile(c.handle, c.userId)} className="h-8 w-8 rounded-full bg-white/20 text-white text-xs font-semibold shrink-0">{(c.handle || '?')[0]?.toUpperCase()}</button>
                 <div className="min-w-0 flex-1">
                   <p className="text-xs text-zinc-400">
-                    <button type="button" onClick={() => openProfile(c.handle, c.userId)} className="text-[#007ACC] hover:underline font-medium">@{c.handle}</button>
+                    <button type="button" onClick={() => openProfile(c.handle, c.userId)} className="text-white hover:underline font-medium">@{c.handle}</button>
                     {c.pinned && <span className="ml-2 text-[10px] text-zinc-500">Pinned</span>}
                   </p>
                   <p className="text-zinc-200 mt-0.5 whitespace-pre-wrap">{c.text}</p>
@@ -81,7 +81,7 @@ export default function CommentsPanel({ contentId, creatorId }) {
                     <div className="mt-2 ml-2 space-y-2 border-l border-zinc-800 pl-3">
                       {replies.map((r) => (
                         <div key={r.id}>
-                          <button type="button" onClick={() => openProfile(r.handle, r.userId)} className="text-xs text-[#007ACC] hover:underline">@{r.handle}</button>
+                          <button type="button" onClick={() => openProfile(r.handle, r.userId)} className="text-xs text-white hover:underline">@{r.handle}</button>
                           <p className="text-zinc-200 text-sm">{r.text}</p>
                         </div>
                       ))}

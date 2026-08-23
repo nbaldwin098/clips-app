@@ -25,7 +25,6 @@ import {
   Music,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { useTheme } from '../context/ThemeContext'
 import { lsGet } from '../lib/storage'
 import { listIndexedUsers } from '../lib/moderation'
 import { cn } from '../lib/utils'
@@ -36,10 +35,10 @@ const itemCls = (active) =>
     active ? 'text-white bg-[#1f1f28]' : 'text-zinc-400 hover:text-white hover:bg-[#181820]'
   )
 
-function NavBtn({ active, onClick, icon: Icon, label, accent, collapsed }) {
+function NavBtn({ active, onClick, icon: Icon, label, collapsed }) {
   return (
     <button type="button" onClick={onClick} className={itemCls(active)} title={collapsed ? label : undefined}>
-      {Icon && <Icon className="h-4 w-4 shrink-0" style={active ? { color: accent.primary } : undefined} />}
+      {Icon && <Icon className={cn('h-4 w-4 shrink-0', active && 'text-white')} />}
       {!collapsed && <span className="truncate">{label}</span>}
     </button>
   )
@@ -66,7 +65,6 @@ export default function CollapsibleSidebar({
   focusedStreamUserId,
 }) {
   const { isAuthenticated, user } = useAuth()
-  const { accent } = useTheme()
   const [moreOpen, setMoreOpen] = useState(false)
   const [liveNow, setLiveNow] = useState(() => (lsGet('live_board', []) || []).filter((b) => b.isLive))
 
@@ -129,11 +127,11 @@ export default function CollapsibleSidebar({
       <div className="flex-1 overflow-y-auto py-2 px-1.5 space-y-4">
         {/* Primary navigation */}
         <nav className="space-y-0.5">
-          <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'home'} onClick={() => go('home')} icon={Home} label="Recommended" />
-          <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'clips' || currentView === 'shorts'} onClick={() => go('clips')} icon={Clapperboard} label="Clips" />
-          <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'live'} onClick={() => go('live')} icon={Radio} label="Live" />
-          <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'explore'} onClick={() => go('explore')} icon={Compass} label="Search" />
-          <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'sounds'} onClick={() => go('sounds')} icon={Music} label="Sounds" />
+          <NavBtn collapsed={collapsed} active={currentView === 'home'} onClick={() => go('home')} icon={Home} label="Recommended" />
+          <NavBtn collapsed={collapsed} active={currentView === 'clips' || currentView === 'shorts'} onClick={() => go('clips')} icon={Clapperboard} label="Clips" />
+          <NavBtn collapsed={collapsed} active={currentView === 'live'} onClick={() => go('live')} icon={Radio} label="Live" />
+          <NavBtn collapsed={collapsed} active={currentView === 'explore'} onClick={() => go('explore')} icon={Compass} label="Search" />
+          <NavBtn collapsed={collapsed} active={currentView === 'sounds'} onClick={() => go('sounds')} icon={Music} label="Sounds" />
         </nav>
 
         {/* Real "Live Now" list — empty state when nobody is broadcasting */}
@@ -159,10 +157,7 @@ export default function CollapsibleSidebar({
                 title={collapsed ? `${s.displayName} · LIVE` : undefined}
               >
                 <span className="relative shrink-0">
-                  <span
-                    className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold border-2 border-[#eb0400]"
-                    style={{ backgroundColor: accent.badgeBg, color: accent.primary }}
-                  >
+                  <span className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold border-2 border-[#eb0400] bg-white/10 text-white">
                     {(s.displayName || s.handle || '?')[0]?.toUpperCase()}
                   </span>
                   <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-[#eb0400] ring-1 ring-[#111116] animate-pulse" />
@@ -183,15 +178,15 @@ export default function CollapsibleSidebar({
         {!collapsed && (
           <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
             <p className="px-2.5 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Library</p>
-            <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'history'} onClick={() => go('history')} icon={History} label="History" />
-            <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'watch-later'} onClick={() => go('watch-later')} icon={Clock} label="Watch later" />
-            <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'liked'} onClick={() => go('liked')} icon={ThumbsUp} label="Liked" />
+            <NavBtn collapsed={collapsed} active={currentView === 'history'} onClick={() => go('history')} icon={History} label="History" />
+            <NavBtn collapsed={collapsed} active={currentView === 'watch-later'} onClick={() => go('watch-later')} icon={Clock} label="Watch later" />
+            <NavBtn collapsed={collapsed} active={currentView === 'liked'} onClick={() => go('liked')} icon={ThumbsUp} label="Liked" />
           </div>
         )}
 
         {!collapsed && (
           <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
-            <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'subscriptions'} onClick={() => go('subscriptions')} icon={Users} label="Subscriptions" />
+            <NavBtn collapsed={collapsed} active={currentView === 'subscriptions'} onClick={() => go('subscriptions')} icon={Users} label="Subscriptions" />
           </div>
         )}
 
@@ -200,12 +195,12 @@ export default function CollapsibleSidebar({
           {!collapsed && <p className="px-2.5 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Creators</p>}
           {isApprovedCreator && (
             <>
-              <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'dashboard'} onClick={() => go('dashboard')} icon={LayoutDashboard} label="Studio" />
-              <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'wallet'} onClick={() => go('wallet')} icon={Wallet} label="Wallet" />
-              <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'analytics'} onClick={() => go('analytics')} icon={BarChart3} label="Analytics" />
+              <NavBtn collapsed={collapsed} active={currentView === 'dashboard'} onClick={() => go('dashboard')} icon={LayoutDashboard} label="Studio" />
+              <NavBtn collapsed={collapsed} active={currentView === 'wallet'} onClick={() => go('wallet')} icon={Wallet} label="Wallet" />
+              <NavBtn collapsed={collapsed} active={currentView === 'analytics'} onClick={() => go('analytics')} icon={BarChart3} label="Analytics" />
             </>
           )}
-          <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'creators'} onClick={() => go('creators')} icon={Users} label="All creators" />
+          <NavBtn collapsed={collapsed} active={currentView === 'creators'} onClick={() => go('creators')} icon={Users} label="All creators" />
           {!collapsed && recommendedCreators.length === 0 && (
             <p className="px-2.5 text-[11px] text-zinc-600 pt-1">No approved creators yet.</p>
           )}
@@ -214,10 +209,7 @@ export default function CollapsibleSidebar({
               <p className="px-2.5 pt-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Recommended</p>
               {recommendedCreators.map((c) => (
                 <button key={c.id} type="button" onClick={() => go('creators')} className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-[#181820]">
-                  <span
-                    className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0 overflow-hidden"
-                    style={{ backgroundColor: accent.badgeBg, color: accent.primary }}
-                  >
+                  <span className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0 overflow-hidden bg-white/10 text-white">
                     {c.avatarUrl ? <img src={c.avatarUrl} alt="" className="h-full w-full object-cover" /> : (c.displayName || '?')[0].toUpperCase()}
                   </span>
                   <span className="min-w-0">
@@ -239,18 +231,18 @@ export default function CollapsibleSidebar({
             </button>
             {moreOpen && (
               <div className="ml-2 space-y-0.5 border-l border-[#23232c] pl-2">
-                <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'support'} onClick={() => go('support')} icon={LifeBuoy} label="Support" />
+                <NavBtn collapsed={collapsed} active={currentView === 'support'} onClick={() => go('support')} icon={LifeBuoy} label="Support" />
                 {isAuthenticated && user?.creatorStatus !== 'approved' && (
-                  <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'creator-apply'} onClick={() => go('creator-apply')} icon={ShieldCheck} label="Apply to create" />
+                  <NavBtn collapsed={collapsed} active={currentView === 'creator-apply'} onClick={() => go('creator-apply')} icon={ShieldCheck} label="Apply to create" />
                 )}
-                <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'about'} onClick={() => go('about')} icon={BookOpen} label="About" />
-                <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'help'} onClick={() => go('help')} icon={HelpCircle} label="Help" />
-                <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'legal-tos'} onClick={() => go('legal-tos')} icon={FileText} label="Terms of Service" />
-                <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'legal-privacy'} onClick={() => go('legal-privacy')} icon={Shield} label="Privacy Policy" />
-                <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'legal-creator'} onClick={() => go('legal-creator')} icon={Scale} label="Creator Agreement" />
-                <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'legal-community'} onClick={() => go('legal-community')} icon={Users} label="Community Guidelines" />
+                <NavBtn collapsed={collapsed} active={currentView === 'about'} onClick={() => go('about')} icon={BookOpen} label="About" />
+                <NavBtn collapsed={collapsed} active={currentView === 'help'} onClick={() => go('help')} icon={HelpCircle} label="Help" />
+                <NavBtn collapsed={collapsed} active={currentView === 'legal-tos'} onClick={() => go('legal-tos')} icon={FileText} label="Terms of Service" />
+                <NavBtn collapsed={collapsed} active={currentView === 'legal-privacy'} onClick={() => go('legal-privacy')} icon={Shield} label="Privacy Policy" />
+                <NavBtn collapsed={collapsed} active={currentView === 'legal-creator'} onClick={() => go('legal-creator')} icon={Scale} label="Creator Agreement" />
+                <NavBtn collapsed={collapsed} active={currentView === 'legal-community'} onClick={() => go('legal-community')} icon={Users} label="Community Guidelines" />
                 {user?.isPlatformAdmin && (
-                  <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'admin'} onClick={() => go('admin')} icon={ShieldCheck} label="Admin" />
+                  <NavBtn collapsed={collapsed} active={currentView === 'admin'} onClick={() => go('admin')} icon={ShieldCheck} label="Admin" />
                 )}
               </div>
             )}

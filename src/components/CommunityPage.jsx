@@ -12,7 +12,7 @@ export default function CommunityPage({ onNavigate, onOpenAuth }) {
     return (
       <div className="p-6 text-center">
         <p className="text-sm text-zinc-400">Sign in to post.</p>
-        <button type="button" onClick={onOpenAuth} className="mt-3 h-9 px-4 rounded-lg bg-[#007ACC] text-white text-sm">Sign in</button>
+        <button type="button" onClick={onOpenAuth} className="mt-3 h-9 px-4 rounded-lg bg-white text-black text-sm">Sign in</button>
       </div>
     )
   }
@@ -31,7 +31,7 @@ export default function CommunityPage({ onNavigate, onOpenAuth }) {
         }}
       >
         <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} placeholder="Share an update…" className="w-full rounded-lg border border-[#2f2f37] bg-[#1f1f23] px-3 py-2 text-sm" />
-        <button type="submit" className="h-9 px-3 rounded-lg bg-[#007ACC] text-white text-sm">Post</button>
+        <button type="submit" className="h-9 px-3 rounded-lg bg-white text-black text-sm">Post</button>
       </form>
       <ul className="space-y-2">
         {posts.map((p) => (

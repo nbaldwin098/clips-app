@@ -27,10 +27,10 @@ export default function SettingsPage({ onNavigate }) {
       <PageHeader title="Settings" onBack={() => onNavigate?.('home')} />
       <div className="rounded-2xl border border-zinc-800 bg-[#121218] p-5 space-y-4">
         <div>
-          <p className="text-xs text-[#007ACC]">Email</p>
+          <p className="text-xs text-white">Email</p>
           <p className="text-sm text-zinc-200 mt-1">{user?.email}</p>
         </div>
-        <label className="block text-xs text-[#007ACC]">
+        <label className="block text-xs text-white">
           Display name
           <input
             defaultValue={user?.displayName || ''}
@@ -38,7 +38,7 @@ export default function SettingsPage({ onNavigate }) {
             className="mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100"
           />
         </label>
-        <label className="block text-xs text-[#007ACC]">
+        <label className="block text-xs text-white">
           Handle (@username — unique, 3–24 chars)
           <input
             defaultValue={user?.handle || ''}
@@ -55,7 +55,7 @@ export default function SettingsPage({ onNavigate }) {
           />
         </label>
         <p className="text-xs text-zinc-500">
-          Creator status: <span className="text-[#007ACC]">{user?.creatorStatus || 'none'}</span>
+          Creator status: <span className="text-white">{user?.creatorStatus || 'none'}</span>
         </p>
         <button
           type="button"
@@ -70,7 +70,7 @@ export default function SettingsPage({ onNavigate }) {
       </div>
 
       <div className="mt-6 rounded-2xl border border-zinc-800 bg-[#121218] p-5 space-y-3">
-        <p className="text-xs font-medium text-[#007ACC]">Watch history</p>
+        <p className="text-xs font-medium text-white">Watch history</p>
         <p className="text-[11px] text-zinc-500">
           Like YouTube: history improves Recommended. Turn off to stop saving new watches.
         </p>
@@ -106,7 +106,7 @@ export default function SettingsPage({ onNavigate }) {
       </div>
 
       <div className="mt-6 space-y-4 rounded-2xl border border-zinc-800 bg-[#121218] p-5">
-        <p className="text-xs font-medium text-[#007ACC]">Security & playback</p>
+        <p className="text-xs font-medium text-white">Security & playback</p>
         <div className="flex flex-wrap gap-2">
           <button type="button" className="h-9 px-3 rounded-lg border border-zinc-700 text-xs text-zinc-200" onClick={() => enable2FA(user?.id)}>Enable 2FA (local)</button>
           <button type="button" className="h-9 px-3 rounded-lg border border-zinc-700 text-xs text-zinc-200" onClick={() => disable2FA(user?.id)}>Disable 2FA</button>
@@ -128,7 +128,7 @@ export default function SettingsPage({ onNavigate }) {
             </label>
           ))}
         </div>
-        <p className="text-xs text-[#007ACC]">Notification prefs</p>
+        <p className="text-xs text-white">Notification prefs</p>
         <div className="flex flex-wrap gap-2 text-xs">
           {Object.entries(getNotifPrefs(user?.id)).map(([k, v]) => (
             <label key={k} className="flex items-center gap-1 border border-zinc-800 rounded-lg px-2 py-1">

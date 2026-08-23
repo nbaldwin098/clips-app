@@ -26,17 +26,17 @@ export default function SupportPage({ onOpenAuth }) {
   return (
     <div className="p-4 md:p-6 max-w-lg mx-auto space-y-6">
       <div>
-        <h1 className="text-lg font-semibold text-[#007ACC]">Customer support</h1>
+        <h1 className="text-lg font-semibold text-white">Customer support</h1>
         <p className="text-xs text-zinc-500 mt-1">Report issues, appeals, payment questions. Tickets go to the admin portal.</p>
       </div>
 
       {!isAuthenticated ? (
         <p className="text-sm text-zinc-400">
-          <button type="button" onClick={onOpenAuth} className="text-[#007ACC] font-medium">Sign in</button> to open a ticket.
+          <button type="button" onClick={onOpenAuth} className="text-white font-medium">Sign in</button> to open a ticket.
         </p>
       ) : (
         <form onSubmit={submit} className="rounded-2xl border border-zinc-800 bg-[#121218] p-5 space-y-3">
-          {sent && <p className="text-xs text-green-400">Ticket submitted.</p>}
+          {sent && <p className="text-xs text-white">Ticket submitted.</p>}
           <input
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
@@ -52,7 +52,7 @@ export default function SupportPage({ onOpenAuth }) {
             placeholder="Describe the issue"
             className="w-full rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 py-2 text-sm text-zinc-100"
           />
-          <button type="submit" className="h-10 px-4 rounded-lg bg-[#007ACC] text-white text-sm font-medium">
+          <button type="submit" className="h-10 px-4 rounded-lg bg-white text-black text-sm font-medium">
             Submit ticket
           </button>
         </form>
@@ -65,7 +65,7 @@ export default function SupportPage({ onOpenAuth }) {
             <div key={t.id} className="rounded-xl border border-zinc-800 bg-[#121218] px-4 py-3 text-sm">
               <div className="flex justify-between gap-2">
                 <span className="text-zinc-100">{t.subject}</span>
-                <span className="text-xs text-[#007ACC]">{t.status}</span>
+                <span className="text-xs text-white">{t.status}</span>
               </div>
               <p className="text-xs text-zinc-500 mt-1 line-clamp-2">{t.body}</p>
             </div>

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
-import { ThemeProvider } from './context/ThemeContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import StreamingNavbar from './components/StreamingNavbar'
 import CollapsibleSidebar from './components/CollapsibleSidebar'
@@ -147,8 +146,8 @@ function AppShell() {
         <div className="p-8 max-w-md mx-auto text-center">
           <p className="text-sm text-zinc-200 font-medium">Creator tools locked</p>
           <p className="text-xs text-zinc-500 mt-2">Apply and wait for admin approval.</p>
-          <button type="button" onClick={() => navigate('creator-apply')} className="mt-4 h-10 px-4 rounded-lg bg-[var(--color-accent-primary)] text-black font-bold text-sm">Apply to create</button>
-          <button type="button" onClick={() => navigate('home')} className="mt-3 block mx-auto text-xs text-[var(--color-accent-primary)]">← Back to Recommended</button>
+          <button type="button" onClick={() => navigate('creator-apply')} className="mt-4 h-10 px-4 rounded-lg bg-white text-black font-bold text-sm">Apply to create</button>
+          <button type="button" onClick={() => navigate('home')} className="mt-3 block mx-auto text-xs text-white">← Back to Recommended</button>
         </div>
       )
     }
@@ -211,7 +210,7 @@ function AppShell() {
   const isLiveView = view === 'live'
 
   return (
-    <div className="min-h-screen bg-[#09090c] text-zinc-100 flex flex-col selection:bg-[var(--color-accent-primary)] selection:text-black">
+    <div className="min-h-screen bg-[#09090c] text-zinc-100 flex flex-col selection:bg-white selection:text-black">
       <StreamingNavbar
         onNavigate={navigate}
         onOpenAuth={openAuth}
@@ -260,9 +259,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <ThemeProvider>
-          <AppShell />
-        </ThemeProvider>
+        <AppShell />
       </AuthProvider>
     </ErrorBoundary>
   )

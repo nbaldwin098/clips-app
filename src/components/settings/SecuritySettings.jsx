@@ -59,7 +59,7 @@ export default function SecuritySettings() {
           <input type="password" placeholder="Current password" className="h-10 rounded-lg border border-slate-200 px-3 text-sm" />
           <input type="password" placeholder="New password" className="h-10 rounded-lg border border-slate-200 px-3 text-sm" />
           <input type="password" placeholder="Confirm new password" className="h-10 rounded-lg border border-slate-200 px-3 text-sm" />
-          <button className="h-9 w-fit px-4 rounded-lg bg-[#2C729B] text-white text-sm font-medium">Update password</button>
+          <button className="h-9 w-fit px-4 rounded-lg bg-[#000000] text-white text-sm font-medium">Update password</button>
         </div>
       </section>
 
@@ -67,7 +67,7 @@ export default function SecuritySettings() {
         <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2"><Smartphone className="h-4 w-4" /> Two-factor authentication</h2>
         <p className="text-sm text-slate-500">Use an authenticator app (TOTP) for additional protection.</p>
         <label className="flex items-center gap-3">
-          <input type="checkbox" checked={twoFactor} onChange={e => setTwoFactor(e.target.checked)} className="rounded border-slate-300 text-[#2C729B] focus:ring-[#2C729B]" />
+          <input type="checkbox" checked={twoFactor} onChange={e => setTwoFactor(e.target.checked)} className="rounded border-slate-300 text-[#000000] focus:ring-[#000000]" />
           <span className="text-sm text-slate-700">Enable 2FA</span>
         </label>
         {twoFactor && (
@@ -87,7 +87,7 @@ export default function SecuritySettings() {
                 <p className="text-xs text-slate-500">{s.location}</p>
               </div>
               {s.current ? (
-                <span className="text-xs font-medium text-emerald-600">Current</span>
+                <span className="text-xs font-medium text-black">Current</span>
               ) : (
                 <button className="text-xs font-medium text-red-600 hover:underline">Revoke</button>
               )}

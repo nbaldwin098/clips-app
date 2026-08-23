@@ -12,7 +12,7 @@ export default function PlaylistsPage({ onNavigate, onOpenAuth }) {
     return (
       <div className="p-6 text-center">
         <p className="text-sm text-zinc-400">Sign in to manage playlists.</p>
-        <button type="button" onClick={onOpenAuth} className="mt-3 h-9 px-4 rounded-lg bg-[#007ACC] text-white text-sm">Sign in</button>
+        <button type="button" onClick={onOpenAuth} className="mt-3 h-9 px-4 rounded-lg bg-white text-black text-sm">Sign in</button>
       </div>
     )
   }
@@ -31,7 +31,7 @@ export default function PlaylistsPage({ onNavigate, onOpenAuth }) {
         }}
       >
         <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="New playlist" className="flex-1 h-10 rounded-lg border border-[#2f2f37] bg-[#1f1f23] px-3 text-sm" />
-        <button type="submit" className="h-10 px-3 rounded-lg bg-[#007ACC] text-white text-sm">Create</button>
+        <button type="submit" className="h-10 px-3 rounded-lg bg-white text-black text-sm">Create</button>
       </form>
       <ul className="space-y-2">
         {list.map((p) => (

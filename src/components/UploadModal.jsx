@@ -60,7 +60,7 @@ export default function UploadModal({ open, onClose }) {
               onClick={() => inputRef.current?.click()}
               className="w-full h-28 rounded-xl border border-dashed border-[#3a3a4c] bg-[#1a1a26] hover:bg-[#232333] flex flex-col items-center justify-center gap-2 transition-colors"
             >
-              <Upload className="h-6 w-6 text-[var(--color-accent-primary)]" />
+              <Upload className="h-6 w-6 text-white" />
               <span className="text-sm font-medium text-zinc-200">Choose video file</span>
               <span className="text-xs text-zinc-500">Inspected locally only</span>
             </button>
@@ -69,11 +69,11 @@ export default function UploadModal({ open, onClose }) {
             {meta && (
               <div className="rounded-lg border border-[#303042] bg-[#1a1a28] p-3 text-sm space-y-1">
                 <div className="flex items-center gap-2 font-medium text-white">
-                  <Film className="h-4 w-4 text-[var(--color-accent-primary)]" />
+                  <Film className="h-4 w-4 text-white" />
                   {meta.name}
                 </div>
                 <p className="text-xs text-zinc-400">{meta.sizeMb} MB · {meta.width}×{meta.height} · {meta.duration}s</p>
-                <p className="text-xs text-emerald-400 mt-2">
+                <p className="text-xs text-white mt-2">
                   Ready to broadcast to channel vods!
                 </p>
               </div>

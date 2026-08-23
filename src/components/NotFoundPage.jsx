@@ -13,7 +13,7 @@ export default function NotFoundPage({ onNavigate }) {
           <button
             type="button"
             onClick={() => (onNavigate ? onNavigate('home') : (window.location.href = '/'))}
-            className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-[#007ACC] text-white text-sm font-medium hover:bg-[#23A9F2]"
+            className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-white text-black text-sm font-medium hover:bg-zinc-200"
           >
             <Home className="h-4 w-4" />
             Home

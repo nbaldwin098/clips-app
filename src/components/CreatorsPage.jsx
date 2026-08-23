@@ -28,11 +28,11 @@ export default function CreatorsPage() {
 
   return (
     <div className="p-4 md:p-6 max-w-[900px] mx-auto">
-      <h1 className="text-lg font-semibold text-[#007ACC]">Creators</h1>
+      <h1 className="text-lg font-semibold text-white">Creators</h1>
       <p className="text-xs text-zinc-500 mt-1 mb-5">Recommended by the learning algorithm. Empty until creators are approved and post.</p>
       {ranked.length === 0 ? (
         <div className="rounded-2xl border border-zinc-800 bg-[#121218] px-6 py-16 text-center">
-          <Users className="h-8 w-8 text-[#007ACC] mx-auto" />
+          <Users className="h-8 w-8 text-white mx-auto" />
           <p className="mt-4 text-sm text-zinc-200">No creators to recommend yet</p>
           <p className="mt-1.5 text-xs text-zinc-500 max-w-sm mx-auto">When people apply, get approved, and publish clips, they appear here ranked by engagement — not follower count.</p>
         </div>
@@ -40,7 +40,7 @@ export default function CreatorsPage() {
         <div className="space-y-2">
           {ranked.map((c) => (
             <div key={c.id} className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-[#121218] px-4 py-3">
-              <div className="h-10 w-10 rounded-full bg-[#007acc]/20 text-[#007ACC] flex items-center justify-center text-sm font-semibold">{(c.displayName || '?')[0].toUpperCase()}</div>
+              <div className="h-10 w-10 rounded-full bg-white/20 text-white flex items-center justify-center text-sm font-semibold">{(c.displayName || '?')[0].toUpperCase()}</div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-zinc-100 truncate">{c.displayName}</p>
                 <p className="text-xs text-zinc-500">@{c.handle} · {c.clipCount} clips</p>

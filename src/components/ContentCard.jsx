@@ -36,7 +36,7 @@ export default function ContentCard({ item, onOpen }) {
   const subs = item.creatorId ? getSubscriberCount(item.creatorId) : 0
 
   return (
-    <div className="group rounded-2xl border border-zinc-800 bg-[#121218] overflow-hidden hover:border-[#007acc]/35 transition-all card-lift w-full">
+    <div className="group rounded-2xl border border-zinc-800 bg-[#121218] overflow-hidden hover:border-white/35 transition-all card-lift w-full">
       <button type="button" onClick={open} className="w-full text-left">
         <div className="aspect-[9/14] max-h-64 bg-zinc-900 relative overflow-hidden">
           {thumb ? (
@@ -57,7 +57,7 @@ export default function ContentCard({ item, onOpen }) {
         </div>
       </button>
       <div className="px-3 pb-3 flex items-center gap-2">
-        <button type="button" onClick={(e) => vote('up', e)} className={cn('inline-flex items-center gap-1 h-8 px-2.5 rounded-full border text-xs transition-transform', myVote === 'up' ? 'border-[#007ACC] text-[#007ACC] bg-[#007ACC]/10' : 'border-zinc-800 text-zinc-400', pulse === 'up' && 'scale-125')}>
+        <button type="button" onClick={(e) => vote('up', e)} className={cn('inline-flex items-center gap-1 h-8 px-2.5 rounded-full border text-xs transition-transform', myVote === 'up' ? 'border-white text-white bg-white/10' : 'border-zinc-800 text-zinc-400', pulse === 'up' && 'scale-125')}>
           <ThumbsUp className={cn('h-3.5 w-3.5', pulse === 'up' && 'animate-bounce')} />
           {votes.up}
         </button>

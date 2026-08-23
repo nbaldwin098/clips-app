@@ -72,7 +72,7 @@ export default function LibraryPage({ initialTab = 'history' }) {
           const active = tab === t.id
           return (
             <button key={t.id} onClick={() => setTab(t.id)} className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-sm font-medium border transition-colors ${
-              active ? 'bg-[#007ACC] text-white border-[#007ACC]' : 'bg-[#121218] text-zinc-400 border-zinc-800 hover:bg-[#0b0b0f]'
+              active ? 'bg-white text-black border-white' : 'bg-[#121218] text-zinc-400 border-zinc-800 hover:bg-[#0b0b0f]'
             }`}>
               <Icon className="h-4 w-4" />{t.label}
             </button>
@@ -101,18 +101,18 @@ export default function LibraryPage({ initialTab = 'history' }) {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-zinc-100 truncate">{item.title || item.contentId}</p>
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-zinc-500">
-                    {ratio != null && <span className="text-[#007ACC] font-medium">Watched {percentLabel(ratio)}</span>}
+                    {ratio != null && <span className="text-white font-medium">Watched {percentLabel(ratio)}</span>}
                     {item.updatedAt && <span>{new Date(item.updatedAt).toLocaleString()}</span>}
                     {item.completed && <span className="text-zinc-600">Finished</span>}
                   </div>
                   {ratio != null && ratio > 0 && (
                     <div className="mt-2 h-1 rounded-full bg-zinc-800 overflow-hidden max-w-xs">
-                      <div className="h-full bg-[#007ACC] rounded-full" style={{ width: `${Math.round(ratio * 100)}%` }} />
+                      <div className="h-full bg-white rounded-full" style={{ width: `${Math.round(ratio * 100)}%` }} />
                     </div>
                   )}
                 </div>
                 {(item.sourceUrl || getById(item.contentId)?.sourceUrl) && (
-                  <button type="button" onClick={() => openLink(item)} className="h-9 px-3 rounded-lg bg-[#007ACC] text-white text-xs shrink-0">
+                  <button type="button" onClick={() => openLink(item)} className="h-9 px-3 rounded-lg bg-white text-black text-xs shrink-0">
                     {tab === 'continue' ? 'Resume' : 'Open'}
                   </button>
                 )}

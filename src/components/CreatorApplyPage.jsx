@@ -20,7 +20,7 @@ export default function CreatorApplyPage({ onOpenAuth }) {
   if (!isAuthenticated) {
     return (
       <div className="p-6 max-w-md mx-auto text-sm text-zinc-400">
-        <button type="button" onClick={onOpenAuth} className="text-[#007ACC] font-medium">Sign in</button> to apply.
+        <button type="button" onClick={onOpenAuth} className="text-white font-medium">Sign in</button> to apply.
       </div>
     )
   }
@@ -72,22 +72,22 @@ export default function CreatorApplyPage({ onOpenAuth }) {
 
   return (
     <div className="p-4 md:p-6 max-w-md mx-auto">
-      <h1 className="text-lg font-semibold text-[#007ACC]">Apply to create</h1>
+      <h1 className="text-lg font-semibold text-white">Apply to create</h1>
       <p className="text-xs text-zinc-500 mt-1 mb-4">Short form so we can review and reach you.</p>
       <form onSubmit={submit} className="space-y-3 rounded-2xl border border-zinc-800 bg-[#121218] p-5">
-        <label className="block text-xs text-[#007ACC]">Full name
+        <label className="block text-xs text-white">Full name
           <input required value={name} onChange={(e) => setName(e.target.value)} className={inputCls} maxLength={80} />
         </label>
-        <label className="block text-xs text-[#007ACC]">Email
+        <label className="block text-xs text-white">Email
           <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} maxLength={120} />
         </label>
-        <label className="block text-xs text-[#007ACC]">Phone
+        <label className="block text-xs text-white">Phone
           <input required type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputCls} maxLength={32} placeholder="+1…" />
         </label>
-        <label className="block text-xs text-[#007ACC]">Address
+        <label className="block text-xs text-white">Address
           <input required value={address} onChange={(e) => setAddress(e.target.value)} className={inputCls} maxLength={160} placeholder="City, State / Region" />
         </label>
-        <label className="block text-xs text-[#007ACC]">Category
+        <label className="block text-xs text-white">Category
           <select value={category} onChange={(e) => setCategory(e.target.value)} className={inputCls}>
             <option value="gaming">Gaming</option>
             <option value="irl">IRL</option>
@@ -96,18 +96,18 @@ export default function CreatorApplyPage({ onOpenAuth }) {
             <option value="other">Other</option>
           </select>
         </label>
-        <label className="block text-xs text-[#007ACC]">Bio — Tell us about yourself
+        <label className="block text-xs text-white">Bio — Tell us about yourself
           <textarea required value={bio} onChange={(e) => setBio(e.target.value)} rows={3} maxLength={280} placeholder="Who you are and what you’ll post (280 chars)" className="mt-1 w-full rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600" />
         </label>
         <div>
-          <p className="text-xs text-[#007ACC] mb-1">Social links (up to 4)</p>
+          <p className="text-xs text-white mb-1">Social links (up to 4)</p>
           <div className="space-y-2">
             {[0, 1, 2, 3].map((i) => (
               <input key={i} value={social[i]} onChange={(e) => setLink(i, e.target.value)} className={inputCls} placeholder={`https://… (${i + 1})`} maxLength={120} />
             ))}
           </div>
         </div>
-        <button type="submit" className="w-full h-10 rounded-lg bg-[#007ACC] text-white text-sm font-medium">Submit application</button>
+        <button type="submit" className="w-full h-10 rounded-lg bg-white text-black text-sm font-medium">Submit application</button>
       </form>
     </div>
   )

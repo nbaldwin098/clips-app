@@ -31,11 +31,11 @@ export default function ChatSettings() {
       <section className="pt-6 border-t border-slate-200 space-y-3">
         <h2 className="text-sm font-semibold text-slate-900">Audience restrictions</h2>
         <label className="flex items-center gap-3">
-          <input type="checkbox" checked={subOnly} onChange={e => setSubOnly(e.target.checked)} className="rounded border-slate-300 text-[#2C729B]" />
+          <input type="checkbox" checked={subOnly} onChange={e => setSubOnly(e.target.checked)} className="rounded border-slate-300 text-[#000000]" />
           <span className="text-sm text-slate-700">Subscribers only</span>
         </label>
         <label className="flex items-center gap-3">
-          <input type="checkbox" checked={followerOnly} onChange={e => setFollowerOnly(e.target.checked)} className="rounded border-slate-300 text-[#2C729B]" />
+          <input type="checkbox" checked={followerOnly} onChange={e => setFollowerOnly(e.target.checked)} className="rounded border-slate-300 text-[#000000]" />
           <span className="text-sm text-slate-700">Followers only</span>
         </label>
       </section>
@@ -44,7 +44,7 @@ export default function ChatSettings() {
         <h2 className="text-sm font-semibold text-slate-900">Blocked terms</h2>
         <p className="text-xs text-slate-500">One term or phrase per line. Messages containing these are automatically removed.</p>
         <textarea value={blockedTerms} onChange={e => setBlockedTerms(e.target.value)} rows={5} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" placeholder="spam\nscam link\n..." />
-        <button className="h-9 px-4 rounded-lg bg-[#2C729B] text-white text-sm font-medium">Save filters</button>
+        <button className="h-9 px-4 rounded-lg bg-[#000000] text-white text-sm font-medium">Save filters</button>
       </section>
 
       <section className="pt-6 border-t border-slate-200 space-y-3">

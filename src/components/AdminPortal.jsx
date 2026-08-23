@@ -16,12 +16,12 @@ export default function AdminPortal() {
   if (!authed) {
     return (
       <div className="p-6 max-w-sm mx-auto">
-        <h1 className="text-lg font-semibold text-[#007ACC]">Admin portal</h1>
+        <h1 className="text-lg font-semibold text-white">Admin portal</h1>
         <p className="text-xs text-zinc-500 mt-1 mb-4">Staff only. MVP code: clips-admin</p>
         <form onSubmit={(e) => { e.preventDefault(); if (adminLogin(code.trim())) { setAuthed(true); setErr('') } else setErr('Invalid code') }} className="space-y-3">
           <input type="password" value={code} onChange={(e) => setCode(e.target.value)} className="w-full h-10 rounded-lg border border-zinc-800 bg-[#121218] px-3 text-sm text-zinc-100" placeholder="Admin code" />
           {err && <p className="text-xs text-red-400">{err}</p>}
-          <button type="submit" className="w-full h-10 rounded-lg bg-[#007ACC] text-white text-sm">Enter</button>
+          <button type="submit" className="w-full h-10 rounded-lg bg-white text-black text-sm">Enter</button>
         </form>
       </div>
     )
@@ -44,12 +44,12 @@ export default function AdminPortal() {
   return (
     <div className="p-4 md:p-6 max-w-[1100px] mx-auto">
       <div className="flex justify-between mb-4">
-        <h1 className="text-lg font-semibold text-[#007ACC]">Admin portal</h1>
+        <h1 className="text-lg font-semibold text-white">Admin portal</h1>
         <button type="button" onClick={() => { adminLogout(); setAuthed(false) }} className="text-xs text-zinc-500">Sign out admin</button>
       </div>
       <div className="flex flex-wrap gap-2 mb-4">
         {[['applications','Applications'],['tickets','Support'],['users','Users'],['content','Content'],['live','Live']].map(([id,label]) => (
-          <button key={id} type="button" onClick={() => setTab(id)} className={`h-8 px-3 rounded-full text-xs ${tab===id?'bg-[#007ACC] text-white':'border border-zinc-800 text-zinc-400'}`}>{label}</button>
+          <button key={id} type="button" onClick={() => setTab(id)} className={`h-8 px-3 rounded-full text-xs ${tab===id?'bg-white text-black':'border border-zinc-800 text-zinc-400'}`}>{label}</button>
         ))}
       </div>
       {tab==='applications' && apps.map((a) => (
@@ -59,7 +59,7 @@ export default function AdminPortal() {
           <p className="text-xs text-zinc-400 mt-1">{a.about}</p>
           {a.status==='pending' && (
             <div className="flex gap-2 mt-2">
-              <button type="button" onClick={() => approve(a,'approved')} className="h-8 px-3 rounded-lg bg-green-600 text-white text-xs">Approve</button>
+              <button type="button" onClick={() => approve(a,'approved')} className="h-8 px-3 rounded-lg bg-white text-black text-xs">Approve</button>
               <button type="button" onClick={() => approve(a,'rejected')} className="h-8 px-3 rounded-lg bg-red-600 text-white text-xs">Reject</button>
             </div>
           )}

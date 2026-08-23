@@ -33,7 +33,7 @@ export default class ErrorBoundary extends Component {
             <p className="mt-2 text-sm text-zinc-500 leading-relaxed break-words">{this.state.message}</p>
             <p className="mt-2 text-xs text-zinc-600">Go home or reload. Data on this device is usually still safe.</p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
-              <button type="button" onClick={this.goHome} className="h-10 px-5 rounded-xl bg-[#007ACC] text-white text-sm font-medium hover:bg-[#23A9F2]">
+              <button type="button" onClick={this.goHome} className="h-10 px-5 rounded-xl bg-white text-black text-sm font-medium hover:bg-zinc-200">
                 Go home
               </button>
               <button type="button" onClick={() => window.location.reload()} className="h-10 px-5 rounded-xl border border-zinc-700 text-zinc-300 text-sm font-medium hover:bg-zinc-800">

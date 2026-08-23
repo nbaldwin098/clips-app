@@ -41,7 +41,7 @@ export default function ChannelSettings() {
             <input value={links.website} onChange={e => setLinks(l => ({ ...l, website: e.target.value }))} className="mt-1 w-full h-10 rounded-lg border border-slate-200 px-3 text-sm" placeholder="https://..." />
           </label>
         </div>
-        <button className="h-9 px-4 rounded-lg bg-[#2C729B] text-white text-sm font-medium">Save links</button>
+        <button className="h-9 px-4 rounded-lg bg-[#000000] text-white text-sm font-medium">Save links</button>
       </section>
 
       <section className="pt-6 border-t border-slate-200 space-y-3">

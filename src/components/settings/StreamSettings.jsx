@@ -34,7 +34,7 @@ export default function StreamSettings() {
             <div className="flex gap-2">
               <code className="flex-1 text-sm bg-white border border-slate-200 rounded px-3 py-2 truncate">{rtmpUrl}</code>
               <button onClick={() => copy(rtmpUrl)} className="h-9 w-9 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-white">
-                {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4 text-slate-500" />}
+                {copied ? <Check className="h-4 w-4 text-black" /> : <Copy className="h-4 w-4 text-slate-500" />}
               </button>
             </div>
           </div>
@@ -68,8 +68,8 @@ export default function StreamSettings() {
       <section className="pt-6 border-t border-slate-200 space-y-4">
         <h2 className="text-sm font-semibold text-slate-900">Latency mode</h2>
         <div className="flex gap-3">
-          <button onClick={() => setLatency('ultra')} className={`h-9 px-4 rounded-lg text-sm font-medium border ${latency === 'ultra' ? 'bg-[#2C729B] text-white border-[#2C729B]' : 'border-slate-200 text-slate-700'}`}>Ultra-low</button>
-          <button onClick={() => setLatency('standard')} className={`h-9 px-4 rounded-lg text-sm font-medium border ${latency === 'standard' ? 'bg-[#2C729B] text-white border-[#2C729B]' : 'border-slate-200 text-slate-700'}`}>Standard</button>
+          <button onClick={() => setLatency('ultra')} className={`h-9 px-4 rounded-lg text-sm font-medium border ${latency === 'ultra' ? 'bg-[#000000] text-white border-[#000000]' : 'border-slate-200 text-slate-700'}`}>Ultra-low</button>
+          <button onClick={() => setLatency('standard')} className={`h-9 px-4 rounded-lg text-sm font-medium border ${latency === 'standard' ? 'bg-[#000000] text-white border-[#000000]' : 'border-slate-200 text-slate-700'}`}>Standard</button>
         </div>
         <label className="block max-w-xs">
           <span className="text-xs font-medium text-slate-600">Broadcast delay (seconds)</span>
@@ -79,11 +79,11 @@ export default function StreamSettings() {
 
       <section className="pt-6 border-t border-slate-200 space-y-3">
         <label className="flex items-center gap-3">
-          <input type="checkbox" checked={autoVod} onChange={e => setAutoVod(e.target.checked)} className="rounded border-slate-300 text-[#2C729B]" />
+          <input type="checkbox" checked={autoVod} onChange={e => setAutoVod(e.target.checked)} className="rounded border-slate-300 text-[#000000]" />
           <span className="text-sm text-slate-700">Auto-archive live streams to VOD library</span>
         </label>
         <label className="flex items-center gap-3">
-          <input type="checkbox" checked={allowClips} onChange={e => setAllowClips(e.target.checked)} className="rounded border-slate-300 text-[#2C729B]" />
+          <input type="checkbox" checked={allowClips} onChange={e => setAllowClips(e.target.checked)} className="rounded border-slate-300 text-[#000000]" />
           <span className="text-sm text-slate-700">Allow viewers to create clips</span>
         </label>
       </section>

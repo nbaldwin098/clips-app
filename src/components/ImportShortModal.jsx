@@ -62,14 +62,14 @@ export default function ImportShortModal({ open, onClose }) {
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="https://www.tiktok.com/@… or youtube.com/shorts/…"
-              className="w-full h-10 rounded-lg border border-slate-200 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2C729B]/30 focus:border-[#2C729B]"
+              className="w-full h-10 rounded-lg border border-slate-200 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black"
             />
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
           {result && (
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2">
               <div className="flex items-center gap-2 text-sm font-medium text-slate-900">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                <CheckCircle2 className="h-4 w-4 text-black" />
                 {saved ? 'Saved to library' : 'Reference ready'}
               </div>
               <p className="text-xs text-slate-600">{result.title}</p>
@@ -91,7 +91,7 @@ export default function ImportShortModal({ open, onClose }) {
           )}
           <button
             onClick={handleParse}
-            className="w-full h-10 rounded-lg bg-[#2C729B] text-white text-sm font-medium hover:bg-[#245F82]"
+            className="w-full h-10 rounded-lg bg-black text-white text-sm font-medium hover:bg-zinc-800"
           >
             Import link
           </button>

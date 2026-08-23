@@ -13,7 +13,7 @@ import { lsGet } from '../lib/storage'
 const itemCls = (active) =>
   cn(
     'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-    active ? 'bg-[#007ACC]/20 text-[#007ACC]' : 'text-[#007ACC]/85 hover:bg-zinc-800/80 hover:text-[#23A9F2]'
+    active ? 'bg-white/20 text-white' : 'text-white/85 hover:bg-zinc-800/80 hover:text-white'
   )
 
 function NavBtn({ active, onClick, icon: Icon, label }) {
@@ -47,7 +47,7 @@ export default function Sidebar({ currentView, onNavigate, open, onClose }) {
   }, [currentView, user?.id])
 
   const body = (
-    <div className="flex flex-col h-full text-[#007ACC]">
+    <div className="flex flex-col h-full text-white">
       <div className="flex items-center justify-between p-3 md:hidden">
         <span className="text-sm font-semibold">Menu</span>
         <button type="button" onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-zinc-800" aria-label="Close menu">
@@ -92,7 +92,7 @@ export default function Sidebar({ currentView, onNavigate, open, onClose }) {
             <p className="px-3 pt-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Recommended creators</p>
             {recommendedCreators.map((c) => (
               <button key={c.id} type="button" onClick={() => go('creators')} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left hover:bg-zinc-800/80">
-                <span className="h-7 w-7 rounded-full bg-[#007ACC]/20 text-[#007ACC] flex items-center justify-center text-xs font-semibold shrink-0">{(c.displayName || '?')[0].toUpperCase()}</span>
+                <span className="h-7 w-7 rounded-full bg-white/20 text-white flex items-center justify-center text-xs font-semibold shrink-0">{(c.displayName || '?')[0].toUpperCase()}</span>
                 <span className="min-w-0">
                   <span className="block text-xs text-zinc-200 truncate">{c.displayName}</span>
                   <span className="block text-[10px] text-zinc-500 truncate">@{c.handle}</span>

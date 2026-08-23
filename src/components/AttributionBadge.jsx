@@ -16,7 +16,7 @@ export default function AttributionBadge({ item, className = '' }) {
           href={item.sourceUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-[#2C729B] hover:underline"
+          className="text-white hover:underline"
           onClick={(e) => e.stopPropagation()}
         >
           Source

@@ -39,7 +39,7 @@ export default function NotificationsSettings() {
         type="checkbox"
         checked={!!prefs[id]}
         onChange={() => toggle(id)}
-        className="mt-1 rounded border-slate-300 text-[#2C729B] focus:ring-[#2C729B]"
+        className="mt-1 rounded border-slate-300 text-[#000000] focus:ring-[#000000]"
       />
     </label>
   )
@@ -62,7 +62,7 @@ export default function NotificationsSettings() {
         <Row id="pushChat" label="Chat mentions" />
         <Row id="pushMarketing" label="Product updates" />
       </section>
-      <button onClick={save} className="h-9 px-4 rounded-lg bg-[#2C729B] text-white text-sm font-medium hover:bg-[#245F82]">
+      <button onClick={save} className="h-9 px-4 rounded-lg bg-[#000000] text-white text-sm font-medium hover:bg-[#27272a]">
         {saved ? 'Saved' : 'Save preferences'}
       </button>
     </div>

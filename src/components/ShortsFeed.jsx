@@ -16,8 +16,8 @@ export default function ShortsFeed() {
       </div>
       {items.length === 0 ? (
         <div className="rounded-2xl border border-zinc-800 bg-[#121218] px-6 py-16 text-center">
-          <div className="mx-auto h-12 w-12 rounded-full bg-[#007acc]/15 flex items-center justify-center">
-            <Clapperboard className="h-6 w-6 text-[#007acc]" />
+          <div className="mx-auto h-12 w-12 rounded-full bg-white/15 flex items-center justify-center">
+            <Clapperboard className="h-6 w-6 text-white" />
           </div>
           <p className="mt-4 text-sm font-medium text-zinc-200">No clips yet</p>
           <p className="mt-1.5 text-xs text-zinc-500 max-w-md mx-auto">

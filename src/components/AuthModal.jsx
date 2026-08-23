@@ -91,7 +91,7 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
             {mode === 'signup' && (
               <>
                 <label className="block">
-                  <span className="text-xs font-medium text-[var(--color-accent-primary)]">Display name</span>
+                  <span className="text-xs font-medium text-white">Display name</span>
                   <input
                     value={displayName}
                     onChange={(e) => {
@@ -99,43 +99,43 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
                       setDisplayName(v)
                       if (!handle.trim()) setHandle(v.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24))
                     }}
-                    className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent-primary)]"
+                    className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-white"
                   />
                 </label>
                 <label className="block">
-                  <span className="text-xs font-medium text-[var(--color-accent-primary)]">Username</span>
+                  <span className="text-xs font-medium text-white">Username</span>
                   <div className="mt-1 flex">
                     <span className="inline-flex items-center h-10 px-3 rounded-l-lg border border-r-0 border-[#2f2f37] bg-[#18181b] text-zinc-500 text-sm">@</span>
                     <input
                       value={handle}
                       onChange={(e) => setHandle(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24))}
-                      className="h-10 flex-1 rounded-r-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent-primary)]"
+                      className="h-10 flex-1 rounded-r-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-white"
                     />
                   </div>
                 </label>
               </>
             )}
             <label className="block">
-              <span className="text-xs font-medium text-[var(--color-accent-primary)]">Email</span>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent-primary)]" autoComplete="email" />
+              <span className="text-xs font-medium text-white">Email</span>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-white" autoComplete="email" />
             </label>
             <label className="block">
-              <span className="text-xs font-medium text-[var(--color-accent-primary)]">Password</span>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent-primary)]" autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} />
+              <span className="text-xs font-medium text-white">Password</span>
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-white" autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} />
             </label>
             {mode === 'signup' && (
               <p className="text-[11px] text-zinc-500">Tip: use your name or brand as @username so people recognize your public profile.</p>
             )}
             {error && <p className="text-sm text-red-400">{error}</p>}
-            <button type="submit" disabled={busy} className="w-full h-10 rounded-lg bg-[var(--color-accent-primary)] text-black font-bold text-sm hover:brightness-110 disabled:opacity-60 transition-all">
+            <button type="submit" disabled={busy} className="w-full h-10 rounded-lg bg-white text-black font-bold text-sm hover:bg-zinc-200 disabled:opacity-60 transition-all">
               {busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}
             </button>
           </form>
           <p className="text-xs text-zinc-500 text-center mt-4">
             {mode === 'signin' ? (
-              <>No account? <button type="button" className="text-[var(--color-accent-primary)] font-medium" onClick={() => setMode('signup')}>Sign up</button></>
+              <>No account? <button type="button" className="text-white font-medium" onClick={() => setMode('signup')}>Sign up</button></>
             ) : (
-              <>Have an account? <button type="button" className="text-[var(--color-accent-primary)] font-medium" onClick={() => setMode('signin')}>Sign in</button></>
+              <>Have an account? <button type="button" className="text-white font-medium" onClick={() => setMode('signin')}>Sign in</button></>
             )}
           </p>
         </div>

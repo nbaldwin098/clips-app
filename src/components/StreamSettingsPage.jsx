@@ -14,7 +14,7 @@ export default function StreamSettingsPage({ onNavigate }) {
     <div className="p-4 md:p-6 max-w-lg mx-auto">
       <PageHeader title="Stream settings" onBack={() => onNavigate?.('dashboard')} />
       <div className="rounded-xl border border-[#2f2f37] bg-[#1f1f23] p-5 space-y-4">
-        <label className="block text-xs text-[#007ACC]">
+        <label className="block text-xs text-white">
           Quality
           <select value={quality} onChange={(e) => setQuality(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-2 text-sm text-zinc-100">
             <option value="1080p30">1080p30</option>
@@ -22,7 +22,7 @@ export default function StreamSettingsPage({ onNavigate }) {
             <option value="480p30">480p30</option>
           </select>
         </label>
-        <label className="block text-xs text-[#007ACC]">
+        <label className="block text-xs text-white">
           Latency
           <select value={latency} onChange={(e) => setLatency(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-2 text-sm text-zinc-100">
             <option value="low">Low</option>
@@ -31,7 +31,7 @@ export default function StreamSettingsPage({ onNavigate }) {
         </label>
         <button
           type="button"
-          className="h-10 w-full rounded-lg bg-[#007ACC] text-white text-sm"
+          className="h-10 w-full rounded-lg bg-white text-black text-sm"
           onClick={() => {
             setStreamSettings(user?.id, { defaultQuality: quality, latency })
             setSaved(true)
@@ -39,7 +39,7 @@ export default function StreamSettingsPage({ onNavigate }) {
         >
           Save
         </button>
-        {saved && <p className="text-xs text-green-400">Saved.</p>}
+        {saved && <p className="text-xs text-white">Saved.</p>}
       </div>
     </div>
   )

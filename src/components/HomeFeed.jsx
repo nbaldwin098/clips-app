@@ -46,8 +46,8 @@ export default function HomeFeed() {
 
       {items.length === 0 ? (
         <div className="rounded-2xl border border-zinc-800 bg-[#121218] px-6 py-16 text-center">
-          <div className="mx-auto h-12 w-12 rounded-full bg-[#007acc]/15 flex items-center justify-center">
-            <Sparkles className="h-6 w-6 text-[#007acc]" />
+          <div className="mx-auto h-12 w-12 rounded-full bg-white/15 flex items-center justify-center">
+            <Sparkles className="h-6 w-6 text-white" />
           </div>
           <p className="mt-4 text-sm font-medium text-zinc-200">No clips in the feed yet</p>
           <p className="mt-1.5 text-xs text-zinc-500 max-w-md mx-auto leading-relaxed">
@@ -56,7 +56,7 @@ export default function HomeFeed() {
         </div>
       ) : (
         <div className="relative group">
-          <button type="button" onClick={() => shift(-1)} className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-black/70 border border-zinc-700 text-zinc-200 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:border-[#007acc] hover:text-[#0098ff]" aria-label="Previous">
+          <button type="button" onClick={() => shift(-1)} className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-black/70 border border-zinc-700 text-zinc-200 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:border-white hover:text-white" aria-label="Previous">
             <ChevronLeft className="h-5 w-5" />
           </button>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 px-2">
@@ -64,7 +64,7 @@ export default function HomeFeed() {
               <ContentCard key={`${item.id}-${offset}-${idx}`} item={item} />
             ))}
           </div>
-          <button type="button" onClick={() => shift(1)} className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-black/70 border border-zinc-700 text-zinc-200 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:border-[#007acc] hover:text-[#0098ff]" aria-label="Next">
+          <button type="button" onClick={() => shift(1)} className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-black/70 border border-zinc-700 text-zinc-200 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:border-white hover:text-white" aria-label="Next">
             <ChevronRight className="h-5 w-5" />
           </button>
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">

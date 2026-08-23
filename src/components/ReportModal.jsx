@@ -29,20 +29,20 @@ export default function ReportModal({ open, onClose, target = {} }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
       <div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-[#121218] p-5">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-[#007ACC]">Report</h2>
+          <h2 className="text-sm font-semibold text-white">Report</h2>
           <button type="button" onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-zinc-800"><X className="h-4 w-4" /></button>
         </div>
         {done ? (
           <p className="text-sm text-zinc-200">Report submitted.</p>
         ) : (
           <form onSubmit={submit} className="space-y-3">
-            <label className="block text-xs text-[#007ACC]">Reason
+            <label className="block text-xs text-white">Reason
               <select value={reason} onChange={(e) => setReason(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm">{REASONS.map((r) => <option key={r}>{r}</option>)}</select>
             </label>
-            <label className="block text-xs text-[#007ACC]">Details
+            <label className="block text-xs text-white">Details
               <textarea value={detail} onChange={(e) => setDetail(e.target.value)} rows={3} maxLength={500} className="mt-1 w-full rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 py-2 text-sm" />
             </label>
-            <button type="submit" className="w-full h-10 rounded-lg bg-[#007ACC] text-white text-sm">Submit report</button>
+            <button type="submit" className="w-full h-10 rounded-lg bg-white text-black text-sm">Submit report</button>
             {target.userId && isAuthenticated && (
               <button type="button" onClick={block} className="w-full h-9 rounded-lg border border-zinc-700 text-xs text-zinc-300">Block this user</button>
             )}

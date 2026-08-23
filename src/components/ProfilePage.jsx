@@ -38,11 +38,11 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId }
       <div className="px-4 pt-4">
         <PageHeader title="Profile" onBack={() => onNavigate?.('home')} />
       </div>
-      <div className="relative mx-4 h-36 sm:h-44 rounded-xl overflow-hidden bg-gradient-to-r from-zinc-900 via-zinc-800 to-[#007ACC]/30 border border-zinc-800">
+      <div className="relative mx-4 h-36 sm:h-44 rounded-xl overflow-hidden bg-gradient-to-r from-zinc-900 via-zinc-800 to-white/30 border border-zinc-800">
         {banner ? <img src={banner} alt="" className="h-full w-full object-cover" /> : null}
       </div>
       <div className="px-4 -mt-10 relative z-10 flex flex-wrap items-end gap-4">
-        <div className="h-24 w-24 rounded-full border-4 border-[#0b0b0f] bg-[#007ACC]/30 flex items-center justify-center text-3xl font-semibold text-[#007ACC] overflow-hidden">
+        <div className="h-24 w-24 rounded-full border-4 border-[#0b0b0f] bg-white/30 flex items-center justify-center text-3xl font-semibold text-white overflow-hidden">
           {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" /> : (displayName[0] || '?').toUpperCase()}
         </div>
         <div className="flex-1 min-w-[160px] pb-1">
@@ -55,7 +55,7 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId }
             <button type="button" onClick={() => onNavigate?.('channel')} className="h-9 px-4 rounded-full border border-zinc-700 text-xs text-zinc-200">Customize channel</button>
           ) : (
             isAuthenticated && creatorId && (
-              <button type="button" onClick={() => { toggleSubscribe(user.id, creatorId); setTick((t) => t + 1) }} className={`h-9 px-4 rounded-full text-xs font-medium ${subscribed ? 'border border-zinc-700 text-zinc-300' : 'bg-[#007ACC] text-white'}`}>
+              <button type="button" onClick={() => { toggleSubscribe(user.id, creatorId); setTick((t) => t + 1) }} className={`h-9 px-4 rounded-full text-xs font-medium ${subscribed ? 'border border-zinc-700 text-zinc-300' : 'bg-white text-black'}`}>
                 {subscribed ? 'Subscribed' : 'Subscribe'}
               </button>
             )
@@ -65,7 +65,7 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId }
       {bio && <p className="px-4 mt-4 text-sm text-zinc-400 max-w-2xl">{bio}</p>}
       <div className="px-4 mt-6">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-medium text-[#007ACC]">Videos</h2>
+          <h2 className="text-sm font-medium text-white">Videos</h2>
           <p className="text-[10px] text-zinc-600">Newest first · pinned on top</p>
         </div>
         {items.length === 0 ? (
@@ -75,10 +75,10 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId }
             {items.map((item) => (
               <div key={item.id} className="relative">
                 {(item.pinned || isPinned(creatorId, item.id)) && (
-                  <span className="absolute top-2 left-2 z-10 text-[10px] px-1.5 py-0.5 rounded bg-black/70 text-[#007ACC] flex items-center gap-0.5"><Pin className="h-3 w-3" /> Pinned</span>
+                  <span className="absolute top-2 left-2 z-10 text-[10px] px-1.5 py-0.5 rounded bg-black/70 text-white flex items-center gap-0.5"><Pin className="h-3 w-3" /> Pinned</span>
                 )}
                 {isSelf && (
-                  <button type="button" onClick={() => onPin(item.id)} className="absolute top-2 right-2 z-10 h-8 w-8 rounded-full bg-black/70 border border-zinc-700 flex items-center justify-center text-[#007ACC]" title="Pin / unpin"><Pin className="h-3.5 w-3.5" /></button>
+                  <button type="button" onClick={() => onPin(item.id)} className="absolute top-2 right-2 z-10 h-8 w-8 rounded-full bg-black/70 border border-zinc-700 flex items-center justify-center text-white" title="Pin / unpin"><Pin className="h-3.5 w-3.5" /></button>
                 )}
                 <ContentCard item={{ ...item, pinned: isPinned(creatorId, item.id) }} />
               </div>

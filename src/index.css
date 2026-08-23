@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Streaming Dark Theme Tokens (Twitch #0e0e10 / Kick #0b0e0f) */
+/* Streaming dark theme — white accent only */
 :root {
   --color-bg: #09090b;
   --color-bg-alt: #111116;
@@ -12,16 +12,13 @@
   --color-text: #f4f4f6;
   --color-text-secondary: #adadb8;
   --color-muted: #79798c;
-  
-  /* Dynamic high-contrast accent injected by ThemeContext */
-  --color-accent-primary: #9146FF;
-  --color-accent-hover: #772CE8;
-  --color-accent-glow: rgba(145, 70, 255, 0.4);
-  --color-accent-rgb: 145, 70, 255;
-  
+  --color-accent-primary: #ffffff;
+  --color-accent-hover: #e4e4e7;
+  --color-accent-glow: rgba(255, 255, 255, 0.25);
+  --color-accent-rgb: 255, 255, 255;
   --color-live: #eb0400;
-  --color-success: #53fc18;
-  --color-warning: #ffb800;
+  --color-success: #ffffff;
+  --color-warning: #ffffff;
   --color-danger: #ef4444;
   --radius-card: 0.75rem;
   --font-ui: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -41,7 +38,6 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Ambient dynamic background lighting with subtle glowing accents */
 body::before {
   content: "";
   position: fixed;
@@ -49,10 +45,9 @@ body::before {
   pointer-events: none;
   z-index: 0;
   background:
-    radial-gradient(ellipse 70% 40% at 50% -10%, rgba(var(--color-accent-rgb), 0.09), transparent 60%),
-    radial-gradient(ellipse 35% 25% at 95% 10%, rgba(var(--color-accent-rgb), 0.05), transparent 50%),
+    radial-gradient(ellipse 70% 40% at 50% -10%, rgba(255, 255, 255, 0.04), transparent 60%),
+    radial-gradient(ellipse 35% 25% at 95% 10%, rgba(255, 255, 255, 0.03), transparent 50%),
     radial-gradient(ellipse 40% 30% at 5% 90%, rgba(255, 255, 255, 0.015), transparent 50%);
-  transition: background 0.3s ease;
 }
 
 #root {
@@ -60,13 +55,11 @@ body::before {
   z-index: 1;
 }
 
-/* Sleek Streamer Scrollbars */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #2f2f3a; border-radius: 9999px; }
 ::-webkit-scrollbar-thumb:hover { background: #454555; }
 
-/* Custom utility styles */
 .stream-card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -75,12 +68,12 @@ body::before {
 }
 
 .stream-card:hover {
-  border-color: rgba(var(--color-accent-rgb), 0.45);
-  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.5), 0 0 16px -2px rgba(var(--color-accent-rgb), 0.15);
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.5);
 }
 
 .glow-accent {
-  box-shadow: 0 0 15px -2px rgba(var(--color-accent-rgb), 0.4);
+  box-shadow: 0 0 15px -2px rgba(255, 255, 255, 0.2);
 }
 
 .live-badge-glow {
@@ -96,7 +89,6 @@ body::before {
   animation: pulse-live 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* Chat text smooth wrap */
 .chat-message-text {
   word-break: break-word;
   overflow-wrap: anywhere;

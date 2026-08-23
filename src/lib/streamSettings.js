@@ -24,7 +24,7 @@ export const DEFAULT_STREAM_SETTINGS = {
   streamTitleTemplate: '',
   category: 'Just Chatting',
   tags: [],
-  brandingColor: '#007ACC',
+  brandingColor: '#ffffff',
 }
 
 export function getStreamSettings(userId) {

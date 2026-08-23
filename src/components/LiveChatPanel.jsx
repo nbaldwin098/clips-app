@@ -9,7 +9,6 @@ import {
   X,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { useTheme } from '../context/ThemeContext'
 import { cn } from '../lib/utils'
 import { getLiveChat, postLiveChat } from '../lib/engagement'
 
@@ -25,7 +24,6 @@ export default function LiveChatPanel({
   onOpenAuth,
 }) {
   const { user, isAuthenticated } = useAuth()
-  const { accent, accentKey } = useTheme()
 
   const [messages, setMessages] = useState(() => (channel?.userId ? getLiveChat(channel.userId) : []))
   const [inputText, setInputText] = useState('')
@@ -151,7 +149,7 @@ export default function LiveChatPanel({
               type="checkbox"
               checked={timestampsEnabled}
               onChange={(e) => setTimestampsEnabled(e.target.checked)}
-              className="rounded bg-[#1a1a24] border-zinc-700 text-[var(--color-accent-primary)] focus:ring-0"
+              className="rounded bg-[#1a1a24] border-zinc-700 text-white focus:ring-0"
             />
           </label>
         </div>
@@ -187,11 +185,11 @@ export default function LiveChatPanel({
                     </span>
                   )}
                   {isHost && (
-                    <span className="px-1 py-0.5 rounded text-[9px] font-bold uppercase mr-1.5 align-middle" style={{ backgroundColor: accent.badgeBg, color: accent.primary, border: `1px solid ${accent.badgeBorder}` }}>
+                    <span className="px-1 py-0.5 rounded text-[9px] font-bold uppercase mr-1.5 align-middle bg-white/10 text-white border border-white/25">
                       Host
                     </span>
                   )}
-                  <span className="font-bold mr-1.5" style={{ color: isSelf ? accent.primary : '#c9c9d6' }}>
+                  <span className={cn('font-bold mr-1.5', isSelf ? 'text-white' : 'text-zinc-300')}>
                     {m.handle || 'viewer'}:
                   </span>
                   <span className="text-zinc-200 select-text">{m.text}</span>
@@ -244,12 +242,12 @@ export default function LiveChatPanel({
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder="Send a message..."
                 maxLength={500}
-                className="w-full h-10 rounded-lg border border-[#272734] bg-[#181822] pl-3 pr-10 text-xs text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-[var(--color-accent-primary)]"
+                className="w-full h-10 rounded-lg border border-[#272734] bg-[#181822] pl-3 pr-10 text-xs text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-white"
               />
               <button
                 type="button"
                 onClick={() => setShowEmotes((v) => !v)}
-                className={cn('absolute right-2 h-7 w-7 flex items-center justify-center rounded text-zinc-400 hover:text-zinc-100 transition-colors', showEmotes && 'text-[var(--color-accent-primary)]')}
+                className={cn('absolute right-2 h-7 w-7 flex items-center justify-center rounded text-zinc-400 hover:text-zinc-100 transition-colors', showEmotes && 'text-white')}
                 title="Quick reactions"
               >
                 <Smile className="h-4 w-4" />
@@ -263,7 +261,7 @@ export default function LiveChatPanel({
                   'h-8 px-4 rounded-lg text-xs font-bold transition-all shadow-md flex items-center gap-1.5',
                   inputText.trim() ? 'hover:brightness-110 active:scale-95' : 'opacity-40 cursor-not-allowed bg-zinc-800 text-zinc-500'
                 )}
-                style={inputText.trim() ? { backgroundColor: accent.primary, color: accentKey === 'green' ? '#000000' : '#ffffff' } : {}}
+                style={inputText.trim() ? { backgroundColor: '#ffffff', color: '#000000' } : {}}
               >
                 <Send className="h-3.5 w-3.5" />
                 <span>Chat</span>
@@ -292,7 +290,7 @@ export default function LiveChatPanel({
           onClick={onToggleCollapse}
           className="hidden lg:flex fixed right-4 bottom-6 z-40 h-10 px-3.5 rounded-full border border-[#2b2b3b] bg-[#181824] shadow-xl items-center gap-2 text-xs font-bold text-zinc-200 hover:bg-[#202030] hover:text-white transition-all"
         >
-          <MessageSquare className="h-4 w-4" style={{ color: accent.primary }} />
+          <MessageSquare className="h-4 w-4 text-white" />
           <span>Expand chat</span>
         </button>
       )}

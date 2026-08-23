@@ -46,7 +46,7 @@ export default function AccountSettings() {
             <input
               value={displayName}
               onChange={e => setDisplayName(e.target.value)}
-              className="mt-1 w-full h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2C729B]/30 focus:border-[#2C729B]"
+              className="mt-1 w-full h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#000000]/30 focus:border-[#000000]"
             />
           </label>
           <label className="block">
@@ -56,7 +56,7 @@ export default function AccountSettings() {
               <input
                 value={handle}
                 onChange={e => setHandle(e.target.value.replace(/\s/g, '').toLowerCase())}
-                className="h-10 flex-1 rounded-r-lg border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2C729B]/30 focus:border-[#2C729B]"
+                className="h-10 flex-1 rounded-r-lg border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#000000]/30 focus:border-[#000000]"
               />
             </div>
           </label>
@@ -66,7 +66,7 @@ export default function AccountSettings() {
               value={bio}
               onChange={e => setBio(e.target.value)}
               rows={3}
-              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2C729B]/30 focus:border-[#2C729B]"
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#000000]/30 focus:border-[#000000]"
               placeholder="Short description for your channel"
             />
           </label>
@@ -76,13 +76,13 @@ export default function AccountSettings() {
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              className="mt-1 w-full h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2C729B]/30 focus:border-[#2C729B]"
+              className="mt-1 w-full h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#000000]/30 focus:border-[#000000]"
             />
           </label>
         </div>
         <button
           onClick={save}
-          className="h-9 px-4 rounded-lg bg-[#2C729B] text-white text-sm font-medium hover:bg-[#245F82] transition-colors"
+          className="h-9 px-4 rounded-lg bg-[#000000] text-white text-sm font-medium hover:bg-[#27272a] transition-colors"
         >
           {saved ? 'Saved' : 'Save changes'}
         </button>
@@ -91,10 +91,10 @@ export default function AccountSettings() {
       <section className="pt-6 border-t border-slate-200 space-y-3">
         <h2 className="text-sm font-semibold text-slate-900">Avatar & Banner</h2>
         <div className="flex gap-4">
-          <div className="h-20 w-20 rounded-full bg-[#EBF4FA] border border-slate-200 flex items-center justify-center text-xs font-medium text-[#2C729B]">
+          <div className="h-20 w-20 rounded-full bg-[#f4f4f5] border border-slate-200 flex items-center justify-center text-xs font-medium text-[#000000]">
             {displayName?.[0]?.toUpperCase() || 'A'}
           </div>
-          <div className="flex-1 h-20 rounded-xl bg-[#EBF4FA] border border-slate-200 flex items-center justify-center text-xs text-slate-500">
+          <div className="flex-1 h-20 rounded-xl bg-[#f4f4f5] border border-slate-200 flex items-center justify-center text-xs text-slate-500">
             Banner upload (client crop → object storage)
           </div>
         </div>

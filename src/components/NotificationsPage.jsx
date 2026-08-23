@@ -27,7 +27,7 @@ export default function NotificationsPage() {
       {items.length === 0 ? (
         <div className="rounded-2xl border border-zinc-800/80 bg-[#121218] px-6 py-16 text-center">
           <div className="mx-auto h-12 w-12 rounded-full bg-[rgba(0,122,204,0.15)] flex items-center justify-center">
-            <Bell className="h-6 w-6 text-[#007ACC]" />
+            <Bell className="h-6 w-6 text-white" />
           </div>
           <p className="mt-4 text-sm font-medium text-zinc-200">You are all caught up</p>
           <p className="mt-1.5 text-xs text-zinc-500">Live starts and reports show here until Supabase realtime is connected.</p>

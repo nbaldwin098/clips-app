@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Radio, Key, Copy, Check, Play, Square, Heart, Gift } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { useTheme } from '../context/ThemeContext'
 import { lsGet, lsSet } from '../lib/storage'
 import { toggleSubscribe, isSubscribed, getSubscriberCount } from '../lib/engagement'
 import { cn } from '../lib/utils'
@@ -29,7 +28,6 @@ function formatElapsed(startedAt) {
 
 export default function LiveView({ onNavigate, onOpenAuth, onOpenCheckout, focusedStream, onFocusStream }) {
   const { user, isAuthenticated } = useAuth()
-  const { accent, accentKey } = useTheme()
   const approved = user?.creatorStatus === 'approved'
 
   const [copied, setCopied] = useState('')
@@ -123,7 +121,7 @@ export default function LiveView({ onNavigate, onOpenAuth, onOpenCheckout, focus
     <div className="p-4 md:p-6 max-w-[1100px] mx-auto space-y-6">
       <div>
         <h1 className="text-lg font-semibold text-white flex items-center gap-2">
-          <Radio className="h-5 w-5" style={{ color: accent.primary }} />
+          <Radio className="h-5 w-5 text-white" />
           Live
         </h1>
         <p className="text-xs text-zinc-500 mt-0.5">Real broadcasts from Clips creators on this device. No demo streams.</p>
@@ -142,10 +140,7 @@ export default function LiveView({ onNavigate, onOpenAuth, onOpenCheckout, focus
                 {formatElapsed(focusedStream.startedAt)}
               </span>
             </div>
-            <div
-              className="h-20 w-20 rounded-full flex items-center justify-center text-2xl font-bold mb-3"
-              style={{ backgroundColor: accent.badgeBg, color: accent.primary, border: `2px solid ${accent.primary}` }}
-            >
+            <div className="h-20 w-20 rounded-full flex items-center justify-center text-2xl font-bold mb-3 bg-white/10 text-white border-2 border-white">
               {(focusedStream.displayName || focusedStream.handle || '?')[0]?.toUpperCase()}
             </div>
             <h2 className="text-white text-lg font-bold">{focusedStream.displayName}</h2>
@@ -164,9 +159,8 @@ export default function LiveView({ onNavigate, onOpenAuth, onOpenCheckout, focus
                 disabled={!isAuthenticated || focusedStream.userId === user?.id}
                 className={cn(
                   'flex items-center gap-1.5 h-9 px-4 rounded-lg text-xs font-bold transition-all disabled:opacity-40',
-                  following ? 'bg-[#1f1f28] border border-[#2e2e3b] text-zinc-300' : ''
+                  following ? 'bg-[#1f1f28] border border-[#2e2e3b] text-zinc-300' : 'bg-white text-black'
                 )}
-                style={!following ? { backgroundColor: accent.primary, color: accentKey === 'green' ? '#000' : '#fff' } : {}}
               >
                 <Heart className={cn('h-3.5 w-3.5', following && 'fill-current text-red-400')} />
                 {following ? 'Following' : 'Follow'}
@@ -175,7 +169,7 @@ export default function LiveView({ onNavigate, onOpenAuth, onOpenCheckout, focus
                 type="button"
                 onClick={() => onOpenCheckout?.(focusedStream.userId, focusedStream.handle)}
                 disabled={!isAuthenticated || focusedStream.userId === user?.id}
-                className="flex items-center gap-1.5 h-9 px-4 rounded-lg text-xs font-bold bg-gradient-to-r from-[#9146FF] to-[#6018c5] text-white disabled:opacity-40"
+                className="flex items-center gap-1.5 h-9 px-4 rounded-lg text-xs font-bold bg-white text-black disabled:opacity-40"
               >
                 <Gift className="h-3.5 w-3.5" />
                 Subscribe
@@ -193,7 +187,7 @@ export default function LiveView({ onNavigate, onOpenAuth, onOpenCheckout, focus
 
         {liveNow.length === 0 ? (
           <div className="rounded-2xl border border-[#23232c] bg-[#121218] px-6 py-10 text-center">
-            <Radio className="h-6 w-6 mx-auto" style={{ color: accent.primary }} />
+            <Radio className="h-6 w-6 mx-auto text-white" />
             <p className="mt-4 text-sm text-zinc-200">No one is live right now</p>
             <p className="mt-1 text-xs text-zinc-500">Streams show up here the moment a creator goes live.</p>
           </div>
@@ -207,7 +201,7 @@ export default function LiveView({ onNavigate, onOpenAuth, onOpenCheckout, focus
                 className={cn(
                   'text-left rounded-xl border p-4 transition-colors',
                   focusedStream?.userId === s.userId
-                    ? 'border-[var(--color-accent-primary)] bg-[#181822]'
+                    ? 'border-white bg-[#181822]'
                     : 'border-[#23232c] bg-[#121218] hover:border-[#3b3b47]'
                 )}
               >
@@ -227,7 +221,7 @@ export default function LiveView({ onNavigate, onOpenAuth, onOpenCheckout, focus
       {/* Go Live controls for the current user */}
       {!isAuthenticated ? (
         <p className="text-sm text-zinc-400">
-          <button type="button" onClick={onOpenAuth} className="font-medium" style={{ color: accent.primary }}>Sign in</button> to go live after approval.
+          <button type="button" onClick={onOpenAuth} className="font-medium text-white underline underline-offset-2">Sign in</button> to go live after approval.
         </p>
       ) : !approved ? (
         <div className="rounded-2xl border border-[#23232c] bg-[#121218] p-5">
@@ -235,8 +229,7 @@ export default function LiveView({ onNavigate, onOpenAuth, onOpenCheckout, focus
           <button
             type="button"
             onClick={() => onNavigate?.('creator-apply')}
-            className="mt-3 h-10 px-4 rounded-lg text-sm font-bold"
-            style={{ backgroundColor: accent.primary, color: accentKey === 'green' ? '#000' : '#fff' }}
+            className="mt-3 h-10 px-4 rounded-lg text-sm font-bold bg-white text-black"
           >
             Apply to become a creator
           </button>
@@ -244,7 +237,7 @@ export default function LiveView({ onNavigate, onOpenAuth, onOpenCheckout, focus
       ) : (
         <section className="rounded-2xl border border-[#23232c] bg-[#121218] p-5 space-y-3">
           <h2 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
-            <Key className="h-4 w-4" style={{ color: accent.primary }} /> Go live
+            <Key className="h-4 w-4 text-white" /> Go live
           </h2>
           <input
             value={title}
@@ -259,8 +252,7 @@ export default function LiveView({ onNavigate, onOpenAuth, onOpenCheckout, focus
             <button
               type="button"
               onClick={() => copy(streamKey, 'key')}
-              className="h-9 w-9 border border-[#272734] rounded-lg flex items-center justify-center"
-              style={{ color: accent.primary }}
+              className="h-9 w-9 border border-[#272734] rounded-lg flex items-center justify-center text-white"
             >
               {copied === 'key' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             </button>

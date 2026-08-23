@@ -6,9 +6,9 @@ export default function StudioToolsPage({ onNavigate }) {
       <PageHeader title="Studio tools" onBack={() => onNavigate?.('dashboard')} />
       <div className="rounded-xl border border-[#2f2f37] bg-[#1f1f23] p-5 space-y-2 text-sm text-zinc-300">
         <p>Drafts, schedule, chapters, and earn settings live here.</p>
-        <button type="button" onClick={() => onNavigate?.('analytics')} className="text-[#007ACC]">Analytics →</button>
+        <button type="button" onClick={() => onNavigate?.('analytics')} className="text-white">Analytics →</button>
         <br />
-        <button type="button" onClick={() => onNavigate?.('stream-settings')} className="text-[#007ACC]">Stream settings →</button>
+        <button type="button" onClick={() => onNavigate?.('stream-settings')} className="text-white">Stream settings →</button>
       </div>
     </div>
   )

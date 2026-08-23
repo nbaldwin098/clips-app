@@ -4,7 +4,7 @@ export default function Footer({ onNavigate }) {
       key={label}
       type="button"
       onClick={() => onNavigate?.(view)}
-      className="text-xs text-zinc-500 hover:text-[#0098ff] transition-colors"
+      className="text-xs text-zinc-500 hover:text-white transition-colors"
     >
       {label}
     </button>
@@ -16,7 +16,7 @@ export default function Footer({ onNavigate }) {
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <div className="h-7 w-7 rounded-lg bg-[#007acc] text-white text-xs font-bold flex items-center justify-center">
+              <div className="h-7 w-7 rounded-lg bg-white text-black text-xs font-bold flex items-center justify-center">
                 C
               </div>
               <span className="font-semibold text-zinc-100">Clips</span>
