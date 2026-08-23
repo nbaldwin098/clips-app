@@ -198,7 +198,7 @@ function AppShell() {
       case 'library': return <LibraryPage />
       case 'help': return <HelpPage />
       case 'about': return <AboutPage />
-      case 'notifications': return <NotificationsPage />
+      case 'notifications': return <NotificationsPage onNavigate={navigate} />
       case 'legal-tos': return <TermsOfService />
       case 'legal-privacy': return <PrivacyPolicy />
       case 'legal-creator': return <CreatorAgreement />

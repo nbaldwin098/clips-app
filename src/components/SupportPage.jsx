@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { createTicket, listTickets } from '../lib/moderation'
+import { notifyNewTicket } from '../lib/notifications'
 
 export default function SupportPage({ onOpenAuth }) {
   const { user, isAuthenticated } = useAuth()
@@ -18,6 +19,7 @@ export default function SupportPage({ onOpenAuth }) {
       subject: subject.trim(),
       body: body.trim(),
     })
+    notifyNewTicket({ userId: user.id, handle: user.handle, subject: subject.trim() })
     setSent(true)
     setSubject('')
     setBody('')

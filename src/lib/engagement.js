@@ -1,4 +1,5 @@
 import { lsGet, lsSet } from './storage'
+import { notifyNewLike, notifyNewSubscriber, notifyPremium, notifyMentions } from './notifications'
 
 const LIKES = 'engagement_likes'
 const USER_VOTES = 'engagement_votes'
@@ -23,6 +24,7 @@ export function toggleVote(userId, contentId, direction) {
   const prev = mine[contentId] || null
   const tally = lsGet(LIKES, {})
   const cur = { ...(tally[contentId] || { up: 0, down: 0 }) }
+  const becameUp = direction === 'up' && prev !== 'up'
   if (prev === direction) {
     cur[direction === 'up' ? 'up' : 'down'] = Math.max(0, cur[direction === 'up' ? 'up' : 'down'] - 1)
     delete mine[contentId]
@@ -36,6 +38,7 @@ export function toggleVote(userId, contentId, direction) {
   tally[contentId] = cur
   lsSet(USER_VOTES, votes)
   lsSet(LIKES, tally)
+  if (becameUp) notifyNewLike(contentId, userId)
   return cur
 }
 
@@ -70,7 +73,7 @@ export function isSubscribed(userId, creatorId) {
   return (lsGet(SUBS, {})[creatorId] || []).includes(userId)
 }
 
-export function toggleSubscribe(userId, creatorId) {
+export function toggleSubscribe(userId, creatorId, { notify = true } = {}) {
   if (!userId || !creatorId || userId === creatorId) return false
   const all = lsGet(SUBS, {})
   const list = all[creatorId] || []
@@ -79,7 +82,9 @@ export function toggleSubscribe(userId, creatorId) {
   else list.push(userId)
   all[creatorId] = list
   lsSet(SUBS, all)
-  return list.includes(userId)
+  const subscribed = list.includes(userId)
+  if (notify && subscribed) notifyNewSubscriber(creatorId, userId)
+  return subscribed
 }
 
 export const PREMIUM_PRICE = 5
@@ -91,11 +96,13 @@ export function isPremiumSub(userId, creatorId) {
 export function addPremiumSub(userId, creatorId) {
   const key = `premium_${creatorId}`
   const list = lsGet(key, [])
-  if (!list.includes(userId)) {
+  const isNew = !list.includes(userId)
+  if (isNew) {
     list.push(userId)
     lsSet(key, list)
   }
-  toggleSubscribe(userId, creatorId)
+  toggleSubscribe(userId, creatorId, { notify: !isNew })
+  if (isNew) notifyPremium(creatorId, userId)
   return true
 }
 
@@ -110,8 +117,23 @@ export function getWatchHours(creatorId) {
   return ((lsGet(WATCH, {})[creatorId] || 0) / 3600).toFixed(2)
 }
 
+function clipsForCreator(creatorId) {
+  const legacy = lsGet('user_clips', []) || []
+  const imported = lsGet('imports', []) || []
+  const seen = new Set()
+  const out = []
+  for (const c of [...imported, ...legacy]) {
+    if (!c?.id || seen.has(c.id)) continue
+    if (c.creatorId === creatorId || c.userId === creatorId) {
+      seen.add(c.id)
+      out.push(c)
+    }
+  }
+  return out
+}
+
 export function getCreatorAnalytics(creatorId) {
-  const clips = lsGet('user_clips', []).filter((c) => c.creatorId === creatorId || c.userId === creatorId)
+  const clips = clipsForCreator(creatorId)
   let totalViews = 0
   let totalUp = 0
   let totalDown = 0
@@ -137,7 +159,9 @@ export function getCreatorAnalytics(creatorId) {
 
 export function getCreatorRanking(creatorId) {
   const users = Object.keys(lsGet(SUBS, {})).concat(
-    lsGet('user_clips', []).map((c) => c.creatorId).filter(Boolean)
+    [...(lsGet('user_clips', []) || []), ...(lsGet('imports', []) || [])]
+      .map((c) => c.creatorId || c.userId)
+      .filter(Boolean)
   )
   const unique = [...new Set(users)]
   const ranked = unique
@@ -183,6 +207,10 @@ export function postLiveChat(streamUserId, message) {
   const list = getLiveChat(streamUserId)
   list.push({ id: `msg_${Date.now()}`, ...message, at: new Date().toISOString() })
   lsSet(`live_chat_${streamUserId}`, list.slice(-200))
+  notifyMentions({
+    text: message?.text,
+    actorId: message?.userId,
+  })
   return list
 }
 

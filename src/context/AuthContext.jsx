@@ -114,8 +114,22 @@ export function AuthProvider({ children }) {
       setUser(next)
       lsSet('user', next)
       try { indexUser(next) } catch {}
+      return
     }
-  }, [user?.id, user?.handle, user?.creatorStatus, user?.isPlatformAdmin])
+    const indexed = lsGet('users_index', {})[user.id]
+    if (
+      indexed
+      && indexed.creatorStatus
+      && (indexed.creatorStatus !== user.creatorStatus || !!indexed.isCreator !== !!user.isCreator)
+    ) {
+      const next = {
+        ...user,
+        creatorStatus: indexed.creatorStatus,
+        isCreator: indexed.creatorStatus === 'approved' || !!indexed.isCreator,
+      }
+      setUser(next)
+    }
+  }, [user?.id, user?.handle, user?.creatorStatus, user?.isCreator, user?.isPlatformAdmin])
 
   const login = useCallback(async (payload = {}) => {
     const email = typeof payload === 'string' ? payload : payload.email || ''

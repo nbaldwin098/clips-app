@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { lsGet, lsSet } from '../lib/storage'
+import { notifyReport } from '../lib/notifications'
 const REASONS = ['Spam or misleading','Harassment or hate','Sexual content','Violent or dangerous','Copyright infringement','Child safety','Other']
 export default function ReportModal({ open, onClose, target = {} }) {
   const { user, isAuthenticated } = useAuth()
@@ -14,6 +15,12 @@ export default function ReportModal({ open, onClose, target = {} }) {
     const list = lsGet('yt_reports', [])
     list.unshift({ id: `rep_${Date.now()}`, reason, detail: detail.slice(0, 500), target, reporterId: user?.id || 'anon', at: new Date().toISOString() })
     lsSet('yt_reports', list.slice(0, 200))
+    notifyReport({
+      reporterId: user?.id || null,
+      targetUserId: target.userId || target.creatorId || null,
+      reason,
+      contentId: target.contentId || target.id || null,
+    })
     setDone(true)
   }
   const block = () => {

@@ -23,6 +23,7 @@ import {
   ShieldCheck,
   X,
   Music,
+  Bell,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { lsGet } from '../lib/storage'
@@ -82,7 +83,7 @@ export default function CollapsibleSidebar({
 
   const recommendedCreators = (() => {
     const users = listIndexedUsers().filter((u) => u.creatorStatus === 'approved' || u.isCreator)
-    const clips = lsGet('user_clips', [])
+    const clips = [...(lsGet('imports', []) || []), ...(lsGet('user_clips', []) || [])]
     const count = {}
     for (const c of clips) {
       const id = c.creatorId || c.userId
@@ -132,6 +133,9 @@ export default function CollapsibleSidebar({
           <NavBtn collapsed={collapsed} active={currentView === 'live'} onClick={() => go('live')} icon={Radio} label="Live" />
           <NavBtn collapsed={collapsed} active={currentView === 'explore'} onClick={() => go('explore')} icon={Compass} label="Search" />
           <NavBtn collapsed={collapsed} active={currentView === 'sounds'} onClick={() => go('sounds')} icon={Music} label="Sounds" />
+          {isAuthenticated && (
+            <NavBtn collapsed={collapsed} active={currentView === 'notifications'} onClick={() => go('notifications')} icon={Bell} label="Notifications" />
+          )}
         </nav>
 
         {/* Real "Live Now" list — empty state when nobody is broadcasting */}

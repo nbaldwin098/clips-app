@@ -132,8 +132,21 @@ export default function SettingsPage({ onNavigate }) {
         <div className="flex flex-wrap gap-2 text-xs">
           {Object.entries(getNotifPrefs(user?.id)).map(([k, v]) => (
             <label key={k} className="flex items-center gap-1 border border-zinc-800 rounded-lg px-2 py-1">
-              <input type="checkbox" checked={!!v} onChange={(e) => setNotifPrefs(user?.id, { [k]: e.target.checked })} />
-              {k}
+              <input type="checkbox" checked={!!v} onChange={(e) => { setNotifPrefs(user?.id, { [k]: e.target.checked }); force((n) => n + 1) }} />
+              {{
+                all: 'All',
+                subscribers: 'New subscribers',
+                likes: 'Likes',
+                comments: 'Comments',
+                mentions: 'Mentions',
+                live: 'Live from subscriptions',
+                posts: 'Community posts',
+                uploads: 'New clips',
+                premium: 'Premium purchases',
+                application: 'Creator application',
+                reports: 'Reports & tickets',
+                marketing: 'Marketing',
+              }[k] || k}
             </label>
           ))}
         </div>

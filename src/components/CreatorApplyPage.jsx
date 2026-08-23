@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { getApplicationForUser, submitCreatorApplication } from '../lib/moderation'
+import { notifyApplicationSubmitted } from '../lib/notifications'
 
 const inputCls =
   'mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100 placeholder:text-zinc-600'
@@ -59,6 +60,7 @@ export default function CreatorApplyPage({ onOpenAuth }) {
       creatorStatus: 'pending',
       displayName: name.trim().slice(0, 80) || user.displayName,
     })
+    notifyApplicationSubmitted(user.id, user.handle)
     setDone(true)
   }
 
@@ -74,6 +76,11 @@ export default function CreatorApplyPage({ onOpenAuth }) {
     <div className="p-4 md:p-6 max-w-md mx-auto">
       <h1 className="text-lg font-semibold text-white">Apply to create</h1>
       <p className="text-xs text-zinc-500 mt-1 mb-4">Short form so we can review and reach you.</p>
+      {existing?.status === 'rejected' && (
+        <p className="mb-4 text-sm text-zinc-200 rounded-xl border border-zinc-800 bg-[#121218] px-4 py-3">
+          Your last application was not approved. Update the form and submit again for another review.
+        </p>
+      )}
       <form onSubmit={submit} className="space-y-3 rounded-2xl border border-zinc-800 bg-[#121218] p-5">
         <label className="block text-xs text-white">Full name
           <input required value={name} onChange={(e) => setName(e.target.value)} className={inputCls} maxLength={80} />

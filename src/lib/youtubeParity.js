@@ -1,4 +1,5 @@
 import { lsGet, lsSet } from './storage'
+import { notifyNewComment, notifyFollowersOfPost, DEFAULT_NOTIF_PREFS } from './notifications'
 
 const K = {
   comments: 'yt_comments', playlists: 'yt_playlists', posts: 'yt_posts', notifPrefs: 'yt_notif_prefs',
@@ -38,6 +39,14 @@ export function addComment(contentId, { userId, handle, text, parentId = null })
     heldAll.unshift({ ...row, contentId })
     lsSet(K.heldComments, heldAll.slice(0, 200))
   }
+  const parent = parentId ? list.find((c) => c.id === parentId) : null
+  notifyNewComment({
+    contentId,
+    actorId: userId,
+    text: row.text,
+    parentAuthorId: parent?.userId || null,
+    held,
+  })
   return row
 }
 export function toggleCommentLike(contentId, commentId, userId) {
@@ -107,6 +116,9 @@ export function createPost(payload) {
   const row = { id: id('post'), type: payload.type || 'text', text: String(payload.text || '').slice(0, 5000), pollOptions: payload.pollOptions || [], votes: {}, imageData: payload.imageData || null, scheduledFor: payload.scheduledFor || null, published: !payload.scheduledFor, creatorId: payload.creatorId, handle: payload.handle, createdAt: new Date().toISOString(), likes: 0 }
   list.unshift(row)
   lsSet(K.posts, list)
+  if (row.published && row.creatorId) {
+    notifyFollowersOfPost({ creatorId: row.creatorId, handle: row.handle, text: row.text })
+  }
   return row
 }
 export function votePoll(postId, userId, optionIndex) {
@@ -264,7 +276,7 @@ export function schedulePremiere(row) {
 }
 export function listPremieres(userId) { return (lsGet(K.premieres, []) || []).filter((p) => p.userId === userId) }
 export function getNotifPrefs(userId) {
-  return lsGet(K.notifPrefs, {})[userId] || { all: true, uploads: true, live: true, posts: true, comments: true, mentions: true, marketing: false }
+  return { ...DEFAULT_NOTIF_PREFS, ...(lsGet(K.notifPrefs, {})[userId] || {}) }
 }
 export function setNotifPrefs(userId, partial) {
   const all = lsGet(K.notifPrefs, {})

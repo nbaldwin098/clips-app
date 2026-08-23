@@ -4,8 +4,10 @@ import {
   listTickets, updateTicket, listIndexedUsers, listImports, listUserClips,
 } from '../lib/moderation'
 import { lsGet, lsSet } from '../lib/storage'
+import { useAuth } from '../context/AuthContext'
 
 export default function AdminPortal() {
+  const { user } = useAuth()
   const [authed, setAuthed] = useState(isAdminSession())
   const [code, setCode] = useState('')
   const [err, setErr] = useState('')
@@ -17,8 +19,13 @@ export default function AdminPortal() {
     return (
       <div className="p-6 max-w-sm mx-auto">
         <h1 className="text-lg font-semibold text-white">Admin portal</h1>
-        <p className="text-xs text-zinc-500 mt-1 mb-4">Staff only. MVP code: clips-admin</p>
-        <form onSubmit={(e) => { e.preventDefault(); if (adminLogin(code.trim())) { setAuthed(true); setErr('') } else setErr('Invalid code') }} className="space-y-3">
+        <p className="text-xs text-zinc-500 mt-1 mb-4">Staff only. Sign in as @cs1 and enter the admin code.</p>
+        <form onSubmit={(e) => {
+          e.preventDefault()
+          const result = adminLogin(code.trim(), user)
+          if (result?.ok) { setAuthed(true); setErr('') }
+          else setErr(result?.error || 'Invalid code')
+        }} className="space-y-3">
           <input type="password" value={code} onChange={(e) => setCode(e.target.value)} className="w-full h-10 rounded-lg border border-zinc-800 bg-[#121218] px-3 text-sm text-zinc-100" placeholder="Admin code" />
           {err && <p className="text-xs text-red-400">{err}</p>}
           <button type="submit" className="w-full h-10 rounded-lg bg-white text-black text-sm">Enter</button>

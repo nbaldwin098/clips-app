@@ -1,45 +1,126 @@
-import { Bell } from 'lucide-react'
-import { lsGet } from '../lib/storage'
+import { useEffect, useState } from 'react'
+import {
+  Bell,
+  Heart,
+  MessageCircle,
+  Radio,
+  UserPlus,
+  AtSign,
+  Crown,
+  ShieldCheck,
+  Flag,
+  Clapperboard,
+  Megaphone,
+} from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { getLiveChat } from '../lib/engagement'
+import {
+  listNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+  subscribeNotifications,
+} from '../lib/notifications'
+import { cn } from '../lib/utils'
 
-export default function NotificationsPage() {
-  const { user } = useAuth()
-  const reports = lsGet('yt_reports', []).slice(0, 10)
-  const board = lsGet('live_board', []).filter((b) => b.isLive).slice(0, 5)
-  const items = []
-  for (const b of board) {
-    items.push({ id: b.id || b.userId, text: `@${b.handle || 'creator'} is live: ${b.title || 'Untitled'}`, at: b.startedAt })
-  }
-  for (const r of reports) {
-    if (user && r.reporterId === user.id) {
-      items.push({ id: r.id, text: `Your report (${r.reason}) was submitted`, at: r.at })
+const ICONS = {
+  subscriber: UserPlus,
+  like: Heart,
+  comment: MessageCircle,
+  mention: AtSign,
+  live: Radio,
+  post: Megaphone,
+  upload: Clapperboard,
+  premium: Crown,
+  application: ShieldCheck,
+  report: Flag,
+  ticket: Flag,
+  held_comment: MessageCircle,
+}
+
+function timeAgo(iso) {
+  if (!iso) return ''
+  const ms = Date.now() - new Date(iso).getTime()
+  if (Number.isNaN(ms) || ms < 0) return ''
+  const mins = Math.floor(ms / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}h ago`
+  return `${Math.floor(hours / 24)}d ago`
+}
+
+export default function NotificationsPage({ onNavigate }) {
+  const { user, isAuthenticated } = useAuth()
+  const [items, setItems] = useState([])
+
+  useEffect(() => {
+    if (!user?.id) {
+      setItems([])
+      return undefined
     }
+    const refresh = () => setItems(listNotifications(user.id))
+    refresh()
+    markAllNotificationsRead(user.id)
+    refresh()
+    return subscribeNotifications(refresh)
+  }, [user?.id])
+
+  if (!isAuthenticated) {
+    return (
+      <div className="p-4 md:p-6 max-w-2xl mx-auto">
+        <h1 className="text-xl font-semibold text-zinc-100 mb-6">Notifications</h1>
+        <div className="rounded-2xl border border-zinc-800 bg-[#121218] px-6 py-16 text-center">
+          <p className="text-sm text-zinc-300">Sign in to see creator and account notifications.</p>
+        </div>
+      </div>
+    )
   }
-  if (user?.handle) {
-    for (const m of (getLiveChat(user.id) || []).slice(-5)) {
-      items.push({ id: m.id, text: `Chat: ${m.name}: ${m.text}`, at: m.at })
-    }
-  }
+
   return (
     <div className="p-4 md:p-6 max-w-2xl mx-auto">
-      <h1 className="text-xl font-semibold text-zinc-100 mb-6">Notifications</h1>
+      <h1 className="text-xl font-semibold text-zinc-100 mb-2">Notifications</h1>
+      <p className="text-xs text-zinc-500 mb-6">Subscribers, comments, likes, live, applications, and reports.</p>
       {items.length === 0 ? (
         <div className="rounded-2xl border border-zinc-800/80 bg-[#121218] px-6 py-16 text-center">
-          <div className="mx-auto h-12 w-12 rounded-full bg-[rgba(0,122,204,0.15)] flex items-center justify-center">
+          <div className="mx-auto h-12 w-12 rounded-full bg-white/10 flex items-center justify-center">
             <Bell className="h-6 w-6 text-white" />
           </div>
           <p className="mt-4 text-sm font-medium text-zinc-200">You are all caught up</p>
-          <p className="mt-1.5 text-xs text-zinc-500">Live starts and reports show here until Supabase realtime is connected.</p>
+          <p className="mt-1.5 text-xs text-zinc-500">
+            Creators get notified for new subscribers, comments, likes, premium, and application reviews.
+          </p>
         </div>
       ) : (
         <div className="space-y-2">
-          {items.map((it) => (
-            <div key={it.id} className="rounded-xl border border-zinc-800 bg-[#121218] px-4 py-3">
-              <p className="text-sm text-zinc-200">{it.text}</p>
-              {it.at && <p className="text-[10px] text-zinc-600 mt-1">{new Date(it.at).toLocaleString()}</p>}
-            </div>
-          ))}
+          {items.map((it) => {
+            const Icon = ICONS[it.type] || Bell
+            return (
+              <button
+                key={it.id}
+                type="button"
+                onClick={() => {
+                  markNotificationRead(user.id, it.id)
+                  if (it.view && onNavigate) onNavigate(it.view)
+                }}
+                className={cn(
+                  'w-full text-left rounded-xl border px-4 py-3 transition-colors',
+                  it.read
+                    ? 'border-zinc-800 bg-[#121218]'
+                    : 'border-white/20 bg-[#1a1a22]'
+                )}
+              >
+                <div className="flex items-start gap-3">
+                  <span className="mt-0.5 h-8 w-8 rounded-lg bg-white/10 text-white flex items-center justify-center shrink-0">
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-zinc-100">{it.title}</p>
+                    {it.body && <p className="text-xs text-zinc-500 mt-0.5 truncate">{it.body}</p>}
+                    <p className="text-[10px] text-zinc-600 mt-1">{timeAgo(it.at)}</p>
+                  </div>
+                </div>
+              </button>
+            )
+          })}
         </div>
       )}
     </div>

@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { X, Link2, CheckCircle2, AlertTriangle } from 'lucide-react'
 import { importUserLink } from '../lib/contentService'
+import { useAuth } from '../context/AuthContext'
 
 export default function ImportShortModal({ open, onClose }) {
+  const { user } = useAuth()
   const [url, setUrl] = useState('')
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
@@ -14,7 +16,7 @@ export default function ImportShortModal({ open, onClose }) {
     setError('')
     setResult(null)
     setSaved(false)
-    const res = importUserLink(url.trim())
+    const res = importUserLink(url.trim(), user)
     if (!res.ok) {
       setError(res.error || 'Unable to import URL.')
       return

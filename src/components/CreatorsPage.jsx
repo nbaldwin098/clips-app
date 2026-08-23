@@ -9,7 +9,7 @@ export default function CreatorsPage() {
   const { user } = useAuth()
   const ranked = useMemo(() => {
     const users = listIndexedUsers().filter((u) => u.creatorStatus === 'approved' || u.isCreator)
-    const clips = lsGet('user_clips', [])
+    const clips = [...(lsGet('imports', []) || []), ...(lsGet('user_clips', []) || [])]
     const byCreator = {}
     for (const c of clips) {
       const id = c.creatorId || c.userId

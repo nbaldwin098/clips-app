@@ -1,5 +1,6 @@
 import { getImports, saveImport, parseExternalShort, lsGet, lsSet } from './storage'
 import { rankForUser } from './algorithmEngine'
+import { notifyFollowersOfUpload } from './notifications'
 
 const VIEW_KEY = 'clips_content_views'
 const PIN_KEY = 'clips_pinned_by_creator'
@@ -53,7 +54,16 @@ export function sortNewestWithPins(items, creatorId = null) {
 }
 
 export function getCreatorContent(creatorId, handle = null) {
-  const all = withViewCounts(getImports().map(normalizeItem))
+  const imported = getImports()
+  const legacy = lsGet('user_clips', []) || []
+  const seen = new Set()
+  const merged = []
+  for (const raw of [...imported, ...legacy]) {
+    if (!raw?.id || seen.has(raw.id)) continue
+    seen.add(raw.id)
+    merged.push(raw)
+  }
+  const all = withViewCounts(merged.map(normalizeItem))
   const filtered = all.filter((i) => {
     if (creatorId && (i.creatorId === creatorId || i.userId === creatorId)) return true
     if (handle && String(i.handle || i.creatorHandle || '').toLowerCase() === String(handle).toLowerCase()) return true
@@ -140,13 +150,25 @@ export function listImportsNormalized() {
   return withViewCounts(getImports().map(normalizeItem))
 }
 
-export function importUserLink(url) {
+export function importUserLink(url, actor = null) {
   const trimmed = String(url || '').trim()
-  if (!trimmed) return null
+  if (!trimmed) return { ok: false, item: null, error: 'Paste a public short URL.' }
   const record = parseExternalShort(trimmed)
-  if (!record) return null
+  if (!record) return { ok: false, item: null, error: 'Unable to import that URL.' }
+  if (actor?.id) {
+    record.creatorId = actor.id
+    record.userId = actor.id
+    record.handle = actor.handle || record.handle
+  }
   saveImport(record)
-  return normalizeItem(record)
+  if (actor?.id) {
+    notifyFollowersOfUpload({
+      creatorId: actor.id,
+      handle: actor.handle,
+      title: record.title,
+    })
+  }
+  return { ok: true, item: normalizeItem(record), error: null }
 }
 
 export function recordContentView(id) {

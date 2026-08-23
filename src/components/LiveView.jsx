@@ -3,6 +3,7 @@ import { Radio, Key, Copy, Check, Play, Square, Heart, Gift } from 'lucide-react
 import { useAuth } from '../context/AuthContext'
 import { lsGet, lsSet } from '../lib/storage'
 import { toggleSubscribe, isSubscribed, getSubscriberCount } from '../lib/engagement'
+import { notifyFollowersWentLive } from '../lib/notifications'
 import { cn } from '../lib/utils'
 
 function ensureStreamKey(userId) {
@@ -93,6 +94,11 @@ export default function LiveView({ onNavigate, onOpenAuth, onOpenCheckout, focus
     lsSet('live_board', without)
     setIsLive(true)
     refreshLiveBoard()
+    notifyFollowersWentLive({
+      creatorId: user.id,
+      handle: user.handle,
+      title: payload.title,
+    })
   }
 
   const endLive = () => {

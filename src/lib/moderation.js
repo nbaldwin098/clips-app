@@ -1,4 +1,5 @@
 import { lsGet, lsSet } from './storage'
+import { notifyApplicationStatus } from './notifications'
 
 const ADMIN_KEY = 'clips_admin_session'
 const APPS_KEY = 'creator_applications'
@@ -91,8 +92,10 @@ export function setApplicationStatus(appId, status, note = '') {
     const users = lsGet(USERS_INDEX, {})
     if (users[app.userId]) {
       users[app.userId].creatorStatus = status
+      users[app.userId].isCreator = status === 'approved'
       lsSet(USERS_INDEX, users)
     }
+    notifyApplicationStatus(app.userId, status)
   }
   return app
 }

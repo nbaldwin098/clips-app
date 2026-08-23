@@ -1,11 +1,12 @@
 import { Upload, Radio, Link2, BarChart3 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { lsGet } from '../lib/storage'
+import { getCreatorContent } from '../lib/contentService'
 import PageHeader from './PageHeader'
 
 export default function CreatorDashboard({ onOpenImport, onOpenUpload, onNavigate }) {
   const { user } = useAuth()
-  const clips = lsGet('user_clips', []).filter((c) => c.creatorId === user?.id || c.userId === user?.id)
+  const clips = getCreatorContent(user?.id, user?.handle)
   const live = lsGet(`live_state_${user?.id}`, null)
   return (
     <div className="p-4 md:p-6 max-w-[1000px] mx-auto">

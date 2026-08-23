@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { cn } from '../lib/utils'
+import { subscribeNotifications, unreadCount } from '../lib/notifications'
 
 export default function StreamingNavbar({
   onNavigate,
@@ -28,6 +29,7 @@ export default function StreamingNavbar({
 }) {
   const { user, isAuthenticated, logout } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [unread, setUnread] = useState(0)
   const menuRef = useRef(null)
 
   useEffect(() => {
@@ -39,6 +41,16 @@ export default function StreamingNavbar({
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  useEffect(() => {
+    if (!user?.id) {
+      setUnread(0)
+      return undefined
+    }
+    const refresh = () => setUnread(unreadCount(user.id))
+    refresh()
+    return subscribeNotifications(refresh)
+  }, [user?.id])
 
   const handleNav = (v) => {
     setMenuOpen(false)
@@ -147,10 +159,15 @@ export default function StreamingNavbar({
               <button
                 type="button"
                 onClick={() => handleNav('notifications')}
-                className="h-9 w-9 flex items-center justify-center rounded-lg text-zinc-300 hover:bg-[#1f1f27] hover:text-white transition-colors"
+                className="relative h-9 w-9 flex items-center justify-center rounded-lg text-zinc-300 hover:bg-[#1f1f27] hover:text-white transition-colors"
                 title="Notifications"
               >
                 <Bell className="h-4.5 w-4.5" />
+                {unread > 0 && (
+                  <span className="absolute top-1 right-1 min-w-4 h-4 px-1 rounded-full bg-white text-black text-[10px] font-bold leading-4">
+                    {unread > 9 ? '9+' : unread}
+                  </span>
+                )}
               </button>
 
               <div className="relative" ref={menuRef}>
