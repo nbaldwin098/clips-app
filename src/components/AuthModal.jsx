@@ -1,21 +1,25 @@
 import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { getSupabase, isSupabaseConfigured } from '../lib/supabaseClient'
+import { listIndexedUsers } from '../lib/moderation'
 
 export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
   const { login, backend } = useAuth()
-  const [mode, setMode] = useState(initialMode)
+  const [mode, setMode] = useState(initialMode) // signin | signup | forgot-pass | forgot-user
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [handle, setHandle] = useState('')
   const [error, setError] = useState('')
+  const [info, setInfo] = useState('')
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
     if (open) {
       setMode(initialMode)
       setError('')
+      setInfo('')
       setPassword('')
       setBusy(false)
     }
@@ -23,9 +27,82 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
 
   if (!open) return null
 
+  const title =
+    mode === 'signup'
+      ? 'Create account'
+      : mode === 'forgot-pass'
+        ? 'Reset password'
+        : mode === 'forgot-user'
+          ? 'Find username'
+          : 'Sign in'
+
+  const sendPasswordReset = async () => {
+    setError('')
+    setInfo('')
+    const mail = email.trim().toLowerCase()
+    if (!mail || !mail.includes('@')) {
+      setError('Enter the email on your account.')
+      return
+    }
+    setBusy(true)
+    try {
+      if (!isSupabaseConfigured()) {
+        setError('Password reset needs Supabase. Sign up again on this device if you only used local login.')
+        setBusy(false)
+        return
+      }
+      const sb = await getSupabase()
+      if (!sb) {
+        setError('Could not reach auth service.')
+        setBusy(false)
+        return
+      }
+      const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined
+      const { error: resetErr } = await sb.auth.resetPasswordForEmail(mail, {
+        redirectTo,
+      })
+      if (resetErr) throw new Error(resetErr.message)
+      setInfo('If that email is registered, a reset link was sent. Check inbox and spam.')
+    } catch (err) {
+      setError(err?.message || 'Could not send reset email.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const findUsername = () => {
+    setError('')
+    setInfo('')
+    const mail = email.trim().toLowerCase()
+    if (!mail || !mail.includes('@')) {
+      setError('Enter the email on your account.')
+      return
+    }
+    const users = listIndexedUsers()
+    const match = users.find((u) => String(u.email || '').toLowerCase() === mail)
+    if (match?.handle) {
+      setInfo(`Your username is @${match.handle}`)
+    } else {
+      setInfo(
+        'No username found on this device for that email. Sign in with email — your @username shows on your profile after login. Or check Supabase → Authentication → Users.'
+      )
+    }
+  }
+
   const submit = async (e) => {
     e.preventDefault()
     setError('')
+    setInfo('')
+
+    if (mode === 'forgot-pass') {
+      await sendPasswordReset()
+      return
+    }
+    if (mode === 'forgot-user') {
+      findUsername()
+      return
+    }
+
     const mail = email.trim().toLowerCase()
     if (!mail || !mail.includes('@')) {
       setError('Enter a valid email.')
@@ -75,9 +152,7 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
       <div className="w-full max-w-md rounded-2xl border border-[#2f2f37] bg-[#1f1f23] shadow-2xl">
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#2f2f37]">
           <div>
-            <h2 className="text-lg font-semibold text-[#efeff1]">
-              {mode === 'signin' ? 'Sign in' : 'Create account'}
-            </h2>
+            <h2 className="text-lg font-semibold text-[#efeff1]">{title}</h2>
             <p className="text-[10px] text-zinc-500 mt-0.5">
               {backend === 'supabase' ? 'Synced across devices' : 'Local this device'}
             </p>
@@ -91,7 +166,7 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
             {mode === 'signup' && (
               <>
                 <label className="block">
-                  <span className="text-xs font-medium text-white">Display name</span>
+                  <span className="text-xs font-medium text-[#007ACC]">Display name</span>
                   <input
                     value={displayName}
                     onChange={(e) => {
@@ -99,43 +174,96 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
                       setDisplayName(v)
                       if (!handle.trim()) setHandle(v.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24))
                     }}
-                    className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-white"
+                    className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-[#007ACC]"
                   />
                 </label>
                 <label className="block">
-                  <span className="text-xs font-medium text-white">Username</span>
+                  <span className="text-xs font-medium text-[#007ACC]">Username</span>
                   <div className="mt-1 flex">
                     <span className="inline-flex items-center h-10 px-3 rounded-l-lg border border-r-0 border-[#2f2f37] bg-[#18181b] text-zinc-500 text-sm">@</span>
                     <input
                       value={handle}
                       onChange={(e) => setHandle(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24))}
-                      className="h-10 flex-1 rounded-r-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-white"
+                      className="h-10 flex-1 rounded-r-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-[#007ACC]"
                     />
                   </div>
                 </label>
               </>
             )}
+
             <label className="block">
-              <span className="text-xs font-medium text-white">Email</span>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-white" autoComplete="email" />
+              <span className="text-xs font-medium text-[#007ACC]">Email</span>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-[#007ACC]"
+                autoComplete="email"
+              />
             </label>
-            <label className="block">
-              <span className="text-xs font-medium text-white">Password</span>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-white" autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} />
-            </label>
-            {mode === 'signup' && (
-              <p className="text-[11px] text-zinc-500">Tip: use your name or brand as @username so people recognize your public profile.</p>
+
+            {(mode === 'signin' || mode === 'signup') && (
+              <label className="block">
+                <span className="text-xs font-medium text-[#007ACC]">Password</span>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-[#007ACC]"
+                  autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+                />
+              </label>
             )}
+
+            {mode === 'forgot-pass' && (
+              <p className="text-xs text-zinc-500">We’ll email a reset link if this address has an account.</p>
+            )}
+            {mode === 'forgot-user' && (
+              <p className="text-xs text-zinc-500">We’ll look up @username for this email on this device / index.</p>
+            )}
+
             {error && <p className="text-sm text-red-400">{error}</p>}
-            <button type="submit" disabled={busy} className="w-full h-10 rounded-lg bg-white text-black font-bold text-sm hover:bg-zinc-200 disabled:opacity-60 transition-all">
-              {busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}
+            {info && <p className="text-sm text-green-400">{info}</p>}
+
+            <button
+              type="submit"
+              disabled={busy}
+              className="w-full h-10 rounded-lg bg-[#007ACC] text-white text-sm font-medium hover:bg-[#0098ff] disabled:opacity-60"
+            >
+              {busy
+                ? 'Please wait…'
+                : mode === 'signup'
+                  ? 'Create account'
+                  : mode === 'forgot-pass'
+                    ? 'Send reset link'
+                    : mode === 'forgot-user'
+                      ? 'Find username'
+                      : 'Sign in'}
             </button>
           </form>
+
+          {mode === 'signin' && (
+            <div className="mt-3 flex flex-wrap justify-center gap-x-3 gap-y-1 text-xs text-zinc-500">
+              <button type="button" className="text-[#007ACC] font-medium" onClick={() => { setMode('forgot-pass'); setError(''); setInfo('') }}>
+                Forgot password?
+              </button>
+              <button type="button" className="text-[#007ACC] font-medium" onClick={() => { setMode('forgot-user'); setError(''); setInfo('') }}>
+                Forgot username?
+              </button>
+            </div>
+          )}
+
           <p className="text-xs text-zinc-500 text-center mt-4">
-            {mode === 'signin' ? (
-              <>No account? <button type="button" className="text-white font-medium" onClick={() => setMode('signup')}>Sign up</button></>
-            ) : (
-              <>Have an account? <button type="button" className="text-white font-medium" onClick={() => setMode('signin')}>Sign in</button></>
+            {mode === 'signin' && (
+              <>No account? <button type="button" className="text-[#007ACC] font-medium" onClick={() => setMode('signup')}>Sign up</button></>
+            )}
+            {mode === 'signup' && (
+              <>Have an account? <button type="button" className="text-[#007ACC] font-medium" onClick={() => setMode('signin')}>Sign in</button></>
+            )}
+            {(mode === 'forgot-pass' || mode === 'forgot-user') && (
+              <button type="button" className="text-[#007ACC] font-medium" onClick={() => { setMode('signin'); setError(''); setInfo('') }}>
+                Back to sign in
+              </button>
             )}
           </p>
         </div>
