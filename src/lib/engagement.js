@@ -1,5 +1,6 @@
 import { lsGet, lsSet } from './storage'
 import { notifyNewLike, notifyNewSubscriber, notifyPremium, notifyMentions } from './notifications'
+import { notifyContentChanged } from './contentSync'
 
 const LIKES = 'engagement_likes'
 const USER_VOTES = 'engagement_votes'
@@ -38,8 +39,19 @@ export function toggleVote(userId, contentId, direction) {
   tally[contentId] = cur
   lsSet(USER_VOTES, votes)
   lsSet(LIKES, tally)
+  const liked = new Set(lsGet('liked', []))
+  if (mine[contentId] === 'up') liked.add(contentId)
+  else liked.delete(contentId)
+  lsSet('liked', [...liked])
   if (becameUp) notifyNewLike(contentId, userId)
+  notifyContentChanged()
   return cur
+}
+
+export function getUserUpvotedIds(userId) {
+  if (!userId) return []
+  const mine = lsGet(USER_VOTES, {})[userId] || {}
+  return Object.entries(mine).filter(([, dir]) => dir === 'up').map(([id]) => id)
 }
 
 export function recordView(contentId) {

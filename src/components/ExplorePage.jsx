@@ -1,43 +1,64 @@
-import { useMemo, useState, useEffect } from 'react'
-import { Search } from 'lucide-react'
+import { useMemo } from 'react'
 import { getExplore } from '../lib/contentService'
+import { listIndexedUsers } from '../lib/moderation'
 import { useContentSyncTick } from '../lib/useContentSync'
-import ContentCard from './ContentCard'
+import MediaShelves from './MediaShelves'
 
 export default function ExplorePage({ onPlayItem, initialQuery = '' }) {
-  const [q, setQ] = useState(initialQuery)
   const syncTick = useContentSyncTick()
-  useEffect(() => { setQ(initialQuery) }, [initialQuery])
+  const q = String(initialQuery || '').trim()
   const results = useMemo(() => getExplore(q), [q, syncTick])
+  const creators = useMemo(() => {
+    const needle = q.toLowerCase()
+    if (!needle) return []
+    return listIndexedUsers()
+      .filter((u) => {
+        const handle = String(u.handle || '').toLowerCase()
+        const name = String(u.displayName || '').toLowerCase()
+        return handle.includes(needle) || name.includes(needle)
+      })
+      .slice(0, 8)
+  }, [q, syncTick])
+
+  const openProfile = (creator) => {
+    if (typeof window !== 'undefined') window.__clipsOpenProfile?.(creator.handle, creator.id)
+  }
 
   return (
     <div className="p-4 md:p-6 max-w-[1400px] mx-auto space-y-6">
-      <div>
-        <h1 className="text-lg font-semibold text-zinc-100">Explore</h1>
-        <p className="text-xs text-zinc-500 mt-0.5">Search titles and tags from real imports</p>
-      </div>
+      <h1 className="text-lg font-semibold text-zinc-100">
+        {q ? `Results for “${q}”` : 'Explore'}
+      </h1>
 
-      <div className="relative max-w-xl">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search…"
-          className="w-full h-11 rounded-full border border-zinc-800 bg-[#121218] pl-10 pr-4 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-white focus:border-white/40"
-        />
-      </div>
-
-      {results.length === 0 ? (
-        <p className="text-sm text-zinc-500 text-center py-12">
-          {q ? 'No matches.' : 'Nothing to explore yet — import content to fill the catalog.'}
-        </p>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
-          {results.map((item) => (
-            <ContentCard key={item.id} item={item} onOpen={onPlayItem} />
+      {creators.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="text-sm font-semibold text-zinc-300">Creators</h2>
+          {creators.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => openProfile(c)}
+              className="w-full flex items-center gap-3 rounded-xl border border-zinc-800 bg-[#121218] px-4 py-3 text-left hover:border-zinc-600"
+            >
+              <span className="h-10 w-10 rounded-full bg-white/10 text-white flex items-center justify-center text-sm font-semibold overflow-hidden">
+                {c.avatarUrl ? <img src={c.avatarUrl} alt="" className="h-full w-full object-cover" /> : (c.displayName || '?')[0]?.toUpperCase()}
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm text-zinc-100 truncate">{c.displayName}</span>
+                <span className="block text-xs text-zinc-500">@{c.handle}</span>
+              </span>
+            </button>
           ))}
-        </div>
+        </section>
       )}
+
+      {results.length === 0 && creators.length === 0 ? (
+        <p className="text-sm text-zinc-500 text-center py-12">
+          {q ? 'No matches.' : 'Nothing here yet.'}
+        </p>
+      ) : results.length > 0 ? (
+        <MediaShelves items={results} onPlayItem={onPlayItem} />
+      ) : null}
     </div>
   )
 }

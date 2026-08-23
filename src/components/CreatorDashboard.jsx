@@ -18,10 +18,9 @@ export default function CreatorDashboard({ onOpenImport, onOpenUpload, onNavigat
       </div>
       <div className="rounded-xl border border-zinc-800 bg-[#121218] p-4 mb-4">
         <div className="flex items-center gap-2 mb-2"><BarChart3 className="h-4 w-4 text-white" /><h2 className="text-sm text-zinc-100">Overview</h2></div>
-        <div className="grid grid-cols-3 gap-3 text-center">
-          <div><p className="text-lg text-white font-semibold">{clips.length}</p><p className="text-[10px] text-zinc-500">Clips</p></div>
-          <div><p className="text-lg text-white font-semibold">{live?.isLive ? '1' : '0'}</p><p className="text-[10px] text-zinc-500">Live</p></div>
-          <div><p className="text-lg text-white font-semibold">$0</p><p className="text-[10px] text-zinc-500">Wallet</p></div>
+        <div className="grid grid-cols-2 gap-3 text-center">
+          <div><p className="text-lg text-white font-semibold">{clips.length}</p><p className="text-[10px] text-zinc-500">Posts</p></div>
+          <div><p className="text-lg text-white font-semibold">{live?.isLive ? 'Live' : 'Off'}</p><p className="text-[10px] text-zinc-500">Broadcast</p></div>
         </div>
       </div>
       <h2 className="text-sm font-medium text-white mb-2">Your clips</h2>

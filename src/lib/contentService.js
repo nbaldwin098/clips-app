@@ -106,6 +106,8 @@ export function normalizeItem(raw) {
     createdAt: raw.createdAt || new Date().toISOString(),
     crossPost: raw.crossPost || null,
     hosted: !!raw.hosted,
+    soundId: raw.soundId || raw.engagement?.soundId || null,
+    soundTitle: raw.soundTitle || raw.engagement?.soundTitle || null,
   }
 }
 
@@ -147,7 +149,9 @@ export function getExplore(query = '') {
       (i) =>
         i.title.toLowerCase().includes(q) ||
         i.description.toLowerCase().includes(q) ||
-        (i.tags || []).some((t) => t.toLowerCase().includes(q))
+        String(i.handle || '').toLowerCase().includes(q) ||
+        String(i.soundTitle || '').toLowerCase().includes(q) ||
+        (i.tags || []).some((t) => String(t).toLowerCase().includes(q))
     ),
     null
   )
@@ -197,7 +201,7 @@ export function importUserLink(url, actor = null) {
   return { ok: true, item: normalizeItem(record), error: null }
 }
 
-export async function publishLocalMedia(file, actor = null, { type = null, title = null, description = null } = {}) {
+export async function publishLocalMedia(file, actor = null, { type = null, title = null, description = null, sound = null } = {}) {
   if (!file) return { ok: false, item: null, error: 'Choose a video file.' }
   try {
     const processed = await processVideoFile(file)
@@ -251,8 +255,12 @@ export async function publishLocalMedia(file, actor = null, { type = null, title
       createdAt: new Date().toISOString(),
       engagement: {
         completionRate: 0, loops: 0, shares: 0, comments: 0, saves: 0, earlySkips: 0, likes: 0,
+        soundId: sound?.id || null,
+        soundTitle: sound?.title || null,
       },
       views: 0,
+      soundId: sound?.id || null,
+      soundTitle: sound?.title || null,
     }
 
     if (actor?.id) {

@@ -39,13 +39,20 @@ export default function CreatorsPage() {
       ) : (
         <div className="space-y-2">
           {ranked.map((c) => (
-            <div key={c.id} className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-[#121218] px-4 py-3">
-              <div className="h-10 w-10 rounded-full bg-white/20 text-white flex items-center justify-center text-sm font-semibold">{(c.displayName || '?')[0].toUpperCase()}</div>
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => { if (typeof window !== 'undefined') window.__clipsOpenProfile?.(c.handle, c.id) }}
+              className="w-full flex items-center gap-3 rounded-xl border border-zinc-800 bg-[#121218] px-4 py-3 text-left hover:border-zinc-600"
+            >
+              <div className="h-10 w-10 rounded-full bg-white/20 text-white flex items-center justify-center text-sm font-semibold overflow-hidden">
+                {c.avatarUrl ? <img src={c.avatarUrl} alt="" className="h-full w-full object-cover" /> : (c.displayName || '?')[0].toUpperCase()}
+              </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-zinc-100 truncate">{c.displayName}</p>
                 <p className="text-xs text-zinc-500">@{c.handle} · {c.clipCount} clips</p>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       )}

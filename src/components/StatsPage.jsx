@@ -11,7 +11,6 @@ import {
   Clapperboard,
   Radio,
   Clock,
-  Sparkles,
 } from 'lucide-react'
 import { listIndexedUsers } from '../lib/moderation'
 import { listImportsNormalized } from '../lib/contentService'
@@ -21,14 +20,13 @@ import PageHeader from './PageHeader'
 
 export default function StatsPage({ onNavigate }) {
   const syncTick = useContentSyncTick()
-  const users = useMemo(() => listIndexedUsers(), [])
+  const users = useMemo(() => listIndexedUsers(), [syncTick])
   const allItems = useMemo(() => listImportsNormalized(), [syncTick])
-  const likesMap = useMemo(() => lsGet('engagement_likes', {}) || {}, [])
-  const subsMap = useMemo(() => lsGet('engagement_subs', {}) || {}, [])
-  const liveBoard = useMemo(() => (lsGet('live_board', []) || []).filter((b) => b.isLive), [])
+  const likesMap = useMemo(() => lsGet('engagement_likes', {}) || {}, [syncTick])
+  const subsMap = useMemo(() => lsGet('engagement_subs', {}) || {}, [syncTick])
+  const liveBoard = useMemo(() => (lsGet('live_board', []) || []).filter((b) => b.isLive), [syncTick])
 
-  // User & Creator metrics
-  const totalUsers = Math.max(users.length, 1)
+  const totalUsers = users.length
   const approvedCreators = users.filter((u) => u.creatorStatus === 'approved' || u.isCreator)
   const totalCreators = approvedCreators.length
 
@@ -78,12 +76,12 @@ export default function StatsPage({ onNavigate }) {
 
   // Duration in hours
   const clipDurationHours = useMemo(() => {
-    const totalSec = clips.reduce((acc, c) => acc + (Number(c.durationSec) || (c.origin === 'upload' ? 45 : 30)), 0)
+    const totalSec = clips.reduce((acc, c) => acc + (Number(c.durationSec) || 0), 0)
     return (totalSec / 3600).toFixed(2)
   }, [clips])
 
   const videoDurationHours = useMemo(() => {
-    const totalSec = videos.reduce((acc, v) => acc + (Number(v.durationSec) || (v.origin === 'upload' ? 300 : 180)), 0)
+    const totalSec = videos.reduce((acc, v) => acc + (Number(v.durationSec) || 0), 0)
     return (totalSec / 3600).toFixed(2)
   }, [videos])
 
@@ -107,16 +105,7 @@ export default function StatsPage({ onNavigate }) {
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6">
       <PageHeader title="Platform Stats" onBack={() => onNavigate?.('home')} />
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs text-zinc-500">
-            Real-time verified platform telemetry and content catalog metrics. No fabricated numbers.
-          </p>
-        </div>
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 text-white text-[11px] font-semibold border border-white/20">
-          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" /> Live Telemetry
-        </div>
-      </div>
+      <p className="text-xs text-zinc-500">Counts from this catalog — nothing invented.</p>
 
       {/* Grid of Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
@@ -139,15 +128,6 @@ export default function StatsPage({ onNavigate }) {
         ))}
       </div>
 
-      {/* Architectural Guarantee Box */}
-      <div className="rounded-2xl border border-zinc-800/80 bg-[#14141d] p-5 text-xs text-zinc-400 space-y-2">
-        <div className="flex items-center gap-2 text-white font-semibold text-sm">
-          <Sparkles className="h-4 w-4 text-white" /> Zero-Storage & Pure Transparency Guarantee
-        </div>
-        <p className="leading-relaxed">
-          Every number shown here is aggregated dynamically from real client interactions, registered users, and active zero-storage video links. Clips never fabricates creators, streams, subscriber counts, or view bot traffic.
-        </p>
-      </div>
     </div>
   )
 }

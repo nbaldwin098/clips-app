@@ -3,7 +3,6 @@ import {
   Radio,
   Home,
   Clapperboard,
-  Compass,
   History,
   Clock,
   ThumbsUp,
@@ -22,7 +21,6 @@ import {
   LifeBuoy,
   ShieldCheck,
   X,
-  Music,
   Image as ImageIcon,
   Bell,
   Activity,
@@ -134,8 +132,6 @@ export default function CollapsibleSidebar({
           <NavBtn collapsed={collapsed} active={currentView === 'clips' || currentView === 'shorts'} onClick={() => go('clips')} icon={Clapperboard} label="Clips" />
           <NavBtn collapsed={collapsed} active={currentView === 'pics'} onClick={() => go('pics')} icon={ImageIcon} label="Pics" />
           <NavBtn collapsed={collapsed} active={currentView === 'live'} onClick={() => go('live')} icon={Radio} label="Live" />
-          <NavBtn collapsed={collapsed} active={currentView === 'explore'} onClick={() => go('explore')} icon={Compass} label="Search" />
-          <NavBtn collapsed={collapsed} active={currentView === 'sounds'} onClick={() => go('sounds')} icon={Music} label="Sounds" />
           {isAuthenticated && (
             <NavBtn collapsed={collapsed} active={currentView === 'notifications'} onClick={() => go('notifications')} icon={Bell} label="Notifications" />
           )}
@@ -212,7 +208,19 @@ export default function CollapsibleSidebar({
             <>
               <p className="px-2.5 pt-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Recommended</p>
               {recommendedCreators.map((c) => (
-                <button key={c.id} type="button" onClick={() => go('creators')} className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-[#181820]">
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => {
+                    if (typeof window !== 'undefined' && window.__clipsOpenProfile) {
+                      window.__clipsOpenProfile(c.handle, c.id)
+                      if (window.innerWidth < 768) onMobileClose?.()
+                    } else {
+                      go('creators')
+                    }
+                  }}
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-[#181820]"
+                >
                   <span className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0 overflow-hidden bg-white/10 text-white">
                     {c.avatarUrl ? <img src={c.avatarUrl} alt="" className="h-full w-full object-cover" /> : (c.displayName || '?')[0].toUpperCase()}
                   </span>

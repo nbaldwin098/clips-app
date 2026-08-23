@@ -172,7 +172,7 @@ export default function StreamingNavbar({
                 </p>
                 {[
                   { id: 'video', label: 'Video', hint: 'Upload a longer video', Icon: Film },
-                  { id: 'clip', label: 'Clip', hint: 'Import a short', Icon: Clapperboard },
+                  { id: 'clip', label: 'Clip', hint: 'Upload a short', Icon: Clapperboard },
                   { id: 'live', label: 'Go live', hint: 'Start a broadcast', Icon: Radio },
                 ].map(({ id, label, hint, Icon }) => (
                   <button

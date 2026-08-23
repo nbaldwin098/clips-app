@@ -2,15 +2,16 @@ import { useState, useRef } from 'react'
 import { X, Upload, Film } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { publishLocalMedia } from '../lib/contentService'
-import { isSupabaseConfigured } from '../lib/supabaseClient'
+import SoundPicker from './SoundPicker'
 
-export default function UploadModal({ open, onClose }) {
+export default function UploadModal({ open, onClose, initialKind = 'video', onOpenAuth }) {
   const { user, isAuthenticated } = useAuth()
   const inputRef = useRef(null)
   const [file, setFile] = useState(null)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [kind, setKind] = useState('short') // short = Clips, video = long
+  const [kind, setKind] = useState(initialKind === 'short' ? 'short' : 'video')
+  const [sound, setSound] = useState(null)
   const [status, setStatus] = useState('idle')
   const [meta, setMeta] = useState(null)
   const [error, setError] = useState('')
@@ -22,7 +23,8 @@ export default function UploadModal({ open, onClose }) {
     setFile(null)
     setTitle('')
     setDescription('')
-    setKind('short')
+    setKind(initialKind === 'short' ? 'short' : 'video')
+    setSound(null)
     setStatus('idle')
     setMeta(null)
     setError('')
@@ -47,6 +49,10 @@ export default function UploadModal({ open, onClose }) {
       setError('Add a title.')
       return
     }
+    if (!isAuthenticated) {
+      onOpenAuth?.()
+      return
+    }
     setStatus('reading')
     setError('')
     try {
@@ -54,6 +60,7 @@ export default function UploadModal({ open, onClose }) {
         type: kind,
         title: title.trim().slice(0, 120),
         description: description.trim().slice(0, 5000),
+        sound,
       })
       if (!published.ok) {
         setError(published.error || 'Could not save this file.')
@@ -68,6 +75,7 @@ export default function UploadModal({ open, onClose }) {
         height: published.item?.height || 1080,
         duration: published.item?.durationSec || 0,
         type: published.item?.type || kind,
+        soundTitle: published.item?.soundTitle || sound?.title || null,
       })
       setStatus('ready')
     } catch (err) {
@@ -87,16 +95,11 @@ export default function UploadModal({ open, onClose }) {
           </button>
         </div>
         <div className="p-5 space-y-4">
-          <p className="text-sm text-zinc-400">
-            {isSupabaseConfigured()
-              ? 'Title + description required. File becomes a Clips link when Storage is up.'
-              : 'Title + description required. File stays on this device until Storage is connected.'}
-          </p>
           {!isAuthenticated && <p className="text-xs text-amber-400">Sign in first.</p>}
 
           <div className="flex gap-2">
-            <button type="button" onClick={() => setKind('short')} className={`flex-1 h-9 rounded-lg text-xs font-medium ${kind === 'short' ? 'bg-white text-black' : 'border border-zinc-700 text-zinc-400'}`}>Clip (Shorts-style)</button>
-            <button type="button" onClick={() => setKind('video')} className={`flex-1 h-9 rounded-lg text-xs font-medium ${kind === 'video' ? 'bg-white text-black' : 'border border-zinc-700 text-zinc-400'}`}>Video (YouTube-style)</button>
+            <button type="button" onClick={() => setKind('short')} className={`flex-1 h-9 rounded-lg text-xs font-medium ${kind === 'short' ? 'bg-white text-black' : 'border border-zinc-700 text-zinc-400'}`}>Clip</button>
+            <button type="button" onClick={() => setKind('video')} className={`flex-1 h-9 rounded-lg text-xs font-medium ${kind === 'video' ? 'bg-white text-black' : 'border border-zinc-700 text-zinc-400'}`}>Video</button>
           </div>
 
           <label className="block text-xs text-zinc-400">Title
@@ -105,6 +108,8 @@ export default function UploadModal({ open, onClose }) {
           <label className="block text-xs text-zinc-400">Description
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} maxLength={5000} className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0e0e10] px-3 py-2 text-sm text-white" placeholder="Tell viewers more…" />
           </label>
+
+          <SoundPicker value={sound} onChange={setSound} onOpenAuth={onOpenAuth} />
 
           <input ref={inputRef} type="file" accept="video/*" className="hidden" onChange={onPick} />
           <button type="button" onClick={() => inputRef.current?.click()} className="w-full h-24 rounded-xl border border-dashed border-zinc-700 bg-[#18181b] hover:bg-[#26262c] flex flex-col items-center justify-center gap-2">
@@ -120,7 +125,7 @@ export default function UploadModal({ open, onClose }) {
           {meta && (
             <div className="rounded-lg border border-zinc-700 bg-[#18181b] p-3 text-sm space-y-1">
               <div className="flex items-center gap-2 font-medium text-white"><Film className="h-4 w-4" />{meta.name}</div>
-              <p className="text-xs text-zinc-400">{meta.sizeMb} MB · {meta.type}</p>
+              <p className="text-xs text-zinc-400">{meta.sizeMb} MB · {meta.type}{meta.soundTitle ? ` · ${meta.soundTitle}` : ''}</p>
               <p className={`text-xs ${hosted ? 'text-green-400' : 'text-amber-400'}`}>{hosted ? 'Live shared link' : 'Saved on this device only'}</p>
             </div>
           )}

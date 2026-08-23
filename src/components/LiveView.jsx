@@ -130,7 +130,6 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
           <Radio className="h-5 w-5 text-white" />
           Live
         </h1>
-        <p className="text-xs text-zinc-500 mt-0.5">Real broadcasts from Clips creators on this device. No demo streams.</p>
       </div>
 
       {/* Focused Stage — only renders for a real selected live stream */}

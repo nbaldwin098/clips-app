@@ -25,7 +25,6 @@ import AuthRequired from './components/AuthRequired'
 import ImportShortModal from './components/ImportShortModal'
 import AuthModal from './components/AuthModal'
 import UploadModal from './components/UploadModal'
-import SoundsPage from './components/SoundsPage'
 import PicsPage from './components/PicsPage'
 import CheckoutPage from './components/CheckoutPage'
 import CheckoutModal from './components/CheckoutModal'
@@ -56,7 +55,7 @@ import { isAdminSession } from './lib/moderation'
 const KNOWN_VIEWS = new Set([
   'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
   'explore', 'history', 'liked', 'watch-later', 'library', 'stats', 'help', 'about',
-  'notifications', 'sounds', 'pics', 'checkout', 'creator-apply', 'advertise', 'advertiser-portal', 'support', 'admin',
+  'notifications', 'pics', 'checkout', 'creator-apply', 'advertise', 'advertiser-portal', 'support', 'admin',
   'analytics', 'channel', 'profile', 'content-rules',
   'subscriptions', 'playlists', 'community', 'studio-tools', 'stream-settings',
   'legal-tos', 'legal-privacy', 'legal-creator', 'legal-community',
@@ -68,6 +67,7 @@ function AppShell() {
   const [importOpen, setImportOpen] = useState(false)
   const [authOpen, setAuthOpen] = useState(false)
   const [uploadOpen, setUploadOpen] = useState(false)
+  const [uploadKind, setUploadKind] = useState('video')
   const [checkoutOpen, setCheckoutOpen] = useState(false)
   const [checkoutTarget, setCheckoutTarget] = useState({ id: null, handle: '' })
   const [profileTarget, setProfileTarget] = useState({ handle: '', userId: null })
@@ -105,18 +105,19 @@ function AppShell() {
     if (!isAuthenticated) { setAuthOpen(true); return }
     setImportOpen(true)
   }
-  const openUpload = () => {
+  const openUpload = (kind = 'video') => {
     if (!isAuthenticated) { setAuthOpen(true); return }
+    setUploadKind(kind === 'short' || kind === 'clip' ? 'short' : 'video')
     setUploadOpen(true)
   }
   const openCreate = (kind) => {
     if (!isAuthenticated) { setAuthOpen(true); return }
     if (kind === 'video') {
-      setUploadOpen(true)
+      openUpload('video')
       return
     }
     if (kind === 'clip') {
-      setImportOpen(true)
+      openUpload('short')
       return
     }
     if (kind === 'live') {
@@ -237,7 +238,6 @@ function AppShell() {
       case 'stream-settings': return <StreamSettingsPage onNavigate={navigate} />
       case 'settings': return <SettingsPage onNavigate={navigate} />
       case 'explore': return <ExplorePage onPlayItem={setActivePlayItem} initialQuery={searchQuery} />
-      case 'sounds': return <SoundsPage onOpenAuth={openAuth} />
       case 'pics': return <PicsPage onOpenAuth={openAuth} />
       case 'checkout': return <CheckoutPage onNavigate={navigate} creatorId={checkoutTarget.id} />
       case 'creator-apply': return <CreatorApplyPage onOpenAuth={openAuth} />
@@ -304,7 +304,7 @@ function AppShell() {
 
       <ImportShortModal open={importOpen} onClose={() => setImportOpen(false)} />
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
-      <UploadModal open={uploadOpen} onClose={() => setUploadOpen(false)} />
+      <UploadModal key={uploadKind} open={uploadOpen} initialKind={uploadKind} onClose={() => setUploadOpen(false)} onOpenAuth={openAuth} />
       <CheckoutModal open={checkoutOpen} onClose={() => setCheckoutOpen(false)} creatorId={checkoutTarget.id} creatorHandle={checkoutTarget.handle} />
       {activePlayItem && (
         <ErrorBoundary>
