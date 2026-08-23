@@ -16,11 +16,13 @@ import {
 import { listIndexedUsers } from '../lib/moderation'
 import { listImportsNormalized } from '../lib/contentService'
 import { lsGet } from '../lib/storage'
+import { useContentSyncTick } from '../lib/useContentSync'
 import PageHeader from './PageHeader'
 
 export default function StatsPage({ onNavigate }) {
+  const syncTick = useContentSyncTick()
   const users = useMemo(() => listIndexedUsers(), [])
-  const allItems = useMemo(() => listImportsNormalized(), [])
+  const allItems = useMemo(() => listImportsNormalized(), [syncTick])
   const likesMap = useMemo(() => lsGet('engagement_likes', {}) || {}, [])
   const subsMap = useMemo(() => lsGet('engagement_subs', {}) || {}, [])
   const liveBoard = useMemo(() => (lsGet('live_board', []) || []).filter((b) => b.isLive), [])

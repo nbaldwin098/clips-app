@@ -6,6 +6,7 @@ import { getMediaBlobUrl } from '../lib/videoStorage'
 import { parseEmbedUrl } from '../lib/videoEmbed'
 import { recordView, getViews, toggleVote, getVotes, getUserVote } from '../lib/engagement'
 import { recordInteraction } from '../lib/algorithmEngine'
+import { useContentSyncTick } from '../lib/useContentSync'
 
 function resolvePlayUrl(item) {
   return item?.mediaUrl || item?.sourceUrl || ''
@@ -165,7 +166,8 @@ function ClipSlide({ item, active, muted, onToggleMute, user }) {
 
 export default function ShortsFeed() {
   const { user } = useAuth()
-  const items = useMemo(() => getShortsFeed(user?.id || null), [user?.id])
+  const syncTick = useContentSyncTick()
+  const items = useMemo(() => getShortsFeed(user?.id || null), [user?.id, syncTick])
   const scrollerRef = useRef(null)
   const [activeIdx, setActiveIdx] = useState(0)
   const [muted, setMuted] = useState(true)

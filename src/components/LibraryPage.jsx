@@ -9,6 +9,7 @@ import {
   pullWatchProgressFromCloud,
 } from '../lib/watchProgress'
 import { getById } from '../lib/contentService'
+import { subscribeContentUpdates } from '../lib/contentSync'
 
 const TABS = [
   { id: 'continue', label: 'Continue', icon: Play },
@@ -28,6 +29,8 @@ export default function LibraryPage({ initialTab = 'history' }) {
       pullWatchProgressFromCloud(user.id).then(() => setTick((t) => t + 1)).catch(() => {})
     }
   }, [user?.id])
+
+  useEffect(() => subscribeContentUpdates(() => setTick((t) => t + 1)), [])
 
   const continueItems = useMemo(() => (user?.id ? listContinueWatching(user.id) : []), [user?.id, tick])
   const historyItems = useMemo(() => (user?.id ? listWatchHistoryDetailed(user.id) : []), [user?.id, tick])

@@ -2,15 +2,17 @@ import { useMemo } from 'react'
 import { Heart } from 'lucide-react'
 import { getLiked } from '../lib/storage'
 import { getById } from '../lib/contentService'
+import { useContentSyncTick } from '../lib/useContentSync'
 import ContentCard from './ContentCard'
 import PageHeader from './PageHeader'
 
 export default function LikedPage({ onNavigate, onPlayItem }) {
-  const likedIds = useMemo(() => getLiked(), [])
+  const syncTick = useContentSyncTick()
+  const likedIds = useMemo(() => getLiked(), [syncTick])
 
   const likedItems = useMemo(() => {
     return likedIds.map((id) => getById(id)).filter(Boolean)
-  }, [likedIds])
+  }, [likedIds, syncTick])
 
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto">

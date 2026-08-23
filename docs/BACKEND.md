@@ -1,5 +1,51 @@
 # How backend works for Clips (free path)
 
+## Cross-device sync setup checklist (Render + Supabase)
+
+Every browser keeps a local cache (`localStorage`) of the content catalog
+so the app works offline and instantly reflects your own uploads. That
+cache is **not** shared between devices or users on its own — without a
+backend, nothing you upload can ever appear anywhere else. If you already
+have a Supabase project and Render env vars set up (e.g. from following
+outside guidance), go through this checklist — having *a* Supabase project
+isn't enough on its own, the exact pieces below all have to be in place:
+
+1. **Env var names must match exactly** (Vite only exposes vars prefixed
+   `VITE_` to client code — see `.env.example`):
+   - `VITE_SUPABASE_URL` — your project's URL, e.g. `https://xxxx.supabase.co`
+   - `VITE_SUPABASE_ANON_KEY` — the project's public **anon** key (Settings
+     → API in the Supabase dashboard). Never use the `service_role` key
+     here — it's a secret server key, not meant for client-side code.
+   - In Render: Dashboard → your service → **Environment** tab → add both
+     as Environment Variables, then trigger a redeploy (env var changes
+     don't apply to an already-running/built instance).
+2. **Run all three migrations** in the Supabase SQL editor (Dashboard →
+   SQL Editor → New query → paste → Run), in order:
+   - `supabase/migrations/0001_videos_table.sql` — the shared video/clip
+     catalog table (what makes uploads visible across devices/users).
+   - `supabase/migrations/0002_watch_progress_table.sql` — cross-device
+     watch history/resume.
+   - `supabase/migrations/0003_clips_storage_bucket.sql` — creates the
+     public `clips` Storage bucket that hosted file uploads need (without
+     it, `uploadVideoToSupabase`/`uploadImageToSupabase` fail silently and
+     every upload falls back to local-only).
+   None of these will error if run more than once (all use `if not
+   exists` / `drop policy if exists`).
+3. **Sign in with a real Supabase account**, not the local-only fallback
+   login that's used when Supabase isn't configured — `AuthModal` shows
+   "Local this device" vs "Synced across devices" so you can tell which
+   one is active for your current session.
+4. **Merge the PR that implements this** (`cursor/cross-device-content-sync`)
+   into `main`, and let Render redeploy — until that's merged, the running
+   app doesn't have this sync code at all, regardless of how the backend
+   itself is configured.
+
+Once all of the above is true, `src/lib/contentSync.js` pushes each
+publish's metadata to the `videos` table and pulls the latest rows into
+every client's local cache on load, after publishing, and on a ~45s
+interval — see `src/lib/contentService.js` (`publishLocalMedia`,
+`importUserLink`) and `src/lib/picsService.js` (`publishPhoto`).
+
 ## Content model (what users do)
 
 **Default: link import (recommended)**  

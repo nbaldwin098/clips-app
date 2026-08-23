@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { listIndexedUsers } from '../lib/moderation'
 import { getCreatorContent, togglePin, isPinned } from '../lib/contentService'
 import { getSubscriberCount, getCreatorRanking, toggleSubscribe, isSubscribed } from '../lib/engagement'
+import { useContentSyncTick } from '../lib/useContentSync'
 import { Pin } from 'lucide-react'
 
 export default function ProfilePage({ onNavigate, profileHandle, profileUserId, onPlayItem }) {
@@ -18,7 +19,8 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
   const isSelf = user && found && user.id === found.id
   const creatorId = found?.id || profileUserId || null
   const [tick, setTick] = useState(0)
-  const items = useMemo(() => getCreatorContent(creatorId, handle), [creatorId, handle, tick])
+  const syncTick = useContentSyncTick()
+  const items = useMemo(() => getCreatorContent(creatorId, handle), [creatorId, handle, tick, syncTick])
   const displayName = found?.displayName || handle || 'Creator'
   const avatar = found?.avatarUrl || (isSelf ? user?.avatarUrl : null)
   const banner = found?.bannerUrl || (isSelf ? user?.bannerUrl : null)

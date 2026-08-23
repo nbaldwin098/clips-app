@@ -17,24 +17,31 @@
 - stream_key text
 - stream_region text
 
-## videos
-- id uuid
-- owner_id fk nullable
-- type text
+## videos — **implemented**, see `supabase/migrations/0001_videos_table.sql`
+Shared cross-device/cross-user content catalog. Every publish (video, clip,
+or pic) upserts its metadata here when the actor is signed in via Supabase;
+every client pulls the latest rows on load and merges them into its local
+cache (`src/lib/contentSync.js`). RLS: public read, insert/update/delete
+only where `creator_id = auth.uid()`.
+- id text pk (client-generated, e.g. `up_172839...`)
+- creator_id uuid references auth.users, nullable
+- handle text
+- type text — `video` | `short` | `pic`
 - title text
 - description text
 - source_url text
 - media_url text
 - thumb_url text
 - origin text
-- license text
-- attribution text
-- is_seed bool default false
-- stored_bytes int default 0
-- duration_sec int
+- hosted bool default false
+- stored_bytes bigint default 0
+- duration_sec numeric default 0
+- width int
+- height int
 - tags text[]
-- privacy text default 'public'
-- created_at timestamptz
+- engagement jsonb default '{}'
+- views bigint default 0
+- created_at timestamptz default now()
 
 ## imports
 - id uuid
