@@ -1,8 +1,8 @@
 function LegalShell({ title, children }) {
   return (
     <div className="p-4 md:p-6 max-w-3xl mx-auto">
-      <h1 className="text-xl font-semibold text-slate-900 mb-6">{title}</h1>
-      <article className="space-y-4 text-sm text-slate-600 leading-relaxed [&_h2]:text-slate-900 [&_h2]:font-semibold [&_h2]:text-sm [&_h2]:mt-6 [&_h2]:mb-2">
+      <h1 className="text-xl font-semibold text-white mb-6">{title}</h1>
+      <article className="space-y-4 text-sm text-[#adadb8] leading-relaxed [&_h2]:text-white [&_h2]:font-semibold [&_h2]:text-sm [&_h2]:mt-6 [&_h2]:mb-2">
         {children}
       </article>
     </div>

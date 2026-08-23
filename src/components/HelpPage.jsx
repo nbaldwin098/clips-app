@@ -28,20 +28,20 @@ export default function HelpPage() {
 
   return (
     <div className="p-4 md:p-6 max-w-3xl mx-auto">
-      <h1 className="text-xl font-semibold text-slate-900 mb-6">Help</h1>
+      <h1 className="text-xl font-semibold text-white mb-6">Help</h1>
       <div className="space-y-3">
         {faqs.map((f) => (
           <details
             key={f.q}
-            className="rounded-xl border border-slate-200 bg-white px-4 py-3 group"
+            className="rounded-xl border border-[#26262c] bg-[#18181b] px-4 py-3 group"
           >
-            <summary className="text-sm font-medium text-slate-900 cursor-pointer list-none flex justify-between items-center">
+            <summary className="text-sm font-medium text-white cursor-pointer list-none flex justify-between items-center">
               {f.q}
-              <span className="text-slate-400 group-open:rotate-45 transition-transform text-lg leading-none">
+              <span className="text-[#adadb8] group-open:rotate-45 transition-transform text-lg leading-none">
                 +
               </span>
             </summary>
-            <p className="mt-2 text-sm text-slate-600 leading-relaxed">{f.a}</p>
+            <p className="mt-2 text-sm text-[#adadb8] leading-relaxed">{f.a}</p>
           </details>
         ))}
       </div>
