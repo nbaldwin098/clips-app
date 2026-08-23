@@ -1,17 +1,17 @@
 import { useState, useRef, useCallback } from 'react'
-import { ImagePlus, User } from 'lucide-react'
+import { ImagePlus, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getPicsFeed, publishPhoto } from '../lib/picsService'
 import { isSupabaseConfigured } from '../lib/supabaseClient'
 
-/** Continuous photo feed — each pic in its own box. Avatar + name top-left. */
+/** Pure photo wall — no titles/names on the grid. Hover zooms; click opens lightbox. */
 export default function PicsPage({ onOpenAuth }) {
   const { user, isAuthenticated } = useAuth()
   const inputRef = useRef(null)
   const [items, setItems] = useState(() => getPicsFeed())
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [msg, setMsg] = useState('')
+  const [lightbox, setLightbox] = useState(null)
 
   const refresh = useCallback(() => setItems(getPicsFeed()), [])
 
@@ -25,14 +25,12 @@ export default function PicsPage({ onOpenAuth }) {
     }
     setBusy(true)
     setError('')
-    setMsg('')
     try {
       const res = await publishPhoto(file, user)
       if (!res.ok) {
         setError(res.error || 'Upload failed.')
         return
       }
-      setMsg(res.hosted ? 'Photo live as a shared link.' : 'Saved on this device (connect Storage for shared links).')
       refresh()
     } catch (err) {
       setError(err?.message || 'Upload failed.')
@@ -50,79 +48,66 @@ export default function PicsPage({ onOpenAuth }) {
   }
 
   return (
-    <div className="min-h-full bg-[#0e0e10]">
-      <div className="sticky top-0 z-10 border-b border-[#2f2f37] bg-[#0e0e10]/95 backdrop-blur px-4 py-3 flex items-center justify-between gap-3">
+    <div className="min-h-full bg-[#09090c]">
+      <div className="sticky top-0 z-10 border-b border-zinc-800/80 bg-[#09090c]/95 backdrop-blur px-4 py-3 flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-lg font-semibold text-[#efeff1]">Pics</h1>
-          <p className="text-[11px] text-zinc-500">
-            Continuous photo feed · each post is its own box
-            {isSupabaseConfigured() ? ' · uploads become links' : ' · local until Storage is connected'}
-          </p>
+          <h1 className="text-lg font-semibold text-zinc-100">Pics</h1>
+          <p className="text-[11px] text-zinc-500">Photos only · hover to peek · click to open</p>
         </div>
-        <button
-          type="button"
-          onClick={openUpload}
-          disabled={busy}
-          className="shrink-0 h-9 px-3 rounded-lg bg-[#007ACC] text-white text-sm font-medium hover:bg-[#0098ff] disabled:opacity-60 inline-flex items-center gap-1.5"
-        >
+        <button type="button" onClick={openUpload} disabled={busy} className="h-9 px-3 rounded-lg bg-white text-black text-sm font-semibold disabled:opacity-60 inline-flex items-center gap-1.5">
           <ImagePlus className="h-4 w-4" />
-          {busy ? 'Uploading…' : 'Upload pic'}
+          {busy ? 'Uploading…' : 'Upload'}
         </button>
         <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={onPick} />
       </div>
 
-      {(error || msg) && (
-        <div className="px-4 pt-3">
-          {error && <p className="text-sm text-red-400">{error}</p>}
-          {msg && <p className="text-sm text-green-400">{msg}</p>}
+      {error && <p className="px-4 pt-3 text-sm text-red-400">{error}</p>}
+      {!isSupabaseConfigured() && (
+        <p className="px-4 pt-2 text-[11px] text-zinc-600">Storage offline — pics stay on this device until the clips bucket is public.</p>
+      )}
+
+      {items.length === 0 ? (
+        <div className="m-4 rounded-2xl border border-zinc-800 bg-[#121218] px-6 py-16 text-center">
+          <p className="text-sm text-zinc-300">No pics yet</p>
+          <button type="button" onClick={openUpload} className="mt-4 h-9 px-4 rounded-lg bg-white text-black text-sm font-semibold">Upload first pic</button>
+        </div>
+      ) : (
+        <div className="columns-2 sm:columns-3 md:columns-4 gap-1 p-1 pb-20">
+          {items.map((pic) => {
+            const src = pic.mediaUrl || pic.thumbUrl || pic.sourceUrl
+            return (
+              <button
+                key={pic.id}
+                type="button"
+                onClick={() => setLightbox(pic)}
+                className="mb-1 w-full break-inside-avoid relative overflow-hidden bg-zinc-900 group focus:outline-none"
+              >
+                <img
+                  src={src}
+                  alt=""
+                  className="w-full block object-cover transition-transform duration-300 group-hover:scale-105"
+                  loading="lazy"
+                />
+                <div className="pointer-events-none absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors" />
+              </button>
+            )
+          })}
         </div>
       )}
 
-      <div className="flex flex-col gap-0 max-w-xl mx-auto w-full pb-16">
-        {items.length === 0 && (
-          <div className="m-4 rounded-xl border border-[#2f2f37] bg-[#1f1f23] px-6 py-16 text-center">
-            <p className="text-sm text-zinc-300">No pics yet</p>
-            <p className="text-xs text-zinc-500 mt-1">Upload a photo to start the feed.</p>
-            <button type="button" onClick={openUpload} className="mt-4 h-9 px-4 rounded-lg bg-[#007ACC] text-white text-sm">
-              Upload first pic
-            </button>
-          </div>
-        )}
-
-        {items.map((pic) => {
-          const name = pic.displayName || pic.handle || 'User'
-          const handle = pic.handle ? `@${String(pic.handle).replace(/^@/, '')}` : ''
-          const initial = String(name).charAt(0).toUpperCase()
-          return (
-            <article key={pic.id} className="relative border-b border-[#2f2f37] bg-[#121214]">
-              <div className="absolute top-3 left-3 z-10 flex items-center gap-2 max-w-[85%]">
-                <div className="h-9 w-9 rounded-full overflow-hidden border-2 border-white/80 bg-[#007ACC] flex items-center justify-center shrink-0 shadow-md">
-                  {pic.avatarUrl ? (
-                    <img src={pic.avatarUrl} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <span className="text-sm font-semibold text-white">{initial || <User className="h-4 w-4" />}</span>
-                  )}
-                </div>
-                <div className="min-w-0 rounded-full bg-black/55 backdrop-blur-sm px-2.5 py-1">
-                  <p className="text-xs font-semibold text-white truncate">{name}</p>
-                  {handle && <p className="text-[10px] text-zinc-300 truncate">{handle}</p>}
-                </div>
-              </div>
-              <div className="w-full bg-black">
-                <img
-                  src={pic.mediaUrl || pic.thumbUrl || pic.sourceUrl}
-                  alt={pic.title || 'Photo'}
-                  className="w-full max-h-[85vh] object-contain mx-auto block"
-                  loading="lazy"
-                />
-              </div>
-              {pic.title && pic.title !== 'Photo' && (
-                <p className="px-3 py-2 text-xs text-zinc-400 truncate">{pic.title}</p>
-              )}
-            </article>
-          )
-        })}
-      </div>
+      {lightbox && (
+        <div className="fixed inset-0 z-[120] bg-black/90 flex items-center justify-center p-3" onClick={() => setLightbox(null)}>
+          <button type="button" className="absolute top-4 right-4 h-10 w-10 rounded-full bg-white/10 text-white flex items-center justify-center" onClick={() => setLightbox(null)} aria-label="Close">
+            <X className="h-5 w-5" />
+          </button>
+          <img
+            src={lightbox.mediaUrl || lightbox.thumbUrl || lightbox.sourceUrl}
+            alt=""
+            className="max-h-[92vh] max-w-full object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   )
 }

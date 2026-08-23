@@ -4,10 +4,13 @@ import { useAuth } from '../context/AuthContext'
 import { publishLocalMedia } from '../lib/contentService'
 import { isSupabaseConfigured } from '../lib/supabaseClient'
 
-/** Pick file → upload to Supabase Storage (public link) when configured, else local link. */
 export default function UploadModal({ open, onClose }) {
   const { user, isAuthenticated } = useAuth()
   const inputRef = useRef(null)
+  const [file, setFile] = useState(null)
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [kind, setKind] = useState('short') // short = Clips, video = long
   const [status, setStatus] = useState('idle')
   const [meta, setMeta] = useState(null)
   const [error, setError] = useState('')
@@ -15,15 +18,43 @@ export default function UploadModal({ open, onClose }) {
 
   if (!open) return null
 
-  const onPick = async (e) => {
-    const f = e.target.files?.[0]
-    if (!f) return
-    setStatus('reading')
+  const reset = () => {
+    setFile(null)
+    setTitle('')
+    setDescription('')
+    setKind('short')
+    setStatus('idle')
     setMeta(null)
     setError('')
     setHosted(false)
+  }
+
+  const onPick = (e) => {
+    const f = e.target.files?.[0]
+    if (!f) return
+    setFile(f)
+    setMeta(null)
+    setError('')
+    if (!title.trim()) setTitle(String(f.name || '').replace(/\.[^.]+$/, '') || '')
+  }
+
+  const submit = async () => {
+    if (!file) {
+      setError('Choose a video file.')
+      return
+    }
+    if (!title.trim()) {
+      setError('Add a title.')
+      return
+    }
+    setStatus('reading')
+    setError('')
     try {
-      const published = await publishLocalMedia(f, user)
+      const published = await publishLocalMedia(file, user, {
+        type: kind,
+        title: title.trim().slice(0, 120),
+        description: description.trim().slice(0, 5000),
+      })
       if (!published.ok) {
         setError(published.error || 'Could not save this file.')
         setStatus('error')
@@ -31,13 +62,12 @@ export default function UploadModal({ open, onClose }) {
       }
       setHosted(!!published.hosted)
       setMeta({
-        name: f.name,
-        sizeMb: Math.round((f.size / (1024 * 1024)) * 10) / 10,
+        name: published.item?.title || title,
+        sizeMb: Math.round((file.size / (1024 * 1024)) * 10) / 10,
         width: published.item?.width || 1920,
         height: published.item?.height || 1080,
         duration: published.item?.durationSec || 0,
-        type: published.item?.type || 'video',
-        url: published.item?.mediaUrl || '',
+        type: published.item?.type || kind,
       })
       setStatus('ready')
     } catch (err) {
@@ -48,49 +78,50 @@ export default function UploadModal({ open, onClose }) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-      <div className="relative w-full max-w-md rounded-2xl bg-[#1f1f23] shadow-2xl border border-[#2f2f37]">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#2f2f37]">
-          <h2 className="text-base font-semibold text-[#efeff1]">Upload clip</h2>
-          <button type="button" onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-zinc-800">
+      <div className="absolute inset-0 bg-black/70" onClick={() => { reset(); onClose() }} />
+      <div className="relative w-full max-w-md rounded-2xl bg-[#1f1f23] shadow-2xl border border-[#2f2f37] max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#2f2f37] sticky top-0 bg-[#1f1f23] z-10">
+          <h2 className="text-base font-semibold text-[#efeff1]">Upload</h2>
+          <button type="button" onClick={() => { reset(); onClose() }} className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-zinc-800">
             <X className="h-4 w-4 text-zinc-400" />
           </button>
         </div>
         <div className="p-5 space-y-4">
-          <p className="text-sm text-zinc-400 leading-relaxed">
+          <p className="text-sm text-zinc-400">
             {isSupabaseConfigured()
-              ? 'We upload your file and turn it into a Clips link (Supabase Storage). Keep files under ~80MB.'
-              : 'Storage not connected yet — file stays on this device only. Add Supabase bucket "clips" for shared links.'}
+              ? 'Title + description required. File becomes a Clips link when Storage is up.'
+              : 'Title + description required. File stays on this device until Storage is connected.'}
           </p>
-          {!isAuthenticated && (
-            <p className="text-xs text-amber-400">Sign in first so the clip is tied to your account.</p>
-          )}
+          {!isAuthenticated && <p className="text-xs text-amber-400">Sign in first.</p>}
+
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setKind('short')} className={`flex-1 h-9 rounded-lg text-xs font-medium ${kind === 'short' ? 'bg-white text-black' : 'border border-zinc-700 text-zinc-400'}`}>Clip (Shorts-style)</button>
+            <button type="button" onClick={() => setKind('video')} className={`flex-1 h-9 rounded-lg text-xs font-medium ${kind === 'video' ? 'bg-white text-black' : 'border border-zinc-700 text-zinc-400'}`}>Video (YouTube-style)</button>
+          </div>
+
+          <label className="block text-xs text-zinc-400">Title
+            <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} className="mt-1 w-full h-10 rounded-lg border border-zinc-700 bg-[#0e0e10] px-3 text-sm text-white" placeholder="What is this about?" />
+          </label>
+          <label className="block text-xs text-zinc-400">Description
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} maxLength={5000} className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0e0e10] px-3 py-2 text-sm text-white" placeholder="Tell viewers more…" />
+          </label>
+
           <input ref={inputRef} type="file" accept="video/*" className="hidden" onChange={onPick} />
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            className="w-full h-28 rounded-xl border border-dashed border-[#3f3f46] bg-[#18181b] hover:bg-[#26262c] flex flex-col items-center justify-center gap-2 transition-colors"
-          >
-            <Upload className="h-6 w-6 text-[#007ACC]" />
-            <span className="text-sm font-medium text-zinc-200">Choose video</span>
-            <span className="text-xs text-zinc-500">Converts to a playable link</span>
+          <button type="button" onClick={() => inputRef.current?.click()} className="w-full h-24 rounded-xl border border-dashed border-zinc-700 bg-[#18181b] hover:bg-[#26262c] flex flex-col items-center justify-center gap-2">
+            <Upload className="h-5 w-5 text-zinc-300" />
+            <span className="text-sm text-zinc-200">{file ? file.name : 'Choose video file'}</span>
           </button>
-          {status === 'reading' && <p className="text-sm text-zinc-400">Uploading / processing…</p>}
-          {status === 'error' && <p className="text-sm text-red-400">{error || 'Could not read this file.'}</p>}
+
+          <button type="button" onClick={submit} disabled={status === 'reading' || !file} className="w-full h-10 rounded-lg bg-white text-black text-sm font-bold disabled:opacity-50">
+            {status === 'reading' ? 'Uploading…' : 'Publish'}
+          </button>
+
+          {status === 'error' && <p className="text-sm text-red-400">{error}</p>}
           {meta && (
-            <div className="rounded-lg border border-[#2f2f37] bg-[#18181b] p-3 text-sm space-y-1">
-              <div className="flex items-center gap-2 font-medium text-white">
-                <Film className="h-4 w-4 text-[#007ACC]" />
-                {meta.name}
-              </div>
-              <p className="text-xs text-zinc-400">
-                {meta.sizeMb} MB · {meta.width}×{meta.height} · {meta.duration}s · {meta.type}
-              </p>
-              <p className={`text-xs mt-2 ${hosted ? 'text-green-400' : 'text-amber-400'}`}>
-                {hosted
-                  ? 'Live link created — others can play this when the feed loads it.'
-                  : 'Saved on this device only (shared hosting not available yet).'}
-              </p>
+            <div className="rounded-lg border border-zinc-700 bg-[#18181b] p-3 text-sm space-y-1">
+              <div className="flex items-center gap-2 font-medium text-white"><Film className="h-4 w-4" />{meta.name}</div>
+              <p className="text-xs text-zinc-400">{meta.sizeMb} MB · {meta.type}</p>
+              <p className={`text-xs ${hosted ? 'text-green-400' : 'text-amber-400'}`}>{hosted ? 'Live shared link' : 'Saved on this device only'}</p>
             </div>
           )}
         </div>

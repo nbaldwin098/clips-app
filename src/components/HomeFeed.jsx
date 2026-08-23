@@ -12,47 +12,35 @@ export default function HomeFeed({ onPlayItem }) {
   const items = useMemo(() => getHomeFeed(user?.id || null), [user?.id])
   const [offset, setOffset] = useState(0)
 
-  const visible = items.length
-    ? Array.from({ length: Math.min(PAGE, items.length) }, (_, i) => items[(offset + i) % items.length])
+  const videos = items.filter((i) => i.type === 'video')
+  const shorts = items.filter((i) => i.type !== 'video')
+
+  const visible = shorts.length
+    ? Array.from({ length: Math.min(PAGE, shorts.length) }, (_, i) => shorts[(offset + i) % shorts.length])
     : []
 
   const shift = useCallback(
     (dir) => {
-      if (!items.length) return
-      const current = items[offset]
-      if (current && user?.id) {
-        // Fast swipe past is an implicit skip signal
+      if (!shorts.length) return
+      setOffset((o) => (o + dir + shorts.length) % shorts.length)
+      const shown = shorts[(offset + dir + shorts.length) % shorts.length]
+      if (shown && user?.id) {
         recordInteraction(user.id, {
-          contentId: current.id,
-          type: 'skip',
-          tags: current.tags || [],
-          creatorId: current.creatorId || current.userId,
+          contentId: shown.id,
+          type: 'impression',
+          tags: shown.tags || [],
+          creatorId: shown.creatorId || shown.userId,
         })
       }
-      setOffset((o) => {
-        const next = (o + dir + items.length) % items.length
-        const shown = items[next]
-        if (shown && user?.id) {
-          recordInteraction(user.id, {
-            contentId: shown.id,
-            type: 'impression',
-            tags: shown.tags || [],
-            creatorId: shown.creatorId || shown.userId,
-          })
-        }
-        return next
-      })
     },
-    [items, offset, user?.id]
+    [shorts, offset, user?.id]
   )
 
   return (
-    <div className="p-4 md:p-6 max-w-[1200px] mx-auto w-full">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-lg font-semibold text-zinc-100">Recommended</h1>
-          <p className="text-xs text-zinc-500 mt-0.5">For You · TikTok-style real-time learning (completion, loops, shares)</p>
-        </div>
+    <div className="p-4 md:p-6 max-w-[1200px] mx-auto w-full space-y-10">
+      <div>
+        <h1 className="text-lg font-semibold text-zinc-100">Recommended</h1>
+        <p className="text-xs text-zinc-500 mt-0.5">Videos · YouTube layout · Clips · Shorts layout</p>
       </div>
 
       {items.length === 0 ? (
@@ -60,30 +48,46 @@ export default function HomeFeed({ onPlayItem }) {
           <div className="mx-auto h-12 w-12 rounded-full bg-white/15 flex items-center justify-center">
             <Sparkles className="h-6 w-6 text-white" />
           </div>
-          <p className="mt-4 text-sm font-medium text-zinc-200">No clips in the feed yet</p>
-          <p className="mt-1.5 text-xs text-zinc-500 max-w-md mx-auto leading-relaxed">
-            When creators import or upload, the learning ranker places them here. Live only appears if the algorithm surfaces it.
-          </p>
+          <p className="mt-4 text-sm font-medium text-zinc-200">No posts yet</p>
+          <p className="mt-1.5 text-xs text-zinc-500 max-w-md mx-auto">Upload with a title and description from +.</p>
         </div>
       ) : (
-        <div className="relative group">
-          <button type="button" onClick={() => shift(-1)} className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-black/70 border border-zinc-700 text-zinc-200 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:border-white hover:text-white" aria-label="Previous">
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 px-2">
-            {visible.map((item, idx) => (
-              <ContentCard key={`${item.id}-${offset}-${idx}`} item={item} onOpen={onPlayItem} />
-            ))}
-          </div>
-          <button type="button" onClick={() => shift(1)} className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-black/70 border border-zinc-700 text-zinc-200 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:border-white hover:text-white" aria-label="Next">
-            <ChevronRight className="h-5 w-5" />
-          </button>
-          <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
-            {items.slice(0, Math.min(items.length, 12)).map((item) => (
-              <ContentCard key={`row-${item.id}`} item={item} onOpen={onPlayItem} />
-            ))}
-          </div>
-        </div>
+        <>
+          {videos.length > 0 && (
+            <section>
+              <h2 className="text-base font-semibold text-zinc-200 mb-3">Videos</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+                {videos.map((item) => (
+                  <ContentCard key={item.id} item={item} onOpen={onPlayItem} variant="video" />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {shorts.length > 0 && (
+            <section>
+              <h2 className="text-base font-semibold text-zinc-200 mb-3">Clips</h2>
+              <div className="relative group">
+                <button type="button" onClick={() => shift(-1)} className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-black/70 border border-zinc-700 text-zinc-200 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center" aria-label="Previous">
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 px-1">
+                  {visible.map((item, idx) => (
+                    <ContentCard key={`${item.id}-${offset}-${idx}`} item={item} onOpen={onPlayItem} variant="short" />
+                  ))}
+                </div>
+                <button type="button" onClick={() => shift(1)} className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-black/70 border border-zinc-700 text-zinc-200 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center" aria-label="Next">
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {shorts.slice(0, 12).map((item) => (
+                  <ContentCard key={`row-${item.id}`} item={item} onOpen={onPlayItem} variant="short" />
+                ))}
+              </div>
+            </section>
+          )}
+        </>
       )}
     </div>
   )
