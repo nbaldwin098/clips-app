@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { getApplicationForUser, submitCreatorApplication } from '../lib/moderation'
 import { notifyApplicationSubmitted } from '../lib/notifications'
+import { ORG, applicationsAreOpen, applicationsWindowLabel } from '../lib/orgConfig'
 
 const inputCls =
   'mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100 placeholder:text-zinc-600'
@@ -17,6 +18,7 @@ export default function CreatorApplyPage({ onOpenAuth }) {
   const [social, setSocial] = useState(['', '', '', ''])
   const [category, setCategory] = useState('gaming')
   const [done, setDone] = useState(false)
+  const open = applicationsAreOpen()
 
   if (!isAuthenticated) {
     return (
@@ -37,7 +39,7 @@ export default function CreatorApplyPage({ onOpenAuth }) {
   if (existing?.status === 'pending' || user.creatorStatus === 'pending' || done) {
     return (
       <div className="p-6 max-w-md mx-auto rounded-2xl border border-zinc-800 bg-[#121218] text-sm text-zinc-200">
-        Application pending. We may contact you at the email or phone you provided.
+        Application pending. We may contact you at the email or phone you provided ({ORG.supportEmail} for questions).
       </div>
     )
   }
@@ -49,10 +51,12 @@ export default function CreatorApplyPage({ onOpenAuth }) {
       userId: user.id,
       handle: user.handle,
       name: name.trim().slice(0, 80),
+      displayName: name.trim().slice(0, 80),
       email: email.trim().slice(0, 120),
       phone: phone.trim().slice(0, 32),
       address: address.trim().slice(0, 160),
       bio: bio.trim().slice(0, 280),
+      about: bio.trim().slice(0, 280),
       links,
       category,
     })
@@ -75,7 +79,25 @@ export default function CreatorApplyPage({ onOpenAuth }) {
   return (
     <div className="p-4 md:p-6 max-w-md mx-auto">
       <h1 className="text-lg font-semibold text-white">Apply to create</h1>
-      <p className="text-xs text-zinc-500 mt-1 mb-4">Short form so we can review and reach you.</p>
+      <p className="text-xs text-zinc-500 mt-1 mb-3">Short form so we can review and reach you.</p>
+
+      <div className={`mb-4 rounded-xl border px-4 py-3 text-xs ${
+        open ? 'border-emerald-800/50 bg-emerald-950/30 text-emerald-200' : 'border-zinc-800 bg-[#121218] text-zinc-400'
+      }`}>
+        {open ? (
+          <>
+            <p className="font-medium text-emerald-100">Applications open</p>
+            <p className="mt-1">{ORG.applicationsOpenMessage}</p>
+            <p className="mt-1 text-emerald-200/70">Window: {applicationsWindowLabel()}</p>
+          </>
+        ) : (
+          <>
+            <p className="font-medium text-zinc-200">Limited open window ended</p>
+            <p className="mt-1">You can still apply; reviews run as normal. Window was {applicationsWindowLabel()}.</p>
+          </>
+        )}
+      </div>
+
       {existing?.status === 'rejected' && (
         <p className="mb-4 text-sm text-zinc-200 rounded-xl border border-zinc-800 bg-[#121218] px-4 py-3">
           Your last application was not approved. Update the form and submit again for another review.
