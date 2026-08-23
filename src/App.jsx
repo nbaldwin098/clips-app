@@ -23,6 +23,7 @@ import NotFoundPage from './components/NotFoundPage'
 import AuthRequired from './components/AuthRequired'
 import ImportShortModal from './components/ImportShortModal'
 import AuthModal from './components/AuthModal'
+import MfaGate from './components/MfaGate'
 import UploadModal from './components/UploadModal'
 import PicsPage from './components/PicsPage'
 import CheckoutPage from './components/CheckoutPage'
@@ -71,7 +72,7 @@ const KNOWN_VIEWS = new Set([
 ])
 
 function AppShell() {
-  const { user, isAuthenticated } = useAuth()
+  const { user, isAuthenticated, mfaPending } = useAuth()
   const [view, setView] = useState('home')
   const [routeId, setRouteId] = useState('')
   const [importOpen, setImportOpen] = useState(false)
@@ -496,6 +497,7 @@ function AppShell() {
 
       <ImportShortModal open={importOpen} onClose={() => setImportOpen(false)} />
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
+      {mfaPending ? <MfaGate /> : null}
       <UploadModal
         key={`${uploadKind}-${uploadSound?.id || 'none'}-${uploadStitch?.id || 'none'}`}
         open={uploadOpen}

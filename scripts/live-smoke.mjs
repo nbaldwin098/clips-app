@@ -2,6 +2,7 @@
 import { readFileSync } from 'node:fs'
 import { extractHashtags, mergeTags, parseClock, parseCaptionCues, isReleased, filterExploreItems } from '../src/lib/mediaMeta.js'
 import { parseRoute, buildHash } from '../src/lib/routes.js'
+import { sanitizeAuthError, normalizePhone } from '../src/lib/authBrand.js'
 
 let failed = 0
 function assert(cond, msg) {
@@ -12,6 +13,10 @@ function assert(cond, msg) {
     console.log('ok', msg)
   }
 }
+
+assert(sanitizeAuthError('Invalid login credentials') === 'Wrong email or password.', 'branded login error')
+assert(!/supabase/i.test(sanitizeAuthError('supabase provider is not enabled')), 'errors never say supabase')
+assert(normalizePhone('5551234567') === '+15551234567', 'us phone to e164')
 
 assert(extractHashtags('hello #Music and #gaming').join(',') === 'music,gaming', 'hashtags')
 assert(mergeTags('music, extra', 'more #music #live').includes('live'), 'merge tags')
@@ -84,8 +89,19 @@ const authSrc = readFileSync(new URL('../src/components/AuthModal.jsx', import.m
 assert(!authSrc.includes('Continue with Google'), 'google sign-in removed')
 assert(authSrc.includes('Continue with Apple'), 'apple sign-in button')
 assert(authSrc.includes('Continue with Microsoft'), 'microsoft sign-in button')
+assert(authSrc.includes('Continue with X'), 'x sign-in button')
 assert(authSrc.includes('loginWithOAuth'), 'oauth handler wired')
-assert(authSrc.includes('CapCut is an editor'), 'capcut is not a fake login')
+assert(authSrc.includes('Phone'), 'phone sign-in')
+assert(!/supabase/i.test(authSrc), 'auth modal never says supabase')
+assert(authSrc.includes('CapCut cannot sign people'), 'capcut is not a fake login')
+
+const brandSrc = readFileSync(new URL('../src/lib/authBrand.js', import.meta.url), 'utf8')
+assert(brandSrc.includes('Your Clips code is'), 'sms template says clips')
+assert(brandSrc.includes('sanitizeAuthError'), 'auth errors are branded')
+
+const secSrc = readFileSync(new URL('../src/components/settings/SecuritySettings.jsx', import.meta.url), 'utf8')
+assert(secSrc.includes('startMfaEnroll'), 'real 2fa enroll')
+assert(!secSrc.includes('Backend integration required'), '2fa is not a fake checkbox')
 
 const shortsSrc = readFileSync(new URL('../src/components/ShortsFeed.jsx', import.meta.url), 'utf8')
 assert(shortsSrc.includes('onStitch'), 'stitch on clip player')
