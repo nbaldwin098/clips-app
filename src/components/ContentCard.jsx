@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { ThumbsUp, ThumbsDown, Eye, MessageCircle, Flag, Share2, Bookmark, Play } from 'lucide-react'
+import { ThumbsUp, ThumbsDown, Eye, MessageCircle, Flag, Share2, Bookmark, Play, Music } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import {
   getVotes, getUserVote, toggleVote, getViews, recordView, getSubscriberCount,
@@ -157,6 +157,9 @@ export default function ContentCard({ item, onOpen, variant }) {
               <p className="text-sm font-semibold text-zinc-100 line-clamp-2 leading-snug">{item.title || 'Untitled'}</p>
               <p className="text-xs text-zinc-500 mt-1">{handle}{subs > 0 ? ` · ${subs} subscribers` : ''}</p>
               <p className="text-xs text-zinc-500">{views} views</p>
+              {item.soundTitle ? (
+                <p className="text-xs text-zinc-500 mt-1 inline-flex items-center gap-1"><Music className="h-3 w-3" />{item.soundTitle}</p>
+              ) : null}
               {item.description ? (
                 <p className="text-xs text-zinc-600 mt-1 line-clamp-2">{item.description}</p>
               ) : null}
@@ -183,6 +186,9 @@ export default function ContentCard({ item, onOpen, variant }) {
           <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/90 via-black/40 to-transparent">
             <p className="text-sm font-semibold text-white line-clamp-2">{item.title || 'Untitled'}</p>
             <p className="text-[11px] text-zinc-300 mt-1">{handle}</p>
+            {item.soundTitle ? (
+              <p className="text-[11px] text-zinc-300 mt-0.5 inline-flex items-center gap-1 truncate"><Music className="h-3 w-3 shrink-0" />{item.soundTitle}</p>
+            ) : null}
           </div>
           <div className="absolute top-2 right-2 flex items-center gap-1 rounded-md bg-black/70 px-1.5 py-0.5 text-[10px] text-zinc-200">
             <Eye className="h-3 w-3" /> {views}

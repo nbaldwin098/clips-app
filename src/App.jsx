@@ -25,7 +25,6 @@ import AuthRequired from './components/AuthRequired'
 import ImportShortModal from './components/ImportShortModal'
 import AuthModal from './components/AuthModal'
 import UploadModal from './components/UploadModal'
-import SoundsPage from './components/SoundsPage'
 import PicsPage from './components/PicsPage'
 import CheckoutPage from './components/CheckoutPage'
 import CheckoutModal from './components/CheckoutModal'
@@ -53,7 +52,7 @@ import { lsGet, lsSet } from './lib/storage'
 const KNOWN_VIEWS = new Set([
   'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
   'explore', 'history', 'liked', 'watch-later', 'library', 'stats', 'help', 'about',
-  'notifications', 'sounds', 'pics', 'checkout', 'creator-apply', 'advertise', 'advertiser-portal', 'support', 'admin',
+  'notifications', 'pics', 'checkout', 'creator-apply', 'advertise', 'advertiser-portal', 'support', 'admin',
   'analytics', 'channel', 'profile', 'content-rules',
   'subscriptions', 'playlists', 'community', 'studio-tools', 'stream-settings',
   'legal-tos', 'legal-privacy', 'legal-creator', 'legal-community',
@@ -210,7 +209,6 @@ function AppShell() {
       case 'stream-settings': return <StreamSettingsPage onNavigate={navigate} />
       case 'settings': return <SettingsPage onNavigate={navigate} />
       case 'explore': return <ExplorePage onPlayItem={setActivePlayItem} />
-      case 'sounds': return <SoundsPage onOpenAuth={openAuth} />
       case 'pics': return <PicsPage onOpenAuth={openAuth} />
       case 'checkout': return <CheckoutPage onNavigate={navigate} creatorId={checkoutTarget.id} />
       case 'creator-apply': return <CreatorApplyPage onOpenAuth={openAuth} />
@@ -277,7 +275,7 @@ function AppShell() {
 
       <ImportShortModal open={importOpen} onClose={() => setImportOpen(false)} />
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
-      <UploadModal open={uploadOpen} onClose={() => setUploadOpen(false)} />
+      <UploadModal open={uploadOpen} onClose={() => setUploadOpen(false)} onOpenAuth={openAuth} />
       <CheckoutModal open={checkoutOpen} onClose={() => setCheckoutOpen(false)} creatorId={checkoutTarget.id} creatorHandle={checkoutTarget.handle} />
       {activePlayItem && (
         <VideoPlayerModal item={activePlayItem} onClose={() => setActivePlayItem(null)} />
