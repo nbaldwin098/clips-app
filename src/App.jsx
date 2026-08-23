@@ -43,6 +43,7 @@ import PlaylistsPage from './components/PlaylistsPage'
 import CommunityPage from './components/CommunityPage'
 import StudioToolsPage from './components/StudioToolsPage'
 import StreamSettingsPage from './components/StreamSettingsPage'
+import ContentRulesPage from './components/ContentRulesPage'
 import {
   TermsOfService, PrivacyPolicy, CreatorAgreement, CommunityGuidelines,
 } from './components/legal/LegalPages'
@@ -53,7 +54,7 @@ const KNOWN_VIEWS = new Set([
   'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
   'explore', 'history', 'liked', 'watch-later', 'library', 'stats', 'help', 'about',
   'notifications', 'sounds', 'pics', 'checkout', 'creator-apply', 'advertise', 'advertiser-portal', 'support', 'admin',
-  'analytics', 'channel', 'profile',
+  'analytics', 'channel', 'profile', 'content-rules',
   'subscriptions', 'playlists', 'community', 'studio-tools', 'stream-settings',
   'legal-tos', 'legal-privacy', 'legal-creator', 'legal-community',
 ])
@@ -217,6 +218,7 @@ function AppShell() {
       case 'advertiser-portal': return <AdvertiserPortal onNavigate={navigate} />
       case 'support': return <SupportPage onOpenAuth={openAuth} />
       case 'admin': return <AdminPortal onNavigate={navigate} />
+      case 'content-rules': return <ContentRulesPage />
       case 'history': return <HistoryPage onNavigate={navigate} onPlayItem={setActivePlayItem} />
       case 'liked': return <LikedPage onNavigate={navigate} onPlayItem={setActivePlayItem} />
       case 'watch-later': return <WatchLaterPage onNavigate={navigate} onPlayItem={setActivePlayItem} />
