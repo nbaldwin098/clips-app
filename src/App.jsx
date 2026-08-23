@@ -26,6 +26,7 @@ import ImportShortModal from './components/ImportShortModal'
 import AuthModal from './components/AuthModal'
 import UploadModal from './components/UploadModal'
 import SoundsPage from './components/SoundsPage'
+import PicsPage from './components/PicsPage'
 import CheckoutPage from './components/CheckoutPage'
 import CheckoutModal from './components/CheckoutModal'
 import CreatorApplyPage from './components/CreatorApplyPage'
@@ -51,7 +52,7 @@ import { lsGet, lsSet } from './lib/storage'
 const KNOWN_VIEWS = new Set([
   'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
   'explore', 'history', 'liked', 'watch-later', 'library', 'stats', 'help', 'about',
-  'notifications', 'sounds', 'checkout', 'creator-apply', 'advertise', 'advertiser-portal', 'support', 'admin',
+  'notifications', 'sounds', 'pics', 'checkout', 'creator-apply', 'advertise', 'advertiser-portal', 'support', 'admin',
   'analytics', 'channel', 'profile',
   'subscriptions', 'playlists', 'community', 'studio-tools', 'stream-settings',
   'legal-tos', 'legal-privacy', 'legal-creator', 'legal-community',
@@ -69,13 +70,10 @@ function AppShell() {
   const [activePlayItem, setActivePlayItem] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
 
-  // Layout chrome state — collapsible sidebar + live chat panel, both real UI, no fake data.
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => lsGet('sidebar_collapsed', false) === true)
   const [chatCollapsed, setChatCollapsed] = useState(() => lsGet('chat_collapsed', false) === true)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [mobileChatOpen, setMobileChatOpen] = useState(false)
-
-  // The live stream currently focused on the Live page — always a real live_board entry, or null.
   const [focusedLiveStream, setFocusedLiveStream] = useState(null)
 
   useEffect(() => {
@@ -212,6 +210,7 @@ function AppShell() {
       case 'settings': return <SettingsPage onNavigate={navigate} />
       case 'explore': return <ExplorePage />
       case 'sounds': return <SoundsPage onOpenAuth={openAuth} />
+      case 'pics': return <PicsPage onOpenAuth={openAuth} />
       case 'checkout': return <CheckoutPage onNavigate={navigate} creatorId={checkoutTarget.id} />
       case 'creator-apply': return <CreatorApplyPage onOpenAuth={openAuth} />
       case 'advertise': return <AdvertisePage onNavigate={navigate} />
