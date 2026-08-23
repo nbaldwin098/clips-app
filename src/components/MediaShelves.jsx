@@ -26,7 +26,7 @@ export default function MediaShelves({ items, onPlayItem, onOpenPic, pinOverlay 
       {shorts.length > 0 && (
         <section>
           <h2 className="text-base font-semibold text-zinc-200 mb-3">Clips</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
             {shorts.map((item) => (
               <div key={item.id} className="relative">
                 {pinOverlay?.(item)}

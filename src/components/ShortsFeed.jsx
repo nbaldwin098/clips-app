@@ -1,48 +1,56 @@
 import { useMemo, useEffect, useState, useRef } from 'react'
-import { Clapperboard, Heart, MessageCircle, Share2, Volume2, VolumeX, Music, X } from 'lucide-react'
+import { ChevronLeft, Heart, MessageCircle, Search, Share2, Volume2, VolumeX, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getShortsFeed, getFollowingFeed } from '../lib/contentService'
 import { getMediaBlobUrl } from '../lib/videoStorage'
 import { parseEmbedUrl } from '../lib/videoEmbed'
 import { safeIframeSrc, safeMediaUrl } from '../lib/safeUrl'
-import { recordView, getViews, toggleVote, getVotes, getUserVote } from '../lib/engagement'
+import { recordView, toggleVote, getVotes, getUserVote, isSubscribed, toggleSubscribe } from '../lib/engagement'
+import { listComments } from '../lib/youtubeParity'
 import { recordInteraction } from '../lib/algorithmEngine'
 import { copyShareUrl } from '../lib/routes'
+import { withReferenceShorts } from '../lib/referenceShorts'
 import { useContentSyncTick } from '../lib/useContentSync'
-import { cn } from '../lib/utils'
 import CommentsPanel from './CommentsPanel'
 import ShortsStage, { ShortsCard } from './ShortsStage'
+import ShortsGrid from './ShortsGrid'
 
 function resolvePlayUrl(item) {
   return item?.mediaUrl || item?.sourceUrl || ''
 }
 
-function ActionBtn({ onClick, label, children, active = false }) {
+function RailBtn({ onClick, label, children, active = false, circled = true }) {
   return (
     <button type="button" onClick={onClick} className="flex flex-col items-center gap-1">
-      <span className={`h-11 w-11 rounded-full bg-[#272727] hover:bg-[#3d3d3d] flex items-center justify-center ${active ? 'text-red-400' : 'text-white'}`}>
-        {children}
-      </span>
-      {label != null ? <span className="text-[11px] text-white font-medium">{label}</span> : null}
+      {circled ? (
+        <span className={`h-11 w-11 rounded-full bg-[#272727] hover:bg-[#3d3d3d] flex items-center justify-center ${active ? 'text-red-400' : 'text-white'}`}>
+          {children}
+        </span>
+      ) : (
+        <span className={`drop-shadow-md ${active ? 'text-red-400' : 'text-white'}`}>{children}</span>
+      )}
+      {label != null ? <span className="text-[11px] text-white font-medium drop-shadow">{label}</span> : null}
     </button>
   )
 }
 
 function ClipSlide({
-  item, active, muted, onToggleMute, user, onOpenAuth, onOpenProfile, onOpenSound, onStitch,
+  item, active, muted, onToggleMute, user, onOpenAuth, onOpenProfile, onOpenSound, onBack, onSearch,
 }) {
   const vidRef = useRef(null)
   const [src, setSrc] = useState(() => resolvePlayUrl(item))
   const [embed, setEmbed] = useState(() => parseEmbedUrl(resolvePlayUrl(item)))
   const [votes, setVotes] = useState(() => getVotes(item.id))
   const [myVote, setMyVote] = useState(() => getUserVote(user?.id, item.id))
-  const [views, setViews] = useState(() => getViews(item.id))
   const [heartBurst, setHeartBurst] = useState(false)
   const [commentsOpen, setCommentsOpen] = useState(false)
   const [progress, setProgress] = useState(0)
+  const [following, setFollowing] = useState(() => isSubscribed(user?.id, item.creatorId || item.userId))
   const lastTap = useRef(0)
   const lastTime = useRef(0)
   const looped = useRef(false)
+  const creatorId = item.creatorId || item.userId
+  const commentCount = listComments(item.id).length
 
   useEffect(() => {
     let cancelled = false
@@ -77,21 +85,20 @@ function ClipSlide({
         el.muted = true
         el.play()?.catch(() => {})
       })
-      const n = recordView(item.id)
-      setViews(n)
+      recordView(item.id)
       if (user?.id) {
         recordInteraction(user.id, {
           contentId: item.id,
           type: 'impression',
           tags: item.tags || [],
-          creatorId: item.creatorId || item.userId,
+          creatorId,
         })
       }
     } else {
       el.pause()
       try { el.currentTime = 0 } catch {}
     }
-  }, [active, muted, item.id, embed?.type, user?.id])
+  }, [active, muted, item.id, embed?.type, user?.id, creatorId, item.tags])
 
   const like = (e) => {
     e?.stopPropagation?.()
@@ -105,8 +112,15 @@ function ClipSlide({
       contentId: item.id,
       type: 'upvote',
       tags: item.tags || [],
-      creatorId: item.creatorId || item.userId,
+      creatorId,
     })
+  }
+
+  const follow = (e) => {
+    e?.stopPropagation?.()
+    if (!user?.id) { onOpenAuth?.(); return }
+    if (!creatorId) return
+    setFollowing(toggleSubscribe(user.id, creatorId))
   }
 
   const onSurfaceClick = () => {
@@ -127,46 +141,47 @@ function ClipSlide({
   const share = async (e) => {
     e?.stopPropagation?.()
     try {
-      await copyShareUrl('watch', item.id)
+      await copyShareUrl('clips', item.id)
       if (user?.id) {
         recordInteraction(user.id, {
           contentId: item.id,
           type: 'share',
           tags: item.tags || [],
-          creatorId: item.creatorId || item.userId,
+          creatorId,
         })
       }
     } catch {}
   }
 
   const handle = item.handle ? `@${String(item.handle).replace(/^@/, '')}` : '@creator'
+  const initial = String(item.handle || 'C').replace(/^@/, '').slice(0, 1).toUpperCase()
   const videoSrc = embed?.src || src
   const isIframe = embed?.type === 'iframe'
 
-  const actions = (
+  const actions = (circled) => (
     <>
-      <ActionBtn onClick={like} label={votes.up || 0} active={myVote === 'up'}>
-        <Heart className={`h-6 w-6 ${myVote === 'up' ? 'fill-current' : ''}`} />
-      </ActionBtn>
-      <ActionBtn onClick={() => setCommentsOpen(true)}>
-        <MessageCircle className="h-5 w-5" />
-      </ActionBtn>
-      <ActionBtn onClick={share}>
-        <Share2 className="h-5 w-5" />
-      </ActionBtn>
-      <ActionBtn
-        onClick={(e) => { e?.stopPropagation?.(); if (!user?.id) { onOpenAuth?.(); return } onStitch?.(item) }}
-        label="Stitch"
+      <RailBtn circled={circled} onClick={like} label={votes.up || 0} active={myVote === 'up'}>
+        <Heart className={`h-7 w-7 ${myVote === 'up' ? 'fill-current' : ''}`} />
+      </RailBtn>
+      <RailBtn circled={circled} onClick={() => setCommentsOpen(true)} label={commentCount}>
+        <MessageCircle className="h-7 w-7" />
+      </RailBtn>
+      <RailBtn circled={circled} onClick={share} label="Share">
+        <Share2 className="h-7 w-7" />
+      </RailBtn>
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onOpenProfile?.(item.handle, creatorId) }}
+        className="h-11 w-11 rounded-full bg-white/20 text-white text-sm font-semibold flex items-center justify-center ring-2 ring-white/80"
+        aria-label={handle}
       >
-        <Clapperboard className="h-5 w-5" />
-      </ActionBtn>
+        {initial}
+      </button>
     </>
   )
 
   return (
-    <ShortsCard
-      actions={actions}
-    >
+    <ShortsCard actions={actions(true)} fillMobile>
       <div
         className="absolute inset-0"
         onClick={onSurfaceClick}
@@ -189,7 +204,7 @@ function ClipSlide({
           <video
             ref={(el) => { vidRef.current = el }}
             src={safeMediaUrl(videoSrc)}
-            className="absolute inset-0 w-full h-full object-contain bg-black pointer-events-none"
+            className="absolute inset-0 w-full h-full object-cover md:object-contain bg-black pointer-events-none"
             playsInline
             loop
             muted={muted}
@@ -204,7 +219,7 @@ function ClipSlide({
                   contentId: item.id,
                   type: 'loop',
                   tags: item.tags || [],
-                  creatorId: item.creatorId || item.userId,
+                  creatorId,
                 })
                 setTimeout(() => { looped.current = false }, 400)
               }
@@ -224,14 +239,34 @@ function ClipSlide({
         )}
       </div>
 
-      <button
-        type="button"
-        onClick={(e) => { e.stopPropagation(); onToggleMute?.() }}
-        className="absolute top-3 right-3 z-10 h-9 w-9 rounded-full bg-black/55 hover:bg-black/70 text-white flex items-center justify-center"
-        aria-label={muted ? 'Unmute' : 'Mute'}
-      >
-        {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-      </button>
+      <div className="absolute top-0 inset-x-0 z-20 flex items-center justify-between px-3 pt-3">
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onBack?.() }}
+          className="h-10 w-10 rounded-full text-white flex items-center justify-center"
+          aria-label="Back to Shorts"
+        >
+          <ChevronLeft className="h-7 w-7 drop-shadow" />
+        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onToggleMute?.() }}
+            className="h-10 w-10 rounded-full text-white flex items-center justify-center"
+            aria-label={muted ? 'Unmute' : 'Mute'}
+          >
+            {muted ? <VolumeX className="h-5 w-5 drop-shadow" /> : <Volume2 className="h-5 w-5 drop-shadow" />}
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onSearch?.() }}
+            className="h-10 w-10 rounded-full text-white flex items-center justify-center"
+            aria-label="Search"
+          >
+            <Search className="h-5 w-5 drop-shadow" />
+          </button>
+        </div>
+      </div>
 
       {heartBurst && (
         <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
@@ -239,31 +274,42 @@ function ClipSlide({
         </div>
       )}
 
-      <div className="absolute inset-x-0 bottom-0 pt-20 pb-5 px-3 bg-gradient-to-t from-black/80 to-transparent z-10">
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); onOpenProfile?.(item.handle, item.creatorId || item.userId) }}
-          className="text-sm font-semibold text-white drop-shadow"
-        >
-          {handle}
-        </button>
-        <p className="text-sm text-white/95 mt-1 line-clamp-2 drop-shadow">{item.title || 'Untitled'}</p>
+      <div className="absolute inset-x-0 bottom-0 z-10 pt-24 pb-5 px-3 bg-gradient-to-t from-black/80 via-black/25 to-transparent">
+        <div className="flex items-center gap-2 pr-16 md:pr-4">
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onOpenProfile?.(item.handle, creatorId) }}
+            className="text-sm font-semibold text-white drop-shadow"
+          >
+            {handle}
+          </button>
+          <button
+            type="button"
+            onClick={follow}
+            className={`h-7 px-3 rounded-full text-xs font-semibold ${
+              following ? 'bg-white/15 text-white' : 'bg-white text-black'
+            }`}
+          >
+            {following ? 'Following' : 'Subscribe'}
+          </button>
+        </div>
+        <p className="text-sm text-white mt-2 line-clamp-2 drop-shadow pr-16 md:pr-4">{item.title || 'Untitled'}</p>
         {item.soundTitle ? (
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onOpenSound?.(item.soundId || item.soundTitle) }}
-            className="mt-2 text-[11px] text-white/80 inline-flex items-center gap-1"
+            className="mt-2 max-w-[80%] h-8 px-3 rounded-full bg-black/45 text-[12px] text-white inline-flex items-center gap-2"
           >
-            <Music className="h-3 w-3" />{item.soundTitle}
+            <span className="h-4 w-4 rounded-full bg-white/90" />
+            <span className="truncate">{item.soundTitle}</span>
           </button>
         ) : null}
-        <p className="text-[10px] text-white/50 mt-2">{views} views</p>
       </div>
 
-      <div className="md:hidden absolute right-2 bottom-28 flex flex-col items-center gap-3 z-10">
-        {actions}
+      <div className="md:hidden absolute right-2 bottom-28 flex flex-col items-center gap-5 z-10">
+        {actions(false)}
       </div>
-      <div className="absolute inset-x-0 bottom-0 z-10 h-0.5 bg-white/15">
+      <div className="absolute inset-x-0 bottom-0 z-10 h-0.5 bg-white/20">
         <div className="h-full bg-white" style={{ width: `${Math.round((progress || 0) * 100)}%` }} />
       </div>
 
@@ -276,7 +322,7 @@ function ClipSlide({
             </button>
           </div>
           <div className="px-4 pb-6">
-            <CommentsPanel contentId={item.id} creatorId={item.creatorId || item.userId} />
+            <CommentsPanel contentId={item.id} creatorId={creatorId} />
           </div>
         </div>
       )}
@@ -284,15 +330,19 @@ function ClipSlide({
   )
 }
 
-export default function ShortsFeed({ onOpenAuth, onOpenProfile, onOpenSound, onStitch, focusId }) {
+export default function ShortsFeed({
+  onOpenAuth, onOpenProfile, onOpenSound, onNavigate, focusId,
+}) {
   const { user } = useAuth()
   const syncTick = useContentSyncTick()
   const [tab, setTab] = useState('recommended')
-  const recommended = useMemo(() => getShortsFeed(user?.id || null), [user?.id, syncTick])
+  const realRecommended = useMemo(() => getShortsFeed(user?.id || null), [user?.id, syncTick])
+  const recommended = useMemo(() => withReferenceShorts(realRecommended), [realRecommended])
   const following = useMemo(() => getFollowingFeed(user?.id, { shortsOnly: true }), [user?.id, syncTick])
   const items = tab === 'following' ? following : recommended
   const [activeIdx, setActiveIdx] = useState(0)
   const [muted, setMuted] = useState(true)
+  const inPlayer = Boolean(focusId)
   const startIdx = useMemo(() => {
     if (!focusId || !items.length) return 0
     const idx = items.findIndex((i) => i.id === focusId)
@@ -301,60 +351,62 @@ export default function ShortsFeed({ onOpenAuth, onOpenProfile, onOpenSound, onS
 
   useEffect(() => { setActiveIdx(startIdx) }, [startIdx])
 
-  const empty = (
-    <div className="h-full min-h-[60vh] flex items-center justify-center p-6">
-      <div className="rounded-2xl border border-zinc-800 bg-[#121218] px-6 py-16 text-center max-w-md">
-        <div className="mx-auto h-12 w-12 rounded-full bg-white/15 flex items-center justify-center">
-          <Clapperboard className="h-6 w-6 text-white" />
+  const openClip = (item) => onNavigate?.('clips', item.id)
+  const backToGrid = () => {
+    setTab('recommended')
+    onNavigate?.('clips')
+  }
+
+  if (!inPlayer) {
+    if (tab === 'following' && following.length === 0) {
+      return (
+        <div className="h-full overflow-y-auto bg-[#0f0f0f]">
+          <div className="px-3 py-3 flex items-center justify-between">
+            <h1 className="text-xl font-semibold text-white">Shorts</h1>
+            <div className="flex gap-1 rounded-full bg-white/10 p-1">
+              <button type="button" onClick={() => setTab('recommended')} className="h-7 px-3 rounded-full text-[11px] font-semibold text-white/70">Recommended</button>
+              <button type="button" className="h-7 px-3 rounded-full text-[11px] font-semibold bg-white text-black">Following</button>
+            </div>
+          </div>
+          <p className="px-4 pt-10 text-sm text-zinc-400 text-center">Follow creators to fill this shelf.</p>
         </div>
-        <p className="mt-4 text-sm font-medium text-zinc-200">
-          {tab === 'following' && recommended.length > 0 ? 'Follow creators to fill this feed.' : 'No clips yet'}
-        </p>
-        <p className="mt-1.5 text-xs text-zinc-500">Upload a Clip from +.</p>
-      </div>
-    </div>
-  )
+      )
+    }
+    return (
+      <ShortsGrid
+        items={tab === 'following' ? following : recommended}
+        onOpen={openClip}
+        tab={tab}
+        onTab={setTab}
+      />
+    )
+  }
 
   return (
     <ShortsStage
-      key={`clips-${tab}`}
+      key={`clips-player-${tab}`}
       count={items.length}
       activeIndex={activeIdx}
       onActiveIndex={setActiveIdx}
       initialIndex={startIdx}
-      empty={empty}
-      header={(
-        <div className="shrink-0 flex justify-center pt-2 pb-1">
-          <div className="flex gap-1 rounded-full bg-black/40 p-1">
-            {['recommended', 'following'].map((id) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => { setTab(id); setActiveIdx(0) }}
-                className={cn(
-                  'h-7 px-3 rounded-full text-[11px] font-semibold',
-                  tab === id ? 'bg-white text-black' : 'text-white/70'
-                )}
-              >
-                {id === 'recommended' ? 'Recommended' : 'Following'}
-              </button>
-            ))}
-          </div>
-        </div>
+      bleedMobile
+      empty={(
+        <div className="h-full flex items-center justify-center text-sm text-zinc-400">No clips</div>
       )}
       renderSlide={(index, active) => (
         items[index] ? (
-        <ClipSlide
-          item={items[index]}
-          active={active}
-          muted={muted}
-          onToggleMute={() => setMuted((m) => !m)}
-          user={user}
-          onOpenAuth={onOpenAuth}
-          onOpenProfile={onOpenProfile}
-          onOpenSound={onOpenSound}
-          onStitch={onStitch}
-        />
+          <ClipSlide
+            item={items[index]}
+            active={active}
+            muted={muted}
+            onToggleMute={() => setMuted((m) => !m)}
+            user={user}
+            onOpenAuth={onOpenAuth}
+            onOpenProfile={onOpenProfile}
+            onOpenSound={onOpenSound}
+            onBack={backToGrid}
+            onSearch={() => onNavigate?.('explore')}
+          />
         ) : null
       )}
     />

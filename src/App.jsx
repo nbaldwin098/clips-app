@@ -200,6 +200,11 @@ function AppShell() {
       openPic(item)
       return
     }
+    if (item.type === 'short') {
+      setMiniItem(null)
+      navigate('clips', item.id)
+      return
+    }
     setMiniItem(null)
     setRouteId(item.id)
     setView('watch')
@@ -365,6 +370,7 @@ function AppShell() {
             onOpenProfile={openProfile}
             onOpenSound={openSound}
             onStitch={openStitch}
+            onNavigate={navigate}
             focusId={routeId}
           />
         )

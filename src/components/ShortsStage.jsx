@@ -27,6 +27,7 @@ export default function ShortsStage({
   header = null,
   renderSlide,
   empty = null,
+  bleedMobile = false,
 }) {
   const scrollerRef = useRef(null)
   const n = Math.max(0, Number(count) || 0)
@@ -122,7 +123,11 @@ export default function ShortsStage({
           {reel.map((row) => (
             <div
               key={row.key}
-              className="h-full w-full snap-start snap-always shrink-0 flex items-center justify-center px-3 py-4 sm:px-10 sm:py-8"
+              className={
+                bleedMobile
+                  ? 'h-full w-full snap-start snap-always shrink-0 flex items-stretch md:items-center justify-center px-0 py-0 md:px-10 md:py-8'
+                  : 'h-full w-full snap-start snap-always shrink-0 flex items-center justify-center px-3 py-4 sm:px-10 sm:py-8'
+              }
             >
               {renderSlide(row.index, row.index === activeIndex)}
             </div>
@@ -154,9 +159,13 @@ export default function ShortsStage({
   )
 }
 
-export function ShortsCard({ children, actions }) {
+export function ShortsCard({ children, actions, fillMobile = false }) {
   const hostRef = useRef(null)
-  const [box, setBox] = useState({ w: 0, h: 0, desktop: false })
+  const [box, setBox] = useState(() => ({
+    w: 0,
+    h: 0,
+    desktop: typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches,
+  }))
 
   useEffect(() => {
     const el = hostRef.current
@@ -181,6 +190,15 @@ export function ShortsCard({ children, actions }) {
 
   const rail = box.desktop && actions ? 64 : 0
   const dim = fitPortrait(box.w - rail, box.h, 420)
+  const mobileFill = fillMobile && !box.desktop
+
+  if (mobileFill) {
+    return (
+      <div ref={hostRef} className="h-full w-full">
+        <div className="relative h-full w-full bg-black overflow-hidden">{children}</div>
+      </div>
+    )
+  }
 
   return (
     <div ref={hostRef} className="h-full w-full flex items-end justify-center gap-3">

@@ -2,6 +2,7 @@
 import { readFileSync } from 'node:fs'
 import { extractHashtags, mergeTags, parseClock, parseCaptionCues, isReleased, filterExploreItems } from '../src/lib/mediaMeta.js'
 import { parseRoute, buildHash } from '../src/lib/routes.js'
+import { getReferenceShorts, withReferenceShorts, getReferenceShort } from '../src/lib/referenceShorts.js'
 
 let failed = 0
 function assert(cond, msg) {
@@ -67,6 +68,13 @@ assert(!modalSrc.includes('addPremiumSub'), 'checkout modal does not fake a paid
 assert(pageSrc.includes('startPremiumCheckout'), 'checkout page uses the gate')
 assert(modalSrc.includes('startPremiumCheckout'), 'checkout modal uses the gate')
 assert(pageSrc.includes('VITE_STRIPE_PAYMENT_LINK') || pageSrc.includes('Payment Link'), 'checkout mentions payment link')
+
+const refs = getReferenceShorts()
+assert(refs.length >= 10, 'reference shorts catalog')
+assert(refs.every((s) => s.reference === true && s.type === 'short' && /^https:/.test(s.mediaUrl)), 'reference shorts are https shorts')
+assert(getReferenceShort(refs[0].id)?.id === refs[0].id, 'reference short by id')
+assert(withReferenceShorts([]).length === refs.length, 'reference fill when catalog empty')
+assert(withReferenceShorts([{ id: refs[0].id, type: 'short' }]).filter((s) => s.id === refs[0].id).length === 1, 'reference does not duplicate real id')
 
 if (failed) {
   console.error(`${failed} failed`)

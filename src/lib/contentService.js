@@ -8,6 +8,7 @@ import { pushContentRecord, notifyContentChanged } from './contentSync'
 import { getSubscriptionsForUser } from './engagement'
 import { getPicsFeed } from './picsService'
 import { mergeTags, isReleased } from './mediaMeta'
+import { getReferenceShort } from './referenceShorts'
 import { setChapters, setCaptions, deleteScheduled } from './youtubeParity'
 
 const VIEW_KEY = 'clips_content_views'
@@ -286,6 +287,8 @@ export function listCatalogTags(limit = 24) {
 export function getById(id) {
   const fromImport = getImports().find((i) => i.id === id)
   if (fromImport) return normalizeItem(withViewCounts([fromImport])[0])
+  const reference = getReferenceShort(id)
+  if (reference) return { ...reference }
   return null
 }
 
