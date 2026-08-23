@@ -67,9 +67,7 @@ export async function publishPhoto(file, actor = null) {
   try {
     const processed = await processImageFile(file)
     const id = `pic_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
-    const uploadFile = /image\/(jpeg|jpg|png|webp)/i.test(file.type || '')
-      ? file
-      : processed.displayFile || file
+    const uploadFile = processed.displayFile || file
 
     let mediaUrl = processed.rawUrl
     let hosted = false

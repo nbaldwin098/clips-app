@@ -6,7 +6,7 @@ import { isSupabaseConfigured } from '../lib/supabaseClient'
 import { subscribeContentUpdates } from '../lib/contentSync'
 import { getMediaBlobUrl } from '../lib/videoStorage'
 
-function PicImage({ pic, className, alt = '', full = false }) {
+function PicImage({ pic, className, alt = '', full = false, fill = false }) {
   const immediate = pickImmediatePhotoSrc(pic, { full })
   const [recovered, setRecovered] = useState(null)
   const [failed, setFailed] = useState(false)
@@ -49,10 +49,22 @@ function PicImage({ pic, className, alt = '', full = false }) {
   }
 
   if (failed || !src) {
-    return <div className={`bg-zinc-900 ${className || ''}`} />
+    return <div className={fill ? 'absolute inset-0 bg-zinc-800' : `bg-zinc-800 ${className || ''}`} />
   }
 
-  return <img src={src} alt={alt} className={className} onError={onError} />
+  if (fill) {
+    return (
+      <img
+        src={src}
+        alt={alt}
+        className="absolute inset-0 h-full w-full object-cover"
+        onError={onError}
+        decoding="async"
+      />
+    )
+  }
+
+  return <img src={src} alt={alt} className={className} onError={onError} decoding="async" />
 }
 
 /** Grid of all pics · click one → full-screen vertical scroll through the set */
@@ -151,9 +163,9 @@ export default function PicsPage({ onOpenAuth }) {
               key={pic.id}
               type="button"
               onClick={() => openAt(index)}
-              className="relative aspect-square overflow-hidden bg-zinc-900 group focus:outline-none"
+              className="relative block w-full aspect-square overflow-hidden bg-zinc-800 group focus:outline-none"
             >
-              <PicImage key={pic.id} pic={pic} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+              <PicImage key={pic.id} pic={pic} fill />
               <div className="pointer-events-none absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
             </button>
           ))}
@@ -186,8 +198,8 @@ export default function PicsPage({ onOpenAuth }) {
             }}
           >
             {items.map((pic) => (
-              <div key={pic.id} className="h-full w-full snap-start snap-always flex items-center justify-center shrink-0">
-                <PicImage pic={pic} full className="max-h-full max-w-full object-contain" />
+              <div key={pic.id} className="relative h-full w-full snap-start snap-always flex items-center justify-center shrink-0 bg-black">
+                <PicImage pic={pic} full className="max-h-full max-w-full w-auto h-auto object-contain" />
               </div>
             ))}
           </div>
