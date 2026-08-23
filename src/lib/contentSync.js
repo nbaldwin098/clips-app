@@ -27,7 +27,16 @@ export function notifyContentChanged() {
   window.dispatchEvent(new CustomEvent(SYNC_EVENT))
 }
 
+/** Cloud catalog can only usefully store http(s) links — blob: dies per-tab. */
+function cloudUrl(url) {
+  const u = String(url || '')
+  return u.startsWith('https://') || u.startsWith('http://') ? u : ''
+}
+
 function toRow(record, actor) {
+  const media = cloudUrl(record.mediaUrl) || cloudUrl(record.sourceUrl)
+  const source = cloudUrl(record.sourceUrl) || media
+  const thumb = cloudUrl(record.thumbUrl) || media
   return {
     id: record.id,
     creator_id: actor?.id || record.creatorId || record.userId || null,
@@ -35,9 +44,9 @@ function toRow(record, actor) {
     type: record.type || 'short',
     title: record.title || 'Untitled',
     description: record.description || '',
-    source_url: record.sourceUrl || record.mediaUrl || '',
-    media_url: record.mediaUrl || record.sourceUrl || '',
-    thumb_url: record.thumbUrl || '',
+    source_url: source,
+    media_url: media,
+    thumb_url: thumb,
     origin: record.origin || null,
     hosted: !!record.hosted,
     stored_bytes: record.storedBytes || 0,
