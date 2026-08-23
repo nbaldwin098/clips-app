@@ -13,12 +13,22 @@ export default function HomeFeed() {
   const [offset, setOffset] = useState(0)
 
   const visible = items.length
-    ? Array.from({ length: PAGE }, (_, i) => items[(offset + i) % items.length])
+    ? Array.from({ length: Math.min(PAGE, items.length) }, (_, i) => items[(offset + i) % items.length])
     : []
 
   const shift = useCallback(
     (dir) => {
       if (!items.length) return
+      const current = items[offset]
+      if (current && user?.id) {
+        // Fast swipe past is an implicit skip signal
+        recordInteraction(user.id, {
+          contentId: current.id,
+          type: 'skip',
+          tags: current.tags || [],
+          creatorId: current.creatorId || current.userId,
+        })
+      }
       setOffset((o) => {
         const next = (o + dir + items.length) % items.length
         const shown = items[next]
@@ -27,12 +37,13 @@ export default function HomeFeed() {
             contentId: shown.id,
             type: 'impression',
             tags: shown.tags || [],
+            creatorId: shown.creatorId || shown.userId,
           })
         }
         return next
       })
     },
-    [items, user?.id]
+    [items, offset, user?.id]
   )
 
   return (
@@ -40,7 +51,7 @@ export default function HomeFeed() {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-lg font-semibold text-zinc-100">Recommended</h1>
-          <p className="text-xs text-zinc-500 mt-0.5">Algorithm feed · learns from watch, skip, share</p>
+          <p className="text-xs text-zinc-500 mt-0.5">For You · TikTok-style real-time learning (completion, loops, shares)</p>
         </div>
       </div>
 
