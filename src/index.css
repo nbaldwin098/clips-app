@@ -1,17 +1,25 @@
 @import "tailwindcss";
 
+/* Clips = streaming dark (Twitch/Kick/TikTok layered charcoal), brand accent coding blue */
 :root {
-  --color-bg: #0b0b0f;
-  --color-surface: #121218;
-  --color-surface-2: #1a1a22;
-  --color-border: #2a2a35;
-  --color-text: #f4f4f5;
-  --color-muted: #a1a1aa;
+  --color-bg: #0e0e10;
+  --color-bg-alt: #18181b;
+  --color-surface: #1f1f23;
+  --color-surface-2: #26262c;
+  --color-surface-hover: #2c2c35;
+  --color-border: #2f2f37;
+  --color-border-strong: #3f3f46;
+  --color-text: #efeff1;
+  --color-text-secondary: #adadb8;
+  --color-muted: #848494;
   --color-accent: #007acc;
-  --color-accent-hover: #0098ff;
-  --color-accent-dim: rgba(0, 122, 204, 0.15);
-  --color-success: #22c55e;
+  --color-accent-hover: #1a9fff;
+  --color-accent-dim: rgba(0, 122, 204, 0.18);
+  --color-live: #eb0400;
+  --color-success: #00f593;
   --color-danger: #ef4444;
+  --radius-card: 0.75rem;
+  --font-ui: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 html, body, #root {
@@ -21,23 +29,42 @@ html, body, #root {
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-ui);
   background-color: var(--color-bg);
   color: var(--color-text);
   -webkit-font-smoothing: antialiased;
 }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #007acc; }
-
-:focus-visible { outline: 2px solid #007acc; outline-offset: 2px; }
-
-.card-lift {
-  transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 122, 204, 0.08), transparent 55%),
+    radial-gradient(ellipse 40% 30% at 100% 0%, rgba(145, 71, 255, 0.04), transparent 50%);
 }
-.card-lift:hover {
-  border-color: #007acc;
-  box-shadow: 0 0 0 1px rgba(0, 122, 204, 0.25);
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #52525b; }
+
+.clips-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+.clips-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--color-live);
+  box-shadow: 0 0 0 3px rgba(235, 4, 0, 0.25);
 }
