@@ -102,7 +102,7 @@ export function normalizeItem(raw) {
 
 export function getHomeFeed(userId = null) {
   const imports = getImports().map((i) => ({ ...i, type: i.type || 'short' }))
-  let merged = withViewCounts(imports.map(normalizeItem))
+  let merged = withViewCounts(imports.map(normalizeItem)).filter((i) => i.type !== 'pic')
   merged = merged.map((i) => {
     const cid = i.creatorId || i.userId
     return { ...i, pinned: cid ? isPinned(cid, i.id) : false }
@@ -130,7 +130,7 @@ export function getShortsFeed(userId = null) {
 }
 
 export function getExplore(query = '') {
-  const all = withViewCounts(getImports().map(normalizeItem))
+  const all = withViewCounts(getImports().map(normalizeItem)).filter((i) => i.type !== 'pic')
   const q = query.trim().toLowerCase()
   if (!q) return sortNewestWithPins(all, null)
   return sortNewestWithPins(
@@ -183,11 +183,7 @@ export function importUserLink(url, actor = null) {
   return { ok: true, item: normalizeItem(record), error: null }
 }
 
-/**
- * Upload file → prefer Supabase public URL (our link).
- * Fallback: local blob URL + IndexedDB (this device only).
- */
-export async function publishLocalMedia(file, actor = null, { type = null } = {}) {
+export async function publishLocalMedia(file, actor = null, { type = null, title = null, description = null } = {}) {
   if (!file) return { ok: false, item: null, error: 'Choose a video file.' }
   try {
     const processed = await processVideoFile(file)
@@ -206,7 +202,6 @@ export async function publishLocalMedia(file, actor = null, { type = null } = {}
         hosted = true
         storageNote = 'Hosted link (Supabase Storage)'
       } else if (up.error) {
-        // still allow local fallback so user is not blocked
         console.warn('[Clips] Supabase upload failed, using local link:', up.error)
         storageNote = `Local only — ${up.error}`
       }
@@ -214,7 +209,6 @@ export async function publishLocalMedia(file, actor = null, { type = null } = {}
       storageNote = 'Local only — add Supabase Storage bucket "clips" for shared links'
     }
 
-    // Always keep a local copy for offline/this-device playback backup
     try {
       await storeMediaBlob(id, file)
     } catch {}
@@ -222,12 +216,20 @@ export async function publishLocalMedia(file, actor = null, { type = null } = {}
     const isVertical = processed.height > processed.width
     const isShortDuration = processed.durationSec && processed.durationSec <= 90
     const inferredType = type || (isVertical || isShortDuration ? 'short' : 'video')
+    const finalTitle =
+      (title && String(title).trim()) ||
+      String(file.name || 'Untitled').replace(/\.[^.]+$/, '') ||
+      'Untitled'
+    const finalDescription =
+      description != null && String(description).trim() !== ''
+        ? String(description).trim()
+        : storageNote
 
     const record = {
       id,
       type: inferredType,
-      title: String(file.name || 'Untitled').replace(/\.[^.]+$/, '') || 'Untitled',
-      description: storageNote,
+      title: finalTitle.slice(0, 120),
+      description: finalDescription.slice(0, 5000),
       sourceUrl: mediaUrl,
       mediaUrl,
       thumbUrl: processed.thumbUrl || '',
