@@ -3,8 +3,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react'
 export const ACCENTS = {
   purple: {
     id: 'purple',
-    name: 'Twitch Purple',
-    brand: 'Twitch Style',
+    name: 'Neon Purple',
+    brand: 'High contrast',
     primary: '#9146FF',
     primaryHover: '#772CE8',
     glow: 'rgba(145, 70, 255, 0.4)',
@@ -17,8 +17,8 @@ export const ACCENTS = {
   },
   green: {
     id: 'green',
-    name: 'Kick Neon Green',
-    brand: 'Kick Style',
+    name: 'Neon Green',
+    brand: 'High contrast',
     primary: '#53FC18',
     primaryHover: '#42ca13',
     glow: 'rgba(83, 252, 24, 0.4)',
@@ -69,9 +69,6 @@ export function ThemeProvider({ children }) {
     return 'purple'
   })
 
-  const [chatPosition, setChatPosition] = useState('right') // 'right' | 'bottom' | 'hidden'
-  const [theaterMode, setTheaterMode] = useState(false)
-
   const currentAccent = ACCENTS[accentKey] || ACCENTS.purple
 
   useEffect(() => {
@@ -92,21 +89,12 @@ export function ThemeProvider({ children }) {
     }
   }
 
-  const toggleAccent = () => {
-    setAccentKey((prev) => (prev === 'purple' ? 'green' : prev === 'green' ? 'cyan' : prev === 'cyan' ? 'pink' : 'purple'))
-  }
-
   return (
     <ThemeContext.Provider
       value={{
         accent: currentAccent,
         accentKey,
         setAccent,
-        toggleAccent,
-        chatPosition,
-        setChatPosition,
-        theaterMode,
-        setTheaterMode,
         allAccents: ACCENTS,
       }}
     >

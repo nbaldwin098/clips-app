@@ -10,10 +10,9 @@ import {
   ChevronDown,
   Sparkles,
   Radio,
-  Gamepad2,
+  Compass,
   Tv,
   Check,
-  Zap,
   SlidersHorizontal,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
@@ -84,21 +83,11 @@ export default function StreamingNavbar({
                 boxShadow: `0 0 12px ${accent.glow}`,
               }}
             >
-              <Zap className="h-4.5 w-4.5 fill-current" />
+              C
             </div>
             <div className="flex flex-col">
-              <span className="text-base font-extrabold tracking-tight text-white flex items-center gap-1">
-                PULSE
-                <span
-                  className="text-[10px] px-1.5 py-0.2 rounded font-bold uppercase tracking-wider"
-                  style={{
-                    backgroundColor: accent.badgeBg,
-                    color: accent.primary,
-                    border: `1px solid ${accent.badgeBorder}`,
-                  }}
-                >
-                  LIVE
-                </span>
+              <span className="text-base font-extrabold tracking-tight text-white">
+                Clips
               </span>
             </div>
           </button>
@@ -110,13 +99,25 @@ export default function StreamingNavbar({
               onClick={() => handleNav('home')}
               className={cn(
                 'px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5',
-                currentView === 'home' || currentView === 'live'
+                currentView === 'home'
+                  ? 'text-white bg-[#1f1f27]'
+                  : 'text-zinc-400 hover:text-zinc-100 hover:bg-[#18181f]'
+              )}
+            >
+              Recommended
+            </button>
+            <button
+              type="button"
+              onClick={() => handleNav('live')}
+              className={cn(
+                'px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5',
+                currentView === 'live'
                   ? 'text-white bg-[#1f1f27]'
                   : 'text-zinc-400 hover:text-zinc-100 hover:bg-[#18181f]'
               )}
             >
               <Radio className="h-4 w-4" style={{ color: accent.primary }} />
-              Browse Stream
+              Live
             </button>
             <button
               type="button"
@@ -128,8 +129,8 @@ export default function StreamingNavbar({
                   : 'text-zinc-400 hover:text-zinc-100 hover:bg-[#18181f]'
               )}
             >
-              <Gamepad2 className="h-4 w-4" />
-              Categories
+              <Compass className="h-4 w-4" />
+              Explore
             </button>
             <button
               type="button"
@@ -155,7 +156,8 @@ export default function StreamingNavbar({
               type="search"
               value={searchQuery || ''}
               onChange={(e) => onSearchChange?.(e.target.value)}
-              placeholder="Search streams, games, channels..."
+              onFocus={() => handleNav('explore')}
+              placeholder="Search your clips and creators..."
               className="w-full h-9 rounded-full border border-[#272730] bg-[#16161d] pl-9 pr-4 text-sm text-zinc-100 placeholder:text-zinc-500 transition-all focus:bg-[#1a1a23] focus:border-[#3b3b47] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent-primary)]"
             />
           </div>
@@ -170,7 +172,7 @@ export default function StreamingNavbar({
               type="button"
               onClick={() => setPaletteOpen((o) => !o)}
               className="flex h-9 items-center gap-1.5 px-2.5 rounded-lg border border-[#272730] bg-[#16161d] hover:bg-[#1f1f27] text-xs font-semibold text-zinc-200 transition-colors"
-              title="Change Accent Style (Twitch Purple vs Kick Neon Green)"
+              title="Change accent color"
             >
               <span
                 className="h-3 w-3 rounded-full shadow-sm"
@@ -220,7 +222,7 @@ export default function StreamingNavbar({
             )}
           </div>
 
-          {/* Go Live / Create Action */}
+          {/* Create / Upload Action */}
           <button
             type="button"
             onClick={onOpenUpload}
@@ -230,10 +232,10 @@ export default function StreamingNavbar({
               color: accentKey === 'green' ? '#051800' : '#ffffff',
               boxShadow: `0 0 12px ${accent.glow}`,
             }}
-            title="Go Live / Upload Stream"
+            title="Upload or import a clip"
           >
             <Plus className="h-4 w-4 stroke-[3]" />
-            <span className="hidden md:inline">Go Live</span>
+            <span className="hidden md:inline">Create</span>
           </button>
 
           {/* User Section */}

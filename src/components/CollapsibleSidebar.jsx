@@ -1,267 +1,281 @@
-import React, { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Radio,
-  ChevronLeft,
+  Home,
+  Clapperboard,
+  Compass,
+  History,
+  Clock,
+  ThumbsUp,
+  Users,
+  LayoutDashboard,
+  Wallet,
+  BarChart3,
+  ChevronDown,
   ChevronRight,
-  Sparkles,
-  Gamepad2,
-  Search,
+  ChevronLeft,
+  HelpCircle,
+  FileText,
+  Shield,
+  Scale,
+  BookOpen,
+  LifeBuoy,
+  ShieldCheck,
+  X,
+  Music,
 } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
+import { lsGet } from '../lib/storage'
+import { listIndexedUsers } from '../lib/moderation'
 import { cn } from '../lib/utils'
+
+const itemCls = (active) =>
+  cn(
+    'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-semibold transition-colors',
+    active ? 'text-white bg-[#1f1f28]' : 'text-zinc-400 hover:text-white hover:bg-[#181820]'
+  )
+
+function NavBtn({ active, onClick, icon: Icon, label, accent, collapsed }) {
+  return (
+    <button type="button" onClick={onClick} className={itemCls(active)} title={collapsed ? label : undefined}>
+      {Icon && <Icon className="h-4 w-4 shrink-0" style={active ? { color: accent.primary } : undefined} />}
+      {!collapsed && <span className="truncate">{label}</span>}
+    </button>
+  )
+}
+
+function formatElapsed(startedAt) {
+  if (!startedAt) return ''
+  const ms = Date.now() - new Date(startedAt).getTime()
+  if (ms < 0 || Number.isNaN(ms)) return ''
+  const mins = Math.floor(ms / 60000)
+  if (mins < 1) return 'new'
+  if (mins < 60) return `${mins}m`
+  return `${Math.floor(mins / 60)}h`
+}
 
 export default function CollapsibleSidebar({
   collapsed,
   onToggleCollapse,
-  currentChannelId,
-  onSelectChannel,
-  channels = [],
   currentView,
   onNavigate,
   mobileOpen,
   onMobileClose,
+  onSelectLiveStream,
+  focusedStreamUserId,
 }) {
+  const { isAuthenticated, user } = useAuth()
   const { accent } = useTheme()
-  const [filterQuery, setFilterQuery] = useState('')
+  const [moreOpen, setMoreOpen] = useState(false)
+  const [liveNow, setLiveNow] = useState(() => (lsGet('live_board', []) || []).filter((b) => b.isLive))
 
-  const liveChannels = channels.filter((c) => c.isLive)
-  const offlineChannels = channels.filter((c) => !c.isLive)
+  const refreshLiveBoard = useCallback(() => {
+    setLiveNow((lsGet('live_board', []) || []).filter((b) => b.isLive))
+  }, [])
 
-  const filteredLive = filterQuery.trim()
-    ? liveChannels.filter(
-        (c) =>
-          c.displayName.toLowerCase().includes(filterQuery.toLowerCase()) ||
-          c.game.toLowerCase().includes(filterQuery.toLowerCase())
-      )
-    : liveChannels
+  useEffect(() => {
+    refreshLiveBoard()
+    const interval = setInterval(refreshLiveBoard, 15000)
+    return () => clearInterval(interval)
+  }, [refreshLiveBoard, currentView])
 
-  const formatViewers = (n) => {
-    if (!n) return '0'
-    if (n >= 1000) return (n / 1000).toFixed(1) + 'K'
-    return String(n)
+  const isApprovedCreator = user?.creatorStatus === 'approved'
+
+  const recommendedCreators = (() => {
+    const users = listIndexedUsers().filter((u) => u.creatorStatus === 'approved' || u.isCreator)
+    const clips = lsGet('user_clips', [])
+    const count = {}
+    for (const c of clips) {
+      const id = c.creatorId || c.userId
+      if (id) count[id] = (count[id] || 0) + 1
+    }
+    return users
+      .map((u) => ({ ...u, n: count[u.id] || 0 }))
+      .sort((a, b) => b.n - a.n)
+      .slice(0, 5)
+  })()
+
+  const go = (id) => {
+    onNavigate(id)
+    if (typeof window !== 'undefined' && window.innerWidth < 768) onMobileClose?.()
   }
 
-  const renderChannelItem = (channel) => {
-    const isSelected = channel.id === currentChannelId && (currentView === 'home' || currentView === 'live')
-
-    return (
-      <button
-        key={channel.id}
-        type="button"
-        onClick={() => {
-          onSelectChannel(channel)
-          if (onMobileClose) onMobileClose()
-        }}
-        className={cn(
-          'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all group relative',
-          isSelected
-            ? 'bg-[#1f1f28] text-white border-l-2'
-            : 'text-zinc-400 hover:text-zinc-100 hover:bg-[#181820]'
-        )}
-        style={{
-          borderLeftColor: isSelected ? accent.primary : 'transparent',
-        }}
-        title={collapsed ? `${channel.displayName} - ${channel.game} (${formatViewers(channel.viewers)})` : undefined}
-      >
-        {/* Avatar + Live Dot */}
-        <div className="relative shrink-0">
-          <img
-            src={channel.avatar}
-            alt={channel.displayName}
-            className={cn(
-              'h-8 w-8 rounded-full object-cover border transition-transform group-hover:scale-105',
-              channel.isLive ? 'border-[#eb0400]' : 'border-zinc-700 opacity-60'
-            )}
-          />
-          {channel.isLive && (
-            <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-[#eb0400] ring-2 ring-[#0e0e12] animate-pulse" />
-          )}
-        </div>
-
-        {/* Channel Details (Full View) */}
-        {!collapsed && (
-          <div className="flex-1 min-w-0 flex items-center justify-between">
-            <div className="min-w-0 pr-1">
-              <div className="flex items-center gap-1">
-                <span className={cn('text-xs font-semibold truncate', isSelected ? 'text-white' : 'text-zinc-200 group-hover:text-white')}>
-                  {channel.displayName}
-                </span>
-              </div>
-              <span className="block text-[11px] text-zinc-500 truncate">
-                {channel.game}
-              </span>
-            </div>
-
-            {channel.isLive ? (
-              <div className="flex items-center gap-1 shrink-0">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#eb0400]" />
-                <span className="text-[11px] font-medium text-zinc-300">
-                  {formatViewers(channel.viewers)}
-                </span>
-              </div>
-            ) : (
-              <span className="text-[10px] text-zinc-600 uppercase font-bold shrink-0">
-                Offline
-              </span>
-            )}
-          </div>
-        )}
-      </button>
-    )
+  const selectLive = (entry) => {
+    onSelectLiveStream?.(entry)
+    if (typeof window !== 'undefined' && window.innerWidth < 768) onMobileClose?.()
   }
 
-  const sidebarContent = (
-    <div className="flex flex-col h-full bg-[#111116] border-r border-[#23232c] select-none">
-      
-      {/* Sidebar Header & Collapse Toggle */}
-      <div className="flex items-center justify-between p-2.5 border-b border-[#23232c]">
-        {!collapsed ? (
-          <div className="flex items-center justify-between w-full px-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
-              <Radio className="h-3.5 w-3.5 text-[#eb0400]" />
-              Live Channels
-            </span>
-            <button
-              type="button"
-              onClick={onToggleCollapse}
-              className="h-6 w-6 flex items-center justify-center rounded text-zinc-400 hover:text-white hover:bg-[#1e1e27] transition-colors"
-              title="Collapse Sidebar"
-              aria-label="Collapse Sidebar"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-          </div>
-        ) : (
-          <div className="w-full flex justify-center">
-            <button
-              type="button"
-              onClick={onToggleCollapse}
-              className="h-7 w-7 flex items-center justify-center rounded text-zinc-400 hover:text-white hover:bg-[#1e1e27] transition-colors"
-              title="Expand Sidebar"
-              aria-label="Expand Sidebar"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-        )}
+  const body = (
+    <div className="flex flex-col h-full text-zinc-300">
+      <div className="flex items-center justify-between p-2.5 border-b border-[#23232c] md:hidden">
+        <span className="text-xs font-semibold text-zinc-200">Menu</span>
+        <button type="button" onClick={onMobileClose} className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-[#1e1e27]" aria-label="Close menu">
+          <X className="h-4 w-4" />
+        </button>
       </div>
 
-      {/* Main Channel List Area */}
-      <div className="flex-1 overflow-y-auto px-1.5 py-2 space-y-4">
-        
-        {/* Filter Input if Expanded */}
-        {!collapsed && channels.length > 5 && (
-          <div className="px-1 mb-2">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500" />
-              <input
-                type="text"
-                value={filterQuery}
-                onChange={(e) => setFilterQuery(e.target.value)}
-                placeholder="Filter channels..."
-                className="w-full h-7 rounded-md border border-[#23232c] bg-[#16161f] pl-7 pr-2 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500"
-              />
-            </div>
-          </div>
-        )}
+      <div className="hidden md:flex items-center justify-end p-2 border-b border-[#23232c]">
+        <button
+          type="button"
+          onClick={onToggleCollapse}
+          className="h-7 w-7 flex items-center justify-center rounded text-zinc-400 hover:text-white hover:bg-[#1e1e27]"
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+        </button>
+      </div>
 
-        {/* Followed / Recommended Live Channels */}
-        <div className="space-y-0.5">
+      <div className="flex-1 overflow-y-auto py-2 px-1.5 space-y-4">
+        {/* Primary navigation */}
+        <nav className="space-y-0.5">
+          <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'home'} onClick={() => go('home')} icon={Home} label="Recommended" />
+          <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'clips' || currentView === 'shorts'} onClick={() => go('clips')} icon={Clapperboard} label="Clips" />
+          <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'live'} onClick={() => go('live')} icon={Radio} label="Live" />
+          <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'explore'} onClick={() => go('explore')} icon={Compass} label="Search" />
+          <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'sounds'} onClick={() => go('sounds')} icon={Music} label="Sounds" />
+        </nav>
+
+        {/* Real "Live Now" list — empty state when nobody is broadcasting */}
+        <div className="pt-3 border-t border-[#1e1e27] space-y-1">
           {!collapsed && (
-            <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-1">
-              Followed Channels ({filteredLive.length})
+            <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-1 flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#eb0400]" />
+              Live now ({liveNow.length})
             </p>
           )}
-          {filteredLive.map((ch) => renderChannelItem(ch))}
+          {liveNow.length === 0 ? (
+            !collapsed && <p className="px-2.5 text-[11px] text-zinc-600">No one is live right now.</p>
+          ) : (
+            liveNow.map((s) => (
+              <button
+                key={s.userId}
+                type="button"
+                onClick={() => selectLive(s)}
+                className={cn(
+                  'w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left transition-colors',
+                  focusedStreamUserId === s.userId ? 'bg-[#1f1f28]' : 'hover:bg-[#181820]'
+                )}
+                title={collapsed ? `${s.displayName} · LIVE` : undefined}
+              >
+                <span className="relative shrink-0">
+                  <span
+                    className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold border-2 border-[#eb0400]"
+                    style={{ backgroundColor: accent.badgeBg, color: accent.primary }}
+                  >
+                    {(s.displayName || s.handle || '?')[0]?.toUpperCase()}
+                  </span>
+                  <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-[#eb0400] ring-1 ring-[#111116] animate-pulse" />
+                </span>
+                {!collapsed && (
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-xs text-zinc-200 truncate">{s.displayName}</span>
+                    <span className="block text-[10px] text-zinc-500 truncate">{s.title}</span>
+                  </span>
+                )}
+                {!collapsed && <span className="text-[10px] text-zinc-500 shrink-0">{formatElapsed(s.startedAt)}</span>}
+              </button>
+            ))
+          )}
         </div>
 
-        {/* Offline Channels Section */}
-        {!collapsed && offlineChannels.length > 0 && (
-          <div className="space-y-0.5 pt-2 border-t border-[#1e1e27]">
-            <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-1">
-              Offline Channels
-            </p>
-            {offlineChannels.map((ch) => renderChannelItem(ch))}
+        {/* Library */}
+        {!collapsed && (
+          <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
+            <p className="px-2.5 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Library</p>
+            <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'history'} onClick={() => go('history')} icon={History} label="History" />
+            <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'watch-later'} onClick={() => go('watch-later')} icon={Clock} label="Watch later" />
+            <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'liked'} onClick={() => go('liked')} icon={ThumbsUp} label="Liked" />
           </div>
         )}
 
-        {/* Quick Platform Navigation */}
         {!collapsed && (
-          <div className="space-y-0.5 pt-3 border-t border-[#1e1e27]">
-            <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-1">
-              Navigation
-            </p>
-            <button
-              type="button"
-              onClick={() => onNavigate('home')}
-              className={cn(
-                'w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors',
-                currentView === 'home' ? 'text-white bg-[#1f1f28]' : 'text-zinc-400 hover:text-white hover:bg-[#181820]'
-              )}
-            >
-              <Radio className="h-4 w-4" style={{ color: accent.primary }} />
-              Live Home
+          <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
+            <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'subscriptions'} onClick={() => go('subscriptions')} icon={Users} label="Subscriptions" />
+          </div>
+        )}
+
+        {/* Real approved creators — empty state when none exist yet */}
+        <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
+          {!collapsed && <p className="px-2.5 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Creators</p>}
+          {isApprovedCreator && (
+            <>
+              <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'dashboard'} onClick={() => go('dashboard')} icon={LayoutDashboard} label="Studio" />
+              <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'wallet'} onClick={() => go('wallet')} icon={Wallet} label="Wallet" />
+              <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'analytics'} onClick={() => go('analytics')} icon={BarChart3} label="Analytics" />
+            </>
+          )}
+          <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'creators'} onClick={() => go('creators')} icon={Users} label="All creators" />
+          {!collapsed && recommendedCreators.length === 0 && (
+            <p className="px-2.5 text-[11px] text-zinc-600 pt-1">No approved creators yet.</p>
+          )}
+          {!collapsed && recommendedCreators.length > 0 && (
+            <>
+              <p className="px-2.5 pt-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Recommended</p>
+              {recommendedCreators.map((c) => (
+                <button key={c.id} type="button" onClick={() => go('creators')} className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-[#181820]">
+                  <span
+                    className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0 overflow-hidden"
+                    style={{ backgroundColor: accent.badgeBg, color: accent.primary }}
+                  >
+                    {c.avatarUrl ? <img src={c.avatarUrl} alt="" className="h-full w-full object-cover" /> : (c.displayName || '?')[0].toUpperCase()}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[11px] text-zinc-200 truncate">{c.displayName}</span>
+                    <span className="block text-[10px] text-zinc-500 truncate">@{c.handle}</span>
+                  </span>
+                </button>
+              ))}
+            </>
+          )}
+        </div>
+
+        {/* More */}
+        {!collapsed && (
+          <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
+            <button type="button" onClick={() => setMoreOpen((v) => !v)} className={itemCls(false)}>
+              {moreOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              <span>More</span>
             </button>
-            <button
-              type="button"
-              onClick={() => onNavigate('explore')}
-              className={cn(
-                'w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors',
-                currentView === 'explore' ? 'text-white bg-[#1f1f28]' : 'text-zinc-400 hover:text-white hover:bg-[#181820]'
-              )}
-            >
-              <Gamepad2 className="h-4 w-4 text-emerald-400" />
-              Categories & Games
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigate('clips')}
-              className={cn(
-                'w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors',
-                currentView === 'clips' ? 'text-white bg-[#1f1f28]' : 'text-zinc-400 hover:text-white hover:bg-[#181820]'
-              )}
-            >
-              <Sparkles className="h-4 w-4 text-amber-400" />
-              Popular Clips
-            </button>
+            {moreOpen && (
+              <div className="ml-2 space-y-0.5 border-l border-[#23232c] pl-2">
+                <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'support'} onClick={() => go('support')} icon={LifeBuoy} label="Support" />
+                {isAuthenticated && user?.creatorStatus !== 'approved' && (
+                  <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'creator-apply'} onClick={() => go('creator-apply')} icon={ShieldCheck} label="Apply to create" />
+                )}
+                <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'about'} onClick={() => go('about')} icon={BookOpen} label="About" />
+                <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'help'} onClick={() => go('help')} icon={HelpCircle} label="Help" />
+                <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'legal-tos'} onClick={() => go('legal-tos')} icon={FileText} label="Terms of Service" />
+                <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'legal-privacy'} onClick={() => go('legal-privacy')} icon={Shield} label="Privacy Policy" />
+                <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'legal-creator'} onClick={() => go('legal-creator')} icon={Scale} label="Creator Agreement" />
+                <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'legal-community'} onClick={() => go('legal-community')} icon={Users} label="Community Guidelines" />
+                {user?.isPlatformAdmin && (
+                  <NavBtn accent={accent} collapsed={collapsed} active={currentView === 'admin'} onClick={() => go('admin')} icon={ShieldCheck} label="Admin" />
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
-
-      {/* Sidebar Footer */}
-      {!collapsed && (
-        <div className="p-2.5 border-t border-[#23232c] text-[11px] text-zinc-500 flex items-center justify-between">
-          <span>Pulse v2.4</span>
-          <span className="flex items-center gap-1 text-[#eb0400]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#eb0400] animate-pulse" />
-            Ingest Active
-          </span>
-        </div>
-      )}
     </div>
   )
 
   return (
     <>
-      {/* Desktop Persistent Sidebar */}
       <aside
         className={cn(
-          'hidden md:block shrink-0 h-[calc(100vh-3.5rem)] sticky top-14 transition-all duration-200 z-30',
+          'hidden md:block shrink-0 h-[calc(100vh-3.5rem)] sticky top-14 bg-[#111116] border-r border-[#23232c] transition-all duration-200 z-30',
           collapsed ? 'w-14' : 'w-60'
         )}
       >
-        {sidebarContent}
+        {body}
       </aside>
 
-      {/* Mobile Drawer Overlay */}
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex">
-          <div
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
-            onClick={onMobileClose}
-          />
-          <div className="relative w-64 max-w-[80vw] h-full shadow-2xl z-10">
-            {sidebarContent}
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={onMobileClose} />
+          <div className="relative w-64 max-w-[80vw] h-full bg-[#111116] border-r border-[#23232c] shadow-2xl z-10">
+            {body}
           </div>
         </div>
       )}
