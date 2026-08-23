@@ -1,6 +1,14 @@
+/**
+ * Watch progress + library history for link-based clips.
+ * Local always works; when Supabase is configured, same account resumes on any device.
+ */
 import { lsGet, lsSet } from './storage'
-import { isWatchHistoryEnabled } from './algorithmEngine'
 import { getSupabase, isSupabaseConfigured } from './supabaseClient'
+
+const HIST_PREF_KEY = 'clips_watch_history_enabled'
+function isWatchHistoryEnabled() {
+  return lsGet(HIST_PREF_KEY, true) !== false
+}
 
 const PROGRESS_KEY = 'clips_watch_progress'
 const CONTINUE_KEY = 'clips_continue_watching'
@@ -45,7 +53,7 @@ export function recordWatchProgress(userId, {
   if (!row.completed && ratio > 0.05) list.unshift(contentId)
   cont[userId] = list.slice(0, 40)
   lsSet(CONTINUE_KEY, cont)
-  syncProgressToCloud(userId, row)
+  syncProgressToCloud(row)
   return row
 }
 
@@ -80,7 +88,7 @@ export function percentLabel(ratio) {
   return `${Math.max(0, Math.min(100, Math.round((Number(ratio) || 0) * 100)))}%`
 }
 
-async function syncProgressToCloud(userId, row) {
+async function syncProgressToCloud(row) {
   if (!isSupabaseConfigured()) return
   try {
     const sb = await getSupabase()
