@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import PageHeader from './PageHeader'
 import { useAuth } from '../context/AuthContext'
-import { getStreamSettings, saveStreamSettings } from '../lib/streamSettings'
+import { getStreamSettings, setStreamSettings } from '../lib/streamSettings'
 
 export default function StreamSettingsPage({ onNavigate }) {
   const { user } = useAuth()
   const initial = getStreamSettings(user?.id)
-  const [quality, setQuality] = useState(initial.quality || '720p30')
+  const [quality, setQuality] = useState(initial.defaultQuality || '720p30')
   const [latency, setLatency] = useState(initial.latency || 'low')
   const [saved, setSaved] = useState(false)
 
@@ -33,7 +33,7 @@ export default function StreamSettingsPage({ onNavigate }) {
           type="button"
           className="h-10 w-full rounded-lg bg-[#007ACC] text-white text-sm"
           onClick={() => {
-            saveStreamSettings(user?.id, { quality, latency })
+            setStreamSettings(user?.id, { defaultQuality: quality, latency })
             setSaved(true)
           }}
         >
