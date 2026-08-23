@@ -100,6 +100,27 @@ export function getImports() {
   return lsGet('imports', [])
 }
 
+/**
+ * Merge a batch of records (typically pulled from the cloud catalog) into
+ * the local import cache. Existing local fields are preserved unless the
+ * incoming record overrides them, so a record this device is still
+ * mid-publish on never gets clobbered by a stale/partial cloud copy.
+ */
+export function mergeImports(records) {
+  if (!records?.length) return getImports()
+  const local = getImports()
+  const byId = new Map(local.map((r) => [r.id, r]))
+  for (const rec of records) {
+    if (!rec?.id) continue
+    byId.set(rec.id, { ...byId.get(rec.id), ...rec })
+  }
+  const merged = [...byId.values()]
+    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+    .slice(0, 500)
+  lsSet('imports', merged)
+  return merged
+}
+
 export function toggleLiked(id) {
   const set = new Set(lsGet('liked', []))
   if (set.has(id)) set.delete(id)
