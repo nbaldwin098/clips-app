@@ -101,7 +101,9 @@ export function addPremiumSub(userId, creatorId) {
     list.push(userId)
     lsSet(key, list)
   }
-  toggleSubscribe(userId, creatorId, { notify: !isNew })
+  if (!isSubscribed(userId, creatorId)) {
+    toggleSubscribe(userId, creatorId, { notify: false })
+  }
   if (isNew) notifyPremium(creatorId, userId)
   return true
 }

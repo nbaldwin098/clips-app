@@ -153,6 +153,14 @@ export function listImportsNormalized() {
 export function importUserLink(url, actor = null) {
   const trimmed = String(url || '').trim()
   if (!trimmed) return { ok: false, item: null, error: 'Paste a public short URL.' }
+  try {
+    const parsed = new URL(trimmed)
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return { ok: false, item: null, error: 'Use an http or https link.' }
+    }
+  } catch {
+    return { ok: false, item: null, error: 'That is not a valid URL.' }
+  }
   const record = parseExternalShort(trimmed)
   if (!record) return { ok: false, item: null, error: 'Unable to import that URL.' }
   if (actor?.id) {

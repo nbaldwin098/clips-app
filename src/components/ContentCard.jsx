@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import { ThumbsUp, ThumbsDown, Eye } from 'lucide-react'
+import { ThumbsUp, ThumbsDown, Eye, MessageCircle, Flag } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import {
   getVotes, getUserVote, toggleVote, getViews, recordView, getSubscriberCount,
 } from '../lib/engagement'
 import { cn } from '../lib/utils'
+import CommentsPanel from './CommentsPanel'
+import ReportModal from './ReportModal'
 
 export default function ContentCard({ item, onOpen }) {
   const { user, isAuthenticated } = useAuth()
@@ -12,6 +14,8 @@ export default function ContentCard({ item, onOpen }) {
   const [myVote, setMyVote] = useState(() => getUserVote(user?.id, item?.id))
   const [views, setViews] = useState(() => getViews(item?.id))
   const [pulse, setPulse] = useState(null)
+  const [showComments, setShowComments] = useState(false)
+  const [reportOpen, setReportOpen] = useState(false)
 
   if (!item) return null
 
@@ -65,7 +69,32 @@ export default function ContentCard({ item, onOpen }) {
           <ThumbsDown className={cn('h-3.5 w-3.5', pulse === 'down' && 'animate-bounce')} />
           {votes.down}
         </button>
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setShowComments((v) => !v) }}
+          className="inline-flex items-center gap-1 h-8 px-2.5 rounded-full border border-zinc-800 text-zinc-400 text-xs hover:text-white"
+        >
+          <MessageCircle className="h-3.5 w-3.5" />
+          Comment
+        </button>
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setReportOpen(true) }}
+          className="inline-flex items-center gap-1 h-8 px-2.5 rounded-full border border-zinc-800 text-zinc-400 text-xs hover:text-white ml-auto"
+        >
+          <Flag className="h-3.5 w-3.5" />
+        </button>
       </div>
+      {showComments && (
+        <div className="px-3 pb-3">
+          <CommentsPanel contentId={item.id} creatorId={item.creatorId || item.userId} />
+        </div>
+      )}
+      <ReportModal
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+        target={{ id: item.id, contentId: item.id, userId: item.creatorId || item.userId, handle: item.handle }}
+      />
     </div>
   )
 }

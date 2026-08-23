@@ -214,7 +214,7 @@ function AppShell() {
       <StreamingNavbar
         onNavigate={navigate}
         onOpenAuth={openAuth}
-        onOpenUpload={openUpload}
+        onOpenUpload={openImport}
         onToggleSidebar={toggleSidebar}
         currentView={view}
         searchQuery={searchQuery}

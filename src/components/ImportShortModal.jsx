@@ -97,6 +97,7 @@ export default function ImportShortModal({ open, onClose }) {
           >
             Import link
           </button>
+          <p className="text-[11px] text-zinc-500 text-center">Paste a public YouTube Shorts, TikTok, or similar link.</p>
         </div>
       </div>
     </div>
