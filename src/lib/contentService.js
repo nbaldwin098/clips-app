@@ -161,7 +161,11 @@ export function getHomeFeed(userId = null) {
 }
 
 export function getShortsFeed(userId = null) {
-  return getHomeFeed(userId).filter((i) => i.type === 'short')
+  const shorts = getHomeFeed(null).filter((i) => i.type === 'short')
+  if (userId && typeof rankForUser === 'function') {
+    try { return rankForUser(shorts, userId) } catch { return shorts }
+  }
+  return shorts
 }
 
 function matchesQuery(i, q) {

@@ -14,7 +14,7 @@ export default function CreatorWallet({ onNavigate }) {
           <>
             <p className="text-sm text-zinc-200">Stripe publishable key is set ({stripeMode()}).</p>
             <p className="text-xs text-zinc-500">
-              Connect Express and a payouts endpoint are not live. This page will not invent a balance. {user?.email}
+              Payouts are not live. Stripe Connect Express is not connected. This page will not invent a balance or let anyone withdraw. Set your list price on Channel. {user?.email}
             </p>
           </>
         ) : (

@@ -1,0 +1,312 @@
+/**
+ * Cloud social graph. Local storage is always the UI source.
+ * When the signed-in user is a real Supabase account, we push/pull
+ * follows, votes, comments, playlists, and that user's notifications.
+ * Failures stay silent — never leak raw DB errors into the UI.
+ */
+import { lsGet, lsSet } from './storage'
+import { getSupabase, isSupabaseConfigured } from './supabaseClient'
+import { notifyContentChanged } from './contentSync'
+
+const LIKES = 'engagement_likes'
+const USER_VOTES = 'engagement_votes'
+const SUBS = 'engagement_subs'
+const NOTIF_KEY = 'clips_notifications'
+const COMMENTS = 'yt_comments'
+const PLAYLISTS = 'yt_playlists'
+
+let actor = null
+
+export function setGraphActor(user) {
+  actor = user?.provider === 'supabase' && isUuid(user.id) ? user : null
+}
+
+export function getGraphActor() {
+  return actor
+}
+
+function isUuid(id) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(id || ''))
+}
+
+function canSync() {
+  return !!(isSupabaseConfigured() && actor?.id)
+}
+
+function emit() {
+  notifyContentChanged()
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('clips-notifications'))
+  }
+}
+
+async function client() {
+  if (!canSync()) return null
+  try {
+    return await getSupabase()
+  } catch {
+    return null
+  }
+}
+
+export function pushFollow(followerId, creatorId, following) {
+  if (!canSync() || followerId !== actor.id) return
+  ;(async () => {
+    const sb = await client()
+    if (!sb) return
+    try {
+      if (following) {
+        await sb.from('follows').upsert({ follower_id: followerId, creator_id: creatorId })
+      } else {
+        await sb.from('follows').delete().eq('follower_id', followerId).eq('creator_id', creatorId)
+      }
+    } catch {}
+  })()
+}
+
+export function pushVote(userId, contentId, direction) {
+  if (!canSync() || userId !== actor.id) return
+  ;(async () => {
+    const sb = await client()
+    if (!sb) return
+    try {
+      if (!direction) {
+        await sb.from('votes').delete().eq('user_id', userId).eq('content_id', contentId)
+      } else {
+        await sb.from('votes').upsert({ user_id: userId, content_id: contentId, direction })
+      }
+    } catch {}
+  })()
+}
+
+export function pushComment(contentId, row) {
+  if (!canSync() || !row?.id || row.userId !== actor.id) return
+  ;(async () => {
+    const sb = await client()
+    if (!sb) return
+    try {
+      await sb.from('comments').upsert({
+        id: row.id,
+        content_id: contentId,
+        user_id: row.userId,
+        handle: row.handle || null,
+        body: row.text || '',
+        parent_id: row.parentId || null,
+        likes: row.likes || 0,
+        liked_by: row.likedBy || [],
+        pinned: !!row.pinned,
+        hearted: !!row.hearted,
+        held: !!row.held,
+        deleted: !!row.deleted,
+        created_at: row.createdAt || new Date().toISOString(),
+      })
+    } catch {}
+  })()
+}
+
+export function pushPlaylist(row) {
+  if (!canSync() || !row?.id || row.userId !== actor.id) return
+  ;(async () => {
+    const sb = await client()
+    if (!sb) return
+    try {
+      await sb.from('playlists').upsert({
+        id: row.id,
+        user_id: row.userId,
+        title: row.title || 'Playlist',
+        visibility: row.visibility || 'public',
+        items: row.items || [],
+        created_at: row.createdAt || new Date().toISOString(),
+      })
+    } catch {}
+  })()
+}
+
+export function pushNotification(row) {
+  if (!canSync() || !row?.id) return
+  ;(async () => {
+    const sb = await client()
+    if (!sb) return
+    try {
+      await sb.from('notifications').upsert({
+        id: row.id,
+        user_id: row.userId,
+        type: row.type,
+        title: row.title,
+        body: row.body || '',
+        actor_id: row.actorId || null,
+        content_id: row.contentId || null,
+        view: row.view || 'notifications',
+        meta: row.meta || {},
+        read: !!row.read,
+        at: row.at || new Date().toISOString(),
+      })
+    } catch {}
+  })()
+}
+
+function applyFollows(rows) {
+  const map = {}
+  for (const r of rows || []) {
+    if (!r.creator_id || !r.follower_id) continue
+    map[r.creator_id] = map[r.creator_id] || []
+    if (!map[r.creator_id].includes(r.follower_id)) map[r.creator_id].push(r.follower_id)
+  }
+  const local = lsGet(SUBS, {}) || {}
+  for (const [creatorId, list] of Object.entries(local)) {
+    for (const fid of list || []) {
+      if (isUuid(fid)) continue
+      map[creatorId] = map[creatorId] || []
+      if (!map[creatorId].includes(fid)) map[creatorId].push(fid)
+    }
+  }
+  lsSet(SUBS, map)
+}
+
+function applyVotes(rows) {
+  const byUser = lsGet(USER_VOTES, {}) || {}
+  for (const r of rows || []) {
+    if (!r.user_id || !r.content_id) continue
+    byUser[r.user_id] = byUser[r.user_id] || {}
+    byUser[r.user_id][r.content_id] = r.direction
+  }
+  const tally = {}
+  for (const userVotes of Object.values(byUser)) {
+    for (const [contentId, dir] of Object.entries(userVotes || {})) {
+      tally[contentId] = tally[contentId] || { up: 0, down: 0 }
+      if (dir === 'up') tally[contentId].up += 1
+      if (dir === 'down') tally[contentId].down += 1
+    }
+  }
+  lsSet(USER_VOTES, byUser)
+  lsSet(LIKES, tally)
+}
+
+function applyComments(rows) {
+  const all = lsGet(COMMENTS, {}) || {}
+  for (const r of rows || []) {
+    if (!r.id || !r.content_id) continue
+    const list = all[r.content_id] || []
+    const next = {
+      id: r.id,
+      userId: r.user_id,
+      handle: r.handle,
+      text: r.body || '',
+      parentId: r.parent_id || null,
+      likes: r.likes || 0,
+      likedBy: Array.isArray(r.liked_by) ? r.liked_by : [],
+      pinned: !!r.pinned,
+      hearted: !!r.hearted,
+      held: !!r.held,
+      deleted: !!r.deleted,
+      createdAt: r.created_at,
+    }
+    const i = list.findIndex((c) => c.id === r.id)
+    if (i >= 0) list[i] = { ...list[i], ...next }
+    else list.push(next)
+    all[r.content_id] = list
+  }
+  lsSet(COMMENTS, all)
+}
+
+function applyPlaylists(rows) {
+  const list = lsGet(PLAYLISTS, []) || []
+  for (const r of rows || []) {
+    if (!r.id) continue
+    const next = {
+      id: r.id,
+      userId: r.user_id,
+      title: r.title || 'Playlist',
+      visibility: r.visibility || 'public',
+      items: Array.isArray(r.items) ? r.items : [],
+      createdAt: r.created_at,
+    }
+    const i = list.findIndex((p) => p.id === r.id)
+    if (i >= 0) list[i] = { ...list[i], ...next }
+    else list.unshift(next)
+  }
+  lsSet(PLAYLISTS, list)
+}
+
+function applyNotifications(rows) {
+  if (!actor?.id) return
+  const all = lsGet(NOTIF_KEY, {}) || {}
+  const mine = Array.isArray(all[actor.id]) ? all[actor.id] : []
+  for (const r of rows || []) {
+    const next = {
+      id: r.id,
+      userId: r.user_id,
+      type: r.type,
+      title: r.title,
+      body: r.body || '',
+      actorId: r.actor_id,
+      contentId: r.content_id,
+      view: r.view || 'notifications',
+      meta: r.meta || {},
+      read: !!r.read,
+      at: r.at,
+    }
+    const i = mine.findIndex((n) => n.id === r.id)
+    if (i >= 0) mine[i] = { ...mine[i], ...next, read: mine[i].read || next.read }
+    else mine.push(next)
+  }
+  mine.sort((a, b) => new Date(b.at) - new Date(a.at))
+  all[actor.id] = mine.slice(0, 100)
+  lsSet(NOTIF_KEY, all)
+}
+
+async function pushMine() {
+  if (!canSync()) return
+  const sb = await client()
+  if (!sb) return
+  const uid = actor.id
+  const subs = lsGet(SUBS, {}) || {}
+  for (const [creatorId, list] of Object.entries(subs)) {
+    if (Array.isArray(list) && list.includes(uid)) {
+      try { await sb.from('follows').upsert({ follower_id: uid, creator_id: creatorId }) } catch {}
+    }
+  }
+  const mineVotes = (lsGet(USER_VOTES, {}) || {})[uid] || {}
+  for (const [contentId, direction] of Object.entries(mineVotes)) {
+    if (direction === 'up' || direction === 'down') {
+      try { await sb.from('votes').upsert({ user_id: uid, content_id: contentId, direction }) } catch {}
+    }
+  }
+  const comments = lsGet(COMMENTS, {}) || {}
+  for (const [contentId, list] of Object.entries(comments)) {
+    for (const row of list || []) {
+      if (row?.userId === uid) pushComment(contentId, row)
+    }
+  }
+  for (const row of lsGet(PLAYLISTS, []) || []) {
+    if (row?.userId === uid) pushPlaylist(row)
+  }
+  for (const row of (lsGet(NOTIF_KEY, {}) || {})[uid] || []) {
+    pushNotification(row)
+  }
+}
+
+export async function syncGraphFromCloud() {
+  if (!canSync()) return false
+  const sb = await client()
+  if (!sb) return false
+  try {
+    const [follows, votes, comments, playlists, notifs] = await Promise.all([
+      sb.from('follows').select('*').limit(2000),
+      sb.from('votes').select('*').limit(4000),
+      sb.from('comments').select('*').limit(4000),
+      sb.from('playlists').select('*').limit(400),
+      sb.from('notifications').select('*').eq('user_id', actor.id).order('at', { ascending: false }).limit(100),
+    ])
+    if (!follows.error && follows.data) applyFollows(follows.data)
+    if (!votes.error && votes.data) applyVotes(votes.data)
+    if (!comments.error && comments.data) applyComments(comments.data)
+    if (!playlists.error && playlists.data) applyPlaylists(playlists.data)
+    if (!notifs.error && notifs.data) applyNotifications(notifs.data)
+    emit()
+    pushMine()
+    return true
+  } catch {
+    return false
+  }
+}

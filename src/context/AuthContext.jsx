@@ -3,6 +3,7 @@ import { lsGet, lsSet, lsRemove } from '../lib/storage'
 import { indexUser, validateHandle, normalizeHandle, isPlatformOwner } from '../lib/moderation'
 import { getSupabase, isSupabaseConfigured } from '../lib/supabaseClient'
 import { pullWatchProgressFromCloud } from '../lib/watchProgress'
+import { setGraphActor, syncGraphFromCloud } from '../lib/graphSync'
 import { ensureOwnProfile, privilegesFromProfile } from '../lib/profiles'
 import { hashSecret, verifySecret } from '../lib/secrets'
 
@@ -125,7 +126,10 @@ export function AuthProvider({ children }) {
           setUser(mapped)
           try { indexUser(mapped) } catch {}
           try { await pullWatchProgressFromCloud(mapped.id) } catch {}
+          setGraphActor(mapped)
+          try { await syncGraphFromCloud() } catch {}
         } else {
+          setGraphActor(null)
           setUser((prev) => (prev?.provider === 'supabase' ? null : sanitizeUser(prev)))
         }
         const { data } = sb.auth.onAuthStateChange(async (_event, sess) => {
@@ -134,7 +138,10 @@ export function AuthProvider({ children }) {
             setUser(mapped)
             try { indexUser(mapped) } catch {}
             try { await pullWatchProgressFromCloud(mapped.id) } catch {}
+            setGraphActor(mapped)
+            try { await syncGraphFromCloud() } catch {}
           } else {
+            setGraphActor(null)
             setUser((prev) => (prev?.provider === 'supabase' ? null : prev))
           }
         })
@@ -174,6 +181,8 @@ export function AuthProvider({ children }) {
             setUser(mapped)
             setMode('viewer')
             try { indexUser(mapped) } catch {}
+            setGraphActor(mapped)
+            try { await syncGraphFromCloud() } catch {}
             return mapped
           }
           return { pendingEmailConfirm: true, email }
@@ -188,6 +197,8 @@ export function AuthProvider({ children }) {
         setMode('viewer')
         try { indexUser(mapped) } catch {}
         try { await pullWatchProgressFromCloud(mapped.id) } catch {}
+        setGraphActor(mapped)
+        try { await syncGraphFromCloud() } catch {}
         return mapped
       }
       throw new Error('Sign-in is temporarily unavailable. Try again.')
@@ -244,10 +255,26 @@ export function AuthProvider({ children }) {
         if (sb) await sb.auth.signOut()
       }
     } catch {}
+    setGraphActor(null)
     setUser(null)
     setMode('viewer')
     lsRemove('user')
     lsSet('mode', 'viewer')
+  }, [])
+
+  const loginWithGoogle = useCallback(async () => {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Google sign-in needs Supabase on this deploy.')
+    }
+    const sb = await getSupabase()
+    if (!sb) throw new Error('Could not reach auth.')
+    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined
+    const { error } = await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo },
+    })
+    if (error) throw new Error(error.message)
+    return { redirected: true }
   }, [])
 
   const updateProfile = useCallback((partial) => {
@@ -287,6 +314,7 @@ export function AuthProvider({ children }) {
     authReady,
     backend: isSupabaseConfigured() ? 'supabase' : 'local',
     login,
+    loginWithGoogle,
     logout,
     updateProfile,
     enableCreatorMode,

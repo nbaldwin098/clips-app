@@ -1,5 +1,5 @@
 import { useMemo, useEffect, useState, useRef } from 'react'
-import { ChevronLeft, Heart, MessageCircle, Search, Share2, Volume2, VolumeX, X } from 'lucide-react'
+import { ChevronLeft, Clapperboard, Heart, MessageCircle, Search, Share2, Volume2, VolumeX, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getShortsFeed, getFollowingFeed } from '../lib/contentService'
 import { getMediaBlobUrl } from '../lib/videoStorage'
@@ -35,7 +35,7 @@ function RailBtn({ onClick, label, children, active = false, circled = true }) {
 }
 
 function ClipSlide({
-  item, active, muted, onToggleMute, user, onOpenAuth, onOpenProfile, onOpenSound, onBack, onSearch,
+  item, active, muted, onToggleMute, user, onOpenAuth, onOpenProfile, onOpenSound, onStitch, onBack, onSearch,
 }) {
   const vidRef = useRef(null)
   const [src, setSrc] = useState(() => resolvePlayUrl(item))
@@ -168,6 +168,13 @@ function ClipSlide({
       </RailBtn>
       <RailBtn circled={circled} onClick={share} label="Share">
         <Share2 className="h-7 w-7" />
+      </RailBtn>
+      <RailBtn
+        circled={circled}
+        onClick={(e) => { e?.stopPropagation?.(); if (!user?.id) { onOpenAuth?.(); return } onStitch?.(item) }}
+        label="Stitch"
+      >
+        <Clapperboard className="h-6 w-6" />
       </RailBtn>
       <button
         type="button"
@@ -331,7 +338,7 @@ function ClipSlide({
 }
 
 export default function ShortsFeed({
-  onOpenAuth, onOpenProfile, onOpenSound, onNavigate, focusId,
+  onOpenAuth, onOpenProfile, onOpenSound, onStitch, onNavigate, focusId,
 }) {
   const { user } = useAuth()
   const syncTick = useContentSyncTick()
@@ -342,6 +349,8 @@ export default function ShortsFeed({
   const items = tab === 'following' ? following : recommended
   const [activeIdx, setActiveIdx] = useState(0)
   const [muted, setMuted] = useState(true)
+  const shownAt = useRef(Date.now())
+  const prevIdx = useRef(0)
   const inPlayer = Boolean(focusId)
   const startIdx = useMemo(() => {
     if (!focusId || !items.length) return 0
@@ -387,7 +396,21 @@ export default function ShortsFeed({
       key={`clips-player-${tab}`}
       count={items.length}
       activeIndex={activeIdx}
-      onActiveIndex={setActiveIdx}
+      onActiveIndex={(i) => {
+        const prev = items[prevIdx.current]
+        const waited = Date.now() - shownAt.current
+        if (prev && user?.id && i !== prevIdx.current) {
+          recordInteraction(user.id, {
+            contentId: prev.id,
+            type: waited < 2000 ? 'early_skip' : 'skip',
+            tags: prev.tags || [],
+            creatorId: prev.creatorId || prev.userId,
+          })
+        }
+        shownAt.current = Date.now()
+        prevIdx.current = i
+        setActiveIdx(i)
+      }}
       initialIndex={startIdx}
       bleedMobile
       empty={(
@@ -404,6 +427,7 @@ export default function ShortsFeed({
             onOpenAuth={onOpenAuth}
             onOpenProfile={onOpenProfile}
             onOpenSound={onOpenSound}
+            onStitch={onStitch}
             onBack={backToGrid}
             onSearch={() => onNavigate?.('explore')}
           />

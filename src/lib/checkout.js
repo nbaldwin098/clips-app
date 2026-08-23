@@ -33,7 +33,7 @@ export async function startPremiumCheckout({ already = false, email = '', refere
       status: loaded.ok ? 'key_ready' : 'key_bad',
       url: '',
       message: loaded.ok
-        ? `Stripe ${stripeMode()} key is live on this deploy. Add a $5/mo Payment Link as VITE_STRIPE_PAYMENT_LINK on Render, set the success URL to https://calabi.us/#/checkout?paid=1, then redeploy. Cards charge on Stripe’s page.`
+        ? `Stripe ${stripeMode()} key is live on this deploy. Add a Payment Link as VITE_STRIPE_PAYMENT_LINK on Render (match the creator’s list price), set the success URL to https://calabi.us/#/checkout?paid=1, then redeploy. Cards charge on Stripe’s page. Payouts are not live.`
         : 'The publishable key on this deploy did not load Stripe.js. Check it is pk_live_ or pk_test_ and named VITE_STRIPE_PUBLISHABLE_KEY.',
     }
   }

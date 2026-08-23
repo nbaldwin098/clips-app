@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { X, Heart } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { PREMIUM_PRICE, isPremiumSub } from '../lib/engagement'
+import { getMembershipPrice, isPremiumSub } from '../lib/engagement'
 import { getStripePaymentLink } from '../lib/stripeConfig'
 import { startPremiumCheckout } from '../lib/checkout'
 import { openSafeUrl } from '../lib/safeUrl'
@@ -11,6 +11,7 @@ export default function CheckoutModal({ open, onClose, creatorId, creatorHandle 
   const [status, setStatus] = useState('')
   const [busy, setBusy] = useState(false)
   const target = creatorId || user?.id
+  const price = getMembershipPrice(target)
   const already = user && target ? isPremiumSub(user.id, target) : false
   const hasLink = !!getStripePaymentLink()
 
@@ -43,21 +44,21 @@ export default function CheckoutModal({ open, onClose, creatorId, creatorHandle 
           <h2 className="text-sm font-semibold">Premium membership</h2>
         </div>
         <p className="mt-2 text-xs text-zinc-500">
-          {creatorHandle ? `Support @${creatorHandle}` : 'Support this channel'} · ${PREMIUM_PRICE}/month
+          {creatorHandle ? `Support @${creatorHandle}` : 'Support this channel'} · ${price}/month
         </p>
         <p className="mt-4 text-3xl font-semibold text-white">
-          ${PREMIUM_PRICE}<span className="text-sm text-zinc-500 font-normal">/mo</span>
+          ${price}<span className="text-sm text-zinc-500 font-normal">/mo</span>
         </p>
         <ul className="mt-3 text-xs text-zinc-400 space-y-1 list-disc list-inside">
-          <li>Badge in chat</li>
-          <li>Subscriber emotes</li>
-          <li>{hasLink ? 'Pays on Stripe Checkout' : 'Uses the Render publishable key — add a Payment Link to charge'}</li>
+          <li>Badge in chat when chat exists</li>
+          <li>{hasLink ? 'Pays on Stripe Checkout' : 'Needs a Payment Link on Render to charge'}</li>
+          <li>Payouts are not live</li>
         </ul>
         {already ? (
           <p className="mt-4 text-sm text-white">You already have premium on this channel.</p>
         ) : (
           <button type="button" disabled={busy || !isAuthenticated} onClick={pay} className="mt-5 w-full h-11 rounded-xl bg-white text-black font-bold text-sm disabled:opacity-40 hover:bg-zinc-200 transition-all">
-            {!isAuthenticated ? 'Sign in to subscribe' : busy ? 'Working…' : hasLink ? `Pay $${PREMIUM_PRICE}/mo on Stripe` : `Subscribe $${PREMIUM_PRICE}/mo`}
+            {!isAuthenticated ? 'Sign in to subscribe' : busy ? 'Working…' : hasLink ? `Pay $${price}/mo on Stripe` : `Subscribe $${price}/mo`}
           </button>
         )}
         {status && <p className="mt-3 text-[11px] text-zinc-500">{status}</p>}

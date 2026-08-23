@@ -69,6 +69,35 @@ assert(pageSrc.includes('startPremiumCheckout'), 'checkout page uses the gate')
 assert(modalSrc.includes('startPremiumCheckout'), 'checkout modal uses the gate')
 assert(pageSrc.includes('VITE_STRIPE_PAYMENT_LINK') || pageSrc.includes('Payment Link'), 'checkout mentions payment link')
 
+const engagementSrc = readFileSync(new URL('../src/lib/engagement.js', import.meta.url), 'utf8')
+assert(engagementSrc.includes('export const PREMIUM_PRICE = 5'), 'default list price')
+assert(engagementSrc.includes('export function getMembershipPrice'), 'creator list price reader')
+assert(engagementSrc.includes('export function setMembershipPrice'), 'creator can set list price')
+assert(engagementSrc.includes('n >= 1 && n <= 50'), 'list price stays in range')
+assert(engagementSrc.includes('pushFollow'), 'follows push to cloud')
+assert(engagementSrc.includes('pushVote'), 'votes push to cloud')
+
+const aboutSrc = readFileSync(new URL('../src/components/AboutPage.jsx', import.meta.url), 'utf8')
+assert(aboutSrc.includes('Payouts are not live'), 'about does not promise payouts')
+assert(aboutSrc.includes('Live video is not on yet'), 'about labels live honestly')
+
+const authSrc = readFileSync(new URL('../src/components/AuthModal.jsx', import.meta.url), 'utf8')
+assert(authSrc.includes('Continue with Google'), 'google sign-in button')
+assert(authSrc.includes('loginWithGoogle'), 'google handler wired')
+
+const shortsSrc = readFileSync(new URL('../src/components/ShortsFeed.jsx', import.meta.url), 'utf8')
+assert(shortsSrc.includes('onStitch'), 'stitch on clip player')
+assert(shortsSrc.includes('early_skip'), 'reel skip trains For You')
+
+const liveSrc = readFileSync(new URL('../src/components/LiveView.jsx', import.meta.url), 'utf8')
+assert(liveSrc.includes('Live lobby'), 'live page is a lobby')
+assert(!liveSrc.includes('live-badge-glow'), 'no fake glowing LIVE badge')
+
+const mig = readFileSync(new URL('../supabase/migrations/0006_social_graph.sql', import.meta.url), 'utf8')
+assert(mig.includes('create table if not exists public.follows'), 'social graph migration')
+const graphSrc = readFileSync(new URL('../src/lib/graphSync.js', import.meta.url), 'utf8')
+assert(graphSrc.includes('export async function syncGraphFromCloud'), 'cloud graph pull')
+
 const refs = getReferenceShorts()
 assert(refs.length >= 10, 'reference shorts catalog')
 assert(refs.every((s) => s.reference === true && s.type === 'short' && /^https:/.test(s.mediaUrl)), 'reference shorts are https shorts')

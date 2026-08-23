@@ -1,4 +1,5 @@
 import { lsGet, lsSet } from './storage'
+import { pushNotification } from './graphSync'
 
 const KEY = 'clips_notifications'
 const PREFS_KEY = 'yt_notif_prefs'
@@ -161,6 +162,7 @@ export function createNotification({
   }
   all[userId] = [row, ...list].slice(0, MAX_PER_USER)
   writeAll(all)
+  pushNotification(row)
   return row
 }
 
@@ -193,7 +195,11 @@ export function markNotificationRead(userId, id) {
       changed = true
     }
   }
-  if (changed) writeAll(all)
+  if (changed) {
+    writeAll(all)
+    const row = (all[userId] || []).find((n) => n.id === id)
+    if (row) pushNotification(row)
+  }
 }
 
 export function markAllNotificationsRead(userId) {
@@ -207,7 +213,10 @@ export function markAllNotificationsRead(userId) {
       changed = true
     }
   }
-  if (changed) writeAll(all)
+  if (changed) {
+    writeAll(all)
+    for (const row of all[userId] || []) pushNotification(row)
+  }
 }
 
 export function subscribeNotifications(onChange) {

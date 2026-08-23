@@ -52,6 +52,7 @@ import {
 import { startSession } from './lib/algorithmEngine'
 import { lsGet, lsSet } from './lib/storage'
 import { syncContentFromCloud } from './lib/contentSync'
+import { setGraphActor, syncGraphFromCloud } from './lib/graphSync'
 import { installRuntimeGuards } from './lib/selfHeal'
 import { isAdminSession } from './lib/moderation'
 import { getById, flushScheduledPublishes } from './lib/contentService'
@@ -94,7 +95,9 @@ function AppShell() {
 
   useEffect(() => {
     if (isAuthenticated && user?.id) startSession(user.id)
-  }, [isAuthenticated, user?.id])
+    setGraphActor(user?.provider === 'supabase' ? user : null)
+    if (user?.provider === 'supabase') syncGraphFromCloud().catch(() => {})
+  }, [isAuthenticated, user?.id, user?.provider])
 
   useEffect(() => installRuntimeGuards(), [])
 
@@ -102,14 +105,17 @@ function AppShell() {
     syncContentFromCloud()
     flushScheduledPublishes()
     syncPromotionsFromCloud()
+    syncGraphFromCloud().catch(() => {})
     const interval = setInterval(() => {
       syncContentFromCloud()
       flushScheduledPublishes()
       syncPromotionsFromCloud()
+      syncGraphFromCloud().catch(() => {})
     }, 45_000)
     const onFocus = () => {
       syncContentFromCloud()
       flushScheduledPublishes()
+      syncGraphFromCloud().catch(() => {})
     }
     window.addEventListener('focus', onFocus)
     return () => {

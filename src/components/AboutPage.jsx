@@ -6,8 +6,8 @@ export default function AboutPage() {
         <p className="mt-2 text-sm text-[#adadb8] leading-relaxed">
           On big platforms, people come for the app — not for you. Clips is built so{' '}
           <strong className="font-semibold text-white">the audience comes to the creator</strong>
-          . Follow for free. Subscribe only if they want extras. You keep 100% of the membership price
-          you set.
+          . Follow is free. Paid membership is optional and only after Stripe charges. We do not invent
+          viewers, balances, or a live picture.
         </p>
       </div>
 
@@ -15,32 +15,36 @@ export default function AboutPage() {
         <h2 className="text-sm font-semibold text-white">Why this is different from YouTube</h2>
         <ul className="list-disc pl-5 space-y-2">
           <li>
-            <strong className="text-white">YouTube builds customers for YouTube.</strong> Search,
-            homepage, and recommendations keep people inside their product. Your channel is a stop
-            along the way.
+            <strong className="text-white">YouTube builds customers for YouTube.</strong> Search and
+            Home keep people inside their product. Your channel is a stop along the way.
           </li>
           <li>
-            <strong className="text-white">Clips helps you build fans for yourself.</strong> Your
-            share link, your membership, your imports from elsewhere — the relationship points at you,
-            not at a homepage feed owned by someone else.
+            <strong className="text-white">Clips points the relationship at you.</strong> Your share
+            link, your membership price, your uploads. Formats stay clean: 16:9 videos, 9:16 clips,
+            quiet pics. No stories or DMs.
           </li>
           <li>
-            <strong className="text-white">Follow is free. Subscribe is optional.</strong> Fans who
-            just want to keep up pay nothing. Anything extra is a clear paid choice — and the list price
-            goes to you.
+            <strong className="text-white">Follow is free. Pay is a real charge.</strong> Nothing
+            unlocks premium from a bare Subscribe click.
           </li>
         </ul>
       </section>
 
       <section className="rounded-2xl border border-[#26262c] bg-[#18181b] p-5 space-y-3 text-sm text-[#adadb8]">
-        <h2 className="text-sm font-semibold text-white">How money works</h2>
+        <h2 className="text-sm font-semibold text-white">How money works today</h2>
         <p>
-          You set the monthly price (e.g. $4.99). You receive that full amount. The buyer pays a small
-          processing fee on top. We don’t take a cut of your list price.
+          Creators set a list price on Channel (default $5/mo). Checkout shows that price. A Stripe
+          Payment Link is what actually charges a card. Premium is marked only after Stripe sends the
+          buyer back.
         </p>
         <p>
-          Discovery ranks by real watch signals — completion, rewatches, shares — not by how many
-          followers you already have.
+          Payouts are not live. Wallet will not invent a balance or let anyone withdraw until Stripe
+          Connect is connected. When that ships, the creator keeps the list price and the buyer pays
+          the processing fee on top — not before.
+        </p>
+        <p>
+          Discovery ranks by real watch signals — completion, rewatches, shares, skips — not follower
+          count.
         </p>
       </section>
 
@@ -50,14 +54,15 @@ export default function AboutPage() {
           <li>No fabricated creators or fake view counts</li>
           <li>Import by link so you’re not re-uploading everything</li>
           <li>DMCA notice-and-takedown (no proactive Content ID)</li>
-          <li>Watch without an account; sign in to post, comment, upload, or go live</li>
+          <li>Watch without an account; sign in to post, comment, upload, or list a live lobby</li>
+          <li>Live video is not on yet — the Live page is a lobby, not a fake stream</li>
         </ul>
       </section>
 
       <section className="rounded-2xl border border-[#26262c] bg-[#18181b] p-5 text-sm text-[#adadb8]">
         <h2 className="text-sm font-semibold text-white mb-2">Contact</h2>
-        <p>DMCA: copyright@platform.internal</p>
-        <p className="mt-1">Counter-notice: dmca-counter@platform.internal</p>
+        <p>DMCA: copyright@calabi.us</p>
+        <p className="mt-1">Support: use Help → Support on the site</p>
       </section>
     </div>
   )
