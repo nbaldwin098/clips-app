@@ -23,6 +23,7 @@ import {
   ShieldCheck,
   X,
   Music,
+  Image as ImageIcon,
   Bell,
   Activity,
   Megaphone,
@@ -128,10 +129,10 @@ export default function CollapsibleSidebar({
       </div>
 
       <div className="flex-1 overflow-y-auto py-2 px-1.5 space-y-4">
-        {/* Primary navigation */}
         <nav className="space-y-0.5">
           <NavBtn collapsed={collapsed} active={currentView === 'home'} onClick={() => go('home')} icon={Home} label="Recommended" />
           <NavBtn collapsed={collapsed} active={currentView === 'clips' || currentView === 'shorts'} onClick={() => go('clips')} icon={Clapperboard} label="Clips" />
+          <NavBtn collapsed={collapsed} active={currentView === 'pics'} onClick={() => go('pics')} icon={ImageIcon} label="Pics" />
           <NavBtn collapsed={collapsed} active={currentView === 'live'} onClick={() => go('live')} icon={Radio} label="Live" />
           <NavBtn collapsed={collapsed} active={currentView === 'explore'} onClick={() => go('explore')} icon={Compass} label="Search" />
           <NavBtn collapsed={collapsed} active={currentView === 'sounds'} onClick={() => go('sounds')} icon={Music} label="Sounds" />
@@ -140,7 +141,6 @@ export default function CollapsibleSidebar({
           )}
         </nav>
 
-        {/* Real "Live Now" list — empty state when nobody is broadcasting */}
         <div className="pt-3 border-t border-[#1e1e27] space-y-1">
           {!collapsed && (
             <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-1 flex items-center gap-1.5">
@@ -180,7 +180,6 @@ export default function CollapsibleSidebar({
           )}
         </div>
 
-        {/* Library */}
         {!collapsed && (
           <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
             <p className="px-2.5 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Library</p>
@@ -196,7 +195,6 @@ export default function CollapsibleSidebar({
           </div>
         )}
 
-        {/* Real approved creators — empty state when none exist yet */}
         <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
           {!collapsed && <p className="px-2.5 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Creators</p>}
           {isApprovedCreator && (
@@ -228,7 +226,6 @@ export default function CollapsibleSidebar({
           )}
         </div>
 
-        {/* More */}
         {!collapsed && (
           <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
             <button type="button" onClick={() => setMoreOpen((v) => !v)} className={itemCls(false)}>
