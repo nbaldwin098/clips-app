@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { X, ExternalLink, Play, Clock, SkipForward, ArrowUpRight, AlertCircle, RefreshCw } from 'lucide-react'
+import { X, ExternalLink, Play, Clock, SkipForward, ArrowUpRight, AlertCircle, Loader2 } from 'lucide-react'
 import { getMediaBlobUrl } from '../lib/videoStorage'
 import { parseEmbedUrl } from '../lib/videoEmbed'
 import { recordView, getViews } from '../lib/engagement'
@@ -8,53 +8,90 @@ import { recordInteraction } from '../lib/algorithmEngine'
 import { getActiveAdForVideo, recordAdImpression, recordAdClick, recordAdSkip } from '../lib/adEngine'
 import { useAuth } from '../context/AuthContext'
 
+function isHttp(url) {
+  return typeof url === 'string' && (url.startsWith('https://') || url.startsWith('http://'))
+}
+
+function isBlob(url) {
+  return typeof url === 'string' && url.startsWith('blob:')
+}
+
+/** Build candidate list: https first, never lead with a dead blob. */
+function buildCandidates(item) {
+  if (!item) return []
+  const list = []
+  const push = (u) => {
+    if (u && typeof u === 'string' && !list.includes(u)) list.push(u)
+  }
+  // Prefer stable hosted links
+  if (isHttp(item.mediaUrl)) push(item.mediaUrl)
+  if (isHttp(item.sourceUrl)) push(item.sourceUrl)
+  // Blob only as last resort (often expired after refresh)
+  if (isBlob(item.mediaUrl)) push(item.mediaUrl)
+  if (isBlob(item.sourceUrl)) push(item.sourceUrl)
+  return list
+}
+
 export default function VideoPlayerModal({ item, onClose }) {
   const { user } = useAuth()
-  const rawInitial = item?.mediaUrl || item?.sourceUrl || ''
-  const [playSrc, setPlaySrc] = useState(rawInitial)
-  const [embedInfo, setEmbedInfo] = useState(() => parseEmbedUrl(rawInitial))
+  const [phase, setPhase] = useState('loading') // loading | ready | failed
+  const [playSrc, setPlaySrc] = useState('')
+  const [mode, setMode] = useState('video') // video | iframe
   const [views, setViews] = useState(() => (item?.id ? getViews(item.id) : 0))
-  const [videoError, setVideoError] = useState(false)
   const [showFullDesc, setShowFullDesc] = useState(false)
   const [activeAd, setActiveAd] = useState(null)
   const [adSecondsLeft, setAdSecondsLeft] = useState(5)
   const [canSkipAd, setCanSkipAd] = useState(false)
   const [adDismissed, setAdDismissed] = useState(false)
   const adTimerRef = useRef(null)
+  const candidatesRef = useRef([])
+  const attemptRef = useRef(0)
+  const videoRef = useRef(null)
 
   useEffect(() => {
     if (!item?.id) return
     let cancelled = false
     setViews(recordView(item.id))
-    setVideoError(false)
+    setPhase('loading')
     setAdDismissed(false)
+    setPlaySrc('')
+    attemptRef.current = 0
 
-    const rawUrl = item.mediaUrl || item.sourceUrl || ''
-    const parsed = parseEmbedUrl(rawUrl)
-    setEmbedInfo(parsed)
-    setPlaySrc(rawUrl)
+    const resolve = async () => {
+      const candidates = buildCandidates(item)
 
-    // Prefer IndexedDB blob for uploads (blob: URLs die on refresh)
-    const tryBlob = async () => {
-      if (!item.id) return
+      // IndexedDB recovery for uploads (works after refresh when blob: is dead)
       try {
-        const url = await getMediaBlobUrl(item.id)
-        if (!cancelled && url) {
-          setPlaySrc(url)
-          setEmbedInfo({ type: 'video', src: url, platform: 'direct' })
+        const idbUrl = await getMediaBlobUrl(item.id)
+        if (idbUrl && !candidates.includes(idbUrl)) {
+          // Prefer IDB blob for local uploads if no https
+          if (!candidates.some(isHttp)) candidates.unshift(idbUrl)
+          else candidates.push(idbUrl)
         }
       } catch {}
+
+      if (cancelled) return
+      candidatesRef.current = candidates
+
+      if (candidates.length === 0) {
+        setPhase('failed')
+        return
+      }
+
+      const first = candidates[0]
+      const parsed = parseEmbedUrl(first)
+      if (parsed?.type === 'iframe') {
+        setMode('iframe')
+        setPlaySrc(parsed.src)
+        setPhase('ready')
+        return
+      }
+      setMode('video')
+      setPlaySrc(parsed?.src || first)
+      setPhase('ready')
     }
-    if (
-      item.origin === 'upload' ||
-      item.origin === 'upload-local' ||
-      item.hosted ||
-      String(item.id).startsWith('up_') ||
-      String(item.id).startsWith('local_') ||
-      (rawUrl && rawUrl.startsWith('blob:'))
-    ) {
-      tryBlob()
-    }
+
+    resolve()
 
     const ad = getActiveAdForVideo(item.id)
     if (ad) {
@@ -79,7 +116,44 @@ export default function VideoPlayerModal({ item, onClose }) {
       cancelled = true
       if (adTimerRef.current) clearInterval(adTimerRef.current)
     }
-  }, [item?.id, item?.origin, item?.sourceUrl, item?.mediaUrl, item?.hosted])
+  }, [item?.id, item?.mediaUrl, item?.sourceUrl, item?.origin, item?.hosted])
+
+  /** Auto-advance to next candidate — user never needs Retry. */
+  const tryNextSource = () => {
+    const list = candidatesRef.current || []
+    attemptRef.current += 1
+    if (attemptRef.current >= list.length) {
+      setPhase('failed')
+      return
+    }
+    const next = list[attemptRef.current]
+    const parsed = parseEmbedUrl(next)
+    if (parsed?.type === 'iframe') {
+      setMode('iframe')
+      setPlaySrc(parsed.src)
+      setPhase('ready')
+      return
+    }
+    setMode('video')
+    setPlaySrc(parsed?.src || next)
+    setPhase('ready')
+  }
+
+  const onVideoError = () => {
+    tryNextSource()
+  }
+
+  const onVideoCanPlay = () => {
+    // Ensure autoplay kicks in once buffer is ready
+    const el = videoRef.current
+    if (el) {
+      el.play?.().catch(() => {
+        // muted autoplay fallback
+        el.muted = true
+        el.play?.().catch(() => {})
+      })
+    }
+  }
 
   if (!item) return null
 
@@ -124,19 +198,7 @@ export default function VideoPlayerModal({ item, onClose }) {
 
   const isVertical = item.type === 'short' || (item.height && item.width && item.height > item.width)
   const desc = (item.description || '').trim()
-  const videoSrc = embedInfo?.src || playSrc
-  const useIframe = embedInfo?.type === 'iframe'
-  const useVideo =
-    !useIframe &&
-    !videoError &&
-    videoSrc &&
-    (embedInfo?.type === 'video' ||
-      item.hosted ||
-      item.origin === 'upload' ||
-      item.origin === 'upload-local' ||
-      videoSrc.startsWith('blob:') ||
-      videoSrc.startsWith('data:') ||
-      videoSrc.startsWith('http'))
+  const openUrl = (isHttp(item.mediaUrl) && item.mediaUrl) || (isHttp(item.sourceUrl) && item.sourceUrl) || item.mediaUrl || item.sourceUrl
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md">
@@ -177,65 +239,50 @@ export default function VideoPlayerModal({ item, onClose }) {
             </div>
           )}
 
-          {useIframe ? (
+          {phase === 'loading' && (
+            <div className="flex flex-col items-center gap-3 text-zinc-400">
+              <Loader2 className="h-8 w-8 animate-spin" />
+              <p className="text-xs">Loading video…</p>
+            </div>
+          )}
+
+          {phase === 'ready' && mode === 'iframe' && playSrc && (
             <iframe
-              key={embedInfo.src}
-              src={embedInfo.src}
+              key={playSrc}
+              src={playSrc}
               title={item.title || 'Video'}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
               className="w-full h-full border-0"
             />
-          ) : useVideo ? (
+          )}
+
+          {phase === 'ready' && mode === 'video' && playSrc && (
             <video
-              key={videoSrc}
-              src={videoSrc}
+              ref={videoRef}
+              key={playSrc}
+              src={playSrc}
               controls
               autoPlay
               playsInline
               preload="auto"
+              onCanPlay={onVideoCanPlay}
               onTimeUpdate={handleTimeUpdate}
-              onError={() => setVideoError(true)}
+              onError={onVideoError}
               className="w-full h-full object-contain bg-black"
             />
-          ) : item.sourceUrl || item.mediaUrl ? (
+          )}
+
+          {phase === 'failed' && (
             <div className="flex flex-col items-center justify-center p-6 text-center space-y-4 max-w-md">
-              <div className="h-16 w-16 rounded-full bg-white/10 flex items-center justify-center text-white">
-                <Play className="h-8 w-8 ml-1 fill-current" />
-              </div>
-              <p className="text-base font-bold text-white">{item.title}</p>
-              <p className="text-xs text-zinc-400">
-                {videoError
-                  ? 'Could not play this file in-browser. Open the original link or re-upload with Storage connected.'
-                  : 'Open the source link to watch.'}
-              </p>
-              <div className="flex flex-wrap gap-2 justify-center">
-                <a
-                  href={item.mediaUrl || item.sourceUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-white text-black text-xs font-bold"
-                >
+              <AlertCircle className="h-10 w-10 text-zinc-600" />
+              <p className="text-sm text-zinc-300">Couldn’t play this file in the browser.</p>
+              <p className="text-xs text-zinc-500">Re-upload with Supabase Storage on, or open the file link if you have one.</p>
+              {openUrl && isHttp(openUrl) && (
+                <a href={openUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-white text-black text-xs font-bold">
                   Open media <ExternalLink className="h-4 w-4" />
                 </a>
-                {videoError && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setVideoError(false)
-                      setPlaySrc(item.mediaUrl || item.sourceUrl || '')
-                    }}
-                    className="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl border border-zinc-700 text-zinc-300 text-xs"
-                  >
-                    <RefreshCw className="h-3.5 w-3.5" /> Retry
-                  </button>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center text-zinc-500 text-sm gap-2 p-6">
-              <AlertCircle className="h-8 w-8 text-zinc-600" />
-              <p>No playable media for this post.</p>
+              )}
             </div>
           )}
         </div>
