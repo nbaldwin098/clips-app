@@ -1,6 +1,6 @@
 /**
  * Embed URL Extractor & Stream Parser
- * Converts various platform URLs (YouTube, TikTok, Instagram, Twitch, Kick, direct mp4/webm/m3u8)
+ * Converts various platform URLs (YouTube, YouTube Shorts, TikTok, Instagram Reels, Twitch, Kick, direct mp4/webm/m3u8)
  * into directly playable web embeds or streams.
  */
 
@@ -30,7 +30,7 @@ export function parseEmbedUrl(url) {
       if (videoId) {
         return {
           type: 'iframe',
-          src: `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&enablejsapi=1&rel=0`,
+          src: `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&enablejsapi=1&rel=0&playsinline=1`,
           platform: 'youtube',
         }
       }
@@ -38,24 +38,36 @@ export function parseEmbedUrl(url) {
 
     // 2. TikTok
     if (host.includes('tiktok.com')) {
-      const videoIdMatch = path.match(/\/video\/(\d+)/)
+      const videoIdMatch = path.match(/\/video\/(\d+)/) || path.match(/\/v\/(\d+)/)
       if (videoIdMatch && videoIdMatch[1]) {
         return {
           type: 'iframe',
-          src: `https://www.tiktok.com/embed/v2/${videoIdMatch[1]}`,
+          src: `https://www.tiktok.com/embed/v2/${videoIdMatch[1]}?lang=en-US`,
           platform: 'tiktok',
         }
       }
     }
 
-    // 3. Twitch Clips & Streams
+    // 3. Instagram Reels & Posts
+    if (host.includes('instagram.com') || host.includes('instagr.am')) {
+      const reelMatch = path.match(/\/(reel|reels|p)\/([a-zA-Z0-9_-]+)/)
+      if (reelMatch && reelMatch[2]) {
+        return {
+          type: 'iframe',
+          src: `https://www.instagram.com/reel/${reelMatch[2]}/embed`,
+          platform: 'instagram',
+        }
+      }
+    }
+
+    // 4. Twitch Clips & Streams
     if (host.includes('twitch.tv')) {
       if (host.includes('clips.twitch.tv') || path.includes('/clip/')) {
         const clipId = host.includes('clips.twitch.tv')
           ? path.replace(/^\//, '').split('?')[0]
           : path.split('/clip/')[1]?.split('?')[0]
         if (clipId) {
-          const parent = typeof window !== 'undefined' ? window.location.hostname : 'calabi.us'
+          const parent = typeof window !== 'undefined' ? (window.location.hostname || 'localhost') : 'calabi.us'
           return {
             type: 'iframe',
             src: `https://clips.twitch.tv/embed?clip=${clipId}&parent=${parent}&autoplay=true`,
@@ -65,7 +77,21 @@ export function parseEmbedUrl(url) {
       }
     }
 
-    // 4. Direct video files & Blob URLs
+    // 5. Kick Clips
+    if (host.includes('kick.com')) {
+      if (path.includes('/clip/')) {
+        const clipId = path.split('/clip/')[1]?.split('?')[0]
+        if (clipId) {
+          return {
+            type: 'iframe',
+            src: `https://player.kick.com/clip/${clipId}?autoplay=true`,
+            platform: 'kick',
+          }
+        }
+      }
+    }
+
+    // 6. Direct video files & Blob URLs
     if (
       trimmed.startsWith('blob:') ||
       trimmed.startsWith('data:') ||

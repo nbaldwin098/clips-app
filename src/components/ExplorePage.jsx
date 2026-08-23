@@ -29,7 +29,7 @@ export default function ExplorePage({ onPlayItem }) {
           {q ? 'No matches.' : 'Nothing to explore yet — import content to fill the catalog.'}
         </p>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
           {results.map((item) => (
             <ContentCard key={item.id} item={item} onOpen={onPlayItem} />
           ))}

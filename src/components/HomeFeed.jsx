@@ -5,7 +5,7 @@ import { getHomeFeed } from '../lib/contentService'
 import { recordInteraction } from '../lib/algorithmEngine'
 import ContentCard from './ContentCard'
 
-const PAGE = 3
+const PAGE = 4
 
 export default function HomeFeed({ onPlayItem }) {
   const { user } = useAuth()
@@ -71,7 +71,7 @@ export default function HomeFeed({ onPlayItem }) {
                 <button type="button" onClick={() => shift(-1)} className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-black/70 border border-zinc-700 text-zinc-200 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center" aria-label="Previous">
                   <ChevronLeft className="h-5 w-5" />
                 </button>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 px-1">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 px-1">
                   {visible.map((item, idx) => (
                     <ContentCard key={`${item.id}-${offset}-${idx}`} item={item} onOpen={onPlayItem} variant="short" />
                   ))}
@@ -80,7 +80,7 @@ export default function HomeFeed({ onPlayItem }) {
                   <ChevronRight className="h-5 w-5" />
                 </button>
               </div>
-              <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {shorts.slice(0, 12).map((item) => (
                   <ContentCard key={`row-${item.id}`} item={item} onOpen={onPlayItem} variant="short" />
                 ))}

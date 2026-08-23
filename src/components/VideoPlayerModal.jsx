@@ -223,7 +223,7 @@ export default function VideoPlayerModal({ item, onClose }) {
               onError={handleVideoError}
               className="w-full h-full object-contain bg-black"
             />
-          ) : blobSrc && !videoError && (blobSrc.startsWith('blob:') || blobSrc.startsWith('data:') || item.origin === 'upload') ? (
+          ) : blobSrc && !videoError && (blobSrc.startsWith('blob:') || blobSrc.startsWith('data:') || item.origin === 'upload' || item.origin === 'upload-local' || item.hosted) ? (
             <video
               src={blobSrc}
               controls

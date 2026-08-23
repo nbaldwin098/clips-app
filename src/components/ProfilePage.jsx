@@ -71,7 +71,7 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
         {items.length === 0 ? (
           <p className="text-sm text-zinc-500 py-12 text-center border border-zinc-800 rounded-2xl bg-[#121218]">No videos on this profile yet.</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {items.map((item) => (
               <div key={item.id} className="relative">
                 {(item.pinned || isPinned(creatorId, item.id)) && (

@@ -23,7 +23,7 @@ export default function ShortsFeed({ onPlayItem }) {
           <p className="mt-1.5 text-xs text-zinc-500 max-w-md mx-auto">Upload a Clip with a title from +.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {items.map((item) => (
             <ContentCard key={item.id} item={item} onOpen={onPlayItem} variant="short" />
           ))}
