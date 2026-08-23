@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { ImagePlus, User } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { getPicsFeed, publishPhoto } from '../lib/contentService'
+import { getPicsFeed, publishPhoto } from '../lib/picsService'
 import { isSupabaseConfigured } from '../lib/supabaseClient'
 
 /** Continuous photo feed — each pic in its own box. Avatar + name top-left. */
