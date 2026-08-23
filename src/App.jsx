@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { ThemeProvider } from './context/ThemeContext'
 import ErrorBoundary from './components/ErrorBoundary'
-import Navbar from './components/Navbar'
-import Sidebar from './components/Sidebar'
-import HomeFeed from './components/HomeFeed'
+import StreamingNavbar from './components/StreamingNavbar'
+import CollapsibleSidebar from './components/CollapsibleSidebar'
+import StreamMainArea from './components/StreamMainArea'
+import LiveChatPanel from './components/LiveChatPanel'
+import CategoriesView from './components/CategoriesView'
 import ShortsFeed from './components/ShortsFeed'
-import LiveView from './components/LiveView'
 import CreatorDashboard from './components/CreatorDashboard'
 import CreatorWallet from './components/CreatorWallet'
 import SettingsPage from './components/SettingsPage'
 import LibraryPage from './components/LibraryPage'
-import ExplorePage from './components/ExplorePage'
 import HelpPage from './components/HelpPage'
 import AboutPage from './components/AboutPage'
 import NotificationsPage from './components/NotificationsPage'
@@ -19,46 +20,47 @@ import AuthRequired from './components/AuthRequired'
 import ImportShortModal from './components/ImportShortModal'
 import AuthModal from './components/AuthModal'
 import UploadModal from './components/UploadModal'
-import SoundsPage from './components/SoundsPage'
-import CheckoutPage from './components/CheckoutPage'
 import CheckoutModal from './components/CheckoutModal'
-import CreatorApplyPage from './components/CreatorApplyPage'
-import SupportPage from './components/SupportPage'
-import AdminPortal from './components/AdminPortal'
-import CreatorsPage from './components/CreatorsPage'
-import AnalyticsPage from './components/AnalyticsPage'
 import ChannelPage from './components/ChannelPage'
 import ProfilePage from './components/ProfilePage'
-import SubscriptionsPage from './components/SubscriptionsPage'
-import PlaylistsPage from './components/PlaylistsPage'
-import CommunityPage from './components/CommunityPage'
-import StudioToolsPage from './components/StudioToolsPage'
-import StreamSettingsPage from './components/StreamSettingsPage'
 import {
   TermsOfService, PrivacyPolicy, CreatorAgreement, CommunityGuidelines,
 } from './components/legal/LegalPages'
 import { startSession } from './lib/algorithmEngine'
 import { lsGet, lsSet } from './lib/storage'
+import { MOCK_CHANNELS } from './data/mockStreamData'
 
 const KNOWN_VIEWS = new Set([
-  'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
-  'explore', 'history', 'liked', 'watch-later', 'library', 'help', 'about',
+  'home', 'live', 'explore', 'categories', 'clips', 'shorts', 'dashboard', 'wallet', 'settings',
+  'history', 'liked', 'watch-later', 'library', 'help', 'about',
   'notifications', 'sounds', 'checkout', 'creator-apply', 'support', 'admin',
-  'analytics', 'channel', 'profile',
-  'subscriptions', 'playlists', 'community', 'studio-tools', 'stream-settings',
+  'analytics', 'channel', 'profile', 'subscriptions',
   'legal-tos', 'legal-privacy', 'legal-creator', 'legal-community',
 ])
 
-function AppShell() {
+function StreamingAppShell() {
   const { user, isAuthenticated } = useAuth()
+
   const [view, setView] = useState('home')
+  const [channels] = useState(MOCK_CHANNELS)
+  const [currentChannel, setCurrentChannel] = useState(MOCK_CHANNELS[0])
+  const [searchQuery, setSearchQuery] = useState('')
+
+  // Sidebar & Chat collapse state
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => lsGet('sidebar_collapsed', false) === true)
+  const [chatCollapsed, setChatCollapsed] = useState(() => lsGet('chat_collapsed', false) === true)
+
+  // Mobile Drawers
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+  const [mobileChatOpen, setMobileChatOpen] = useState(false)
+
+  // Modal dialog states
   const [importOpen, setImportOpen] = useState(false)
   const [authOpen, setAuthOpen] = useState(false)
   const [uploadOpen, setUploadOpen] = useState(false)
   const [checkoutOpen, setCheckoutOpen] = useState(false)
-  const [checkoutTarget, setCheckoutTarget] = useState({ id: null, handle: '' })
+  const [checkoutTarget] = useState({ id: null, handle: '' })
   const [profileTarget, setProfileTarget] = useState({ handle: '', userId: null })
-  const [sidebarOpen, setSidebarOpen] = useState(() => lsGet('sidebar_open', true) !== false)
 
   useEffect(() => {
     if (isAuthenticated && user?.id) startSession(user.id)
@@ -79,11 +81,7 @@ function AppShell() {
     try { window.scrollTo({ top: 0, behavior: 'smooth' }) } catch {}
   }
   if (typeof window !== 'undefined') window.__clipsOpenProfile = openProfile
-  const openCheckout = (creatorId, creatorHandle) => {
-    if (!isAuthenticated) { setAuthOpen(true); return }
-    setCheckoutTarget({ id: creatorId || null, handle: creatorHandle || '' })
-    setCheckoutOpen(true)
-  }
+
   const navigate = (next) => {
     try {
       const id = next === 'shorts' ? 'clips' : String(next || 'home')
@@ -94,23 +92,41 @@ function AppShell() {
     }
   }
 
-  const lockedCreator = (v) =>
-    (v === 'dashboard' || v === 'wallet' || v === 'analytics' || v === 'studio-tools' || v === 'stream-settings') &&
-    isAuthenticated &&
-    user?.creatorStatus !== 'approved'
-
-  const renderMain = () => {
-    if (!KNOWN_VIEWS.has(view)) return <NotFoundPage onNavigate={navigate} />
-    if (lockedCreator(view)) {
-      return (
-        <div className="p-8 max-w-md mx-auto text-center">
-          <p className="text-sm text-zinc-200 font-medium">Creator tools locked</p>
-          <p className="text-xs text-zinc-500 mt-2">Apply and wait for admin approval.</p>
-          <button type="button" onClick={() => navigate('creator-apply')} className="mt-4 h-10 px-4 rounded-lg bg-[#007ACC] text-white text-sm">Apply to create</button>
-          <button type="button" onClick={() => navigate('home')} className="mt-3 block mx-auto text-xs text-[#007ACC]">← Back to Recommended</button>
-        </div>
-      )
+  const handleSelectChannel = (channel) => {
+    setCurrentChannel(channel)
+    if (view !== 'home' && view !== 'live') {
+      setView('home')
     }
+  }
+
+  const toggleSidebar = () => {
+    // If mobile, toggle drawer; if desktop, toggle collapsed width
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setMobileSidebarOpen((v) => !v)
+    } else {
+      setSidebarCollapsed((prev) => {
+        const next = !prev
+        lsSet('sidebar_collapsed', next)
+        return next
+      })
+    }
+  }
+
+  const toggleChat = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      setMobileChatOpen((v) => !v)
+    } else {
+      setChatCollapsed((prev) => {
+        const next = !prev
+        lsSet('chat_collapsed', next)
+        return next
+      })
+    }
+  }
+
+  const renderMainContent = () => {
+    if (!KNOWN_VIEWS.has(view)) return <NotFoundPage onNavigate={navigate} />
+
     if (view === 'dashboard' && !isAuthenticated)
       return <AuthRequired title="Creator Studio" description="Sign in." onOpenAuth={openAuth} />
     if (view === 'wallet' && !isAuthenticated)
@@ -121,50 +137,118 @@ function AppShell() {
       return <AuthRequired title="Channel" description="Sign in." onOpenAuth={openAuth} />
 
     switch (view) {
-      case 'home': return <HomeFeed />
-      case 'creators': return <CreatorsPage />
+      case 'home':
+      case 'live':
+        return (
+          <StreamMainArea
+            currentChannel={currentChannel}
+            channels={channels}
+            onSelectChannel={handleSelectChannel}
+            onOpenMobileChat={() => setMobileChatOpen(true)}
+            onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
+            searchQuery={searchQuery}
+          />
+        )
+      case 'explore':
+      case 'categories':
+        return <CategoriesView onSelectChannel={handleSelectChannel} />
       case 'clips':
-      case 'shorts': return <ShortsFeed />
-      case 'live': return <LiveView onNavigate={navigate} onOpenAuth={openAuth} onOpenCheckout={openCheckout} />
-      case 'dashboard': return <CreatorDashboard onOpenImport={openImport} onOpenUpload={openUpload} onNavigate={navigate} />
-      case 'wallet': return <CreatorWallet onNavigate={navigate} />
-      case 'analytics': return <AnalyticsPage onNavigate={navigate} />
-      case 'channel': return <ChannelPage onNavigate={navigate} />
-      case 'profile': return <ProfilePage onNavigate={navigate} profileHandle={profileTarget.handle} profileUserId={profileTarget.userId} />
-      case 'subscriptions': return <SubscriptionsPage onNavigate={navigate} onOpenAuth={openAuth} />
-      case 'playlists': return <PlaylistsPage onNavigate={navigate} onOpenAuth={openAuth} />
-      case 'community': return <CommunityPage onNavigate={navigate} onOpenAuth={openAuth} />
-      case 'studio-tools': return <StudioToolsPage onNavigate={navigate} />
-      case 'stream-settings': return <StreamSettingsPage onNavigate={navigate} />
-      case 'settings': return <SettingsPage onNavigate={navigate} />
-      case 'explore': return <ExplorePage />
-      case 'sounds': return <SoundsPage onOpenAuth={openAuth} />
-      case 'checkout': return <CheckoutPage onNavigate={navigate} onOpenQuick={() => openCheckout(null, null)} />
-      case 'creator-apply': return <CreatorApplyPage onOpenAuth={openAuth} />
-      case 'support': return <SupportPage onOpenAuth={openAuth} />
-      case 'admin': return <AdminPortal onNavigate={navigate} />
-      case 'history': return <LibraryPage initialTab="history" />
-      case 'liked': return <LibraryPage initialTab="liked" />
-      case 'watch-later': return <LibraryPage initialTab="saved" />
-      case 'library': return <LibraryPage />
-      case 'help': return <HelpPage />
-      case 'about': return <AboutPage />
-      case 'notifications': return <NotificationsPage />
-      case 'legal-tos': return <TermsOfService />
-      case 'legal-privacy': return <PrivacyPolicy />
-      case 'legal-creator': return <CreatorAgreement />
-      case 'legal-community': return <CommunityGuidelines />
-      default: return <NotFoundPage onNavigate={navigate} />
+      case 'shorts':
+        return <ShortsFeed />
+      case 'dashboard':
+        return <CreatorDashboard onOpenImport={openImport} onOpenUpload={openUpload} onNavigate={navigate} />
+      case 'wallet':
+        return <CreatorWallet onNavigate={navigate} />
+      case 'channel':
+        return <ChannelPage onNavigate={navigate} />
+      case 'profile':
+        return <ProfilePage onNavigate={navigate} profileHandle={profileTarget.handle} profileUserId={profileTarget.userId} />
+      case 'settings':
+        return <SettingsPage onNavigate={navigate} />
+      case 'library':
+      case 'history':
+        return <LibraryPage initialTab={view === 'history' ? 'history' : 'history'} />
+      case 'liked':
+        return <LibraryPage initialTab="liked" />
+      case 'watch-later':
+        return <LibraryPage initialTab="saved" />
+      case 'notifications':
+        return <NotificationsPage />
+      case 'about':
+        return <AboutPage />
+      case 'help':
+        return <HelpPage />
+      case 'legal-tos':
+        return <TermsOfService />
+      case 'legal-privacy':
+        return <PrivacyPolicy />
+      case 'legal-creator':
+        return <CreatorAgreement />
+      case 'legal-community':
+        return <CommunityGuidelines />
+      default:
+        return (
+          <StreamMainArea
+            currentChannel={currentChannel}
+            channels={channels}
+            onSelectChannel={handleSelectChannel}
+            onOpenMobileChat={() => setMobileChatOpen(true)}
+            onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
+            searchQuery={searchQuery}
+          />
+        )
     }
   }
 
+  const isLiveStreamView = view === 'home' || view === 'live'
+
   return (
-    <div className="min-h-screen bg-[#0b0b0f] text-zinc-100 flex flex-col">
-      <Navbar onNavigate={navigate} onOpenAuth={openAuth} onOpenUpload={openUpload} onToggleSidebar={() => setSidebarOpen((s) => { const n = !s; lsSet('sidebar_open', n); return n })} />
-      <div className="flex flex-1 min-h-0">
-        <Sidebar currentView={view} onNavigate={navigate} open={sidebarOpen} onClose={() => { lsSet('sidebar_open', false); setSidebarOpen(false) }} />
-        <main className="flex-1 min-w-0 overflow-y-auto bg-[#0b0b0f]">{renderMain()}</main>
+    <div className="min-h-screen bg-[#09090c] text-zinc-100 flex flex-col selection:bg-[var(--color-accent-primary)] selection:text-black">
+      {/* 1. Fixed Top Navbar */}
+      <StreamingNavbar
+        onNavigate={navigate}
+        onOpenAuth={openAuth}
+        onOpenUpload={openUpload}
+        onToggleSidebar={toggleSidebar}
+        currentView={view}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
+
+      {/* Core 3-Column Responsive Layout: Collapsible Sidebar + Main Content + Fixed Right Chat */}
+      <div className="flex flex-1 min-h-0 relative">
+        
+        {/* 2. Collapsible Left Sidebar for Channel Lists */}
+        <CollapsibleSidebar
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={toggleSidebar}
+          currentChannelId={currentChannel?.id}
+          onSelectChannel={handleSelectChannel}
+          channels={channels}
+          currentView={view}
+          onNavigate={navigate}
+          mobileOpen={mobileSidebarOpen}
+          onMobileClose={() => setMobileSidebarOpen(false)}
+        />
+
+        {/* 3. Main Content Area featuring Video Player Aspect Ratio Box */}
+        <main className="flex-1 min-w-0 flex flex-col overflow-y-auto bg-[#09090c]">
+          {renderMainContent()}
+        </main>
+
+        {/* 4. Fixed Right-Side Panel for Live Chat Feed (Twitch/Kick style) */}
+        {isLiveStreamView && (
+          <LiveChatPanel
+            channel={currentChannel}
+            collapsed={chatCollapsed}
+            onToggleCollapse={toggleChat}
+            mobileOpen={mobileChatOpen}
+            onMobileClose={() => setMobileChatOpen(false)}
+          />
+        )}
       </div>
+
+      {/* Global Modals */}
       <ImportShortModal open={importOpen} onClose={() => setImportOpen(false)} />
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
       <UploadModal open={uploadOpen} onClose={() => setUploadOpen(false)} />
@@ -177,7 +261,9 @@ export default function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <AppShell />
+        <ThemeProvider>
+          <StreamingAppShell />
+        </ThemeProvider>
       </AuthProvider>
     </ErrorBoundary>
   )

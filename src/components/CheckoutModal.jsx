@@ -41,14 +41,14 @@ export default function CheckoutModal({ open, onClose, creatorId, creatorHandle 
         <button type="button" onClick={onClose} className="absolute right-3 top-3 h-8 w-8 rounded-lg flex items-center justify-center text-zinc-400 hover:bg-zinc-800" aria-label="Close">
           <X className="h-4 w-4" />
         </button>
-        <div className="flex items-center gap-2 text-[#007ACC]">
+        <div className="flex items-center gap-2 text-[var(--color-accent-primary)]">
           <Heart className="h-5 w-5" />
           <h2 className="text-sm font-semibold">Premium membership</h2>
         </div>
         <p className="mt-2 text-xs text-zinc-500">
           {creatorHandle ? `Support @${creatorHandle}` : 'Support this channel'} · fixed ${PREMIUM_PRICE}/month
         </p>
-        <p className="mt-4 text-3xl font-semibold text-[#007ACC]">
+        <p className="mt-4 text-3xl font-semibold text-[var(--color-accent-primary)]">
           ${PREMIUM_PRICE}<span className="text-sm text-zinc-500 font-normal">/mo</span>
         </p>
         <ul className="mt-3 text-xs text-zinc-400 space-y-1 list-disc list-inside">
@@ -59,7 +59,7 @@ export default function CheckoutModal({ open, onClose, creatorId, creatorHandle 
         {already ? (
           <p className="mt-4 text-sm text-emerald-400">You already have premium on this channel.</p>
         ) : (
-          <button type="button" disabled={busy || !isAuthenticated} onClick={pay} className="mt-5 w-full h-11 rounded-xl bg-[#007ACC] text-white text-sm font-medium disabled:opacity-40">
+          <button type="button" disabled={busy || !isAuthenticated} onClick={pay} className="mt-5 w-full h-11 rounded-xl bg-[var(--color-accent-primary)] text-black font-bold text-sm disabled:opacity-40 hover:brightness-110 transition-all">
             {!isAuthenticated ? 'Sign in to subscribe' : busy ? 'Working…' : `Subscribe $${PREMIUM_PRICE}/mo`}
           </button>
         )}
