@@ -3,7 +3,6 @@ import {
   Radio,
   Home,
   Clapperboard,
-  Compass,
   History,
   Clock,
   ThumbsUp,
@@ -134,7 +133,6 @@ export default function CollapsibleSidebar({
           <NavBtn collapsed={collapsed} active={currentView === 'clips' || currentView === 'shorts'} onClick={() => go('clips')} icon={Clapperboard} label="Clips" />
           <NavBtn collapsed={collapsed} active={currentView === 'pics'} onClick={() => go('pics')} icon={ImageIcon} label="Pics" />
           <NavBtn collapsed={collapsed} active={currentView === 'live'} onClick={() => go('live')} icon={Radio} label="Live" />
-          <NavBtn collapsed={collapsed} active={currentView === 'explore'} onClick={() => go('explore')} icon={Compass} label="Search" />
           <NavBtn collapsed={collapsed} active={currentView === 'sounds'} onClick={() => go('sounds')} icon={Music} label="Sounds" />
           {isAuthenticated && (
             <NavBtn collapsed={collapsed} active={currentView === 'notifications'} onClick={() => go('notifications')} icon={Bell} label="Notifications" />
