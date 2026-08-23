@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Music, Plus, Check, X } from 'lucide-react'
+import { Music, Plus, Check, X, ExternalLink } from 'lucide-react'
 import { FREE_SOUNDS, SOUND_CATEGORIES } from '../data/sounds'
 import { useAuth } from '../context/AuthContext'
 import { createUserSound, listUserSounds } from '../lib/engagement'
@@ -110,21 +110,36 @@ export default function SoundPicker({ value, onChange, onOpenAuth }) {
             ))}
           </div>
 
-          <div className="space-y-1.5 max-h-48 overflow-y-auto">
+          <div className="space-y-1.5 max-h-56 overflow-y-auto">
             {list.map((s) => (
-              <button
+              <div
                 key={s.id}
-                type="button"
+                role="button"
+                tabIndex={0}
                 onClick={() => select(s)}
-                className="w-full flex items-center gap-2.5 rounded-lg border border-zinc-800 bg-[#121218] px-3 py-2 text-left hover:border-white/30"
+                onKeyDown={(e) => { if (e.key === 'Enter') select(s) }}
+                className="w-full flex items-center gap-2.5 rounded-lg border border-zinc-800 bg-[#121218] px-3 py-2 text-left hover:border-white/30 cursor-pointer"
               >
                 <div className="h-8 w-8 rounded-lg bg-white/15 flex items-center justify-center shrink-0"><Music className="h-3.5 w-3.5 text-white" /></div>
                 <span className="flex-1 min-w-0">
-                  <span className="block text-sm text-zinc-100 truncate">{s.title}</span>
-                  <span className="block text-[11px] text-zinc-500">{s.category} · {s.duration} · {s.license}</span>
+                  <span className="block text-sm text-zinc-100 truncate">{s.title}{s.attribution ? <span className="text-zinc-500"> · by {s.attribution}</span> : null}</span>
+                  <span className="block text-[11px] text-zinc-500">{s.category} · {s.duration} · {s.source} — {s.license}</span>
                 </span>
+                {s.url && (
+                  <a
+                    href={s.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-zinc-500 hover:text-white shrink-0"
+                    title={`View on ${s.source}`}
+                    aria-label={`View on ${s.source}`}
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                )}
                 {value?.id === s.id && <Check className="h-4 w-4 text-white shrink-0" />}
-              </button>
+              </div>
             ))}
           </div>
         </div>

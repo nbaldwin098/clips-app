@@ -2,6 +2,14 @@ import { getImports, saveImport } from './storage'
 import { uploadImageToSupabase } from './mediaUpload'
 import { isSupabaseConfigured } from './supabaseClient'
 
+// Defensively strip raw storage/database error text that may have been saved
+// into `description` by an earlier build, so it never renders on a card.
+const LEAKED_ERROR_PATTERN = /row-level security|violates|local only\s*—/i
+function sanitizeDescription(desc) {
+  const text = String(desc || '')
+  return LEAKED_ERROR_PATTERN.test(text) ? '' : text
+}
+
 export function getPicsFeed() {
   const all = (getImports() || []).filter((i) => i && i.type === 'pic')
   return all
@@ -9,7 +17,7 @@ export function getPicsFeed() {
       id: raw.id,
       type: 'pic',
       title: raw.title || 'Photo',
-      description: raw.description || '',
+      description: sanitizeDescription(raw.description),
       sourceUrl: raw.sourceUrl || raw.mediaUrl || '',
       mediaUrl: raw.mediaUrl || raw.sourceUrl || '',
       thumbUrl: raw.thumbUrl || raw.mediaUrl || '',
@@ -32,16 +40,16 @@ export async function publishPhoto(file, actor = null) {
     const id = `pic_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
     let mediaUrl = URL.createObjectURL(file)
     let hosted = false
-    let storageNote = 'Local only'
 
-    if (isSupabaseConfigured()) {
-      const up = await uploadImageToSupabase(file, actor?.id)
+    // Never surface raw storage/database errors to viewers — log internally and
+    // fall back to the zero-storage local link. Cloud writes require a signed-in actor.
+    if (actor?.id && isSupabaseConfigured()) {
+      const up = await uploadImageToSupabase(file, actor.id)
       if (up.ok && up.publicUrl) {
         mediaUrl = up.publicUrl
         hosted = true
-        storageNote = 'Hosted link (Supabase Storage)'
       } else if (up.error) {
-        storageNote = `Local only — ${up.error}`
+        console.warn('[Clips] Supabase image upload failed, using local link:', up.error)
       }
     }
 
@@ -49,7 +57,7 @@ export async function publishPhoto(file, actor = null) {
       id,
       type: 'pic',
       title: String(file.name || 'Photo').replace(/\.[^.]+$/, '') || 'Photo',
-      description: storageNote,
+      description: '',
       sourceUrl: mediaUrl,
       mediaUrl,
       thumbUrl: mediaUrl,
