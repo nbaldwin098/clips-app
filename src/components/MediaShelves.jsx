@@ -13,10 +13,6 @@ export default function MediaShelves({ items, onPlayItem, onOpenPic, pinOverlay,
   const showVideos = filter === 'all' || filter === 'video'
   const showShorts = filter === 'all' || filter === 'clip'
   const showPics = filter === 'all' || filter === 'pic'
-  const videoRows = useMemo(
-    () => mixFeedAds((items || []).filter((i) => i && i.type === 'video'), 'video-feed'),
-    [items],
-  )
   const clipRows = useMemo(
     () => mixFeedAds((items || []).filter((i) => i && i.type === 'short'), 'clip-feed'),
     [items],
@@ -36,17 +32,11 @@ export default function MediaShelves({ items, onPlayItem, onOpenPic, pinOverlay,
         <section>
           {filter === 'all' ? <h2 className="text-lg font-semibold text-white mb-4">Videos</h2> : null}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-8">
-            {videoRows.map((row) => (
-              row.kind === 'ad' ? (
-                <div key={row.key} className="relative col-span-full">
-                  <InFeedAd ad={row.ad} variant="video" />
-                </div>
-              ) : (
-                <div key={row.key || row.item.id} className="relative">
-                  {pinOverlay?.(row.item)}
-                  <ContentCard item={row.item} onOpen={onPlayItem} variant="video" />
-                </div>
-              )
+            {videos.map((item) => (
+              <div key={item.id} className="relative">
+                {pinOverlay?.(item)}
+                <ContentCard item={item} onOpen={onPlayItem} variant="video" />
+              </div>
             ))}
           </div>
         </section>
@@ -76,7 +66,7 @@ export default function MediaShelves({ items, onPlayItem, onOpenPic, pinOverlay,
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1">
             {picRows.map((row) => (
               row.kind === 'ad' ? (
-                <InFeedAd key={row.key} ad={row.ad} variant="pic-row" />
+                <InFeedAd key={row.key} ad={row.ad} variant="pic" />
               ) : (
                 <button
                   key={row.key || row.item.id}

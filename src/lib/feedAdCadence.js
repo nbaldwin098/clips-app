@@ -1,4 +1,4 @@
-/** Clip in-feed ads every 4–6 items (random). Banners every 10. Pic and video ads every 6–10 (random). */
+/** Clip in-feed ads every 4–6 items (random). Banners every 10. Pic ads every 6–10 (random), same size as photos. Videos do not get in-feed boxes. */
 
 export const CLIP_AD_GAPS = [4, 5, 6]
 export const PIC_AD_GAPS = [6, 7, 8, 9, 10]
@@ -6,7 +6,7 @@ export const VIDEO_AD_GAPS = [6, 7, 8, 9, 10]
 export const CLIP_BANNER_EVERY = 10
 /** Medium-rectangle display zone — clip/pic interstitials, never stretched. */
 export const EXOCLICK_FEED_ZONE = '6010926'
-/** Horizontal banner zone — watch/clip/pic bars and video-grid strips. */
+/** Horizontal banner zone — small clip banners under the description. */
 export const EXOCLICK_BANNER_ZONE = '6010930'
 
 function randomGap(gaps) {
@@ -94,33 +94,7 @@ export function mixPicFeedRows(list) {
 
 export function mixVideoFeedRows(list) {
   const items = Array.isArray(list) ? list : []
-  const out = []
-  let sinceAd = 0
-  let nextGap = randomGap(VIDEO_AD_GAPS)
-
-  items.forEach((item, i) => {
-    out.push({ kind: 'item', item, key: item?.id || `item-${i}` })
-    sinceAd += 1
-    if (i >= items.length - 1) return
-    if (sinceAd < nextGap) return
-
-    out.push({
-      kind: 'ad',
-      ad: { id: `exo-video-feed-${i}`, provider: 'exoclick', zoneId: EXOCLICK_BANNER_ZONE, format: 'banner' },
-      key: `exo-video-feed-${i}`,
-    })
-    sinceAd = 0
-    nextGap = randomGap(VIDEO_AD_GAPS)
-  })
-
-  if (!out.some((r) => r.kind === 'ad') && items.length >= 2) {
-    out.splice(Math.min(3, out.length), 0, {
-      kind: 'ad',
-      ad: { id: 'exo-video-feed-fallback', provider: 'exoclick', zoneId: EXOCLICK_BANNER_ZONE, format: 'banner' },
-      key: 'exo-video-feed-fallback',
-    })
-  }
-  return out
+  return items.map((item, i) => ({ kind: 'item', item, key: item?.id || `item-${i}` }))
 }
 
 /**
