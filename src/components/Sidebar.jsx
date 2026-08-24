@@ -66,7 +66,7 @@ export default function Sidebar({ currentView, onNavigate, open, onClose }) {
 
       <div className="mx-3 border-t border-zinc-800" />
       <div className="p-2 space-y-0.5">
-        <NavBtn active={currentView === 'subscriptions'} onClick={() => go('subscriptions')} icon={Users} label="Following" />
+        <NavBtn active={currentView === 'subscriptions'} onClick={() => go('subscriptions')} icon={Users} label="Subscribed" />
       </div>
 
       <div className="mx-3 border-t border-zinc-800" />
@@ -79,7 +79,7 @@ export default function Sidebar({ currentView, onNavigate, open, onClose }) {
             <NavBtn active={currentView === 'analytics'} onClick={() => go('analytics')} icon={BarChart3} label="Analytics" />
           </>
         )}
-        <NavBtn active={currentView === 'creators'} onClick={() => go('creators')} icon={Users} label="All creators" />
+        <NavBtn active={currentView === 'creators'} onClick={() => go('creators')} icon={Users} label="Top creators" />
         {recommendedCreators.length > 0 && (
           <>
             <p className="px-3 pt-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Recommended creators</p>

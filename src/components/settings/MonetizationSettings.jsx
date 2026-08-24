@@ -14,7 +14,7 @@ export default function MonetizationSettings() {
       <div>
         <h1 className="text-xl font-semibold text-white">Monetization</h1>
         <p className="mt-1 text-sm text-zinc-500">
-          List price is what checkout shows. Stripe still has its own Payment Link amount. Payouts to your bank are not live.
+          Subscribe is free for anyone. To charge for a post, set a price when you upload. Stripe still has its own Payment Link amount. Payouts to your bank are not live.
         </p>
       </div>
 

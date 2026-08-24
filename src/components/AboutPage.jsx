@@ -9,7 +9,7 @@ export default function AboutPage() {
         <p className="mt-2 text-sm text-[#adadb8] leading-relaxed">
           On big platforms, people come for the app — not for you. Clips is built so{' '}
           <strong className="font-semibold text-white">the audience comes to the creator</strong>
-          . Follow is free. Paid membership is optional and only after Stripe charges. We do not invent
+          . Subscribe is free. Creators can price some posts. Paid posts charge only after Stripe. We do not invent
           viewers, balances, or a live picture.
         </p>
       </div>
@@ -27,7 +27,7 @@ export default function AboutPage() {
             quiet pics. No stories or DMs.
           </li>
           <li>
-            <strong className="text-white">Follow is free. Pay is a real charge.</strong> Nothing
+            <strong className="text-white">Subscribe is free. Pay is a real charge.</strong> Nothing
             unlocks premium from a bare Subscribe click.
           </li>
         </ul>

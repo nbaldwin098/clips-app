@@ -97,7 +97,7 @@ export default function HelpPage() {
     },
     {
       q: 'Can I pay for premium now?',
-      a: 'Follow is free. The Stripe publishable key lives on Render as VITE_STRIPE_PUBLISHABLE_KEY. To charge cards, add a Payment Link as VITE_STRIPE_PAYMENT_LINK (same amount as the creator’s list price) and set its success URL to https://calabi.us/#/checkout?paid=1, then Manual Deploy.',
+      a: 'Subscribe is free. Creators can set a price on a post when they upload. The Stripe publishable key lives on Render as VITE_STRIPE_PUBLISHABLE_KEY. To charge cards, add a Payment Link as VITE_STRIPE_PAYMENT_LINK and set its success URL to https://calabi.us/#/checkout?paid=1, then Manual Deploy.',
     },
   ]
 

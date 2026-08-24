@@ -87,7 +87,7 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onNavigate }) {
 
       {following.length > 0 && filter === 'all' && (
         <section>
-          <h2 className="text-lg font-semibold text-white mb-4">Following</h2>
+          <h2 className="text-lg font-semibold text-white mb-4">Subscribed</h2>
           <MediaShelves items={following.slice(0, 12)} onPlayItem={onPlayItem} onOpenPic={onOpenPic} />
         </section>
       )}

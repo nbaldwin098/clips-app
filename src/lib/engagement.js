@@ -120,6 +120,35 @@ export function toggleSubscribe(userId, creatorId, { notify = true } = {}) {
   return subscribed
 }
 
+const BUY_KEY = 'clips_content_purchases'
+
+export function hasPurchasedContent(userId, contentId) {
+  if (!userId || !contentId) return false
+  return (lsGet(BUY_KEY, {})[userId] || []).includes(contentId)
+}
+
+export function markContentPurchased(userId, contentId) {
+  if (!userId || !contentId) return false
+  const all = lsGet(BUY_KEY, {}) || {}
+  const list = all[userId] || []
+  if (!list.includes(contentId)) list.push(contentId)
+  all[userId] = list
+  lsSet(BUY_KEY, all)
+  return true
+}
+
+export function canAccessPaidPost(user, item) {
+  const price = Number(item?.priceUsd) || 0
+  if (price <= 0) return true
+  if (!item) return true
+  const uid = user?.id
+  if (!uid) return false
+  const owner = item.creatorId || item.userId
+  if (owner && owner === uid) return true
+  if (owner && isPremiumSub(uid, owner)) return true
+  return hasPurchasedContent(uid, item.id)
+}
+
 export const PREMIUM_PRICE = 5
 const PRICE_KEY = 'membership_price'
 

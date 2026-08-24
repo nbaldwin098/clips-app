@@ -13,7 +13,7 @@ export default function AnalyticsPage({ onNavigate }) {
   const cards = [
     { label: 'Views', value: a.views },
     { label: 'Watch hours', value: a.watchHours },
-    { label: 'Followers', value: a.subscribers },
+    { label: 'Subscribers', value: a.subscribers },
     { label: 'Premium paid', value: a.premiumSubs },
     { label: 'Likes', value: a.likes },
     { label: 'Clips + videos', value: a.clips },

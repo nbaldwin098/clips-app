@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getById, getRelated, getMoreFromCreator, getWatchQueue } from '../lib/contentService'
-import { recordView, toggleVote, getVotes, getUserVote, toggleSubscribe, isSubscribed } from '../lib/engagement'
+import { recordView, toggleVote, getVotes, getUserVote, canAccessPaidPost } from '../lib/engagement'
 import { getWatchProgress, recordWatchProgress } from '../lib/watchProgress'
 import { recordInteraction } from '../lib/algorithmEngine'
 import { getActiveAdForVideo, recordAdImpression, recordAdClick, recordAdSkip } from '../lib/adEngine'
@@ -29,7 +29,10 @@ import RelatedRow from './RelatedRow'
 import ContentCard from './ContentCard'
 import ChannelAvatar from './ChannelAvatar'
 import VerifiedBadge from './VerifiedBadge'
+import SubscribeButton from './SubscribeButton'
 import { creatorDisplayName, isOfficialCreator, likesLabel, viewsLabel } from '../lib/uiFormat'
+import { startPremiumCheckout } from '../lib/checkout'
+import { getStripePaymentLink } from '../lib/stripeConfig'
 
 function Pill({ children, onClick, active = false, title, disabled }) {
   return (
@@ -98,7 +101,7 @@ export default function WatchPage({
   const [votes, setVotes] = useState(() => getVotes(itemId))
   const [myVote, setMyVote] = useState(() => getUserVote(user?.id, itemId))
   const [isSaved, setIsSaved] = useState(() => (getSaved() || []).includes(itemId))
-  const [followed, setFollowed] = useState(false)
+  const [payBusy, setPayBusy] = useState(false)
   const adTimerRef = useRef(null)
   const countRef = useRef(null)
   const appliedStart = useRef(false)
@@ -123,7 +126,6 @@ export default function WatchPage({
     setVotes(getVotes(itemId))
     setMyVote(getUserVote(user?.id, itemId))
     setIsSaved((getSaved() || []).includes(itemId))
-    setFollowed(user?.id && item?.creatorId ? isSubscribed(user.id, item.creatorId) : false)
     appliedStart.current = false
     setEndScreen(false)
     setCountdown(0)
@@ -327,11 +329,18 @@ export default function WatchPage({
     }
   }
 
-  const follow = () => {
+  const buyPost = async () => {
     if (!isAuthenticated) { onOpenAuth?.(); return }
-    if (!item.creatorId || item.creatorId === user.id) return
-    const on = toggleSubscribe(user.id, item.creatorId)
-    setFollowed(on)
+    if (!item?.id || !user?.id) return
+    try { sessionStorage.setItem('clips_pending_purchase', item.id) } catch {}
+    setPayBusy(true)
+    const result = await startPremiumCheckout({
+      already: false,
+      email: user?.email || '',
+      reference: item.creatorId || item.id,
+    })
+    if (result.url) openSafeUrl(result.url)
+    setPayBusy(false)
   }
 
   const togglePip = async () => {
@@ -411,6 +420,7 @@ export default function WatchPage({
   }
 
   const isVertical = item.type === 'short'
+  const locked = !canAccessPaidPost(user, item)
   const openUrl = (isHttp(item.mediaUrl) && item.mediaUrl) || (isHttp(item.sourceUrl) && item.sourceUrl)
   const desc = (item.description || '').trim()
   const thumb = item.thumbUrl || ''
@@ -423,6 +433,22 @@ export default function WatchPage({
           <div
             className={`relative w-full overflow-hidden rounded-xl ${isVertical ? 'aspect-[9/16] max-h-[78vh] mx-auto' : 'aspect-video'} ${ambient ? 'bg-zinc-950' : 'bg-black'}`}
           >
+            {locked && (
+              <div className="absolute inset-0 z-40 bg-black/85 flex flex-col items-center justify-center p-6 text-center gap-3">
+                <p className="text-lg font-semibold text-white">Paid post</p>
+                <p className="text-sm text-zinc-400 max-w-sm">
+                  Subscribe is free. This post is ${Number(item.priceUsd).toFixed(2)} — the price the creator set.
+                </p>
+                <button
+                  type="button"
+                  disabled={payBusy}
+                  onClick={buyPost}
+                  className="h-10 px-5 rounded-full bg-white text-black text-sm font-semibold disabled:opacity-50"
+                >
+                  {payBusy ? 'Opening…' : getStripePaymentLink() ? `Pay $${Number(item.priceUsd).toFixed(2)} on Stripe` : 'Stripe Payment Link is not on this deploy'}
+                </button>
+              </div>
+            )}
             {ambient && thumb ? (
               <img src={thumb} alt="" className="absolute inset-0 w-full h-full object-cover blur-3xl opacity-40 scale-110" />
             ) : null}
@@ -463,7 +489,7 @@ export default function WatchPage({
                 key={playSrc}
                 src={safeMediaUrl(playSrc)}
                 controls
-                autoPlay
+                autoPlay={!locked}
                 playsInline
                 preload="auto"
                 onLoadedMetadata={onLoadedMetadata}
@@ -559,17 +585,7 @@ export default function WatchPage({
                     {(item.createdAt || item.publishedAt) ? <> · <PostedStamp item={item} /></> : null}
                   </p>
                 </div>
-                {item.creatorId && item.creatorId !== user?.id ? (
-                  <button
-                    type="button"
-                    onClick={follow}
-                    className={`ml-2 h-9 px-4 rounded-full text-sm font-semibold shrink-0 ${
-                      followed ? 'bg-[#272727] text-white hover:bg-[#3f3f3f]' : 'bg-white text-black hover:bg-zinc-200'
-                    }`}
-                  >
-                    {followed ? 'Following' : 'Follow'}
-                  </button>
-                ) : null}
+                <SubscribeButton creatorId={item.creatorId || item.userId} handle={item.handle} onOpenAuth={onOpenAuth} className="ml-2" />
               </div>
 
               <div className="flex items-center gap-2 overflow-x-auto pb-0.5 lg:justify-end">

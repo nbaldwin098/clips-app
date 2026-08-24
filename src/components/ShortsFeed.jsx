@@ -295,7 +295,7 @@ function ClipSlide({
               following ? 'bg-white/15 text-white' : 'bg-white text-black'
             }`}
           >
-            {following ? 'Following' : 'Subscribe'}
+            {following ? 'Subscribed' : 'Subscribe'}
           </button>
         </div>
         <p className="text-sm text-white mt-2 line-clamp-2 drop-shadow pr-16 md:pr-4">{item.title || 'Untitled'}</p>

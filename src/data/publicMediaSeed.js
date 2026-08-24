@@ -7,7 +7,7 @@ import { getImports, saveImport, lsGet, lsSet } from '../lib/storage'
 import { hiddenBrokenIds, isHttpUrl, isKnownDeadUrl } from '../lib/catalogHealth'
 import { indexUser } from '../lib/moderation'
 
-export const CATALOG_GENERATION = 'official-pd-v5'
+export const CATALOG_GENERATION = 'official-pd-v6'
 const GEN_KEY = 'clips_catalog_generation'
 
 export const OFFICIAL_CREATORS = [
@@ -123,7 +123,7 @@ function byCreator(handle) {
 function item(handle, partial) {
   const mediaUrl = partial.mediaUrl
   const thumbUrl = partial.thumbUrl || mediaUrl
-  const createdAt = partial.createdAt || new Date().toISOString()
+  const createdAt = new Date().toISOString()
   return {
     ...byCreator(handle),
     origin: 'public-domain-org',
@@ -530,10 +530,15 @@ export function seedOfficialCatalog() {
   for (const next of OFFICIAL_MEDIA) {
     if (hidden.has(next.id)) continue
     if (!isHttpUrl(next.mediaUrl) || isKnownDeadUrl(next.mediaUrl)) continue
+    const stamped = {
+      ...next,
+      createdAt: new Date().toISOString(),
+      publishedAt: new Date().toISOString(),
+    }
     const prev = byId[next.id]
     const record = prev
-      ? { ...next, createdAt: next.createdAt, publishedAt: next.publishedAt, views: prev.views || 0 }
-      : next
+      ? { ...stamped, views: prev.views || 0 }
+      : stamped
     const same =
       prev
       && prev.mediaUrl === record.mediaUrl

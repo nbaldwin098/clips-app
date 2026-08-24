@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Radio, Key, Copy, Check, Play, Square, Heart, Gift } from 'lucide-react'
+import { Radio, Key, Copy, Check, Play, Square } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { lsGet, lsSet } from '../lib/storage'
-import { toggleSubscribe, isSubscribed, getSubscriberCount } from '../lib/engagement'
+import { getSubscriberCount } from '../lib/engagement'
+import SubscribeButton from './SubscribeButton'
 import { notifyFollowersWentLive } from '../lib/notifications'
 import { pushLiveLobby, endLiveLobby } from '../lib/graphSync'
 import { cn } from '../lib/utils'
@@ -22,7 +23,7 @@ function formatElapsed(startedAt) {
   return `${hrs}h ${mins % 60}m ago`
 }
 
-export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream }) {
+export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream, onOpenAuth }) {
   const { user, isAuthenticated } = useAuth()
   const approved = user?.creatorStatus === 'approved'
 
@@ -125,13 +126,6 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
     onFocusStream?.(entry)
   }
 
-  const handleFollow = () => {
-    if (!isAuthenticated || !focusedStream?.userId) return
-    toggleSubscribe(user.id, focusedStream.userId)
-    setTick((t) => t + 1)
-  }
-
-  const following = isAuthenticated && focusedStream?.userId ? isSubscribed(user.id, focusedStream.userId) : false
   const subCount = focusedStream?.userId ? getSubscriberCount(focusedStream.userId) : 0
 
   return (
@@ -172,31 +166,10 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
           <div className="p-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#23232c]">
             <div className="text-sm text-zinc-400">
               <span className="text-zinc-200 font-semibold">@{focusedStream.handle}</span>
-              {subCount > 0 && <span> · {subCount} followers</span>}
+              {subCount > 0 && <span> · {subCount} subscribers</span>}
             </div>
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleFollow}
-                disabled={!isAuthenticated || focusedStream.userId === user?.id}
-                className={cn(
-                  'flex items-center gap-1.5 h-9 px-4 rounded-lg text-xs font-bold transition-all disabled:opacity-40',
-                  following ? 'bg-[#1f1f28] border border-[#2e2e3b] text-zinc-300' : 'bg-white text-black'
-                )}
-              >
-                <Heart className={cn('h-3.5 w-3.5', following && 'fill-current text-red-400')} />
-                {following ? 'Following' : 'Follow'}
-              </button>
-              <button
-                type="button"
-                onClick={() => onOpenCheckout?.(focusedStream.userId, focusedStream.handle)}
-                disabled={!isAuthenticated || focusedStream.userId === user?.id}
-                className="flex items-center gap-1.5 h-9 px-3 rounded-lg text-xs text-zinc-500 hover:text-zinc-300 disabled:opacity-40"
-                title="Paid subscribe needs Stripe — not connected"
-              >
-                <Gift className="h-3.5 w-3.5" />
-                Paid
-              </button>
+              <SubscribeButton creatorId={focusedStream.userId} handle={focusedStream.handle} onOpenAuth={onOpenAuth} />
             </div>
           </div>
         </div>

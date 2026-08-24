@@ -22,20 +22,20 @@ export default function SubscriptionsPage({ onNavigate, onOpenAuth, onPlayItem, 
   if (!isAuthenticated) {
     return (
       <div className="p-6 max-w-md mx-auto text-sm text-zinc-400">
-        <button type="button" onClick={onOpenAuth} className="text-white font-medium">Sign in</button> to see following uploads.
+        <button type="button" onClick={onOpenAuth} className="text-white font-medium">Sign in</button> to see subscribed uploads.
       </div>
     )
   }
 
   return (
     <div className="p-4 md:p-6 max-w-[1200px] mx-auto space-y-8">
-      <PageHeader title="Following" subtitle="Uploads from people you follow" onBack={() => onNavigate?.('home')} />
+      <PageHeader title="Subscribed" subtitle="Uploads from people you subscribe to" onBack={() => onNavigate?.('home')} />
 
       {channels.length === 0 ? (
         <div className="rounded-2xl border border-zinc-800 bg-[#121218] px-6 py-12 text-center">
           <Users className="h-8 w-8 text-white mx-auto" />
-          <p className="mt-4 text-sm text-zinc-200">Not following anyone yet</p>
-          <p className="mt-1 text-xs text-zinc-500">Follow a creator on their profile or a watch page.</p>
+          <p className="mt-4 text-sm text-zinc-200">Not subscribed to anyone yet</p>
+          <p className="mt-1 text-xs text-zinc-500">Subscribe on a channel or watch page. It is free. Creators can still price individual posts.</p>
         </div>
       ) : (
         <div className="flex gap-3 overflow-x-auto pb-1">
@@ -58,7 +58,7 @@ export default function SubscriptionsPage({ onNavigate, onOpenAuth, onPlayItem, 
 
       {uploads.length === 0 ? (
         channels.length > 0 ? (
-          <p className="text-sm text-zinc-500 text-center py-10">People you follow have not posted on this device yet.</p>
+          <p className="text-sm text-zinc-500 text-center py-10">People you subscribe to have not posted on this device yet.</p>
         ) : null
       ) : (
         <MediaShelves items={uploads} onPlayItem={onPlayItem} onOpenPic={onOpenPic} />

@@ -6,12 +6,12 @@ import {
   Plus,
   Settings,
   LogOut,
-  Radio,
   Tv,
   SlidersHorizontal,
   Film,
   Clapperboard,
   CircleUserRound,
+  Radio,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { cn } from '../lib/utils'
@@ -24,7 +24,6 @@ export default function StreamingNavbar({
   onOpenAuth,
   onCreate,
   onToggleSidebar,
-  currentView,
   searchQuery,
   onSearchChange,
 }) {
@@ -110,17 +109,6 @@ export default function StreamingNavbar({
         </form>
 
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={() => handleNav('live')}
-            className={cn(
-              'hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-sm font-medium',
-              currentView === 'live' ? 'bg-white text-black' : 'text-zinc-200 hover:bg-white/10'
-            )}
-          >
-            <Radio className="h-4 w-4" />
-            Live
-          </button>
           <div className="relative" ref={createRef}>
             <button
               type="button"

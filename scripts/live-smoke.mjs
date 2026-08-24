@@ -1,6 +1,6 @@
 /** Live-project smoke checks — no mock catalog, no invented checkout grant. */
 import { readFileSync } from 'node:fs'
-import { extractHashtags, mergeTags, parseClock, parseCaptionCues, isReleased, filterExploreItems, formatPostedAt, olderIso } from '../src/lib/mediaMeta.js'
+import { extractHashtags, mergeTags, parseClock, parseCaptionCues, isReleased, filterExploreItems, formatPostedAt, olderIso, postedAtOf } from '../src/lib/mediaMeta.js'
 import { parseRoute, buildHash } from '../src/lib/routes.js'
 import { sanitizeAuthError, normalizePhone } from '../src/lib/authBrand.js'
 
@@ -27,6 +27,8 @@ assert(formatPostedAt(now - 3600_000, now) === 'today', 'same-day post says toda
 assert(formatPostedAt(now - 36 * 3600_000, now) === '1d ago', 'yesterday keeps days')
 assert(formatPostedAt('', now) === '', 'missing date is blank not just now')
 assert(olderIso('1969-07-24T16:00:00.000Z', new Date(now).toISOString()) === '1969-07-24T16:00:00.000Z', 'cloud now does not erase real date')
+assert(formatPostedAt(postedAtOf({ id: 'org-nasa-iss', origin: 'public-domain-org', createdAt: '1969-07-24T16:00:00.000Z' })) === 'today', 'library 1969 stamp displays as today')
+assert(formatPostedAt(postedAtOf({ id: 'user-1', createdAt: '1969-12-31T00:00:00.000Z' })) === 'today', 'epoch junk dates display as today')
 assert(parseCaptionCues('00:00.000 --> 00:02.000\nHi').length === 1, 'vtt cues')
 assert(isReleased({ status: 'draft' }) === false, 'draft hidden')
 assert(isReleased({ status: 'published' }) === true, 'published visible')
@@ -118,7 +120,7 @@ assert(!shortsSrc.includes('withReferenceShorts'), 'sample clips not mixed into 
 const gridSrc = readFileSync(new URL('../src/components/ShortsGrid.jsx', import.meta.url), 'utf8')
 assert(!gridSrc.includes('>Shorts<'), 'clips page has no Shorts title')
 assert(gridSrc.includes('Recommended'), 'clips recommended tab')
-assert(gridSrc.includes('Following'), 'clips following tab')
+assert(gridSrc.includes('Subscribed'), 'clips subscribed tab')
 
 const liveSrc = readFileSync(new URL('../src/components/LiveView.jsx', import.meta.url), 'utf8')
 assert(liveSrc.includes('Live video ingest is not connected'), 'live page is a lobby')
@@ -223,6 +225,23 @@ assert(pubSrc.includes('transcodeVideoForUpload'), 'publish path uses the transc
 const navSrc = readFileSync(new URL('../src/components/StreamingNavbar.jsx', import.meta.url), 'utf8')
 assert(!navSrc.includes('SiteClock'), 'header does not show a site clock')
 assert(navSrc.includes('withWord'), 'header shows the calabi wordmark')
+assert(!navSrc.includes('handleNav(\'live\')'), 'header does not show Live Recommended Explore Clips')
+assert(!/\bRecommended\b/.test(navSrc) && !/\bExplore\b/.test(navSrc) && !/\bClips\b/.test(navSrc), 'header has no Recommended Live Explore Clips chips')
+const sideSrc = readFileSync(new URL('../src/components/CollapsibleSidebar.jsx', import.meta.url), 'utf8')
+assert(sideSrc.includes('Top creators'), 'sidebar heading is Top creators')
+assert(sideSrc.includes('label="Subscribed"'), 'sidebar following renamed subscribed')
+assert(sideSrc.includes('min-h-0 overflow-y-auto'), 'collapsed sidebar still scrolls')
+assert(sideSrc.includes('size={collapsed ? 32 : 28}'), 'collapsed sidebar shows avatars only')
+const subBtn = readFileSync(new URL('../src/components/SubscribeButton.jsx', import.meta.url), 'utf8')
+assert(subBtn.includes('Subscribe'), 'subscribe button exists')
+assert(!subBtn.includes('Follow'), 'follow label is gone')
+assert(subBtn.includes('onOpenAuth'), 'subscribe opens sign-in when logged out')
+const creatorPageSrc = readFileSync(new URL('../src/components/ProfilePage.jsx', import.meta.url), 'utf8')
+assert(creatorPageSrc.includes('SubscribeButton'), 'creator page has subscribe')
+const uploadSrc = readFileSync(new URL('../src/components/UploadModal.jsx', import.meta.url), 'utf8')
+assert(uploadSrc.includes('priceUsd'), 'creators can price a post')
+assert(watchSrc2.includes('clips_pending_purchase'), 'paid posts wait for Stripe return')
+assert(watchSrc2.includes('Paid post'), 'watch shows paid overlay')
 assert(watchSrc2.includes('RelatedRow'), 'watch sidebar uses compact related rows')
 const stampSrc = readFileSync(new URL('../src/components/PostedStamp.jsx', import.meta.url), 'utf8')
 assert(stampSrc.includes('formatPostedAt'), 'posted stamp ages over time')
@@ -231,7 +250,7 @@ const kidsSrc = readFileSync(new URL('../src/data/publicMediaSeed.js', import.me
 assert(kidsSrc.includes("handle: 'nasa'"), 'nasa creator channel')
 assert(kidsSrc.includes('yt3.googleusercontent.com'), 'library channels use YouTube avatars')
 assert(kidsSrc.includes('bpfrBmM6vZk'), 'nasa connect uses eClips youtube art')
-assert(kidsSrc.includes('official-pd-v5'), 'catalog generation refreshes timestamps')
+assert(kidsSrc.includes('official-pd-v6'), 'catalog generation refreshes timestamps')
 assert(!kidsSrc.includes('1969-07-24'), 'library posts are dated today not 1969')
 assert(kidsSrc.includes("handle: 'noaa'"), 'noaa creator channel')
 assert(kidsSrc.includes("handle: 'esa'"), 'esa creator channel')

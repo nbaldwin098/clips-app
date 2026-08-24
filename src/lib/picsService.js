@@ -60,6 +60,7 @@ export function getPicsFeed() {
       displayName: raw.displayName || raw.handle,
       avatarUrl: raw.avatarUrl || null,
       creatorId: raw.creatorId || raw.userId,
+      origin: raw.origin || '',
       createdAt: raw.createdAt || raw.publishedAt || '',
       hosted: !!raw.hosted,
     }))

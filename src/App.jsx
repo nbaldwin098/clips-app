@@ -59,7 +59,7 @@ import { installRuntimeGuards } from './lib/selfHeal'
 import { startNamedAccountActivity } from './lib/namedAccountActivity'
 import { pushLibraryCatalogToCloud } from './data/publicMediaSeed'
 import { isAdminSession } from './lib/moderation'
-import { getById, flushScheduledPublishes } from './lib/contentService'
+import { getById, flushScheduledPublishes, resolvePublicCreator } from './lib/contentService'
 import { parseRoute, pushHash } from './lib/routes'
 import { syncPromotionsFromCloud } from './lib/promotions'
 import PromoBanner from './components/PromoBanner'
@@ -153,7 +153,9 @@ function AppShell() {
       return
     }
     if (kind === 'profile') {
-      setProfileTarget({ handle: String(id || '').replace(/^@/, ''), userId: null })
+      const handle = String(id || '').replace(/^@/, '')
+      const found = resolvePublicCreator(handle, null)
+      setProfileTarget({ handle, userId: found?.id || null })
       setView('profile')
       return
     }
@@ -281,9 +283,11 @@ function AppShell() {
   }
   const openProfile = (handle, userId = null) => {
     dockWatchIfNeeded(view === 'watch')
-    setProfileTarget({ handle: String(handle || '').replace(/^@/, ''), userId })
+    const h = String(handle || '').replace(/^@/, '')
+    const found = resolvePublicCreator(h, userId)
+    setProfileTarget({ handle: h || found?.handle || '', userId: found?.id || userId || null })
     setView('profile')
-    pushHash('profile', String(handle || '').replace(/^@/, ''))
+    pushHash('profile', h || found?.handle || '')
     try { window.scrollTo({ top: 0, behavior: 'smooth' }) } catch {}
   }
   if (typeof window !== 'undefined') {
@@ -405,6 +409,7 @@ function AppShell() {
             onOpenCheckout={openCheckout}
             focusedStream={focusedLiveStream}
             onFocusStream={focusLiveStream}
+            onOpenAuth={openAuth}
           />
         )
       case 'dashboard': return <CreatorDashboard onOpenImport={openImport} onOpenUpload={openUpload} onNavigate={navigate} />
@@ -412,7 +417,7 @@ function AppShell() {
       case 'wallet': return <CreatorWallet onNavigate={navigate} />
       case 'analytics': return <AnalyticsPage onNavigate={navigate} />
       case 'channel': return <ChannelPage onNavigate={navigate} />
-      case 'profile': return <ProfilePage onNavigate={navigate} profileHandle={profileTarget.handle} profileUserId={profileTarget.userId} onPlayItem={openWatch} onOpenPic={openPic} />
+      case 'profile': return <ProfilePage onNavigate={navigate} profileHandle={profileTarget.handle} profileUserId={profileTarget.userId} onPlayItem={openWatch} onOpenPic={openPic} onOpenAuth={openAuth} onOpenCheckout={openCheckout} />
       case 'subscriptions': return <SubscriptionsPage onNavigate={navigate} onOpenAuth={openAuth} onPlayItem={openWatch} onOpenPic={openPic} onOpenProfile={openProfile} />
       case 'playlists': return <PlaylistsPage onNavigate={navigate} onOpenAuth={openAuth} onPlayItem={openWatch} onOpenPic={openPic} playlistId={routeId} />
       case 'community': return <CommunityPage onNavigate={navigate} onOpenAuth={openAuth} />
@@ -454,7 +459,6 @@ function AppShell() {
         onOpenAuth={openAuth}
         onCreate={openCreate}
         onToggleSidebar={toggleSidebar}
-        currentView={view}
         searchQuery={searchQuery}
         onSearchChange={(q) => {
           setSearchQuery(q)

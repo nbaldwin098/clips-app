@@ -1,32 +1,29 @@
 import { useMemo, useState } from 'react'
 import MediaShelves from './MediaShelves'
 import { useAuth } from '../context/AuthContext'
-import { listIndexedUsers } from '../lib/moderation'
-import { getCreatorPublicContent, togglePin, isPinned } from '../lib/contentService'
+import { getCreatorPublicContent, togglePin, isPinned, resolvePublicCreator } from '../lib/contentService'
 import { listPlaylists } from '../lib/youtubeParity'
 import { lsGet } from '../lib/storage'
 import { getPicsFeed } from '../lib/picsService'
-import { getSubscriberCount, toggleSubscribe, isSubscribed } from '../lib/engagement'
+import { getSubscriberCount } from '../lib/engagement'
 import { useContentSyncTick } from '../lib/useContentSync'
 import { Pin } from 'lucide-react'
 import { cn } from '../lib/utils'
 import ChannelAvatar from './ChannelAvatar'
 import VerifiedBadge from './VerifiedBadge'
-import { followersLabel, isOfficialCreator } from '../lib/uiFormat'
+import SubscribeButton from './SubscribeButton'
+import { subscribersLabel, isOfficialCreator } from '../lib/uiFormat'
 
-export default function ProfilePage({ onNavigate, profileHandle, profileUserId, onPlayItem, onOpenPic }) {
-  const { user, isAuthenticated } = useAuth()
+export default function ProfilePage({ onNavigate, profileHandle, profileUserId, onPlayItem, onOpenPic, onOpenAuth, onOpenCheckout }) {
+  const { user } = useAuth()
   const handle = String(profileHandle || '').toLowerCase().replace(/^@/, '')
-  const users = listIndexedUsers()
-  const found =
-    users.find((u) => String(u.handle || '').toLowerCase() === handle) ||
-    users.find((u) => u.id === profileUserId) ||
-    null
+  const found = resolvePublicCreator(handle, profileUserId)
   const isSelf = user && found && user.id === found.id
   const creatorId = found?.id || profileUserId || null
   const [tick, setTick] = useState(0)
   const syncTick = useContentSyncTick()
   const items = useMemo(() => getCreatorPublicContent(creatorId, handle), [creatorId, handle, tick, syncTick])
+  const resolvedId = creatorId || items[0]?.creatorId || items[0]?.userId || null
   const playlists = useMemo(() => (creatorId ? listPlaylists(creatorId) : []), [creatorId, tick, syncTick])
   const liveEntry = useMemo(() => {
     const board = (lsGet('live_board', []) || []).filter((b) => b.isLive)
@@ -47,8 +44,7 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
   const avatar = found?.avatarUrl || (isSelf ? user?.avatarUrl : null)
   const banner = found?.bannerUrl || (isSelf ? user?.bannerUrl : null)
   const bio = found?.bio || (isSelf ? user?.bio : '') || ''
-  const subs = creatorId ? getSubscriberCount(creatorId) : 0
-  const subscribed = user && creatorId ? isSubscribed(user.id, creatorId) : false
+  const subs = resolvedId ? getSubscriberCount(resolvedId) : 0
   const official = isOfficialCreator(creatorId, handle)
 
   const onPin = (contentId) => {
@@ -75,18 +71,14 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
           </h1>
           <p className="text-sm text-[#aaa]">@{handle || found?.handle || 'user'}</p>
           <p className="text-xs text-[#aaa] mt-1">
-            {[followersLabel(subs), videos.length ? `${videos.length} videos` : '', clips.length ? `${clips.length} clips` : '', pics.length ? `${pics.length} pics` : ''].filter(Boolean).join(' · ')}
+            {[subscribersLabel(subs), videos.length ? `${videos.length} videos` : '', clips.length ? `${clips.length} clips` : '', pics.length ? `${pics.length} pics` : ''].filter(Boolean).join(' · ')}
           </p>
         </div>
         <div className="flex gap-2 pb-1">
           {isSelf ? (
             <button type="button" onClick={() => onNavigate?.('channel')} className="h-9 px-4 rounded-full border border-zinc-700 text-xs text-zinc-200">Customize channel</button>
           ) : (
-            isAuthenticated && creatorId && (
-              <button type="button" onClick={() => { toggleSubscribe(user.id, creatorId); setTick((t) => t + 1) }} className={`h-9 px-4 rounded-full text-sm font-medium ${subscribed ? 'bg-[#272727] text-white' : 'bg-white text-black'}`}>
-                {subscribed ? 'Following' : 'Follow'}
-              </button>
-            )
+            <SubscribeButton creatorId={resolvedId} handle={handle || found?.handle} onOpenAuth={onOpenAuth} />
           )}
         </div>
       </div>
