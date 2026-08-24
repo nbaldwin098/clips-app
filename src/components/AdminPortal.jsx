@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import {
-  isAdminSession, adminLogin, adminLogout, listApplications, setApplicationStatus,
+  isAdminSession, adminLogin, adminLogout, listApplications,
   listTickets, updateTicket, listIndexedUsers, listImports, listUserClips,
 } from '../lib/moderation'
 import { listIdVerifications, setIdVerificationStatus } from '../lib/verification'
@@ -9,9 +9,9 @@ import {
   getPayoutSettings, setPayoutSettings, setCreatorRpm, listCreatorBalances,
   recordManualPayout, listPayoutLedger, getPayoutContact,
 } from '../lib/payouts'
-import { lsGet, lsSet } from '../lib/storage'
+import { lsGet } from '../lib/storage'
 import { useAuth } from '../context/AuthContext'
-import { ORG, OPS_CHECKLIST, applicationsAreOpen, applicationsWindowLabel } from '../lib/orgConfig'
+import { ORG, OPS_CHECKLIST } from '../lib/orgConfig'
 import AdminPromos from './AdminPromos'
 import AdminAds from './AdminAds'
 
@@ -20,7 +20,7 @@ const TABS = [
   ['payouts', 'Payouts'],
   ['ads', 'Ads'],
   ['promos', 'Promos'],
-  ['applications', 'Creators'],
+  ['applications', 'Old apps'],
   ['id-checks', 'ID checks'],
   ['tickets', 'Support'],
   ['users', 'Users'],
@@ -85,13 +85,6 @@ export default function AdminPortal() {
   const ledger = listPayoutLedger()
   const adsOn = adsAreRunning()
 
-  const approve = (app, status) => {
-    setApplicationStatus(app.id, status)
-    const u = lsGet('user', null)
-    if (u && u.id === app.userId) lsSet('user', { ...u, creatorStatus: status, isCreator: status === 'approved' })
-    refresh()
-  }
-
   const sendPay = () => {
     const row = balances.find((b) => b.userId === payUser)
     const res = recordManualPayout({
@@ -135,7 +128,7 @@ export default function AdminPortal() {
           <div className="rounded-xl border border-zinc-800 bg-[#121218] p-4 space-y-2">
             <p className="text-sm font-medium text-white">Snapshot</p>
             <p className="text-xs text-zinc-400">Users {users.length} · catalog {imports.length} · live lobby {live.filter((l) => l.isLive).length}</p>
-            <p className="text-xs text-zinc-500">Creator apps {applicationsWindowLabel()} · {applicationsAreOpen() ? 'open' : 'closed'}</p>
+            <p className="text-xs text-zinc-500">Creator applications are gone. Anyone with an account can post.</p>
             <ul className="text-xs text-zinc-400 space-y-1 pt-2">
               <li>Support {ORG.supportEmail}</li>
               <li>Copyright {ORG.copyrightEmail}</li>
@@ -242,20 +235,17 @@ export default function AdminPortal() {
       {tab === 'promos' && <AdminPromos />}
 
       {tab === 'applications' && (
-        apps.length === 0 ? <p className="text-xs text-zinc-500">No applications yet.</p> :
-        apps.map((a) => (
-          <div key={a.id} className="rounded-xl border border-zinc-800 bg-[#121218] p-4 text-sm mb-2">
-            <p className="text-zinc-100">{a.displayName || a.name} @{a.handle} · {a.status}</p>
-            <p className="text-xs text-zinc-500">{a.email} {a.phone ? `· ${a.phone}` : ''}</p>
-            <p className="text-xs text-zinc-400 mt-1">{a.about || a.bio}</p>
-            {a.status === 'pending' && (
-              <div className="flex gap-2 mt-2">
-                <button type="button" onClick={() => approve(a, 'approved')} className="h-8 px-3 rounded-lg bg-white text-black text-xs">Approve</button>
-                <button type="button" onClick={() => approve(a, 'rejected')} className="h-8 px-3 rounded-lg bg-red-600 text-white text-xs">Reject</button>
+        <div className="space-y-3">
+          <p className="text-sm text-zinc-300">There is no application. Anyone signed in can post.</p>
+          {apps.length === 0 ? <p className="text-xs text-zinc-500">No leftover applications.</p> :
+            apps.map((a) => (
+              <div key={a.id} className="rounded-xl border border-zinc-800 bg-[#121218] p-4 text-sm">
+                <p className="text-zinc-100">{a.displayName || a.name} @{a.handle} · {a.status}</p>
+                <p className="text-xs text-zinc-500">{a.email} {a.phone ? `· ${a.phone}` : ''}</p>
+                <p className="text-xs text-zinc-400 mt-1">{a.about || a.bio}</p>
               </div>
-            )}
-          </div>
-        ))
+            ))}
+        </div>
       )}
 
       {tab === 'id-checks' && (

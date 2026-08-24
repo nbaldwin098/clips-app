@@ -70,7 +70,7 @@ export default function LibraryPage({ initialTab = 'history' }) {
     <div className="p-4 md:p-6 max-w-4xl mx-auto">
       <h1 className="text-xl font-semibold text-zinc-100 mb-1">Library</h1>
       <p className="text-xs text-zinc-500 mb-4">
-        Catch up on another device when shared login is on. Clips stay as links — we only store how far you watched.
+        Catch up on another device when shared login is on. Short videos stay as links — we only store how far you watched.
       </p>
       <div className="flex flex-wrap gap-2 mb-6">
         {TABS.map((t) => {

@@ -16,7 +16,7 @@ export default function CreatorDashboard({ onOpenImport, onOpenUpload, onNavigat
   const live = lsGet(`live_state_${user?.id}`, null)
   const views = clips.reduce((n, c) => n + (getViews(c.id) || c.views || 0), 0)
   const [copied, setCopied] = useState('')
-  const approved = user?.creatorStatus === 'approved'
+  const approved = Boolean(user?.id)
   const b = creatorBalance(user?.id, user?.handle)
   const key = user?.id ? ensureStreamKey(user.id) : ''
   const vods = listVods(user?.id)
@@ -49,8 +49,7 @@ export default function CreatorDashboard({ onOpenImport, onOpenUpload, onNavigat
       <PageHeader title="Creator Dashboard" subtitle="Stream, content, analytics, wallet" onBack={() => onNavigate('home')} />
       {!approved ? (
         <div className="mb-4 rounded-xl border border-zinc-800 bg-[#121218] p-4 text-sm text-zinc-300">
-          Apply to go live and upload.{' '}
-          <button type="button" className="text-white underline" onClick={() => onNavigate('creator-apply')}>Open apply</button>
+          Sign in to upload and use Studio.
         </div>
       ) : null}
       <div className="grid sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">

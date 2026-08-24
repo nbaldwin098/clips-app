@@ -31,7 +31,7 @@ export default function PasswordRecoveryGate() {
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/80 p-4">
       <form onSubmit={submit} className="w-full max-w-sm rounded-2xl border border-[#2f2f37] bg-[#1f1f23] p-5 space-y-3">
         <h2 className="text-lg font-semibold text-white">Choose a new password</h2>
-        <p className="text-xs text-zinc-500">You opened Clips from a reset email. Set a new password for this account.</p>
+        <p className="text-xs text-zinc-500">You opened calabi from a reset email. Set a new password for this account.</p>
         <input
           type="password"
           value={pw}

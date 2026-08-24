@@ -4,7 +4,7 @@ export const OWNER_LOGIN = {
   handle: 'cs1',
   displayName: 'Nicholas',
   email: 'cs1@calabi.local',
-  passwordHash: 'sha256$c1d2e3f405162738495a6b7c8d9e0f12$d475b3f9776233f2e6b672d3484a0dbcf74ef0f991ee9dc0b9280481dc7756d3',
+  passwordHash: 'sha256$cafe7911f352ee8b9714e48eaf448c2c$0666d3cb70d9595cb03b63863e75b05e880d3e5199948884fb7ece69506f31fa',
 }
 
 export function findOwnerLogin(email) {

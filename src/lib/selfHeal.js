@@ -7,6 +7,7 @@ import { safeHttpUrl } from './safeUrl'
 import { purgeDeadCatalog } from './catalogHealth'
 import { seedOfficialCatalog } from '../data/publicMediaSeed'
 import { seedNamedAccounts } from '../data/namedAccountsSeed'
+import { OWNER_LOGIN } from '../data/ownerLogin'
 
 function isRecord(v) {
   return !!v && typeof v === 'object' && !Array.isArray(v)
@@ -14,21 +15,13 @@ function isRecord(v) {
 
 function stripPrivileges(user) {
   if (!isRecord(user)) return null
-  if (String(user.id || '').startsWith('org-')) {
-    return {
-      ...user,
-      isPlatformAdmin: false,
-      isCreator: true,
-      creatorStatus: 'approved',
-      role: 'user',
-    }
-  }
+  const owner = String(user.id || '') === OWNER_LOGIN.id
   return {
     ...user,
-    isPlatformAdmin: false,
-    isCreator: false,
-    creatorStatus: 'none',
-    role: 'user',
+    isPlatformAdmin: owner,
+    isCreator: true,
+    creatorStatus: 'approved',
+    role: owner ? 'admin' : 'user',
   }
 }
 
@@ -87,10 +80,10 @@ export function healLocalState() {
 export function installRuntimeGuards() {
   if (typeof window === 'undefined') return
   const onError = (event) => {
-    console.warn('[Clips] recovered from runtime error:', event?.message || event)
+    console.warn('[calabi] recovered from runtime error:', event?.message || event)
   }
   const onRejection = (event) => {
-    console.warn('[Clips] recovered from unhandled promise:', event?.reason?.message || event?.reason)
+    console.warn('[calabi] recovered from unhandled promise:', event?.reason?.message || event?.reason)
     event?.preventDefault?.()
   }
   window.addEventListener('error', onError)

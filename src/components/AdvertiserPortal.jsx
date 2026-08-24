@@ -259,7 +259,7 @@ export default function AdvertiserPortal({ onNavigate }) {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-base font-bold text-white">Your campaigns</h2>
-            <p className="text-xs text-zinc-500">Skippable preroll on videos. Bottom banners and in-feed tiles on clips and pics.</p>
+            <p className="text-xs text-zinc-500">Skippable preroll on videos. Bottom banners and in-feed tiles on short videos and pics.</p>
           </div>
           <button
             type="button"

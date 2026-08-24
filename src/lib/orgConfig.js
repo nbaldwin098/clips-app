@@ -14,8 +14,9 @@ function env(key, fallback) {
 
 /** Public contact — set real inboxes before serious creator launch */
 export const ORG = {
-  productName: 'Clips',
+  productName: 'calabi',
   domain: 'calabi.us',
+  siteUrl: env('VITE_PUBLIC_SITE_URL', 'https://calabi.us'),
   supportEmail: env('VITE_SUPPORT_EMAIL', 'support@calabi.us'),
   copyrightEmail: env('VITE_COPYRIGHT_EMAIL', 'copyright@calabi.us'),
   privacyEmail: env('VITE_PRIVACY_EMAIL', 'privacy@calabi.us'),
@@ -28,27 +29,31 @@ export const ORG = {
   ),
   /** Owner handle — only this account is platform admin */
   ownerHandle: 'cs1',
-  /** Creator applications open window (ISO dates, inclusive) */
-  applicationsOpenFrom: env('VITE_APPS_OPEN_FROM', '2026-08-01'),
-  applicationsOpenUntil: env('VITE_APPS_OPEN_UNTIL', '2026-09-30'),
-  applicationsOpenMessage:
-    'Creator applications are open for a limited time. After this window, apply + approve continues as normal.',
 }
 
-export function applicationsAreOpen(now = new Date()) {
-  const from = new Date(ORG.applicationsOpenFrom)
-  const until = new Date(ORG.applicationsOpenUntil)
-  until.setHours(23, 59, 59, 999)
-  return now >= from && now <= until
+/** Public site origin for reset/OAuth links. Never send people to localhost. */
+export function publicOrigin() {
+  const configured = String(ORG.siteUrl || 'https://calabi.us').replace(/\/$/, '')
+  try {
+    if (typeof window !== 'undefined') {
+      const o = String(window.location.origin || '')
+      if (o && !/localhost|127\.0\.0\.1/i.test(o)) return o.replace(/\/$/, '')
+    }
+  } catch {}
+  return configured
+}
+
+export function applicationsAreOpen() {
+  return false
 }
 
 export function applicationsWindowLabel() {
-  return `${ORG.applicationsOpenFrom} → ${ORG.applicationsOpenUntil}`
+  return 'closed — anyone with an account can post'
 }
 
 /** Weekly ops checklist for admin */
 export const OPS_CHECKLIST = [
-  'Approve or reject pending creator applications',
+  'Anyone with an account can post — there is no creator application',
   'Review open support tickets',
   'Check reports / DMCA inbox (' + 'copyright' + ' email)',
   'Confirm Render deploy is green',

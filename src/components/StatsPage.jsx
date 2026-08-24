@@ -92,13 +92,13 @@ export default function StatsPage({ onNavigate }) {
     { label: 'Total Views', value: totalViews.toLocaleString(), icon: Eye, hint: 'Verified watch impressions' },
     { label: 'Total Likes', value: totalLikes.toLocaleString(), icon: ThumbsUp, hint: 'Positive community votes' },
     { label: 'Total Dislikes', value: totalDislikes.toLocaleString(), icon: ThumbsDown, hint: 'Negative feedback votes' },
-    { label: 'Approved Creators', value: totalCreators, icon: ShieldCheck, hint: 'Approved creator accounts' },
+    { label: 'Creators', value: totalCreators, icon: ShieldCheck, hint: 'Accounts that can post' },
     { label: 'Subscribers', value: totalSubscribers.toLocaleString(), icon: UserCheck, hint: 'Channel follower relationships' },
     { label: 'Premium Subscribers', value: totalPremiumSubs.toLocaleString(), icon: Crown, hint: 'Marked paid after Stripe return' },
-    { label: 'Number of Clips', value: numClips, icon: Clapperboard, hint: 'Vertical short-form media' },
+    { label: 'Number of short videos', value: numClips, icon: Clapperboard, hint: 'Vertical short-form media' },
     { label: 'Number of Videos', value: numVideos, icon: Film, hint: 'Standard 1080p long-form videos' },
     { label: 'Active Live Streamers', value: numLiveStreamers, icon: Radio, hint: 'Broadcasting live right now' },
-    { label: 'Clips Catalog Duration', value: `${clipDurationHours} hrs`, icon: Clock, hint: 'Total length of all clips in hours' },
+    { label: 'Short video catalog duration', value: `${clipDurationHours} hrs`, icon: Clock, hint: 'Total length of all short videos in hours' },
     { label: 'Videos Catalog Duration', value: `${videoDurationHours} hrs`, icon: Clock, hint: 'Total length of all videos in hours' },
   ]
 

@@ -14,7 +14,7 @@ import FilterChips from './FilterChips'
 const FILTERS = [
   { id: 'all', label: 'All' },
   { id: 'video', label: 'Videos' },
-  { id: 'clip', label: 'Clips' },
+  { id: 'clip', label: 'Short videos' },
   { id: 'pic', label: 'Pics' },
 ]
 

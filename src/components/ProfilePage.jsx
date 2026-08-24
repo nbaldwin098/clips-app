@@ -73,7 +73,7 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
           </h1>
           <p className="text-sm text-[#aaa]">@{handle || found?.handle || 'user'}</p>
           <p className="text-xs text-[#aaa] mt-1">
-            {[subscribersLabel(subs), videos.length ? `${videos.length} videos` : '', clips.length ? `${clips.length} clips` : '', pics.length ? `${pics.length} pics` : ''].filter(Boolean).join(' · ')}
+            {[subscribersLabel(subs), videos.length ? `${videos.length} videos` : '', clips.length ? `${clips.length} short videos` : '', pics.length ? `${pics.length} pics` : ''].filter(Boolean).join(' · ')}
           </p>
         </div>
         <div className="flex gap-2 pb-1">
@@ -88,7 +88,7 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
       <div className="px-4 mt-6 flex gap-6 border-b border-[#272727]">
         {[
           { id: 'videos', label: 'Videos' },
-          { id: 'clips', label: 'Clips' },
+          { id: 'clips', label: 'Short videos' },
           { id: 'pics', label: 'Pics' },
           { id: 'live', label: liveEntry ? 'Live' : 'Live' },
           { id: 'playlists', label: 'Playlists' },

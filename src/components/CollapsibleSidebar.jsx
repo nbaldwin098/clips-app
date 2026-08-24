@@ -131,7 +131,7 @@ export default function CollapsibleSidebar({
       <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden py-2 px-1.5 space-y-4">
         <nav className="space-y-0.5">
           <NavBtn collapsed={collapsed} active={currentView === 'home'} onClick={() => go('home')} icon={Home} label="Recommended" />
-          <NavBtn collapsed={collapsed} active={currentView === 'clips' || currentView === 'shorts'} onClick={() => go('clips')} icon={Clapperboard} label="Clips" />
+          <NavBtn collapsed={collapsed} active={currentView === 'clips' || currentView === 'shorts'} onClick={() => go('clips')} icon={Clapperboard} label="Short videos" />
           <NavBtn collapsed={collapsed} active={currentView === 'pics'} onClick={() => go('pics')} icon={ImageIcon} label="Pics" />
           <NavBtn collapsed={collapsed} active={currentView === 'live'} onClick={() => go('live')} icon={Radio} label="Live" />
           {isAuthenticated && (
@@ -252,9 +252,6 @@ export default function CollapsibleSidebar({
               <NavBtn collapsed={collapsed} active={currentView === 'support'} onClick={() => go('support')} icon={LifeBuoy} label="Support" />
               {isAuthenticated && (
                 <NavBtn collapsed={collapsed} active={currentView === 'verify'} onClick={() => go('verify')} icon={BadgeCheck} label="Get verified" />
-              )}
-              {isAuthenticated && user?.creatorStatus !== 'approved' && (
-                <NavBtn collapsed={collapsed} active={currentView === 'creator-apply'} onClick={() => go('creator-apply')} icon={ShieldCheck} label="Apply to create" />
               )}
               <NavBtn collapsed={collapsed} active={currentView === 'advertise' || currentView === 'advertiser-portal'} onClick={() => go('advertise')} icon={Megaphone} label="Advertise with us" />
               <NavBtn collapsed={collapsed} active={currentView === 'about'} onClick={() => go('about')} icon={BookOpen} label="About" />

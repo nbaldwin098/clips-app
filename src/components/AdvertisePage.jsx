@@ -41,7 +41,7 @@ export default function AdvertisePage({ onNavigate }) {
   return (
     <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-8">
       <PageHeader
-        title="Advertise on Clips"
+        title="Advertise on calabi"
         onBack={() => onNavigate?.('home')}
         actions={
           <button
@@ -64,7 +64,7 @@ export default function AdvertisePage({ onNavigate }) {
             Advertise next to real videos, not invented traffic
           </h1>
           <p className="text-sm text-zinc-400 leading-relaxed">
-            Inventory today is skippable preroll on videos, plus clip and pic banners and in-feed tiles, after we approve your brand. There is no live CPM, no guaranteed 24-hour turnaround, and no ad-revenue share until an ad pool actually exists. We will not sell you fake reach.
+            Inventory today is skippable preroll on videos, plus short-video and pic banners and in-feed tiles, after we approve your brand. There is no live CPM, no guaranteed 24-hour turnaround, and no ad-revenue share until an ad pool actually exists. We will not sell you fake reach.
           </p>
         </div>
       </div>
@@ -89,7 +89,7 @@ export default function AdvertisePage({ onNavigate }) {
           <div className="h-9 w-9 rounded-xl bg-white/10 text-white flex items-center justify-center font-bold">3</div>
           <h3 className="text-sm font-semibold text-white">Placement</h3>
           <p className="text-xs text-zinc-400 leading-relaxed">
-            Approved campaigns can show skippable preroll on videos, a banner at the bottom of a clip or photo, and tiles between clips or photos as people scroll. Counts are impressions and clicks we actually record — not a sold audience number.
+            Approved campaigns can show skippable preroll on videos, a banner at the bottom of a short video or photo, and tiles between short videos or photos as people scroll. Counts are impressions and clicks we actually record — not a sold audience number.
           </p>
         </div>
       </div>

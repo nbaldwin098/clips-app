@@ -117,7 +117,7 @@ export default function StreamingNavbar({
                 setCreateOpen((o) => !o)
               }}
               className="inline-flex h-9 items-center gap-1.5 rounded-full bg-[#272727] px-3 text-sm font-medium text-white hover:bg-[#3f3f3f]"
-              title="Upload a video, clip, or go live"
+              title="Upload a video, short video, or go live"
               aria-label="Create"
               aria-expanded={createOpen}
             >
@@ -131,7 +131,7 @@ export default function StreamingNavbar({
                 </p>
                 {[
                   { id: 'video', label: 'Video', hint: 'Upload a longer video', Icon: Film },
-                  { id: 'clip', label: 'Clip', hint: 'Upload a short', Icon: Clapperboard },
+                  { id: 'clip', label: 'Short video', hint: 'Upload a short', Icon: Clapperboard },
                   { id: 'live', label: 'Go live', hint: 'Start a broadcast', Icon: Radio },
                 ].map(({ id, label, hint, Icon }) => (
                   <button

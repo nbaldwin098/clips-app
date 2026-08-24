@@ -5,6 +5,10 @@ import {
 } from '../lib/youtubeParity'
 import ChannelAvatar from './ChannelAvatar'
 import PostedStamp from './PostedStamp'
+import SubscribeButton from './SubscribeButton'
+import { resolvePublicCreator } from '../lib/contentService'
+import { getSubscriberCount } from '../lib/engagement'
+import { subscribersLabel } from '../lib/uiFormat'
 
 function openProfile(handle, userId) {
   try {
@@ -14,7 +18,7 @@ function openProfile(handle, userId) {
   } catch {}
 }
 
-export default function CommentsPanel({ contentId, creatorId }) {
+export default function CommentsPanel({ contentId, creatorId, onOpenAuth }) {
   const { user, isAuthenticated } = useAuth()
   const [rows, setRows] = useState(() => listComments(contentId))
   const [text, setText] = useState('')
@@ -24,7 +28,13 @@ export default function CommentsPanel({ contentId, creatorId }) {
   const submit = (e) => {
     e.preventDefault()
     if (!isAuthenticated || !text.trim()) return
-    addComment(contentId, { userId: user.id, handle: user.handle, text: text.trim(), parentId: replyTo })
+    addComment(contentId, {
+      userId: user.id,
+      handle: user.handle,
+      displayName: user.displayName,
+      text: text.trim(),
+      parentId: replyTo,
+    })
     setText('')
     setReplyTo(null)
     refresh()
@@ -67,18 +77,25 @@ export default function CommentsPanel({ contentId, creatorId }) {
       <div className="space-y-5">
         {sorted.map((c) => {
           const replies = rows.filter((r) => r.parentId === c.id)
+          const author = resolvePublicCreator(c.handle, c.userId)
+          const name = c.displayName || author?.displayName || String(c.handle || '').replace(/^@/, '') || 'User'
+          const subs = subscribersLabel(getSubscriberCount(c.userId || author?.id))
           return (
             <div key={c.id} className="text-sm">
               <div className="flex gap-3">
                 <button type="button" onClick={() => openProfile(c.handle, c.userId)}>
-                  <ChannelAvatar name={c.handle} size={36} />
+                  <ChannelAvatar name={name} size={36} />
                 </button>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs text-[#aaa]">
-                    <button type="button" onClick={() => openProfile(c.handle, c.userId)} className="text-white hover:text-zinc-200 font-medium">@{c.handle}</button>
-                    {c.createdAt ? <> · <PostedStamp at={c.createdAt} /></> : null}
-                    {c.pinned && <span className="ml-2 text-[10px] text-[#aaa]">Pinned</span>}
-                  </p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-xs text-[#aaa]">
+                      <button type="button" onClick={() => openProfile(c.handle, c.userId)} className="text-white hover:text-zinc-200 font-medium">{name}</button>
+                      {subs ? <> · {subs}</> : null}
+                      {c.createdAt ? <> · <PostedStamp at={c.createdAt} /></> : null}
+                      {c.pinned && <span className="ml-2 text-[10px] text-[#aaa]">Pinned</span>}
+                    </p>
+                    <SubscribeButton creatorId={c.userId || author?.id} handle={c.handle} onOpenAuth={onOpenAuth} className="h-7 px-3 text-xs" />
+                  </div>
                   <p className="text-zinc-100 mt-1 whitespace-pre-wrap leading-relaxed">{c.text}</p>
                   <div className="flex flex-wrap gap-3 mt-1.5 text-[12px] text-[#aaa]">
                     <button type="button" onClick={() => { if (!user) return; toggleCommentLike(contentId, c.id, user.id); refresh() }}>Like {c.likes || ''}</button>
@@ -100,7 +117,11 @@ export default function CommentsPanel({ contentId, creatorId }) {
                           <ChannelAvatar name={r.handle} size={24} />
                           <div>
                             <p className="text-xs text-[#aaa]">
-                              <button type="button" onClick={() => openProfile(r.handle, r.userId)} className="text-white font-medium">@{r.handle}</button>
+                              <button type="button" onClick={() => openProfile(r.handle, r.userId)} className="text-white font-medium">
+                                {r.displayName || resolvePublicCreator(r.handle, r.userId)?.displayName || String(r.handle || '').replace(/^@/, '') || 'User'}
+                              </button>
+                              {' · '}
+                              {subscribersLabel(getSubscriberCount(r.userId || resolvePublicCreator(r.handle, r.userId)?.id))}
                             </p>
                             <p className="text-zinc-100 mt-0.5">{r.text}</p>
                           </div>

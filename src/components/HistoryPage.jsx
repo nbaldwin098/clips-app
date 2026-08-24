@@ -56,7 +56,7 @@ export default function HistoryPage({ onNavigate, onPlayItem }) {
         }
       />
       <p className="text-xs text-zinc-500 mb-6">
-        Clips and videos you have watched. Re-watches improve your personalized Recommended feed.
+        Short videos and videos you have watched. Re-watches improve your personalized Recommended feed.
       </p>
 
       {!isAuthenticated ? (

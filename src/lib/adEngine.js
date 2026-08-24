@@ -16,8 +16,8 @@ const AD_SETTINGS_KEY = 'clips_ad_settings'
 
 export const AD_PLACEMENTS = [
   { id: 'video', label: 'Videos', hint: 'YouTube-style skippable preroll on watch' },
-  { id: 'clip-banner', label: 'Clips banner', hint: 'Bar at the bottom of a clip' },
-  { id: 'clip-feed', label: 'Clips in-feed', hint: 'Between clips as you scroll' },
+  { id: 'clip-banner', label: 'Shorts banner', hint: 'Bar at the bottom of a short video' },
+  { id: 'clip-feed', label: 'Shorts in-feed', hint: 'Between short videos as you scroll' },
   { id: 'pic-banner', label: 'Pics banner', hint: 'Bar at the bottom of a photo' },
   { id: 'pic-feed', label: 'Pics in-feed', hint: 'Between photos as you scroll' },
 ]

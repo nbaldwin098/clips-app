@@ -275,10 +275,6 @@ function AppShell() {
       return
     }
     if (kind === 'live') {
-      if (user?.creatorStatus !== 'approved') {
-        navigate('creator-apply')
-        return
-      }
       navigate('live')
     }
   }
@@ -366,7 +362,7 @@ function AppShell() {
 
     switch (view) {
       case 'home': return <HomeFeed onPlayItem={openWatch} onOpenPic={openPic} onNavigate={navigate} />
-      case 'creators': return <CreatorsPage />
+      case 'creators': return <CreatorsPage onOpenAuth={openAuth} />
       case 'clips':
       case 'shorts':
         return (

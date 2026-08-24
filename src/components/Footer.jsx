@@ -19,12 +19,12 @@ export default function Footer({ onNavigate }) {
           <div>
             <BrandMark size={28} withWord />
             <p className="text-xs text-[#aaa] max-w-xs leading-relaxed mt-2">
-              Video, clips, and pics. Subscribe is free. Creators can price some posts. Pay only after Stripe.
+              Video, short videos, and pics. Subscribe is free. Creators can price some posts. Pay only after Stripe.
             </p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-10 gap-y-2">
             {link('About', 'about')}
-            {link('Create', 'creator-apply')}
+            {link('Create', 'dashboard')}
             {link('Advertise', 'advertise')}
             {link('Help', 'help')}
             {link('Terms of Service', 'legal-tos')}

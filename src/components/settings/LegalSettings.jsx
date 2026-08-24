@@ -5,7 +5,7 @@ export default function LegalSettings({ onNavigate }) {
     <div className="space-y-8 text-zinc-200">
       <div>
         <h1 className="text-xl font-semibold text-white">Legal & Data</h1>
-        <p className="mt-1 text-sm text-zinc-500">Public policies and how to reach Clips.</p>
+        <p className="mt-1 text-sm text-zinc-500">Public policies and how to reach calabi.</p>
       </div>
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={() => onNavigate?.('legal-tos')} className="h-9 px-3 rounded-lg border border-zinc-700 text-sm text-zinc-200">Terms</button>
@@ -20,7 +20,7 @@ export default function LegalSettings({ onNavigate }) {
         <p>Legal: {ORG.legalEmail}</p>
       </section>
       <p className="text-xs text-zinc-500">
-        Export and clear this device from Settings → Security. Email is stored with your Clips account when you signed in with email.
+        Export and clear this device from Settings → Security. Email is stored with your calabi account when you signed in with email.
       </p>
     </div>
   )

@@ -735,7 +735,7 @@ export default function WatchPage({
               </div>
             ) : null}
 
-            <CommentsPanel contentId={item.id} creatorId={item.creatorId || item.userId} />
+            <CommentsPanel contentId={item.id} creatorId={item.creatorId || item.userId} onOpenAuth={onOpenAuth} />
           </div>
         </div>
 

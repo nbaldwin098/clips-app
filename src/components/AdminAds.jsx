@@ -41,7 +41,7 @@ export default function AdminAds() {
         <div>
           <p className="text-sm font-medium text-white">Site ads</p>
           <p className="text-xs text-zinc-500 mt-0.5">
-            Videos use skippable preroll like YouTube. Clips and pics use a bottom banner, plus ads between items as people scroll.
+            Videos use skippable preroll like YouTube. Short videos and pics use a bottom banner, plus ads between items as people scroll.
           </p>
         </div>
         <button
@@ -58,8 +58,8 @@ export default function AdminAds() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-2">
           {[
             ['videoPreroll', 'Videos', 'YouTube preroll'],
-            ['clipBanner', 'Clips banner', 'Bottom of clip'],
-            ['clipInFeed', 'Clips in-feed', 'Between clips'],
+            ['clipBanner', 'Shorts banner', 'Bottom of short video'],
+            ['clipInFeed', 'Shorts in-feed', 'Between short videos'],
             ['picBanner', 'Pics banner', 'Bottom of photo'],
             ['picInFeed', 'Pics in-feed', 'Between photos'],
           ].map(([key, label, hint]) => (

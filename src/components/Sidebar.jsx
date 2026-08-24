@@ -26,7 +26,7 @@ function NavBtn({ active, onClick, icon: Icon, label }) {
 
 export default function Sidebar({ currentView, onNavigate, open, onClose }) {
   const { isAuthenticated, user } = useAuth()
-  const isApprovedCreator = user?.creatorStatus === 'approved'
+  const isApprovedCreator = Boolean(isAuthenticated)
   const [moreOpen, setMoreOpen] = useState(false)
 
   const go = (id) => {
@@ -50,7 +50,7 @@ export default function Sidebar({ currentView, onNavigate, open, onClose }) {
 
       <nav className="p-2 space-y-0.5">
         <NavBtn active={currentView === 'home'} onClick={() => go('home')} icon={Home} label="Recommended" />
-        <NavBtn active={currentView === 'clips' || currentView === 'shorts'} onClick={() => go('clips')} icon={Clapperboard} label="Clips" />
+        <NavBtn active={currentView === 'clips' || currentView === 'shorts'} onClick={() => go('clips')} icon={Clapperboard} label="Short videos" />
         <NavBtn active={currentView === 'live'} onClick={() => go('live')} icon={Radio} label="Live" />
         <NavBtn active={currentView === 'explore'} onClick={() => go('explore')} icon={Compass} label="Search" />
         <NavBtn active={currentView === 'sounds'} onClick={() => go('sounds')} icon={Music} label="Sounds" />
@@ -108,9 +108,6 @@ export default function Sidebar({ currentView, onNavigate, open, onClose }) {
             <NavBtn active={currentView === 'support'} onClick={() => go('support')} icon={LifeBuoy} label="Support" />
             {isAuthenticated && (
               <NavBtn active={currentView === 'verify'} onClick={() => go('verify')} icon={ShieldCheck} label="Get verified" />
-            )}
-            {isAuthenticated && user?.creatorStatus !== 'approved' && (
-              <NavBtn active={currentView === 'creator-apply'} onClick={() => go('creator-apply')} icon={ShieldCheck} label="Apply to create" />
             )}
             <NavBtn active={currentView === 'advertise' || currentView === 'advertiser-portal'} onClick={() => go('advertise')} icon={Megaphone} label="Advertise with us" />
             <NavBtn active={currentView === 'about'} onClick={() => go('about')} icon={BookOpen} label="About" />

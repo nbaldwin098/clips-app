@@ -6,7 +6,8 @@ import { cn } from '../lib/utils'
 
 export default function SubscribeButton({ creatorId, handle, onOpenAuth, className }) {
   const { user, isAuthenticated } = useAuth()
-  const resolvedId = creatorId || resolvePublicCreator(handle, creatorId)?.id || null
+  const found = resolvePublicCreator(handle, creatorId)
+  const resolvedId = creatorId || found?.id || (handle ? `h:${String(handle).replace(/^@/, '').toLowerCase()}` : null)
   const [on, setOn] = useState(() => isSubscribed(user?.id, resolvedId))
 
   useEffect(() => {

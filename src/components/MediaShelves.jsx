@@ -43,7 +43,7 @@ export default function MediaShelves({ items, onPlayItem, onOpenPic, pinOverlay,
       )}
       {showShorts && shorts.length > 0 && (
         <section>
-          {filter === 'all' ? <h2 className="text-lg font-semibold text-white mb-4">Clips</h2> : null}
+          {filter === 'all' ? <h2 className="text-lg font-semibold text-white mb-4">Short videos</h2> : null}
           <div className="flex gap-3 overflow-x-auto pb-2 chip-scroll">
             {clipRows.map((row) => (
               row.kind === 'ad' ? (

@@ -331,7 +331,7 @@ function ClipSlide({
             </button>
           </div>
           <div className="px-4 pb-6">
-            <CommentsPanel contentId={item.id} creatorId={creatorId} />
+            <CommentsPanel contentId={item.id} creatorId={creatorId} onOpenAuth={onOpenAuth} />
           </div>
         </div>
       )}

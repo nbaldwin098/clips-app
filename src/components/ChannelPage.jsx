@@ -96,7 +96,7 @@ export default function ChannelPage({ onNavigate }) {
 
   const add = (e) => {
     e.preventDefault()
-    if (!code.trim() || user?.creatorStatus !== 'approved') return
+    if (!code.trim() || !user?.id) return
     const list = addEmote(user.id, { code: code.trim() })
     setEmotes([...list])
     setCode('')
@@ -158,7 +158,7 @@ export default function ChannelPage({ onNavigate }) {
           <p className="text-xs text-zinc-500 mt-1">
             {getSubscriberCount(user?.id)} subscribers
             {rank ? ` · Rank #${rank}` : ''}
-            {user?.creatorStatus === 'approved' ? ' · Creator' : ''}
+            {user?.id ? ' · Creator' : ''}
           </p>
           <button
             type="button"
@@ -176,7 +176,7 @@ export default function ChannelPage({ onNavigate }) {
       </div>
 
       <div className="px-4 sm:px-6 mt-6 grid sm:grid-cols-4 gap-2 text-center text-xs">
-        {[['Views', a.views], ['Clips', a.clips], ['Watch hrs', a.watchHours], ['Subs', a.subscribers]].map(([label, val]) => (
+        {[['Views', a.views], ['Short videos', a.clips], ['Watch hrs', a.watchHours], ['Subs', a.subscribers]].map(([label, val]) => (
           <div key={label} className="rounded-xl border border-zinc-800 bg-[#121218] p-3">
             <p className="text-white font-semibold text-lg">{val}</p>
             <p className="text-zinc-500">{label}</p>
@@ -213,7 +213,7 @@ export default function ChannelPage({ onNavigate }) {
           </span>
         </label>
         {err ? <p className="text-sm text-red-400">{err}</p> : null}
-        {user?.creatorStatus === 'approved' && (
+        {user?.id && (
           <div className="rounded-xl border border-zinc-800 bg-[#121218] p-4">
             <p className="text-xs text-white mb-2">Subscriber emotes</p>
             <form onSubmit={add} className="flex gap-2">

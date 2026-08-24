@@ -16,7 +16,7 @@ export default function AnalyticsPage({ onNavigate }) {
     { label: 'Subscribers', value: a.subscribers },
     { label: 'Premium paid', value: a.premiumSubs },
     { label: 'Likes', value: a.likes },
-    { label: 'Clips + videos', value: a.clips },
+    { label: 'Short videos + videos', value: a.clips },
     { label: 'Past lives', value: vods.length },
     { label: 'Rank', value: rank ? `#${rank}` : '—' },
     { label: 'Earned', value: `$${b.earned.toFixed(2)}` },

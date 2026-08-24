@@ -24,7 +24,7 @@ export default function MfaGate() {
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/80 p-4">
       <form onSubmit={submit} className="w-full max-w-sm rounded-2xl border border-[#2f2f37] bg-[#1f1f23] p-5 space-y-3">
         <h2 className="text-lg font-semibold text-white">Enter your 2FA code</h2>
-        <p className="text-xs text-zinc-500">Open your authenticator app. This is a Clips code, not a text from anyone else.</p>
+        <p className="text-xs text-zinc-500">Open your authenticator app. This is a calabi code, not a text from anyone else.</p>
         <input
           value={code}
           onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 8))}

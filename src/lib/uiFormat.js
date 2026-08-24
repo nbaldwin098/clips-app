@@ -15,7 +15,6 @@ export function likesLabel(n) {
 
 export function subscribersLabel(n) {
   const v = Number(n) || 0
-  if (v <= 0) return ''
   if (v === 1) return '1 subscriber'
   return `${formatCount(v)} subscribers`
 }

@@ -4,10 +4,12 @@ import { listSidebarCreators } from '../lib/contentService'
 import { useContentSyncTick } from '../lib/useContentSync'
 import ChannelAvatar from './ChannelAvatar'
 import VerifiedBadge from './VerifiedBadge'
-import { isOfficialCreator } from '../lib/uiFormat'
+import SubscribeButton from './SubscribeButton'
+import { getSubscriberCount } from '../lib/engagement'
+import { isOfficialCreator, subscribersLabel } from '../lib/uiFormat'
 import { isVerifiedChannel } from '../lib/verification'
 
-export default function CreatorsPage() {
+export default function CreatorsPage({ onOpenAuth }) {
   const syncTick = useContentSyncTick()
   const [ranked, setRanked] = useState(() => listSidebarCreators(24))
 
@@ -30,24 +32,28 @@ export default function CreatorsPage() {
       ) : (
         <div className="divide-y divide-[#272727] rounded-2xl border border-[#272727] overflow-hidden">
           {ranked.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => { if (typeof window !== 'undefined') window.__clipsOpenProfile?.(c.handle, c.id) }}
-              className="w-full flex items-center gap-4 px-4 py-3 text-left hover:bg-[#181818]"
-            >
-              <ChannelAvatar src={c.avatarUrl} name={c.displayName} size={48} official={isVerifiedChannel(c.id, c.handle)} />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate inline-flex items-center gap-1.5">
-                  {c.displayName}
-                  {isVerifiedChannel(c.id, c.handle) ? <VerifiedBadge title={isOfficialCreator(c.id, c.handle) ? 'Official channel' : 'Verified'} /> : null}
-                </p>
-                <p className="text-xs text-[#aaa]">
-                  @{c.handle || 'creator'}
-                  {c.postCount ? ` · ${c.postCount} post${c.postCount === 1 ? '' : 's'}` : ''}
-                </p>
-              </div>
-            </button>
+            <div key={c.id} className="flex items-center gap-4 px-4 py-3 hover:bg-[#181818]">
+              <button
+                type="button"
+                onClick={() => { if (typeof window !== 'undefined') window.__clipsOpenProfile?.(c.handle, c.id) }}
+                className="flex items-center gap-4 min-w-0 flex-1 text-left"
+              >
+                <ChannelAvatar src={c.avatarUrl} name={c.displayName} size={48} official={isVerifiedChannel(c.id, c.handle)} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-white truncate inline-flex items-center gap-1.5">
+                    {c.displayName}
+                    {isVerifiedChannel(c.id, c.handle) ? <VerifiedBadge title={isOfficialCreator(c.id, c.handle) ? 'Official channel' : 'Verified'} /> : null}
+                  </p>
+                  <p className="text-xs text-[#aaa]">
+                    @{c.handle || 'creator'}
+                    {' · '}
+                    {subscribersLabel(getSubscriberCount(c.id))}
+                    {c.postCount ? ` · ${c.postCount} post${c.postCount === 1 ? '' : 's'}` : ''}
+                  </p>
+                </div>
+              </button>
+              <SubscribeButton creatorId={c.id} handle={c.handle} onOpenAuth={onOpenAuth} />
+            </div>
           ))}
         </div>
       )}

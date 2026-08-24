@@ -307,7 +307,7 @@ export async function syncPublicEngagementFromCloud() {
       const board = lobby.data.map((r) => ({
         userId: r.user_id,
         isLive: r.is_live !== false,
-        title: r.title || 'Live on Clips',
+        title: r.title || 'Live on calabi',
         handle: r.handle,
         displayName: r.display_name,
         category: r.category,
@@ -332,7 +332,7 @@ export async function pushLiveLobby(payload) {
     const { error } = await sb.from('live_lobby').upsert({
       user_id: payload.userId,
       is_live: true,
-      title: payload.title || 'Live on Clips',
+      title: payload.title || 'Live on calabi',
       handle: payload.handle || null,
       display_name: payload.displayName || null,
       category: payload.category || null,

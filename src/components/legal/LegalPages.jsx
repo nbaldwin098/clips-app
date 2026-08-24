@@ -16,21 +16,21 @@ export function TermsOfService() {
     <LegalShell title="Terms of Service">
       <p>Last updated: August 22, 2026</p>
       <h2>1. Acceptance</h2>
-      <p>By accessing or using Clips you agree to these Terms. If you do not agree, do not use the service.</p>
+      <p>By accessing or using calabi you agree to these Terms. If you do not agree, do not use the service.</p>
       <h2>2. Accounts</h2>
       <p>You are responsible for your account credentials and activity. You must meet the minimum age in your jurisdiction (generally 13+).</p>
       <h2>3. Content</h2>
-      <p>You retain ownership of content you upload. You grant Clips a limited license to host, transcode, and distribute that content on the service. You represent you have all rights needed to post it.</p>
+      <p>You retain ownership of content you upload. You grant calabi a limited license to host, transcode, and distribute that content on the service. You represent you have all rights needed to post it.</p>
       <h2>4. Prohibited conduct</h2>
       <p>No illegal content, malware, spam, or material that violates these Terms or applicable law. We may remove content and suspend accounts that violate these rules.</p>
       <h2>5. Copyright</h2>
-      <p>Clips operates a notice-and-takedown process under the DMCA. See Settings → Copyright &amp; DMCA for intake addresses, strike policy, and counter-notification procedures.</p>
+      <p>calabi operates a notice-and-takedown process under the DMCA. See Settings → Copyright &amp; DMCA for intake addresses, strike policy, and counter-notification procedures.</p>
       <h2>6. Monetization</h2>
       <p>Membership list prices are shown at checkout. Payouts to creators are not live until Stripe Connect is connected. We do not promise a split we cannot pay.</p>
       <h2>7. Disclaimers</h2>
-      <p>The service is provided “as is.” To the fullest extent permitted by law, Clips disclaims warranties of merchantability, fitness for a particular purpose, and non-infringement.</p>
+      <p>The service is provided “as is.” To the fullest extent permitted by law, calabi disclaims warranties of merchantability, fitness for a particular purpose, and non-infringement.</p>
       <h2>8. Limitation of liability</h2>
-      <p>To the fullest extent permitted by law, Clips is not liable for indirect, incidental, special, or consequential damages arising from use of the service.</p>
+      <p>To the fullest extent permitted by law, calabi is not liable for indirect, incidental, special, or consequential damages arising from use of the service.</p>
       <h2>9. Changes</h2>
       <p>We may update these Terms. Continued use after changes constitutes acceptance of the revised Terms.</p>
       <h2>10. Contact</h2>
@@ -48,7 +48,7 @@ export function PrivacyPolicy() {
       <h2>2. How we use data</h2>
       <p>To provide the product, personalize discovery, process payouts, enforce policies, and improve reliability. Follower count is not used as a ranking feature.</p>
       <h2>3. Storage</h2>
-      <p>Sessions and taste may be stored in your browser. Signed-in accounts also sync through Clips. We do not sell personal data.</p>
+      <p>Sessions and taste may be stored in your browser. Signed-in accounts also sync through calabi. We do not sell personal data.</p>
       <h2>4. Sharing</h2>
       <p>We share data with service providers only as needed to operate the platform, or when required by law.</p>
       <h2>5. Your rights</h2>
@@ -69,7 +69,7 @@ export function CreatorAgreement() {
       <h2>2. Eligibility</h2>
       <p>Monetization may require identity verification, minimum activity, and compliance with Community Guidelines and copyright policy.</p>
       <h2>3. Content license</h2>
-      <p>You grant Clips a non-exclusive license to host and deliver your content on the service.</p>
+      <p>You grant calabi a non-exclusive license to host and deliver your content on the service.</p>
       <h2>4. Taxes</h2>
       <p>You are responsible for taxes on amounts you receive.</p>
     </LegalShell>

@@ -11,6 +11,7 @@ import { findOfficialLogin } from '../data/publicMediaSeed'
 import { findOwnerLogin, OWNER_LOGIN } from '../data/ownerLogin'
 import { findNamedAccountLogin, verifyNamedAccountPassword } from '../data/namedAccountsSeed'
 import { sanitizeAuthError } from '../lib/authBrand'
+import { publicOrigin } from '../lib/orgConfig'
 
 const AuthContext = createContext(null)
 const DEFAULT_USER = {
@@ -34,8 +35,8 @@ function persistableUser(u) {
     bannerUrl: persistableMediaUrl(u.bannerUrl) || '',
     bio: String(u.bio || '').slice(0, 500),
     passwordHash: u.passwordHash || undefined,
-    isCreator: org || owner,
-    creatorStatus: org || owner ? 'approved' : 'none',
+    isCreator: true,
+    creatorStatus: 'approved',
     isPlatformAdmin: owner,
     role: owner ? 'admin' : 'user',
   }
@@ -49,8 +50,8 @@ function sanitizeUser(u) {
   return {
     ...DEFAULT_USER,
     ...persisted,
-    isCreator: org || owner,
-    creatorStatus: org || owner ? 'approved' : 'none',
+    isCreator: true,
+    creatorStatus: 'approved',
     isPlatformAdmin: owner,
     role: owner ? 'admin' : 'user',
   }
@@ -86,8 +87,8 @@ function mapSbUser(sbUser, meta = {}) {
     displayName,
     handle: String(handle).toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24) || 'user',
     provider: 'supabase',
-    creatorStatus: 'none',
-    isCreator: false,
+    creatorStatus: 'approved',
+    isCreator: true,
     isPlatformAdmin: false,
     role: 'user',
     avatarUrl: persistableMediaUrl(meta.avatarUrl || sbUser.user_metadata?.avatar_url) || '',
@@ -118,6 +119,8 @@ async function hydratePrivileges(mapped) {
     return {
       ...mapped,
       ...priv,
+      isCreator: true,
+      creatorStatus: 'approved',
       displayName: profile?.display_name || mapped.displayName,
       handle: profile?.handle || mapped.handle,
       bio: profile?.bio || mapped.bio || local?.bio || '',
@@ -129,8 +132,8 @@ async function hydratePrivileges(mapped) {
     return {
       ...mapped,
       isPlatformAdmin: owner,
-      isCreator: owner,
-      creatorStatus: owner ? 'approved' : 'none',
+      isCreator: true,
+      creatorStatus: 'approved',
       role: owner ? 'admin' : 'user',
       avatarUrl: persistableMediaUrl(mapped.avatarUrl) || persistableMediaUrl(local?.avatarUrl) || '',
       bannerUrl: persistableMediaUrl(mapped.bannerUrl) || persistableMediaUrl(local?.bannerUrl) || '',
@@ -215,7 +218,7 @@ export function AuthProvider({ children }) {
         })
         unsub = () => data.subscription.unsubscribe()
       } catch (e) {
-        console.warn('[Clips] Supabase session restore failed', e)
+        console.warn('[calabi] Supabase session restore failed', e)
       } finally {
         setAuthReady(true)
       }
@@ -315,13 +318,13 @@ export function AuthProvider({ children }) {
         avatarUrl: named.avatarUrl,
         bannerUrl: named.bannerUrl,
         bio: '',
-        isCreator: false,
-        creatorStatus: 'none',
+        isCreator: true,
+        creatorStatus: 'approved',
         isPlatformAdmin: false,
         role: 'user',
       }
       setUser(next)
-      setMode('viewer')
+      setMode('creator')
       try { indexUser(next) } catch {}
       return next
     }
@@ -340,7 +343,7 @@ export function AuthProvider({ children }) {
           if (data.user) {
             const mapped = await hydratePrivileges(mapSbUser(data.user, { displayName, handle }))
             setUser(mapped)
-            setMode('viewer')
+            setMode('creator')
             try { indexUser(mapped) } catch {}
             setGraphActor(mapped)
             try { await syncGraphFromCloud() } catch {}
@@ -355,7 +358,7 @@ export function AuthProvider({ children }) {
         if (error) throw new Error(sanitizeAuthError(error.message))
         const mapped = await hydratePrivileges(mapSbUser(data.user, { displayName }))
         setUser(mapped)
-        setMode('viewer')
+        setMode('creator')
         try { indexUser(mapped) } catch {}
         const mfa = await readMfaState(sb)
         setMfaPending(mfa.pending)
@@ -386,9 +389,9 @@ export function AuthProvider({ children }) {
       }
       const ok = await verifySecret(password, stored.passwordHash)
       if (!ok) throw new Error('Invalid email or password')
-      const next = { ...existing, displayName, passwordHash: stored.passwordHash }
+      const next = { ...existing, displayName, passwordHash: stored.passwordHash, isCreator: true, creatorStatus: 'approved' }
       setUser(next)
-      setMode('viewer')
+      setMode('creator')
       try { indexUser(next) } catch {}
       return next
     }
@@ -403,13 +406,13 @@ export function AuthProvider({ children }) {
       handle,
       provider: 'local',
       passwordHash,
-      creatorStatus: 'none',
-      isCreator: false,
+      creatorStatus: 'approved',
+      isCreator: true,
       isPlatformAdmin: false,
       role: 'user',
     }
     setUser(next)
-    setMode('viewer')
+    setMode('creator')
     try { indexUser(next) } catch {}
     return next
   }, [])
@@ -431,12 +434,18 @@ export function AuthProvider({ children }) {
   const sendPasswordReset = useCallback(async (rawEmail) => {
     const mail = String(rawEmail || '').trim().toLowerCase()
     if (!mail || !mail.includes('@')) throw new Error('Enter the email on your account.')
+    if (findOwnerLogin(mail)) {
+      throw new Error('cs1 signs in with the site password. Email reset is not used for that account.')
+    }
+    if (findOfficialLogin(mail) || findNamedAccountLogin(mail)) {
+      throw new Error('That account signs in on this site. Email reset is only for cloud accounts.')
+    }
     if (!isSupabaseConfigured()) {
-      throw new Error('Password reset needs a Clips account on this site.')
+      throw new Error('Password reset needs a calabi cloud account.')
     }
     const sb = await getSupabase()
     if (!sb) throw new Error('Could not send a reset email right now.')
-    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined
+    const redirectTo = `${publicOrigin()}/`
     const { error } = await sb.auth.resetPasswordForEmail(mail, { redirectTo })
     if (error) throw new Error(sanitizeAuthError(error.message))
     return true
@@ -450,7 +459,7 @@ export function AuthProvider({ children }) {
     }
     const sb = await getSupabase()
     if (!sb) throw new Error('Could not reach sign-in.')
-    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined
+    const redirectTo = `${publicOrigin()}/`
     const { error } = await sb.auth.signInWithOAuth({
       provider,
       options: { redirectTo },
@@ -481,7 +490,7 @@ export function AuthProvider({ children }) {
     if (!data.user) throw new Error('That code did not work.')
     const mapped = await hydratePrivileges(mapSbUser(data.user, { phone }))
     setUser(mapped)
-    setMode('viewer')
+    setMode('creator')
     try { indexUser(mapped) } catch {}
     const mfa = await readMfaState(sb)
     setMfaPending(mfa.pending)
@@ -526,10 +535,10 @@ export function AuthProvider({ children }) {
   }, [])
 
   const startMfaEnroll = useCallback(async () => {
-    if (!isSupabaseConfigured()) throw new Error('2FA is only for a signed-in Clips account.')
+    if (!isSupabaseConfigured()) throw new Error('2FA is only for a signed-in calabi account.')
     const sb = await getSupabase()
     if (!sb) throw new Error('Could not start 2FA.')
-    const { data, error } = await sb.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Clips' })
+    const { data, error } = await sb.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'calabi' })
     if (error) throw new Error(sanitizeAuthError(error.message))
     return data
   }, [])
@@ -613,10 +622,9 @@ export function AuthProvider({ children }) {
 
   const enableCreatorMode = useCallback(() => {
     setUser((prev) => {
-      if (prev?.creatorStatus === 'approved') {
-        queueMicrotask(() => setMode('creator'))
-      }
-      return prev
+      if (!prev) return prev
+      queueMicrotask(() => setMode('creator'))
+      return { ...prev, isCreator: true, creatorStatus: 'approved' }
     })
   }, [])
 

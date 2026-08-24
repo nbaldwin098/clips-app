@@ -106,7 +106,7 @@ export default function ShortsGrid({ items, onOpen, tab = 'recommended', onTab }
       </div>
       {items.length === 0 ? (
         <p className="px-4 pt-10 text-sm text-zinc-400 text-center">
-          {tab === 'following' ? 'Subscribe to creators to fill this shelf.' : 'No clips yet'}
+          {tab === 'following' ? 'Subscribe to creators to fill this shelf.' : 'No short videos yet'}
         </p>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 p-4 pb-16">

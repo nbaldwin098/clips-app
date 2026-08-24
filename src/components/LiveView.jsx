@@ -25,7 +25,7 @@ function formatElapsed(startedAt) {
 
 export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream, onOpenAuth }) {
   const { user, isAuthenticated } = useAuth()
-  const approved = user?.creatorStatus === 'approved'
+  const approved = Boolean(isAuthenticated)
 
   const [copied, setCopied] = useState('')
   const [isLive, setIsLive] = useState(false)
@@ -85,7 +85,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
     if (!approved || !user?.id) return
     const payload = {
       isLive: true,
-      title: title.trim() || 'Live on Clips',
+      title: title.trim() || 'Live on calabi',
       category,
       startedAt: new Date().toISOString(),
       userId: user.id,

@@ -62,12 +62,11 @@ export async function setCreatorStatus(targetUserId, status) {
 
 export function privilegesFromProfile(profile, fallbackOwner = false) {
   const role = profile?.role || 'user'
-  const creatorStatus = profile?.creator_status || 'none'
   const isAdmin = role === 'admin' || fallbackOwner
   return {
-    role,
-    creatorStatus: isAdmin && creatorStatus === 'none' ? 'approved' : creatorStatus,
-    isCreator: creatorStatus === 'approved' || isAdmin,
+    role: isAdmin ? 'admin' : 'user',
+    creatorStatus: 'approved',
+    isCreator: true,
     isPlatformAdmin: isAdmin,
   }
 }
