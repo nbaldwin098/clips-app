@@ -12,7 +12,6 @@ import {
   LIVE_VIEWER_AD_DELAY_SEC,
   LIVE_ADS_PER_HOUR_MAX,
   liveAdIntervalFromPerHour,
-  EXOCLICK_LIVE_CREATOR_VAST_URL,
 } from '../../lib/liveAds'
 
 export default function StreamSettings() {
