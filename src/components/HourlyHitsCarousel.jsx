@@ -42,7 +42,7 @@ export default function HourlyHitsCarousel({ onPlayItem, onOpenPic }) {
 
   useEffect(() => {
     if (items.length < 2) return undefined
-    const t = setInterval(() => setIndex((i) => (i + 1) % items.length), 8000)
+    const t = setInterval(() => setIndex((i) => (i + 1) % items.length), 4000)
     return () => clearInterval(t)
   }, [items.length, pack.windowStart])
 
@@ -70,18 +70,18 @@ export default function HourlyHitsCarousel({ onPlayItem, onOpenPic }) {
           <button
             type="button"
             onClick={() => go(-1)}
-            className="absolute left-1 sm:left-2 z-20 h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-black/70 border border-white/15 text-white flex items-center justify-center hover:bg-black/90"
+            className="absolute left-1 sm:left-2 z-20 p-2 text-white/90 flex items-center justify-center hover:text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]"
             aria-label="Previous"
           >
-            <ChevronLeft className="h-6 w-6" />
+            <ChevronLeft className="h-8 w-8 sm:h-10 sm:w-10" />
           </button>
           <button
             type="button"
             onClick={() => go(1)}
-            className="absolute right-1 sm:right-2 z-20 h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-black/70 border border-white/15 text-white flex items-center justify-center hover:bg-black/90"
+            className="absolute right-1 sm:right-2 z-20 p-2 text-white/90 flex items-center justify-center hover:text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]"
             aria-label="Next"
           >
-            <ChevronRight className="h-6 w-6" />
+            <ChevronRight className="h-8 w-8 sm:h-10 sm:w-10" />
           </button>
 
           <Peek item={prev} side="left" onClick={() => go(-1)} />

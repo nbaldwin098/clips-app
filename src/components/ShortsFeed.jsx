@@ -51,6 +51,7 @@ function ClipSlide({
   const lastTap = useRef(0)
   const lastTime = useRef(0)
   const looped = useRef(false)
+  const viewCountedRef = useRef(false)
   const creatorId = item.creatorId || item.userId
   const commentCount = listComments(item.id).length
 
@@ -77,6 +78,10 @@ function ClipSlide({
   }, [item.id, item.mediaUrl, item.sourceUrl])
 
   useEffect(() => {
+    viewCountedRef.current = false
+  }, [item.id])
+
+  useEffect(() => {
     const el = vidRef.current
     if (!el || embed?.type === 'iframe') return
     if (active) {
@@ -87,7 +92,6 @@ function ClipSlide({
         el.muted = true
         el.play()?.catch(() => {})
       })
-      recordView(item.id)
       if (user?.id) {
         recordInteraction(user.id, {
           contentId: item.id,
@@ -222,6 +226,10 @@ function ClipSlide({
               const el = e.target
               if (!el?.duration) return
               setProgress(el.currentTime / el.duration)
+              if (active && el.currentTime >= 1 && !viewCountedRef.current) {
+                viewCountedRef.current = true
+                recordView(item.id)
+              }
               if (el.currentTime + 0.35 < lastTime.current && user?.id && !looped.current) {
                 looped.current = true
                 recordInteraction(user.id, {
