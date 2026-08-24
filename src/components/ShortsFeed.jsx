@@ -14,6 +14,7 @@ import ShortsStage, { ShortsCard } from './ShortsStage'
 import ShortsGrid from './ShortsGrid'
 import ExoClickDisplay, { clipBannerAllowed, EXOCLICK_BANNER_ZONE, EXOCLICK_BANNER_CLASS } from './ExoClickDisplay'
 import { mixFeedAds } from '../lib/adEngine'
+import { preloadPostedItems } from '../lib/preloadMedia'
 
 function resolvePlayUrl(item) {
   return item?.mediaUrl || item?.sourceUrl || ''
@@ -35,7 +36,7 @@ function RailBtn({ onClick, label, children, active = false, circled = true }) {
 }
 
 function ClipSlide({
-  item, active, muted, onToggleMute, user, onOpenAuth, onOpenProfile, onOpenSound, onStitch, onBack, onSearch,
+  item, active, warm = false, muted, onToggleMute, user, onOpenAuth, onOpenProfile, onOpenSound, onStitch, onBack, onSearch,
   showBanner = false,
 }) {
   const vidRef = useRef(null)
@@ -216,7 +217,7 @@ function ClipSlide({
             playsInline
             loop
             muted={muted}
-            preload={active ? 'auto' : 'metadata'}
+            preload={active || warm ? 'auto' : 'metadata'}
             onTimeUpdate={(e) => {
               const el = e.target
               if (!el?.duration) return
@@ -375,6 +376,10 @@ export default function ShortsFeed({
   }, [focusId, mixed])
 
   useEffect(() => { setActiveIdx(startIdx) }, [startIdx])
+  useEffect(() => {
+    const from = inPlayer ? activeIdx + 1 : 0
+    preloadPostedItems(mixed.slice(from), inPlayer ? 3 : 2)
+  }, [mixed, activeIdx, inPlayer])
 
   const openClip = (item) => onNavigate?.('clips', item.id)
   const backToGrid = () => {
@@ -418,7 +423,7 @@ export default function ShortsFeed({
       empty={(
         <div className="h-full flex items-center justify-center text-sm text-zinc-400">No clips</div>
       )}
-      renderSlide={(index, active) => {
+      renderSlide={(index, active, warm) => {
         const row = mixed[index]
         if (row?.kind === 'ad') {
           return (
@@ -434,6 +439,7 @@ export default function ShortsFeed({
           <ClipSlide
             item={row.item}
             active={active}
+            warm={warm}
             muted={muted}
             onToggleMute={() => setMuted((m) => !m)}
             user={user}

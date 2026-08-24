@@ -11,6 +11,7 @@ import { downloadPostedMedia } from '../lib/mediaDownload'
 import { mixFeedAds } from '../lib/adEngine'
 import { InFeedAd, PlacementBanner } from './AdUnits'
 import ExoClickDisplay from './ExoClickDisplay'
+import { preloadPostedItems } from '../lib/preloadMedia'
 
 function PicImage({ pic, className, alt = '', full = false, fill = false, eager = false, onUnplayable }) {
   const immediate = pickImmediatePhotoSrc(pic, { full })
@@ -77,7 +78,7 @@ function PicImage({ pic, className, alt = '', full = false, fill = false, eager 
   return <img src={src} alt={alt} className={className} onError={onError} decoding="async" loading={eager ? 'eager' : 'lazy'} fetchPriority={eager ? 'high' : 'low'} />
 }
 
-function PicSlide({ pic, onOpenProfile }) {
+function PicSlide({ pic, onOpenProfile, eager = true }) {
   const share = async (e) => {
     e?.stopPropagation?.()
     try { await copyShareUrl('pic', pic.id) } catch {}
@@ -101,7 +102,7 @@ function PicSlide({ pic, onOpenProfile }) {
   return (
     <ShortsCard actions={actions}>
       <div className="absolute inset-0 bg-black flex items-center justify-center">
-        <PicImage pic={pic} full eager className="max-h-full max-w-full w-auto h-auto object-contain" />
+        <PicImage pic={pic} full eager={eager} className="max-h-full max-w-full w-auto h-auto object-contain" />
       </div>
       {handle ? (
         <div className="absolute inset-x-0 bottom-0 z-10">
@@ -157,14 +158,9 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
   useEffect(() => subscribeContentUpdates(refresh), [refresh])
 
   useEffect(() => {
-    const first = items[0]
-    if (!first) return
-    const src = pickImmediatePhotoSrc(first)
-    if (!src) return
-    const img = new Image()
-    img.decoding = 'sync'
-    img.src = src
-  }, [items])
+    const from = viewerIndex == null ? 0 : viewerIndex + 1
+    preloadPostedItems(mixed.slice(from), viewerIndex == null ? 6 : 3)
+  }, [mixed, viewerIndex])
 
   useEffect(() => {
     if (!initialPicId || skipAutoOpen.current) return
@@ -243,7 +239,7 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
               <p className="text-[11px] text-white/50">{viewerIndex + 1}/{mixed.length}</p>
             </div>
           )}
-          renderSlide={(index) => {
+          renderSlide={(index, active, warm) => {
             const row = mixed[index]
             if (row?.kind === 'ad') {
               return (
@@ -255,7 +251,7 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
                 </div>
               )
             }
-            return row?.item ? <PicSlide pic={row.item} onOpenProfile={onOpenProfile} /> : null
+            return row?.item ? <PicSlide pic={row.item} onOpenProfile={onOpenProfile} eager={active || warm} /> : null
           }}
         />
       </div>

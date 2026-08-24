@@ -37,6 +37,7 @@ import { isVerifiedChannel } from '../lib/verification'
 import { startPremiumCheckout } from '../lib/checkout'
 import { stashPendingStripe, startTipCheckout, TIP_AMOUNTS } from '../lib/tips'
 import { getStripePaymentLink } from '../lib/stripeConfig'
+import { preloadPostedItem } from '../lib/preloadMedia'
 
 function Pill({ children, onClick, active = false, title, disabled }) {
   return (
@@ -166,6 +167,10 @@ export default function WatchPage({
   }, [item])
 
   const original = item?.stitchOf ? getById(item.stitchOf) : null
+
+  useEffect(() => {
+    preloadPostedItem(queue.next)
+  }, [queue.next])
 
   useEffect(() => {
     setVotes(getVotes(itemId))

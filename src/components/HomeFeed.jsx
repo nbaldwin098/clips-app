@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { Sparkles } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getStableHomeFeed, getStableFollowingFeed, getById } from '../lib/contentService'
@@ -11,6 +11,7 @@ import TastePicker from './TastePicker'
 import Footer from './Footer'
 import FilterChips from './FilterChips'
 import HourlyHitsCarousel from './HourlyHitsCarousel'
+import { preloadPostedItem, preloadPostedItems } from '../lib/preloadMedia'
 
 const FILTERS = [
   { id: 'all', label: 'All' },
@@ -34,6 +35,12 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onNavigate }) {
     if (!user?.id) return []
     return listContinueWatching(user.id).map((row) => getById(row.contentId)).filter((i) => i && i.type === 'video')
   }, [user?.id])
+
+  useEffect(() => {
+    preloadPostedItem(featured)
+    preloadPostedItems(continueItems, 1)
+    preloadPostedItems(items, 3)
+  }, [featured, continueItems, items])
 
   return (
     <div className="w-full">
