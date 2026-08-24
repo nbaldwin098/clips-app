@@ -67,6 +67,12 @@ export function listWatchHistoryDetailed(userId) {
   return Object.values(userMap(userId)).sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
 }
 
+/** Finished videos and clips the user can rewatch from the library. */
+export function listWatchAgain(userId) {
+  if (!userId) return []
+  return listWatchHistoryDetailed(userId).filter((row) => row.completed || (row.watchRatio || 0) >= 0.92)
+}
+
 export function listContinueWatching(userId) {
   if (!userId) return []
   const ids = (lsGet(CONTINUE_KEY, {}) || {})[userId] || []
