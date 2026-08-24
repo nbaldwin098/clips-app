@@ -33,7 +33,11 @@ export function pickImmediatePhotoSrc(pic, { full = false } = {}) {
     if (isHttpUrl(pic.thumbUrl) || isDataImageUrl(pic.thumbUrl)) return pic.thumbUrl
     return pic.mediaUrl || pic.thumbUrl || pic.sourceUrl || ''
   }
-  const list = [pic.mediaUrl, pic.thumbUrl, pic.sourceUrl]
+  const list = [pic.mosaicThumb, pic.thumbUrl, pic.mediaUrl, pic.sourceUrl]
+  if (!full) {
+    const data = list.find((u) => isDataImageUrl(u))
+    if (data) return data
+  }
   const stable = list.find((u) => isHttpUrl(u) || isDataImageUrl(u))
   if (stable) return stable
   return list.find(Boolean) || ''
@@ -50,7 +54,8 @@ export function getPicsFeed() {
       description: sanitizeDescription(raw.description),
       sourceUrl: raw.sourceUrl || raw.mediaUrl || '',
       mediaUrl: raw.mediaUrl || raw.sourceUrl || '',
-      thumbUrl: raw.thumbUrl || raw.mediaUrl || '',
+      thumbUrl: raw.mosaicThumb || raw.thumbUrl || raw.mediaUrl || '',
+      mosaicThumb: raw.mosaicThumb || (String(raw.thumbUrl || '').startsWith('data:image/') ? raw.thumbUrl : ''),
       handle: raw.handle,
       displayName: raw.displayName || raw.handle,
       avatarUrl: raw.avatarUrl || null,
@@ -98,6 +103,7 @@ export async function publishPhoto(file, actor = null) {
       sourceUrl: mediaUrl,
       mediaUrl,
       thumbUrl: processed.thumbUrl || mediaUrl,
+      mosaicThumb: processed.thumbUrl || '',
       origin: hosted ? 'pic-upload' : 'pic-local',
       hosted,
       storedBytes: (processed.displayFile || file).size || 0,

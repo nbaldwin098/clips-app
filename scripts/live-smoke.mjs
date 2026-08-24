@@ -157,6 +157,15 @@ assert(healthSrc.includes('purgeDeadCatalog'), 'dead pics and sample clips are p
 const purgeSql = readFileSync(new URL('../supabase/migrations/0007_purge_dead_media.sql', import.meta.url), 'utf8')
 assert(purgeSql.includes("type = 'pic'"), 'sql removes unplayable pics')
 
+const purgeSql8 = readFileSync(new URL('../supabase/migrations/0008_purge_dead_media.sql', import.meta.url), 'utf8')
+assert(purgeSql8.includes('picsum'), 'sql 0008 removes leftover sample hosts')
+
+const profileMedia = readFileSync(new URL('../src/lib/profileMedia.js', import.meta.url), 'utf8')
+assert(profileMedia.includes('persistProfilePicture'), 'profile photos persist outside localStorage quota')
+const channelSrc = readFileSync(new URL('../src/components/ChannelPage.jsx', import.meta.url), 'utf8')
+assert(channelSrc.includes('Save') && channelSrc.includes('Cancel'), 'channel has save and cancel')
+assert(channelSrc.includes('Change profile picture'), 'avatar camera is on the photo')
+
 if (failed) {
   console.error(`${failed} failed`)
   process.exit(1)

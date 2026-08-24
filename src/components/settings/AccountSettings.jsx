@@ -25,11 +25,13 @@ function readImage(file, maxW, cb) {
 const field = 'mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#000000] px-3 text-sm text-zinc-100'
 
 export default function AccountSettings({ onNavigate }) {
-  const { user, updateProfile } = useAuth()
+  const { user, saveProfile } = useAuth()
   const [displayName, setDisplayName] = useState(user?.displayName || '')
   const [handle, setHandle] = useState(user?.handle || '')
   const [bio, setBio] = useState(user?.bio || '')
-  const [saved, setSaved] = useState(false)
+  const [avatarDraft, setAvatarDraft] = useState(null)
+  const [bannerDraft, setBannerDraft] = useState(null)
+  const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const avatarRef = useRef(null)
   const bannerRef = useRef(null)
@@ -38,32 +40,83 @@ export default function AccountSettings({ onNavigate }) {
     setDisplayName(user?.displayName || '')
     setHandle(user?.handle || '')
     setBio(user?.bio || '')
-  }, [user])
+  }, [user?.id, user?.displayName, user?.handle, user?.bio])
 
-  const save = () => {
+  const dirty = Boolean(
+    avatarDraft
+    || bannerDraft
+    || displayName !== (user?.displayName || '')
+    || handle !== (user?.handle || '')
+    || bio !== (user?.bio || '')
+  )
+
+  const cancel = () => {
+    setDisplayName(user?.displayName || '')
+    setHandle(user?.handle || '')
+    setBio(user?.bio || '')
+    setAvatarDraft(null)
+    setBannerDraft(null)
     setErr('')
+  }
+
+  const save = async () => {
+    setErr('')
+    setBusy(true)
     try {
-      updateProfile({
-        displayName: displayName.trim() || user?.displayName,
-        handle: handle.trim(),
-        bio: bio.slice(0, 280),
-      })
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
+      await saveProfile(
+        { displayName: displayName.trim(), handle, bio: bio.slice(0, 280) },
+        { avatar: avatarDraft, banner: bannerDraft },
+      )
+      setAvatarDraft(null)
+      setBannerDraft(null)
     } catch (e) {
       setErr(e.message || 'Could not save.')
+    } finally {
+      setBusy(false)
     }
   }
 
+  const avatarSrc = avatarDraft || user?.avatarUrl
+  const bannerSrc = bannerDraft || user?.bannerUrl
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-20">
       <div>
         <h1 className="text-xl font-semibold text-white">Account</h1>
-        <p className="mt-1 text-sm text-zinc-500">Name, handle, and bio show on your public profile. Avatar and banner also live on Channel.</p>
+        <p className="mt-1 text-sm text-zinc-500">Name, photo, and bio. Save when you are done — nothing is stored until then.</p>
       </div>
 
       <section className="space-y-4">
         <h2 className="text-sm font-semibold text-white">Profile</h2>
+        <div className="flex gap-4 items-start">
+          <button
+            type="button"
+            onClick={() => avatarRef.current?.click()}
+            className="relative h-20 w-20 rounded-full bg-[#121218] border border-zinc-800 overflow-hidden shrink-0"
+            title="Change profile picture"
+          >
+            {avatarSrc ? <img src={avatarSrc} alt="" className="h-full w-full object-cover" /> : (
+              <span className="flex h-full items-center justify-center text-white">{displayName?.[0]?.toUpperCase() || '?'}</span>
+            )}
+            <span className="absolute inset-0 flex items-center justify-center bg-black/45 text-white">
+              <Camera className="h-5 w-5" />
+            </span>
+          </button>
+          <button type="button" onClick={() => bannerRef.current?.click()} className="flex-1 h-20 rounded-xl bg-[#121218] border border-zinc-800 overflow-hidden relative">
+            {bannerSrc ? <img src={bannerSrc} alt="" className="h-full w-full object-cover" /> : <span className="text-xs text-zinc-500 flex items-center justify-center h-full">Banner</span>}
+            <span className="absolute inset-0 flex items-center justify-center bg-black/30 text-white text-xs">Change banner</span>
+          </button>
+        </div>
+        <input ref={avatarRef} type="file" accept="image/*" className="hidden" onChange={(e) => {
+          const f = e.target.files?.[0]
+          e.target.value = ''
+          readImage(f, 512, setAvatarDraft)
+        }} />
+        <input ref={bannerRef} type="file" accept="image/*" className="hidden" onChange={(e) => {
+          const f = e.target.files?.[0]
+          e.target.value = ''
+          readImage(f, 1280, setBannerDraft)
+        }} />
         <label className="block">
           <span className="text-xs font-medium text-zinc-400">Display name</span>
           <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} className={field} />
@@ -86,32 +139,20 @@ export default function AccountSettings({ onNavigate }) {
         <label className="block">
           <span className="text-xs font-medium text-zinc-400">Email</span>
           <input value={user?.email || ''} readOnly className={`${field} text-zinc-400`} />
-          <span className="mt-1 block text-[11px] text-zinc-500">Login email cannot be edited here. Sign in with a different email to use another inbox.</span>
         </label>
         {err ? <p className="text-sm text-red-400">{err}</p> : null}
-        <button type="button" onClick={save} className="h-9 px-4 rounded-lg bg-white text-black text-sm font-medium">
-          {saved ? 'Saved' : 'Save changes'}
-        </button>
       </section>
 
-      <section className="pt-6 border-t border-zinc-800 space-y-3">
-        <h2 className="text-sm font-semibold text-white">Avatar & banner</h2>
-        <p className="text-xs text-zinc-500">Same files as Channel. They stay on this device unless your account is already synced.</p>
-        <div className="flex gap-4 items-stretch">
-          <button type="button" onClick={() => avatarRef.current?.click()} className="relative h-20 w-20 rounded-full bg-[#121218] border border-zinc-800 overflow-hidden">
-            {user?.avatarUrl ? <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" /> : (
-              <span className="flex h-full items-center justify-center text-white">{displayName?.[0]?.toUpperCase() || '?'}</span>
-            )}
-            <span className="absolute inset-x-0 bottom-0 bg-black/60 text-[10px] text-white py-0.5 flex items-center justify-center gap-1"><Camera className="h-3 w-3" /> Photo</span>
-          </button>
-          <button type="button" onClick={() => bannerRef.current?.click()} className="flex-1 h-20 rounded-xl bg-[#121218] border border-zinc-800 overflow-hidden relative">
-            {user?.bannerUrl ? <img src={user.bannerUrl} alt="" className="h-full w-full object-cover" /> : <span className="text-xs text-zinc-500 flex items-center justify-center h-full">Banner</span>}
+      {dirty ? (
+        <div className="sticky bottom-0 z-20 -mx-4 md:-mx-6 px-4 md:px-6 py-3 border-t border-zinc-800 bg-black flex gap-2 justify-end">
+          <button type="button" onClick={cancel} className="h-10 px-4 rounded-lg border border-zinc-700 text-sm text-zinc-200">Cancel</button>
+          <button type="button" onClick={save} disabled={busy} className="h-10 px-4 rounded-lg bg-white text-black text-sm font-medium disabled:opacity-50">
+            {busy ? 'Saving…' : 'Save'}
           </button>
         </div>
-        <input ref={avatarRef} type="file" accept="image/*" className="hidden" onChange={(e) => readImage(e.target.files?.[0], 256, (data) => updateProfile({ avatarUrl: data }))} />
-        <input ref={bannerRef} type="file" accept="image/*" className="hidden" onChange={(e) => readImage(e.target.files?.[0], 1280, (data) => updateProfile({ bannerUrl: data }))} />
+      ) : (
         <button type="button" onClick={() => onNavigate?.('channel')} className="text-xs text-white underline">Open Channel page</button>
-      </section>
+      )}
     </div>
   )
 }

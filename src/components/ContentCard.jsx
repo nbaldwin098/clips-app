@@ -10,7 +10,7 @@ import { notifyContentChanged } from '../lib/contentSync'
 import { getWatchProgress } from '../lib/watchProgress'
 import { copyShareUrl } from '../lib/routes'
 import { formatPostedAt } from '../lib/mediaMeta'
-import { cn } from '../lib/utils'
+import { hideBrokenMedia } from '../lib/catalogHealth'
 import { openSafeUrl } from '../lib/safeUrl'
 import CommentsPanel from './CommentsPanel'
 import ReportModal from './ReportModal'
@@ -27,7 +27,7 @@ export default function ContentCard({ item, onOpen, variant }) {
   const [pulse, setPulse] = useState(null)
   const [showComments, setShowComments] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
-  const [playlistOpen, setPlaylistOpen] = useState(false)
+  const [gone, setGone] = useState(false)
   const progress = user?.id ? getWatchProgress(user.id, item?.id) : null
   const resumeRatio = progress && !progress.completed ? (progress.lastRatio || progress.watchRatio || 0) : 0
   const viewStartTime = useRef(null)
@@ -50,7 +50,12 @@ export default function ContentCard({ item, onOpen, variant }) {
     }
   }, [item?.id, item?.tags, item?.creatorId, item?.userId, user?.id])
 
-  if (!item) return null
+  if (!item || gone) return null
+
+  const drop = () => {
+    hideBrokenMedia(item.id)
+    setGone(true)
+  }
 
   const open = () => {
     const n = recordView(item.id)
@@ -146,7 +151,7 @@ export default function ContentCard({ item, onOpen, variant }) {
         <button type="button" onClick={open} className="w-full text-left">
           <div className="relative aspect-video w-full bg-zinc-900 overflow-hidden rounded-xl">
             {thumb ? (
-              <img src={thumb} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" referrerPolicy="no-referrer" />
+              <img src={thumb} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" referrerPolicy="no-referrer" onError={drop} />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center text-zinc-600 text-xs">No thumb</div>
             )}
@@ -202,7 +207,7 @@ export default function ContentCard({ item, onOpen, variant }) {
       <button type="button" onClick={open} className="w-full text-left">
         <div className="relative aspect-[9/16] w-full bg-zinc-900 overflow-hidden rounded-xl">
           {thumb ? (
-            <img src={thumb} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" referrerPolicy="no-referrer" />
+            <img src={thumb} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" referrerPolicy="no-referrer" onError={drop} />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center text-zinc-600 text-xs">No thumb</div>
           )}

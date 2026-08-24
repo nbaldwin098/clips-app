@@ -6,7 +6,7 @@ import { pullWatchProgressFromCloud } from '../lib/watchProgress'
 import { setGraphActor, syncGraphFromCloud } from '../lib/graphSync'
 import { ensureOwnProfile, privilegesFromProfile } from '../lib/profiles'
 import { hashSecret, verifySecret } from '../lib/secrets'
-import { sanitizeAuthError, normalizePhone } from '../lib/authBrand'
+import { persistableMediaUrl, restoreProfilePictures, persistProfilePicture } from '../lib/profileMedia'
 
 const AuthContext = createContext(null)
 const DEFAULT_USER = {
@@ -23,9 +23,9 @@ function persistableUser(u) {
     displayName: String(u.displayName || 'Viewer').slice(0, 80),
     handle: normalizeHandle(u.handle) || 'viewer',
     provider: u.provider === 'supabase' ? 'supabase' : 'local',
-    avatarUrl: u.avatarUrl || null,
+    avatarUrl: persistableMediaUrl(u.avatarUrl) || '',
     phone: u.phone || '',
-    bannerUrl: u.bannerUrl || null,
+    bannerUrl: persistableMediaUrl(u.bannerUrl) || '',
     bio: String(u.bio || '').slice(0, 500),
     passwordHash: u.passwordHash || undefined,
     isCreator: false,
@@ -82,8 +82,8 @@ function mapSbUser(sbUser, meta = {}) {
     isCreator: false,
     isPlatformAdmin: false,
     role: 'user',
-    avatarUrl: meta.avatarUrl || sbUser.user_metadata?.avatar_url || null,
-    bannerUrl: meta.bannerUrl || null,
+    avatarUrl: persistableMediaUrl(meta.avatarUrl || sbUser.user_metadata?.avatar_url) || '',
+    bannerUrl: persistableMediaUrl(meta.bannerUrl) || '',
     bio: meta.bio || '',
   }
 }
@@ -102,11 +102,20 @@ async function readMfaState(sb) {
 
 async function hydratePrivileges(mapped) {
   if (!mapped) return mapped
+  const local = lsGet('user', null)
   try {
     const profile = await ensureOwnProfile(mapped)
     const owner = isPlatformOwner({ ...mapped, role: profile?.role })
     const priv = privilegesFromProfile(profile, owner)
-    return { ...mapped, ...priv }
+    return {
+      ...mapped,
+      ...priv,
+      displayName: profile?.display_name || mapped.displayName,
+      handle: profile?.handle || mapped.handle,
+      bio: profile?.bio || mapped.bio || local?.bio || '',
+      avatarUrl: persistableMediaUrl(profile?.avatar_url) || persistableMediaUrl(local?.avatarUrl) || mapped.avatarUrl || '',
+      bannerUrl: persistableMediaUrl(local?.bannerUrl) || mapped.bannerUrl || '',
+    }
   } catch {
     const owner = isPlatformOwner(mapped)
     return {
@@ -115,6 +124,8 @@ async function hydratePrivileges(mapped) {
       isCreator: owner,
       creatorStatus: owner ? 'approved' : 'none',
       role: owner ? 'admin' : 'user',
+      avatarUrl: persistableMediaUrl(mapped.avatarUrl) || persistableMediaUrl(local?.avatarUrl) || '',
+      bannerUrl: persistableMediaUrl(mapped.bannerUrl) || persistableMediaUrl(local?.bannerUrl) || '',
     }
   }
 }
@@ -132,6 +143,20 @@ export function AuthProvider({ children }) {
     else lsRemove('user')
   }, [user])
   useEffect(() => { lsSet('mode', mode) }, [mode])
+
+  useEffect(() => {
+    if (!user?.id) return
+    let alive = true
+    restoreProfilePictures(user.id, { avatarUrl: user.avatarUrl, bannerUrl: user.bannerUrl }).then((urls) => {
+      if (!alive) return
+      setUser((prev) => {
+        if (!prev || prev.id !== user.id) return prev
+        if (prev.avatarUrl === urls.avatarUrl && prev.bannerUrl === urls.bannerUrl) return prev
+        return { ...prev, avatarUrl: urls.avatarUrl || prev.avatarUrl, bannerUrl: urls.bannerUrl || prev.bannerUrl }
+      })
+    })
+    return () => { alive = false }
+  }, [user?.id])
 
   useEffect(() => {
     let unsub = () => {}
@@ -451,6 +476,8 @@ export function AuthProvider({ children }) {
       if (!v.ok) throw new Error(v.error || 'Invalid handle')
       safe.handle = v.handle
     }
+    if (safe.avatarUrl) safe.avatarUrl = persistableMediaUrl(safe.avatarUrl) || safe.avatarUrl
+    if (safe.bannerUrl) safe.bannerUrl = persistableMediaUrl(safe.bannerUrl) || safe.bannerUrl
     setUser((prev) => {
       if (!prev) return prev
       const next = { ...prev, ...safe }
@@ -459,6 +486,29 @@ export function AuthProvider({ children }) {
       return next
     })
   }, [])
+
+  const saveProfile = useCallback(async (partial = {}, drafts = {}) => {
+    const cur = lsGet('user', null)
+    const merged = { ...(cur || {}), ...partial }
+    if (partial.handle != null) {
+      const v = validateHandle(partial.handle, { currentUserId: cur?.id })
+      if (!v.ok) throw new Error(v.error || 'Invalid handle')
+      merged.handle = v.handle
+    }
+    const urls = await persistProfilePicture(
+      { ...merged, provider: cur?.provider, id: cur?.id },
+      { avatarDraft: drafts.avatar, bannerDraft: drafts.banner },
+    )
+    const nextPartial = {
+      displayName: merged.displayName,
+      handle: merged.handle,
+      bio: merged.bio,
+      avatarUrl: urls.avatarUrl,
+      bannerUrl: urls.bannerUrl,
+    }
+    updateProfile(nextPartial)
+    return nextPartial
+  }, [updateProfile])
 
   const enableCreatorMode = useCallback(() => {
     setUser((prev) => {
@@ -494,6 +544,7 @@ export function AuthProvider({ children }) {
     updatePassword,
     logout,
     updateProfile,
+    saveProfile,
     enableCreatorMode,
     switchMode,
   }

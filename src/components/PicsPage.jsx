@@ -19,8 +19,7 @@ function PicImage({ pic, className, alt = '', full = false, fill = false, onUnpl
     let objectUrl = null
 
     const recover = async () => {
-      if (isHttpUrl(immediate)) return
-      if (!full && isDataImageUrl(immediate)) return
+      if (isHttpUrl(immediate) || isDataImageUrl(immediate)) return
       const idbUrl = await getMediaBlobUrl(pic.id)
       if (!alive) return
       if (idbUrl) {
@@ -64,12 +63,14 @@ function PicImage({ pic, className, alt = '', full = false, fill = false, onUnpl
         alt={alt}
         className="absolute inset-0 h-full w-full object-cover"
         onError={onError}
-        decoding="async"
+        decoding="sync"
+        loading="eager"
+        fetchPriority="high"
       />
     )
   }
 
-  return <img src={src} alt={alt} className={className} onError={onError} decoding="async" />
+  return <img src={src} alt={alt} className={className} onError={onError} decoding="sync" loading="eager" fetchPriority="high" />
 }
 
 function PicSlide({ pic, onOpenProfile }) {
@@ -135,6 +136,16 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
     refresh()
   }, [user, refresh])
   useEffect(() => subscribeContentUpdates(refresh), [refresh])
+
+  useEffect(() => {
+    const first = items[0]
+    if (!first) return
+    const src = pickImmediatePhotoSrc(first)
+    if (!src) return
+    const img = new Image()
+    img.decoding = 'sync'
+    img.src = src
+  }, [items])
 
   useEffect(() => {
     if (!initialPicId || skipAutoOpen.current) return
