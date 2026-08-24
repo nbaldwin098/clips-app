@@ -1,4 +1,6 @@
 # Render Blueprint — Static Site
+# Deep links (/clips, /watch/..., /about) 404 unless every missing path
+# is rewritten to index.html. Quote the wildcard so YAML cannot treat * as an alias.
 services:
   - type: web
     name: clips-app
@@ -7,8 +9,15 @@ services:
     staticPublishPath: dist
     routes:
       - type: rewrite
-        source: /*
-        destination: /index.html
+        source: "/*"
+        destination: "/index.html"
+    headers:
+      - path: "/index.html"
+        name: Cache-Control
+        value: no-cache
+      - path: "/assets/*"
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
     envVars:
       - key: VITE_STRIPE_PUBLISHABLE_KEY
         sync: false

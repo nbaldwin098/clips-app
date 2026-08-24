@@ -91,6 +91,16 @@ assert(!parseVastXml('<VAST version="3.0"></VAST>'), 'empty vast is not a fake a
   assert(gaps.every((g) => PIC_AD_GAPS.includes(g)), 'pic gaps stay between 6 and 10')
 }
 assert(existsSync(new URL('../public/_redirects', import.meta.url)), 'static host rewrites unknown paths to the app')
+assert(readFileSync(new URL('../public/_redirects', import.meta.url), 'utf8').includes('/index.html'), 'redirects file serves index.html')
+{
+  const yaml = readFileSync(new URL('../render.yaml', import.meta.url), 'utf8')
+  assert(yaml.includes('source: "/*"'), 'render blueprint quotes the spa wildcard')
+  assert(yaml.includes('destination: "/index.html"'), 'render blueprint rewrites missing paths to the app')
+  assert(yaml.includes('type: rewrite'), 'render blueprint uses a rewrite not a redirect')
+}
+assert(existsSync(new URL('../netlify.toml', import.meta.url)), 'netlify spa fallback is present')
+assert(readFileSync(new URL('../vite.config.js', import.meta.url), 'utf8').includes('spa-index-fallback'), 'build copies index.html to 404.html')
+assert(readFileSync(new URL('../src/components/AdminSetup.jsx', import.meta.url), 'utf8').includes('Render rewrite'), 'admin setup documents the host rewrite')
 
 function isPromoLive(promo, now = Date.now()) {
   if (!promo || promo.published !== true) return false
