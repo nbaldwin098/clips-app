@@ -11,6 +11,7 @@ import { LIVE_CATEGORIES } from '../lib/mediaMeta'
 import { watchingLabel } from '../lib/uiFormat'
 import { ensureStreamKey } from '../lib/streamKeys'
 import { archiveEndedLive } from '../lib/vods'
+import { canGoLive } from '../lib/trustSafety'
 
 function formatElapsed(startedAt) {
   if (!startedAt) return ''
@@ -83,6 +84,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
 
   const goLive = () => {
     if (!approved || !user?.id) return
+    if (!canGoLive(user)) return
     const payload = {
       isLive: true,
       title: title.trim() || 'Live on Clips',

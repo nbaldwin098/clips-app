@@ -10,6 +10,7 @@ import { getPicsFeed } from './picsService'
 import { mergeTags, isReleased } from './mediaMeta'
 import { setChapters, setCaptions, deleteScheduled } from './youtubeParity'
 import { isFeedable, isReferenceItem } from './catalogHealth'
+import { isAccountHidden } from './trustSafety'
 import { listIndexedUsers } from './moderation'
 import { OFFICIAL_CREATORS } from '../data/publicMediaSeed'
 
@@ -142,7 +143,7 @@ function onlyReleased(items) {
 
 export function getHomeFeed(userId = null) {
   const imports = getImports().map((i) => ({ ...i, type: i.type || 'short' }))
-  let merged = onlyReleased(withViewCounts(imports.map(normalizeItem)).filter((i) => i.type !== 'pic' && isFeedable(i)))
+  let merged = onlyReleased(withViewCounts(imports.map(normalizeItem)).filter((i) => i.type !== 'pic' && isFeedable(i) && !isAccountHidden(i.creatorId || i.userId, i.handle)))
   merged = merged.map((i) => {
     const cid = i.creatorId || i.userId
     return { ...i, pinned: cid ? isPinned(cid, i.id) : false }
@@ -173,6 +174,7 @@ export function listPopularCreators(limit = 24) {
   for (const raw of getImports()) {
     const item = normalizeItem(raw)
     if (!item || !isReleased(item) || !isFeedable(item) || isReferenceItem(item)) continue
+    if (isAccountHidden(item.creatorId || item.userId, item.handle)) continue
     const id = item.creatorId || item.userId
     if (!id) continue
     const meta = indexed[id] || {}

@@ -5,6 +5,7 @@ import {
 } from '../lib/youtubeParity'
 import ChannelAvatar from './ChannelAvatar'
 import PostedStamp from './PostedStamp'
+import { canComment } from '../lib/trustSafety'
 
 function openProfile(handle, userId) {
   try {
@@ -24,6 +25,7 @@ export default function CommentsPanel({ contentId, creatorId }) {
   const submit = (e) => {
     e.preventDefault()
     if (!isAuthenticated || !text.trim()) return
+    if (!canComment(user)) return
     addComment(contentId, { userId: user.id, handle: user.handle, text: text.trim(), parentId: replyTo })
     setText('')
     setReplyTo(null)

@@ -9,6 +9,7 @@ import { hashSecret, verifySecret } from '../lib/secrets'
 import { persistableMediaUrl, restoreProfilePictures, persistProfilePicture } from '../lib/profileMedia'
 import { findOfficialLogin } from '../data/publicMediaSeed'
 import { findOwnerLogin, isLocalOwnerLogin, isOwnerAccount, OWNER_LOGIN } from '../data/ownerLogin'
+import { accessBlockMessage } from '../lib/trustSafety'
 import { findNamedAccountLogin, verifyNamedAccountPassword } from '../data/namedAccountsSeed'
 import { sanitizeAuthError } from '../lib/authBrand'
 
@@ -18,6 +19,11 @@ const DEFAULT_USER = {
   isCreator: false, creatorStatus: 'none', avatar: null, role: 'user',
 }
 const PRIVILEGE_KEYS = new Set(['isPlatformAdmin', 'isCreator', 'creatorStatus', 'role', 'id', 'provider'])
+
+function rejectIfBlocked(next) {
+  const blocked = accessBlockMessage(next)
+  if (blocked) throw new Error(blocked)
+}
 
 function persistableUser(u) {
   if (!u || typeof u !== 'object') return null
@@ -140,7 +146,11 @@ async function hydratePrivileges(mapped) {
 }
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => sanitizeUser(lsGet('user', null)))
+  const [user, setUser] = useState(() => {
+    const u = sanitizeUser(lsGet('user', null))
+    if (u && accessBlockMessage(u)) return null
+    return u
+  })
   const [mode, setMode] = useState(() => lsGet('mode', 'viewer'))
   const [authReady, setAuthReady] = useState(!isSupabaseConfigured())
   const [mfaPending, setMfaPending] = useState(false)
@@ -269,6 +279,8 @@ export function AuthProvider({ children }) {
           isPlatformAdmin: true,
           role: 'admin',
         }
+        const blocked = accessBlockMessage(next)
+        if (blocked) throw new Error(blocked)
         setUser(next)
         setMode('creator')
         try { indexUser(next) } catch {}
@@ -304,6 +316,7 @@ export function AuthProvider({ children }) {
         isPlatformAdmin: false,
         role: 'user',
       }
+      rejectIfBlocked(next)
       setUser(next)
       setMode('creator')
       try { indexUser(next) } catch {}
@@ -335,6 +348,7 @@ export function AuthProvider({ children }) {
         isPlatformAdmin: false,
         role: 'user',
       }
+      rejectIfBlocked(next)
       setUser(next)
       setMode('viewer')
       try { indexUser(next) } catch {}
@@ -354,6 +368,7 @@ export function AuthProvider({ children }) {
           if (error) throw new Error(sanitizeAuthError(error.message))
           if (data.user) {
             const mapped = await hydratePrivileges(mapSbUser(data.user, { displayName, handle }))
+            rejectIfBlocked(mapped)
             setUser(mapped)
             setMode('viewer')
             try { indexUser(mapped) } catch {}
@@ -369,6 +384,7 @@ export function AuthProvider({ children }) {
         })
         if (error) throw new Error(sanitizeAuthError(error.message))
         const mapped = await hydratePrivileges(mapSbUser(data.user, { displayName }))
+        rejectIfBlocked(mapped)
         setUser(mapped)
         setMode('viewer')
         try { indexUser(mapped) } catch {}
@@ -402,6 +418,7 @@ export function AuthProvider({ children }) {
       const ok = await verifySecret(password, stored.passwordHash)
       if (!ok) throw new Error('Invalid email or password')
       const next = { ...existing, displayName, passwordHash: stored.passwordHash }
+      rejectIfBlocked(next)
       setUser(next)
       setMode('viewer')
       try { indexUser(next) } catch {}

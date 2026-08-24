@@ -153,6 +153,13 @@ export function submitReport(payload) {
   lsSet(K.reports, list.slice(0, 500))
   return list[0]
 }
+export function listReports() {
+  return lsGet(K.reports, []) || []
+}
+export function setReportStatus(id, status) {
+  const list = (lsGet(K.reports, []) || []).map((r) => (r.id === id ? { ...r, status } : r))
+  lsSet(K.reports, list)
+}
 export function blockUser(blockerId, targetId) {
   const all = lsGet(K.blocks, {})
   const set = new Set(all[blockerId] || [])

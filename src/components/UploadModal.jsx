@@ -6,6 +6,7 @@ import { saveDraft } from '../lib/youtubeParity'
 import { storeMediaBlob } from '../lib/videoStorage'
 import { mergeTags, parseChaptersInput } from '../lib/mediaMeta'
 import SoundPicker from './SoundPicker'
+import { postDeniedMessage } from '../lib/trustSafety'
 
 export default function UploadModal({
   open, onClose, initialKind = 'video', initialSound = null, initialStitch = null, onOpenAuth,
@@ -86,6 +87,11 @@ export default function UploadModal({
     }
     if (!isAuthenticated) {
       onOpenAuth?.()
+      return
+    }
+    const denied = postDeniedMessage(user)
+    if (denied) {
+      setError(denied)
       return
     }
     setStatus('reading')
