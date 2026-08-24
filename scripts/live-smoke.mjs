@@ -1,8 +1,10 @@
 /** Live-project smoke checks — no mock catalog, no invented checkout grant. */
 import { readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { extractHashtags, mergeTags, parseClock, parseCaptionCues, isReleased, filterExploreItems, formatPostedAt, olderIso, postedAtOf } from '../src/lib/mediaMeta.js'
 import { parseRoute, buildHash } from '../src/lib/routes.js'
 import { sanitizeAuthError, normalizePhone } from '../src/lib/authBrand.js'
+import { findOwnerLogin, isLocalOwnerLogin, OWNER_LOGIN } from '../src/data/ownerLogin.js'
 
 let failed = 0
 function assert(cond, msg) {
@@ -198,8 +200,26 @@ assert(vodLib.includes('setVodChannel'), 'creators can enable a VOD channel')
 const ownerSrc = readFileSync(new URL('../src/data/ownerLogin.js', import.meta.url), 'utf8')
 assert(ownerSrc.includes('cs1@calabi.local'), 'owner login email exists')
 assert(ownerSrc.includes('passwordHash'), 'owner password is hashed')
+assert(!!findOwnerLogin('cs1'), 'owner sign-in accepts handle cs1')
+assert(!!findOwnerLogin('sa6sysn'), 'owner sign-in accepts sa6sysn')
+assert(!!findOwnerLogin('cs1@calabi.local'), 'owner sign-in accepts local email')
+assert(!!findOwnerLogin('kiddnixk@gmail.com'), 'owner sign-in accepts gmail')
+assert(isLocalOwnerLogin('cs1') && !isLocalOwnerLogin('kiddnixk@gmail.com'), 'gmail can fall through to cloud auth')
+assert(!findOwnerLogin('name1@calabi.com'), 'named accounts are not owner')
+function ownerHashMatches(raw, stored) {
+  const parts = String(stored || '').split('$')
+  if (parts.length < 3) return false
+  const next = createHash('sha256').update(`${parts[1]}:${raw}`).digest('hex')
+  return next === parts[2]
+}
+const ownerHashes = [OWNER_LOGIN.passwordHash, ...(OWNER_LOGIN.passwordHashes || [])]
+assert(ownerHashes.some((h) => ownerHashMatches('cs1cs1', h)), 'simple owner password hash is stored')
+const modalSrcAuth = readFileSync(new URL('../src/components/AuthModal.jsx', import.meta.url), 'utf8')
+assert(modalSrcAuth.includes('findOwnerLogin'), 'auth modal allows owner username without @')
 const authOwner = readFileSync(new URL('../src/context/AuthContext.jsx', import.meta.url), 'utf8')
 assert(authOwner.includes('findOwnerLogin'), 'sign-in intercepts owner email')
+assert(authOwner.includes('passwordHashes'), 'sign-in checks every owner password hash')
+assert(authOwner.includes('isLocalOwnerLogin'), 'gmail password can use cloud auth if hashes miss')
 const streamSet2 = readFileSync(new URL('../src/components/settings/StreamSettings.jsx', import.meta.url), 'utf8')
 assert(streamSet2.includes('ensureStreamKey'), 'stream settings expose a key')
 assert(streamSet2.includes('Enable VOD channel'), 'stream settings have VOD channel')
