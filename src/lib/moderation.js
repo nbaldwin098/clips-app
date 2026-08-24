@@ -186,6 +186,8 @@ export function indexUser(user) {
     creatorStatus: user.creatorStatus || 'none',
     isCreator: !!user.isCreator,
     avatarUrl: user.avatarUrl || null,
+    bannerUrl: user.bannerUrl || null,
+    bio: user.bio || '',
     updatedAt: new Date().toISOString(),
   }
   lsSet(USERS_INDEX, users)

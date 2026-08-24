@@ -45,8 +45,22 @@ export function hasPlayableVideo(item) {
   return [item?.mediaUrl, item?.sourceUrl].some((u) => isHttpUrl(u))
 }
 
+export function isRetiredCatalogItem(item) {
+  if (!item) return false
+  const id = String(item.id || '')
+  const creator = String(item.creatorId || item.userId || '')
+  const origin = String(item.origin || '')
+  const handle = String(item.handle || '').toLowerCase()
+  return (
+    id.startsWith('edu-')
+    || creator === 'edu-kids-class'
+    || handle === 'kidsclass'
+    || origin === 'public-education'
+  )
+}
+
 export function isFeedable(item) {
-  if (!item || isReferenceItem(item)) return false
+  if (!item || isReferenceItem(item) || isRetiredCatalogItem(item)) return false
   if (item.type === 'pic') return hasStableImage(item)
   return hasPlayableVideo(item)
 }
@@ -74,6 +88,7 @@ export function purgeDeadCatalog() {
   const next = list.filter((row) => {
     if (!row?.id || hidden.has(row.id)) return false
     if (isReferenceItem(row)) return false
+    if (isRetiredCatalogItem(row)) return false
     if (row.type === 'pic' && !hasStableImage(row)) return false
     if ((row.type === 'video' || row.type === 'short') && !hasPlayableVideo(row)) return false
     return true
