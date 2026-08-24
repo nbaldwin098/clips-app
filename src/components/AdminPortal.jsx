@@ -3,6 +3,7 @@ import {
   isAdminSession, adminLogin, adminLogout, listApplications, setApplicationStatus,
   listTickets, updateTicket, listIndexedUsers, listImports, listUserClips,
 } from '../lib/moderation'
+import { listIdVerifications, setIdVerificationStatus } from '../lib/verification'
 import {
   listAdApplications, approveAdApplication, rejectAdApplication,
   adsAreRunning, setAdsRunning, listAllCampaigns, saveAdvertiserCampaign,
@@ -22,6 +23,7 @@ const TABS = [
   ['ads', 'Ads'],
   ['promos', 'Promos'],
   ['applications', 'Creators'],
+  ['id-checks', 'ID checks'],
   ['tickets', 'Support'],
   ['users', 'Users'],
   ['content', 'Content'],
@@ -118,7 +120,7 @@ export default function AdminPortal() {
         <div>
           <h1 className="text-lg font-semibold text-white">Admin</h1>
           <p className="text-[11px] text-zinc-500 mt-0.5">
-            Ads {adsOn ? 'ON' : 'off'} · ${getPayoutSettings().rpmPerThousand}/1k views · pending creators {pendingApps.length} · tickets {openTickets.length}
+            Ads {adsOn ? 'ON' : 'off'} · ${getPayoutSettings().rpmPerThousand}/1k views · pending creators {pendingApps.length} · ID checks {listIdVerifications().filter((r) => r.status === 'pending').length} · tickets {openTickets.length}
           </p>
         </div>
         <button type="button" onClick={() => { adminLogout(); setUnlocked(false) }} className="text-xs text-zinc-500">Sign out admin</button>
@@ -337,6 +339,33 @@ export default function AdminPortal() {
         ))
       )}
 
+      {tab === 'id-checks' && (
+        listIdVerifications().length === 0 ? <p className="text-xs text-zinc-500">No ID submissions yet.</p> :
+        listIdVerifications().map((row) => (
+          <div key={row.id} className="rounded-xl border border-zinc-800 bg-[#121218] p-4 text-sm mb-3">
+            <p className="text-zinc-100">{row.displayName} @{row.handle} · {row.status}</p>
+            <p className="text-[11px] text-zinc-500 mt-0.5">Creator status is separate. Accepting this only adds a checkmark.</p>
+            <div className="mt-3 grid sm:grid-cols-2 gap-3">
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-zinc-500 mb-1">Front</p>
+                {row.frontThumb ? <img src={row.frontThumb} alt="" className="w-full max-h-56 object-contain rounded-lg bg-black" /> : <p className="text-xs text-zinc-600">No photo</p>}
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-zinc-500 mb-1">Back</p>
+                {row.backThumb ? <img src={row.backThumb} alt="" className="w-full max-h-56 object-contain rounded-lg bg-black" /> : <p className="text-xs text-zinc-600">No photo</p>}
+              </div>
+            </div>
+            {row.note ? <p className="text-xs text-zinc-400 mt-2">{row.note}</p> : null}
+            {row.status === 'pending' && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                <button type="button" onClick={() => { setIdVerificationStatus(row.id, 'approved'); refresh() }} className="h-8 px-3 rounded-lg bg-white text-black text-xs font-semibold">Accept</button>
+                <button type="button" onClick={() => { setIdVerificationStatus(row.id, 'denied'); refresh() }} className="h-8 px-3 rounded-lg bg-red-600 text-white text-xs font-semibold">Deny</button>
+              </div>
+            )}
+          </div>
+        ))
+      )}
+
       {tab === 'tickets' && (
         tickets.length === 0 ? <p className="text-xs text-zinc-500">No tickets.</p> :
         tickets.map((t) => (
@@ -351,7 +380,10 @@ export default function AdminPortal() {
         ))
       )}
       {tab === 'users' && users.map((u) => (
-        <div key={u.id} className="text-xs border-b border-zinc-800 py-2 text-zinc-400">{u.displayName} · {u.email} · @{u.handle} · {u.creatorStatus}</div>
+        <div key={u.id} className="text-xs border-b border-zinc-800 py-2 text-zinc-400">
+          {u.displayName} · {u.email} · @{u.handle} · creator {u.creatorStatus}
+          {listIdVerifications().some((r) => r.userId === u.id && r.status === 'approved') ? ' · checkmark' : ''}
+        </div>
       ))}
       {tab === 'content' && (<>{imports.map((i) => <div key={i.id} className="text-xs text-zinc-500 py-1">{i.title || i.url}</div>)}{clips.map((c) => <div key={c.id} className="text-xs text-zinc-500 py-1">{c.title}</div>)}</>)}
       {tab === 'live' && (live.length === 0 ? <p className="text-xs text-zinc-500">No live board entries.</p> : live.map((l) => <div key={l.userId + l.startedAt} className="text-xs py-1">{l.isLive ? 'LIVE' : 'ended'} · {l.title} · @{l.handle}</div>))}

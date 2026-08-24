@@ -13,6 +13,7 @@ import ChannelAvatar from './ChannelAvatar'
 import VerifiedBadge from './VerifiedBadge'
 import SubscribeButton from './SubscribeButton'
 import { subscribersLabel, isOfficialCreator } from '../lib/uiFormat'
+import { isVerifiedChannel } from '../lib/verification'
 
 export default function ProfilePage({ onNavigate, profileHandle, profileUserId, onPlayItem, onOpenPic, onOpenAuth, onOpenCheckout }) {
   const { user } = useAuth()
@@ -46,6 +47,7 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
   const bio = found?.bio || (isSelf ? user?.bio : '') || ''
   const subs = resolvedId ? getSubscriberCount(resolvedId) : 0
   const official = isOfficialCreator(creatorId, handle)
+  const verified = isVerifiedChannel(creatorId, handle)
 
   const onPin = (contentId) => {
     if (!isSelf || !creatorId) return
@@ -67,7 +69,7 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
         <div className="flex-1 min-w-[160px] pb-1">
           <h1 className="text-2xl font-bold text-white inline-flex items-center gap-2">
             {displayName}
-            {official ? <VerifiedBadge className="h-4 w-4" /> : null}
+            {verified ? <VerifiedBadge className="h-4 w-4" title={official ? 'Official channel' : 'Verified'} /> : null}
           </h1>
           <p className="text-sm text-[#aaa]">@{handle || found?.handle || 'user'}</p>
           <p className="text-xs text-[#aaa] mt-1">

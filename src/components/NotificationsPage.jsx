@@ -31,6 +31,7 @@ const ICONS = {
   upload: Clapperboard,
   premium: Crown,
   application: ShieldCheck,
+  verification: ShieldCheck,
   report: Flag,
   ticket: Flag,
   held_comment: MessageCircle,

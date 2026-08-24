@@ -29,6 +29,7 @@ import PicsPage from './components/PicsPage'
 import CheckoutPage from './components/CheckoutPage'
 import CheckoutModal from './components/CheckoutModal'
 import CreatorApplyPage from './components/CreatorApplyPage'
+import VerifyPage from './components/VerifyPage'
 import AdvertisePage from './components/AdvertisePage'
 import AdvertiserPortal from './components/AdvertiserPortal'
 import SupportPage from './components/SupportPage'
@@ -67,7 +68,7 @@ import PromoBanner from './components/PromoBanner'
 const KNOWN_VIEWS = new Set([
   'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
   'explore', 'history', 'liked', 'watch-later', 'library', 'stats', 'help', 'about',
-  'notifications', 'pics', 'checkout', 'creator-apply', 'advertise', 'advertiser-portal', 'support', 'admin',
+  'notifications', 'pics', 'checkout', 'creator-apply', 'verify', 'advertise', 'advertiser-portal', 'support', 'admin',
   'analytics', 'channel', 'profile', 'content-rules', 'vods',
   'subscriptions', 'playlists', 'community', 'studio-tools', 'stream-settings',
   'legal-tos', 'legal-privacy', 'legal-creator', 'legal-community',
@@ -428,6 +429,7 @@ function AppShell() {
       case 'pics': return <PicsPage onOpenAuth={openAuth} onOpenProfile={openProfile} initialPicId={routeId} />
       case 'checkout': return <CheckoutPage onNavigate={navigate} creatorId={checkoutTarget.id} returnParams={routeParams} />
       case 'creator-apply': return <CreatorApplyPage onOpenAuth={openAuth} onNavigate={navigate} />
+      case 'verify': return <VerifyPage onOpenAuth={openAuth} onNavigate={navigate} />
       case 'advertise': return <AdvertisePage onNavigate={navigate} />
       case 'advertiser-portal': return <AdvertiserPortal onNavigate={navigate} />
       case 'support': return <SupportPage onOpenAuth={openAuth} />

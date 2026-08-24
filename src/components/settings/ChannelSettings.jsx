@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react'
 import { getUserSettings, saveUserSettings } from '../../lib/storage'
+import { useAuth } from '../../context/AuthContext'
+import { getIdVerificationForUser, isVerifiedChannel } from '../../lib/verification'
+import { isOfficialCreator } from '../../lib/uiFormat'
 
 const field = 'mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#000000] px-3 text-sm text-zinc-100'
 
-export default function ChannelSettings() {
+export default function ChannelSettings({ onNavigate }) {
+  const { user } = useAuth()
   const stored = getUserSettings()
   const [category, setCategory] = useState(stored.channelCategory || '')
   const [links, setLinks] = useState({
@@ -33,7 +37,7 @@ export default function ChannelSettings() {
     <div className="space-y-8">
       <div>
         <h1 className="text-xl font-semibold text-white">Channel & Branding</h1>
-        <p className="mt-1 text-sm text-zinc-500">Category and links save on this device. They are not a verified badge.</p>
+        <p className="mt-1 text-sm text-zinc-500">Category and links save on this device. The checkmark is a separate ID review.</p>
       </div>
 
       <section className="space-y-4">
@@ -74,8 +78,19 @@ export default function ChannelSettings() {
       <section className="pt-6 border-t border-zinc-800 space-y-3">
         <h2 className="text-sm font-semibold text-white">Verified badge</h2>
         <p className="text-sm text-zinc-500">
-          There is no verification queue yet. Do not expect a checkmark from a button on this page.
+          {isOfficialCreator(user?.id, user?.handle)
+            ? 'This library channel already has the official checkmark.'
+            : isVerifiedChannel(user?.id, user?.handle)
+              ? 'Your checkmark is on. It is separate from creator status.'
+              : getIdVerificationForUser(user?.id)?.status === 'pending'
+                ? 'Front and back of your ID are in review.'
+                : 'Upload the front and back of a government ID. We accept or deny it. You can do this with or without creator status.'}
         </p>
+        {!isOfficialCreator(user?.id, user?.handle) ? (
+          <button type="button" onClick={() => onNavigate?.('verify')} className="h-9 px-4 rounded-lg bg-white text-black text-sm font-medium">
+            {isVerifiedChannel(user?.id, user?.handle) ? 'View checkmark' : 'Get a checkmark'}
+          </button>
+        ) : null}
       </section>
     </div>
   )

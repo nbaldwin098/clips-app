@@ -80,6 +80,10 @@ export default function HelpPage() {
       a: 'Paste a public short URL. We store only metadata and a reference — not the binary file.',
     },
     {
+      q: 'How do I get a checkmark?',
+      a: 'NASA and the other library channels already have the official checkmark. Everyone else uploads a photo of the front and back of a government ID (More → Get verified, or Settings → Channel). Admin accepts or denies it. This is not the creator application — you can do it with or without creator status.',
+    },
+    {
       q: 'How do creator payouts work?',
       a: 'Admin sets USD per 1,000 views. Wallet shows earned, pending, and paid. Nicholas marks a payout sent after paying you by hand. Ads stay off until Admin turns them on. There is no automatic bank withdraw.',
     },

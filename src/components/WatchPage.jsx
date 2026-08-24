@@ -31,6 +31,7 @@ import ChannelAvatar from './ChannelAvatar'
 import VerifiedBadge from './VerifiedBadge'
 import SubscribeButton from './SubscribeButton'
 import { creatorDisplayName, isOfficialCreator, likesLabel, viewsLabel } from '../lib/uiFormat'
+import { isVerifiedChannel } from '../lib/verification'
 import { startPremiumCheckout } from '../lib/checkout'
 import { getStripePaymentLink } from '../lib/stripeConfig'
 
@@ -568,7 +569,7 @@ export default function WatchPage({
                     src={item.avatarUrl}
                     name={creatorDisplayName(item)}
                     size={40}
-                    official={isOfficialCreator(item.creatorId, item.handle)}
+                    official={isVerifiedChannel(item.creatorId || item.userId, item.handle)}
                   />
                 </button>
                 <div className="min-w-0">
@@ -578,7 +579,7 @@ export default function WatchPage({
                     className="flex items-center gap-1.5 text-[15px] font-semibold text-white hover:text-zinc-200 min-w-0"
                   >
                     <span className="truncate">{creatorDisplayName(item)}</span>
-                    {isOfficialCreator(item.creatorId, item.handle) ? <VerifiedBadge /> : null}
+                    {isVerifiedChannel(item.creatorId || item.userId, item.handle) ? <VerifiedBadge title={isOfficialCreator(item.creatorId || item.userId, item.handle) ? 'Official channel' : 'Verified'} /> : null}
                   </button>
                   <p className="text-xs text-[#aaa] mt-0.5">
                     {viewsLabel(views)}
