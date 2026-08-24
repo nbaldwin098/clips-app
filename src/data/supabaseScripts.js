@@ -1,6 +1,7 @@
 import sitePromos from '../../supabase/migrations/0005_site_promos.sql?raw'
 import socialGraph from '../../supabase/migrations/0006_social_graph.sql?raw'
 import purgeDead from '../../supabase/migrations/0007_purge_dead_media.sql?raw'
+import purgeDead2 from '../../supabase/migrations/0008_purge_dead_media.sql?raw'
 
 export const SETUP_SCRIPTS = [
   {
@@ -20,5 +21,11 @@ export const SETUP_SCRIPTS = [
     title: 'Delete broken pics',
     file: '0007_purge_dead_media.sql',
     sql: String(purgeDead || ''),
+  },
+  {
+    id: '0008',
+    title: 'Delete leftover broken clips and pics',
+    file: '0008_purge_dead_media.sql',
+    sql: String(purgeDead2 || ''),
   },
 ]

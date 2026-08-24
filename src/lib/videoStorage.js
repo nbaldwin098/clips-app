@@ -137,14 +137,14 @@ export async function processImageFile(file) {
       throw new Error('Could not read this photo. Use JPG, PNG, or WebP.')
     }
 
-    const thumbSize = fitSize(width, height, 480)
+    const thumbSize = fitSize(width, height, 240)
     const thumbCanvas = document.createElement('canvas')
     thumbCanvas.width = thumbSize.width
     thumbCanvas.height = thumbSize.height
     const thumbCtx = thumbCanvas.getContext('2d')
     if (!thumbCtx) throw new Error('Could not process photo.')
     thumbCtx.drawImage(img, 0, 0, thumbSize.width, thumbSize.height)
-    const thumbUrl = thumbCanvas.toDataURL('image/jpeg', 0.72)
+    const thumbUrl = thumbCanvas.toDataURL('image/jpeg', 0.55)
 
     const storeSize = fitSize(width, height, 1920)
     const storeCanvas = document.createElement('canvas')

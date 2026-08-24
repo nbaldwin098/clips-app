@@ -102,7 +102,7 @@ export default function HelpPage() {
       <section className="mb-8 space-y-3">
         <h2 className="text-sm font-semibold text-white">Supabase SQL — copy and run</h2>
         <p className="text-xs text-zinc-500">
-          Open Supabase → SQL Editor. Tap Copy SQL below. Paste. Run. Repeat for each step. 0007 deletes pics that cannot load.
+          Open Supabase → SQL Editor. Tap Copy SQL below. Paste. Run. Repeat for each step. 0007 and 0008 delete pics and clips that cannot load.
         </p>
         {SETUP_SCRIPTS.map((script) => (
           <CopyScript key={script.id} script={script} />

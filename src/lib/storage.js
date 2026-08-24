@@ -148,6 +148,9 @@ function isDeadUrl(url) {
 
 function pickMergedUrl(incoming, existing) {
   if (isDeadUrl(incoming) && isStableUrl(existing)) return existing
+  if (String(existing || '').startsWith('data:image/') && String(incoming || '').startsWith('http')) {
+    return existing
+  }
   return incoming || existing || ''
 }
 
@@ -162,6 +165,8 @@ export function mergeImports(records) {
     next.mediaUrl = pickMergedUrl(rec.mediaUrl, prev.mediaUrl)
     next.sourceUrl = pickMergedUrl(rec.sourceUrl, prev.sourceUrl || prev.mediaUrl)
     next.thumbUrl = pickMergedUrl(rec.thumbUrl, prev.thumbUrl)
+    const localMosaic = prev.mosaicThumb || (String(prev.thumbUrl || '').startsWith('data:image/') ? prev.thumbUrl : '')
+    next.mosaicThumb = localMosaic || next.mosaicThumb || ''
     byId.set(rec.id, next)
   }
   const merged = [...byId.values()]

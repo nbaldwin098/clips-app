@@ -29,12 +29,20 @@ export function isReferenceItem(item) {
   return id.startsWith('ref-short-') || creator.startsWith('ref-creator-')
 }
 
+export function isKnownDeadUrl(url) {
+  const u = String(url || '').toLowerCase()
+  if (!u) return false
+  return /picsum\.photos|placekitten|loremflickr|via\.placeholder|sample-videos\.com|test-videos\.co\.uk|gtv-videos-bucket|ref-short-/.test(u)
+}
+
 export function hasStableImage(item) {
-  return [item?.mediaUrl, item?.thumbUrl, item?.sourceUrl].some((u) => isHttpUrl(u) || isDataImageUrl(u))
+  if ([item?.mediaUrl, item?.thumbUrl, item?.sourceUrl, item?.mosaicThumb].some(isKnownDeadUrl)) return false
+  return [item?.mediaUrl, item?.thumbUrl, item?.sourceUrl, item?.mosaicThumb].some((u) => isHttpUrl(u) || isDataImageUrl(u))
 }
 
 export function hasPlayableVideo(item) {
-  return [item?.mediaUrl, item?.sourceUrl].some((u) => isHttpUrl(u) || isBlobUrl(u))
+  if ([item?.mediaUrl, item?.sourceUrl].some(isKnownDeadUrl)) return false
+  return [item?.mediaUrl, item?.sourceUrl].some((u) => isHttpUrl(u))
 }
 
 export function isFeedable(item) {
@@ -67,6 +75,7 @@ export function purgeDeadCatalog() {
     if (!row?.id || hidden.has(row.id)) return false
     if (isReferenceItem(row)) return false
     if (row.type === 'pic' && !hasStableImage(row)) return false
+    if ((row.type === 'video' || row.type === 'short') && !hasPlayableVideo(row)) return false
     return true
   })
   if (next.length !== list.length) lsSet('imports', next)
