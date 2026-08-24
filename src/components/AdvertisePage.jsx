@@ -58,13 +58,13 @@ export default function AdvertisePage({ onNavigate }) {
       <div className="relative rounded-3xl border border-zinc-800 bg-gradient-to-br from-[#181824] via-[#121218] to-[#0d0d12] p-6 sm:p-8 overflow-hidden">
         <div className="relative z-10 max-w-2xl space-y-3">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-white text-xs font-semibold border border-white/20">
-            <Sparkles className="h-3.5 w-3.5 text-white" /> 90% Revenue Shared Directly with Creators
+            <Sparkles className="h-3.5 w-3.5 text-white" /> Brand applications — reviewed by a person
           </span>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            High-Impact Video Ads with Verified Audience Retention
+            Advertise next to real videos, not invented traffic
           </h1>
           <p className="text-sm text-zinc-400 leading-relaxed">
-            Reach highly engaged viewers across 1080p clips and live streams. Our transparent 5-second skip prerolls and custom branded overlays deliver maximum brand lift while supporting original creators.
+            Inventory today is preroll and banners on this site after we approve your brand. There is no live CPM, no guaranteed 24-hour turnaround, and no ad-revenue share until an ad pool actually exists. We will not sell you fake reach.
           </p>
         </div>
       </div>
@@ -73,23 +73,23 @@ export default function AdvertisePage({ onNavigate }) {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="rounded-2xl border border-zinc-800 bg-[#121218] p-5 space-y-2">
           <div className="h-9 w-9 rounded-xl bg-white/10 text-white flex items-center justify-center font-bold">1</div>
-          <h3 className="text-sm font-semibold text-white">Apply & Quick Review</h3>
+          <h3 className="text-sm font-semibold text-white">Apply</h3>
           <p className="text-xs text-zinc-400 leading-relaxed">
-            Submit your business info and campaign objectives. Our ops team verifies your brand and approves within 24 hours.
+            Send company, contact, and what you want to run. We read it. Approval is not automatic and is not promised in 24 hours.
           </p>
         </div>
         <div className="rounded-2xl border border-zinc-800 bg-[#121218] p-5 space-y-2">
           <div className="h-9 w-9 rounded-xl bg-white/10 text-white flex items-center justify-center font-bold">2</div>
-          <h3 className="text-sm font-semibold text-white">Automated Portal Login</h3>
+          <h3 className="text-sm font-semibold text-white">Portal after approval</h3>
           <p className="text-xs text-zinc-400 leading-relaxed">
-            Once approved, a dedicated Advertiser Portal account is created with generated credentials to log in, change your password, and configure ads.
+            If we approve you, we create a portal login so you can set creatives. Unapproved brands cannot buy a slot from this form.
           </p>
         </div>
         <div className="rounded-2xl border border-zinc-800 bg-[#121218] p-5 space-y-2">
           <div className="h-9 w-9 rounded-xl bg-white/10 text-white flex items-center justify-center font-bold">3</div>
-          <h3 className="text-sm font-semibold text-white">Live Placement & Analytics</h3>
+          <h3 className="text-sm font-semibold text-white">Placement</h3>
           <p className="text-xs text-zinc-400 leading-relaxed">
-            Your video and banner ads display on relevant clips with interactive skip controls, tracking real impressions and clicks.
+            Approved campaigns can show skippable preroll on watch. Counts are impressions and clicks we actually record — not a sold audience number.
           </p>
         </div>
       </div>

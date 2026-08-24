@@ -31,8 +31,8 @@ export default function ShortsStage({
 }) {
   const scrollerRef = useRef(null)
   const n = Math.max(0, Number(count) || 0)
-  const loop = n > 1
-  const copies = loop ? 3 : 1
+  const loop = false
+  const copies = 1
   const jumping = useRef(false)
   const lastStart = useRef(null)
 

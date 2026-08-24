@@ -6,6 +6,7 @@ import {
   listEmotes, addEmote, getMembershipPrice, setMembershipPrice,
 } from '../lib/engagement'
 import { Camera } from 'lucide-react'
+import { copyShareUrl } from '../lib/routes'
 
 function readImage(file, maxW, cb) {
   if (!file || !file.type.startsWith('image/')) return
@@ -44,6 +45,7 @@ export default function ChannelPage({ onNavigate }) {
   const [bannerDraft, setBannerDraft] = useState(null)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     setDisplayName(user?.displayName || '')
@@ -153,6 +155,18 @@ export default function ChannelPage({ onNavigate }) {
             {rank ? ` · Rank #${rank}` : ''}
             {user?.creatorStatus === 'approved' ? ' · Creator' : ''}
           </p>
+          <button
+            type="button"
+            className="mt-2 h-8 px-3 rounded-lg bg-white text-black text-xs font-semibold"
+            onClick={async () => {
+              if (!user?.handle) return
+              await copyShareUrl('profile', user.handle)
+              setCopied(true)
+              setTimeout(() => setCopied(false), 2000)
+            }}
+          >
+            {copied ? 'Copied' : 'Copy public profile link'}
+          </button>
         </div>
       </div>
 
