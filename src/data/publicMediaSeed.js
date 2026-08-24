@@ -7,7 +7,7 @@ import { getImports, saveImport, lsGet, lsSet } from '../lib/storage'
 import { hiddenBrokenIds, isHttpUrl, isKnownDeadUrl } from '../lib/catalogHealth'
 import { indexUser } from '../lib/moderation'
 
-export const CATALOG_GENERATION = 'official-pd-v2'
+export const CATALOG_GENERATION = 'official-pd-v3'
 const GEN_KEY = 'clips_catalog_generation'
 
 export const OFFICIAL_CREATORS = [
@@ -412,19 +412,6 @@ export const OFFICIAL_MEDIA = [
     mediaUrl: 'https://upload.wikimedia.org/wikipedia/commons/c/c1/Inscribed_angle.webm',
     thumbUrl:
       'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Inscribed_angle.webm/960px--Inscribed_angle.webm.jpg',
-  }),
-  item('classroom', {
-    id: 'org-class-english-nouns',
-    type: 'video',
-    title: 'Nouns you cannot count',
-    description: 'Kids English: uncountable nouns. Wikimedia Commons.',
-    tags: ['kids', 'english', 'nouns', 'grammar'],
-    width: 480,
-    height: 360,
-    createdAt: '2026-08-24T11:10:00.000Z',
-    mediaUrl: 'https://upload.wikimedia.org/wikipedia/commons/4/41/Uncountable_nouns_Or%C3%A4knebara_substantiv.webm',
-    thumbUrl:
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Uncountable_nouns_Or%C3%A4knebara_substantiv.webm/330px--Uncountable_nouns_Or%C3%A4knebara_substantiv.webm.jpg',
   }),
   item('classroom', {
     id: 'org-class-reading-hoppy',
