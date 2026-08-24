@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Flag, Share2, Bookmark, Music, MoreVertical, Download } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { getViews, recordView, getSubscriberCount } from '../lib/engagement'
+import { getViews, getSubscriberCount } from '../lib/engagement'
 import { recordInteraction } from '../lib/algorithmEngine'
 import { toggleSaved, getSaved } from '../lib/storage'
 import { notifyContentChanged } from '../lib/contentSync'
@@ -70,19 +70,6 @@ export default function ContentCard({ item, onOpen, variant }) {
   }
 
   const open = () => {
-    const n = recordView(item.id)
-    setViews(n)
-    if (user?.id) {
-      recordInteraction(user.id, {
-        contentId: item.id,
-        type: 'complete',
-        watchRatio: 1,
-        title: item.title,
-        tags: item.tags || [],
-        creatorId: item.creatorId || item.userId,
-        platform: item.platform || item.origin,
-      })
-    }
     if (onOpen) onOpen(item)
     else if (item.sourceUrl) openSafeUrl(item.sourceUrl)
   }

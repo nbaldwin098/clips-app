@@ -151,6 +151,7 @@ export default function WatchPage({
   const countRef = useRef(null)
   const appliedStart = useRef(false)
   const showingAdRef = useRef(false)
+  const viewCountedRef = useRef(false)
   const vast = useVideoVastAds(item)
 
   const [descOpen, setDescOpen] = useState(false)
@@ -182,6 +183,7 @@ export default function WatchPage({
     setCountdown(0)
     setCueText('')
     setMoreOpen(false)
+    viewCountedRef.current = false
   }, [itemId, user?.id, item?.creatorId])
 
   useEffect(() => {
@@ -198,7 +200,7 @@ export default function WatchPage({
       return undefined
     }
     let cancelled = false
-    setViews(recordView(item.id))
+    setViews(getViews(item.id))
     setPhase('loading')
     setAdDismissed(false)
     attemptRef.current = 0
@@ -263,6 +265,12 @@ export default function WatchPage({
     if (!el) return
     try { el.currentTime = Math.max(0, Math.min(el.duration || sec, sec)) } catch {}
   }
+
+  const countViewOnPlay = useCallback(() => {
+    if (!item?.id || viewCountedRef.current) return
+    viewCountedRef.current = true
+    setViews(recordView(item.id))
+  }, [item?.id])
 
   const onLoadedMetadata = () => {
     const el = videoRef.current
@@ -555,8 +563,6 @@ export default function WatchPage({
             ) : null}
             {vast.creative ? (
               <VideoInStreamAd creative={vast.creative} slot={vast.slot} onDone={vast.finishAd} />
-            ) : vast.awaitingPreroll ? (
-              <div className="absolute inset-0 z-30 bg-black" />
             ) : showingCampaignAd ? (
               <VideoPreroll ad={activeAd} onSkip={skipAd} onComplete={() => setAdDismissed(true)} />
             ) : null}
@@ -567,7 +573,7 @@ export default function WatchPage({
               </div>
             )}
             {phase === 'ready' && mode === 'iframe' && !showingAd && safeIframeSrc(playSrc) && (
-              <iframe src={safeIframeSrc(playSrc)} title={item.title || 'Video'} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen sandbox="allow-scripts allow-same-origin allow-presentation" referrerPolicy="strict-origin-when-cross-origin" className="absolute inset-0 w-full h-full border-0" />
+              <iframe src={safeIframeSrc(playSrc)} title={item.title || 'Video'} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen sandbox="allow-scripts allow-same-origin allow-presentation" referrerPolicy="strict-origin-when-cross-origin" className="absolute inset-0 w-full h-full border-0" onLoad={countViewOnPlay} />
             )}
             {phase === 'ready' && mode === 'video' && safeMediaUrl(playSrc) && (
               <video
@@ -579,6 +585,7 @@ export default function WatchPage({
                 playsInline
                 preload="auto"
                 onLoadedMetadata={onLoadedMetadata}
+                onPlaying={countViewOnPlay}
                 onTimeUpdate={handleTimeUpdate}
                 onEnded={onEnded}
                 onError={tryNext}

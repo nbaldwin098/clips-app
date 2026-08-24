@@ -49,6 +49,7 @@ export default function VideoPlayerModal({ item, onClose }) {
   const [activeAd, setActiveAd] = useState(null)
   const [adDismissed, setAdDismissed] = useState(false)
   const showingAdRef = useRef(false)
+  const viewCountedRef = useRef(false)
   const candidatesRef = useRef([])
   const attemptRef = useRef(0)
   const videoRef = useRef(null)
@@ -57,7 +58,8 @@ export default function VideoPlayerModal({ item, onClose }) {
   useEffect(() => {
     if (!item?.id) return
     let cancelled = false
-    setViews(recordView(item.id))
+    viewCountedRef.current = false
+    setViews(getViews(item.id))
     setPhase('loading')
     setAdDismissed(false)
     setPlaySrc('')
@@ -140,6 +142,12 @@ export default function VideoPlayerModal({ item, onClose }) {
   const onVideoError = () => {
     tryNextSource()
   }
+
+  const countViewOnPlay = useCallback(() => {
+    if (!item?.id || viewCountedRef.current) return
+    viewCountedRef.current = true
+    setViews(recordView(item.id))
+  }, [item?.id])
 
   const onVideoCanPlay = () => {
     const el = videoRef.current
@@ -232,8 +240,6 @@ export default function VideoPlayerModal({ item, onClose }) {
         <div className={`relative w-full bg-black flex items-center justify-center ${isVertical ? 'aspect-[9/16] max-h-[72vh]' : 'aspect-video max-h-[65vh]'} overflow-hidden`}>
           {vast.creative ? (
             <VideoInStreamAd creative={vast.creative} slot={vast.slot} onDone={vast.finishAd} />
-          ) : vast.awaitingPreroll ? (
-            <div className="absolute inset-0 z-30 bg-black" />
           ) : showingCampaignAd ? (
             <VideoPreroll ad={activeAd} onSkip={skipAd} onComplete={() => setAdDismissed(true)} />
           ) : null}
@@ -255,6 +261,7 @@ export default function VideoPlayerModal({ item, onClose }) {
               sandbox="allow-scripts allow-same-origin allow-presentation"
               referrerPolicy="strict-origin-when-cross-origin"
               className="w-full h-full border-0"
+              onLoad={countViewOnPlay}
             />
           )}
 
@@ -268,6 +275,7 @@ export default function VideoPlayerModal({ item, onClose }) {
               playsInline
               preload="auto"
               onCanPlay={onVideoCanPlay}
+              onPlaying={countViewOnPlay}
               onTimeUpdate={handleTimeUpdate}
               onError={onVideoError}
               className="w-full h-full object-contain bg-black"
