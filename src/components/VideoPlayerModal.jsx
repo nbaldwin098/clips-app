@@ -13,7 +13,6 @@ import { downloadPostedMedia } from '../lib/mediaDownload'
 import { VideoPreroll } from './AdUnits'
 import VideoInStreamAd from './VideoInStreamAd'
 import { useVideoVastAds } from '../hooks/useVideoVastAds'
-import { videoVastAdsEnabled } from '../lib/vastAds'
 
 function isHttp(url) {
   return typeof url === 'string' && (url.startsWith('https://') || url.startsWith('http://'))
@@ -54,7 +53,7 @@ export default function VideoPlayerModal({ item, onClose }) {
   const candidatesRef = useRef([])
   const attemptRef = useRef(0)
   const videoRef = useRef(null)
-  const vast = useVideoVastAds(item)
+  const vast = useVideoVastAds(item, { embed: mode === 'iframe' })
 
   useEffect(() => {
     if (!item?.id) return
@@ -106,17 +105,7 @@ export default function VideoPlayerModal({ item, onClose }) {
 
     resolve()
 
-    if (item.type === 'video' && videoVastAdsEnabled()) {
-      setActiveAd(null)
-    } else {
-      const ad = getActiveAdForVideo(item.id)
-      if (ad) {
-        setActiveAd(ad)
-        recordAdImpression(ad.id)
-      } else {
-        setActiveAd(null)
-      }
-    }
+    setActiveAd(null)
 
     return () => {
       cancelled = true
@@ -181,6 +170,15 @@ export default function VideoPlayerModal({ item, onClose }) {
     if (activeAd) recordAdSkip(activeAd.id)
     setAdDismissed(true)
   }, [activeAd])
+
+  useEffect(() => {
+    if (!vast.campaignBreak || !item?.id) return
+    const ad = getActiveAdForVideo(item.id)
+    if (!ad) return
+    setAdDismissed(false)
+    setActiveAd(ad)
+    recordAdImpression(ad.id)
+  }, [vast.campaignBreak, item?.id])
 
   useEffect(() => {
     const el = videoRef.current

@@ -10,8 +10,7 @@ import { getById, getWatchItem, getRelated, getMoreFromCreator, getWatchQueue } 
 import { recordView, getViews, toggleVote, getVotes, getUserVote, canAccessPaidPost } from '../lib/engagement'
 import { getWatchProgress, recordWatchProgress } from '../lib/watchProgress'
 import { recordInteraction } from '../lib/algorithmEngine'
-import { getActiveAdForVideo, recordAdImpression, recordAdSkip, watchBannerAllowed } from '../lib/adEngine'
-import ExoClickDisplay, { EXOCLICK_BANNER_ZONE, EXOCLICK_BANNER_CLASS } from './ExoClickDisplay'
+import { getActiveAdForVideo, recordAdImpression, recordAdSkip } from '../lib/adEngine'
 import { resolvePlayback, PLAYBACK_SPEEDS, formatClock, isHttp } from '../lib/playback'
 import { parseEmbedUrl } from '../lib/videoEmbed'
 import { redirectSafeUrl, safeIframeSrc, safeMediaUrl } from '../lib/safeUrl'
@@ -32,7 +31,6 @@ import SubscribeButton from './SubscribeButton'
 import { VideoPreroll } from './AdUnits'
 import VideoInStreamAd from './VideoInStreamAd'
 import { useVideoVastAds } from '../hooks/useVideoVastAds'
-import { videoVastAdsEnabled } from '../lib/vastAds'
 import { creatorDisplayName, isOfficialCreator, likesLabel, viewsLabel, formatDuration } from '../lib/uiFormat'
 import { isVerifiedChannel } from '../lib/verification'
 import { startPremiumCheckout } from '../lib/checkout'
@@ -154,7 +152,7 @@ export default function WatchPage({
   const showingAdRef = useRef(false)
   const viewCountedRef = useRef(false)
   const iframeViewTimerRef = useRef(null)
-  const vast = useVideoVastAds(item)
+  const vast = useVideoVastAds(item, { embed: mode === 'iframe' })
 
   const [descOpen, setDescOpen] = useState(false)
   const chapters = useMemo(() => {
@@ -219,17 +217,8 @@ export default function WatchPage({
       setPhase(res.playSrc ? 'ready' : 'failed')
     })
 
-    if (item.type === 'video' && videoVastAdsEnabled()) {
-      setActiveAd(null)
-    } else {
-      const ad = getActiveAdForVideo(item.id)
-      if (ad) {
-        setActiveAd(ad)
-        recordAdImpression(ad.id)
-      } else {
-        setActiveAd(null)
-      }
-    }
+    setActiveAd(null)
+    setAdDismissed(false)
 
     return () => {
       cancelled = true
@@ -271,6 +260,15 @@ export default function WatchPage({
     if (activeAd) recordAdSkip(activeAd.id)
     setAdDismissed(true)
   }, [activeAd])
+
+  useEffect(() => {
+    if (!vast.campaignBreak || !item?.id) return
+    const ad = getActiveAdForVideo(item.id)
+    if (!ad) return
+    setAdDismissed(false)
+    setActiveAd(ad)
+    recordAdImpression(ad.id)
+  }, [vast.campaignBreak, item?.id])
 
   useEffect(() => {
     const el = videoRef.current
@@ -672,18 +670,6 @@ export default function WatchPage({
             )}
           </div>
       </div>
-
-          {watchBannerAllowed() ? (
-            <div className="max-w-3xl mx-auto px-4 md:px-6 mt-3">
-              <div className="min-h-[90px] overflow-hidden rounded-lg bg-[#111]">
-                <ExoClickDisplay
-                  format="banner"
-                  zoneId={EXOCLICK_BANNER_ZONE}
-                  insClass={EXOCLICK_BANNER_CLASS}
-                />
-              </div>
-            </div>
-          ) : null}
 
           {chapters.length > 0 && (
             <div className="max-w-3xl mx-auto px-4 md:px-6 mt-3 flex flex-wrap gap-1.5">

@@ -7,6 +7,9 @@ import { safeHttpUrl, safeMediaUrl } from './safeUrl.js'
 export const EXOCLICK_VAST_URL = 'https://s.magsrv.com/v1/vast.php?idz=6010924'
 export const EXOCLICK_LIVE_CREATOR_VAST_URL = 'https://s.magsrv.com/v1/vast.php?idz=6010934'
 export const YT_SKIP_AFTER_SEC = 5
+/** First in-stream ad: 30 seconds into the video. Never a preroll at 0:00. */
+export const VIDEO_FIRST_AD_SEC = 30
+/** Second in-stream ad, and later breaks, only if the video is 8 minutes or longer. */
 export const YT_MIDROLL_MIN_SEC = 8 * 60
 
 export function videoVastAdsEnabled() {
@@ -156,19 +159,25 @@ export async function loadExoClickVast({ depth = 0, kind = 'video' } = {}) {
 }
 
 /**
- * YouTube: mid-rolls only on videos 8 minutes or longer.
- * First break around 45% in; later breaks about every 8 minutes.
- * Skip after 5 seconds is handled by the player, not here.
+ * Long-form videos: first ad 30 seconds in, then another at 8 minutes
+ * if the video is that long, then every 8 minutes after that.
+ * No preroll at 0:00. Videos shorter than 30 seconds get no in-stream ad.
  */
-export function youtubeMidrollBreaks(durationSec) {
+export function videoInStreamBreaks(durationSec) {
   const d = Number(durationSec)
-  if (!Number.isFinite(d) || d < YT_MIDROLL_MIN_SEC) return []
-  const first = Math.min(Math.max(Math.round(d * 0.45), 60), d - 30)
-  const points = [first]
-  let t = first + 8 * 60
-  while (t < d - 30) {
-    points.push(t)
-    t += 8 * 60
+  if (!Number.isFinite(d) || d <= VIDEO_FIRST_AD_SEC) return []
+  const points = [VIDEO_FIRST_AD_SEC]
+  if (d >= YT_MIDROLL_MIN_SEC) {
+    let t = YT_MIDROLL_MIN_SEC
+    while (t <= d) {
+      points.push(t)
+      t += YT_MIDROLL_MIN_SEC
+    }
   }
   return points
+}
+
+/** @deprecated use videoInStreamBreaks — kept so older tests/imports keep working */
+export function youtubeMidrollBreaks(durationSec) {
+  return videoInStreamBreaks(durationSec).filter((t) => t >= YT_MIDROLL_MIN_SEC)
 }

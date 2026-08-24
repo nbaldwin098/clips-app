@@ -64,7 +64,7 @@ export default function AdvertisePage({ onNavigate }) {
             Advertise next to real videos, not invented traffic
           </h1>
           <p className="text-sm text-zinc-400 leading-relaxed">
-            Inventory today is skippable preroll on videos, plus clip and pic banners and in-feed tiles, after we approve your brand. There is no live CPM, no guaranteed 24-hour turnaround, and no ad-revenue share until an ad pool actually exists. We will not sell you fake reach.
+            Inventory today is an in-stream ad 30 seconds into a video (plus another at 8 minutes if the video is that long), clip and pic tiles between posts as you scroll, and a small clip banner under the description. There is no live CPM, no guaranteed 24-hour turnaround, and no ad-revenue share until an ad pool actually exists. We will not sell you fake reach.
           </p>
         </div>
       </div>
