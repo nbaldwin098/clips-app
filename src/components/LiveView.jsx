@@ -47,6 +47,14 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
   }, [])
 
   useEffect(() => {
+    if (!focusedStream?.userId) return
+    const row = liveNow.find((s) => s.userId === focusedStream.userId)
+    if (!row) return
+    if ((row.watchers || 0) === (focusedStream.watchers || 0)) return
+    onFocusStream?.(row)
+  }, [liveNow, focusedStream, onFocusStream])
+
+  useEffect(() => {
     if (!user?.id) return
     const state = lsGet(`live_state_${user.id}`, null)
     if (state?.isLive) {
@@ -90,6 +98,8 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
       handle: user.handle,
       displayName: user.displayName,
       streamKey,
+      watcherIds: [],
+      watchers: 0,
     }
     lsSet(`live_state_${user.id}`, payload)
     const board = lsGet('live_board', [])
@@ -158,6 +168,9 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
             <h2 className="text-white text-lg font-bold">{focusedStream.displayName}</h2>
             <p className="text-zinc-400 text-sm mt-1 max-w-md">{focusedStream.title}</p>
             {focusedStream.category ? <p className="text-zinc-500 text-xs mt-1">{focusedStream.category}</p> : null}
+            <p className="text-zinc-400 text-xs mt-3">
+              {focusedStream.watchers || focusedStream.watcherIds?.length || 0} watching
+            </p>
             <p className="text-zinc-500 text-xs mt-4 max-w-lg">
               Stream health: not connected. No ingest server is receiving video. Viewers see this presence stage only — not a live picture.
             </p>
@@ -228,6 +241,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
                 </div>
                 <p className="text-sm text-zinc-100 font-medium truncate">{s.title}</p>
                 <p className="text-xs text-zinc-500 mt-0.5">@{s.handle}{s.category ? ` · ${s.category}` : ''}</p>
+                <p className="text-[11px] text-zinc-500 mt-1">{s.watchers || s.watcherIds?.length || 0} watching</p>
               </button>
             ))}
           </div>

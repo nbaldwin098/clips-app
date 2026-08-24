@@ -55,6 +55,7 @@ import { lsGet, lsSet } from './lib/storage'
 import { syncContentFromCloud } from './lib/contentSync'
 import { setGraphActor, syncGraphFromCloud } from './lib/graphSync'
 import { installRuntimeGuards } from './lib/selfHeal'
+import { startNamedAccountActivity } from './lib/namedAccountActivity'
 import { isAdminSession } from './lib/moderation'
 import { getById, flushScheduledPublishes } from './lib/contentService'
 import { parseRoute, pushHash } from './lib/routes'
@@ -101,6 +102,7 @@ function AppShell() {
   }, [isAuthenticated, user?.id, user?.provider])
 
   useEffect(() => installRuntimeGuards(), [])
+  useEffect(() => startNamedAccountActivity(), [])
 
   useEffect(() => {
     syncContentFromCloud(user)
