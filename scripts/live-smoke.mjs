@@ -244,6 +244,8 @@ assert(namedSql.includes('on conflict (user_id, content_id) do nothing'), 'likes
 const scriptsSrc = readFileSync(new URL('../src/data/supabaseScripts.js', import.meta.url), 'utf8')
 assert(scriptsSrc.includes('0009_named_activity.sql'), 'help can copy 0009')
 assert(helpSrc.includes('0009'), 'help mentions 0009')
+assert(helpSrc.includes('Open SQL Editor'), 'help has a link to the sql editor')
+assert(helpSrc.includes('supabase.com/dashboard'), 'help points at supabase.com not calabi.us')
 const namedAct2 = readFileSync(new URL('../src/lib/namedAccountActivity.js', import.meta.url), 'utf8')
 assert(namedAct2.includes('namedCloudJobReady'), 'browser bots run until the supabase job tables exist')
 const graphSrc2 = readFileSync(new URL('../src/lib/graphSync.js', import.meta.url), 'utf8')

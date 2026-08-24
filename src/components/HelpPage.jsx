@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { SETUP_SCRIPTS } from '../data/supabaseScripts'
+import { ORG } from '../lib/orgConfig'
 import {
   CLIPS_RESET_EMAIL_SUBJECT,
   CLIPS_RESET_EMAIL_BODY,
@@ -64,7 +65,7 @@ export default function HelpPage() {
     },
     {
       q: 'The 467 people stopped when I closed the tab',
-      a: 'Copy SQL 0009 on this page, paste it into the SQL editor, and Run. That starts a database job so they keep watching and liking without a browser tab. If the last lines fail, turn on pg_cron under Database → Extensions and run those last lines again. They still never comment or chat.',
+      a: 'The SQL editor is not on calabi.us. Tap Open SQL Editor on this Help page (supabase.com). Then Copy SQL for 0009 here, paste in that box, tap Run.',
     },
     {
       q: 'How does discovery work?',
@@ -100,13 +101,40 @@ export default function HelpPage() {
     <div className="p-4 md:p-6 max-w-3xl mx-auto">
       <h1 className="text-xl font-semibold text-white mb-2">Help</h1>
       <p className="text-sm text-[#adadb8] mb-6">
-        To update the database, copy the script — never type the file name.
+        The SQL editor is on supabase.com — not on this site. Copy a script here, then paste it there. Never type the file name.
       </p>
 
       <section className="mb-8 space-y-3">
-        <h2 className="text-sm font-semibold text-white">Supabase SQL — copy and run</h2>
+        <h2 className="text-sm font-semibold text-white">Where the SQL editor is</h2>
+        <p className="text-sm text-zinc-400">
+          1. Open this link (log in if it asks):{' '}
+          <a
+            className="text-white underline break-all"
+            href={ORG.supabaseSqlEditor}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Open SQL Editor
+          </a>
+        </p>
+        <p className="text-sm text-zinc-400">
+          2. You should see a big empty box. That box is the SQL editor.
+        </p>
+        <p className="text-sm text-zinc-400">
+          3. Come back here, tap Copy SQL on “Named people activity job” (0009).
+        </p>
+        <p className="text-sm text-zinc-400">
+          4. Click in the empty box, paste (Ctrl+V or Cmd+V), then tap the green Run button (bottom right).
+        </p>
         <p className="text-xs text-zinc-500">
-          Open Supabase → SQL Editor. Tap Copy SQL below. Paste. Run. Repeat for each step. 0007 and 0008 delete pics and clips that cannot load. 0009 is the job that keeps the 467 people accounts watching and liking.
+          If it asks you to log in, use the same email you used when you made the Clips database. If the last lines of 0009 fail, click Database on the left, then Extensions, turn on pg_cron, and run 0009 again.
+        </p>
+      </section>
+
+      <section className="mb-8 space-y-3">
+        <h2 className="text-sm font-semibold text-white">Copy these scripts</h2>
+        <p className="text-xs text-zinc-500">
+          0009 is the one that makes the 467 people keep watching and liking. 0007 and 0008 only delete broken pics/clips.
         </p>
         {SETUP_SCRIPTS.map((script) => (
           <CopyScript key={script.id} script={script} />

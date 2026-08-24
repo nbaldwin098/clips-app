@@ -21,6 +21,11 @@ export const ORG = {
   privacyEmail: env('VITE_PRIVACY_EMAIL', 'privacy@calabi.us'),
   legalEmail: env('VITE_LEGAL_EMAIL', 'legal@calabi.us'),
   dmcaEmail: env('VITE_DMCA_EMAIL', 'dmca@calabi.us'),
+  /** Owner dashboard — SQL Editor is here, not on calabi.us */
+  supabaseSqlEditor: env(
+    'VITE_SUPABASE_SQL_EDITOR',
+    'https://supabase.com/dashboard/project/nohiyjcxpvfrvrvdfxjc/sql/new',
+  ),
   /** Owner handle — only this account is platform admin */
   ownerHandle: 'cs1',
   /** Creator applications open window (ISO dates, inclusive) */
