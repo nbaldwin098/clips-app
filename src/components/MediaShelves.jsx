@@ -75,7 +75,7 @@ export default function MediaShelves({ items, onPlayItem, onOpenPic, pinOverlay,
                   className="relative block w-full aspect-square overflow-hidden rounded-lg bg-[#272727] group"
                 >
                   {(row.item.thumbUrl || row.item.mediaUrl) ? (
-                    <img src={row.item.thumbUrl || row.item.mediaUrl} alt="" className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                    <img src={row.item.thumbUrl || row.item.mediaUrl} alt="" className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" decoding="async" />
                   ) : null}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   <span className="absolute bottom-1.5 left-1.5 right-1.5 text-[11px] text-white line-clamp-2 opacity-0 group-hover:opacity-100">

@@ -41,7 +41,7 @@ export default function AdminAds() {
         <div>
           <p className="text-sm font-medium text-white">Site ads</p>
           <p className="text-xs text-zinc-500 mt-0.5">
-            Videos use the ExoClick VAST tag as a skippable preroll (skip after 5 seconds, like YouTube). Videos 8 minutes or longer also get mid-rolls. Clip full ads sit every 4–6 clips, never twice in a row and never on a banner. Clip banners sit every 10 clips, never on a full ad. Pic full ads sit every 4 photos as a full-width mosaic row at photo height. Live viewers get the video tag 30 seconds after they open a stream. Creators can run a separate live tag with !ad, with at least 5 minutes between breaks. If a tag has no fill, we do not invent a fake ad.
+            Videos use the ExoClick VAST tag as a skippable preroll (skip after 5 seconds, like YouTube). Videos 8 minutes or longer also get mid-rolls. Clip full ads sit every 4–6 clips, never twice in a row and never on a banner. Clip banners sit every 10 clips, never on a full ad. Pic full ads sit every 6 photos as a full-width mosaic row at photo height. Live viewers get the video tag 30 seconds after they open a stream. Creators can run a separate live tag with !ad, with at least 5 minutes between breaks. If a tag has no fill, we do not invent a fake ad.
           </p>
         </div>
         <button

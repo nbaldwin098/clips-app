@@ -129,7 +129,7 @@ export default function ShortsStage({
                   : 'h-full w-full snap-start snap-always shrink-0 flex items-center justify-center px-3 py-4 sm:px-10 sm:py-8'
               }
             >
-              {renderSlide(row.index, row.index === activeIndex)}
+              {Math.abs(row.index - activeIndex) <= 1 ? renderSlide(row.index, row.index === activeIndex) : null}
             </div>
           ))}
         </div>

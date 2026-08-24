@@ -56,6 +56,7 @@ export function findNamedAccountLogin(email) {
 export function seedNamedAccounts() {
   const users = lsGet(USERS_INDEX, {})
   if (!users || typeof users !== 'object') return
+  if (users['named-0001']?.handle) return
   for (const row of NAMED_ACCOUNTS) {
     users[row.id] = {
       id: row.id,
