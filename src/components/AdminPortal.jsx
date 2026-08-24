@@ -14,9 +14,11 @@ import { useAuth } from '../context/AuthContext'
 import { ORG, OPS_CHECKLIST, applicationsAreOpen, applicationsWindowLabel } from '../lib/orgConfig'
 import AdminPromos from './AdminPromos'
 import AdminAds from './AdminAds'
+import AdminSetup from './AdminSetup'
 
 const TABS = [
   ['ops', 'Overview'],
+  ['setup', 'Setup'],
   ['payouts', 'Payouts'],
   ['ads', 'Ads'],
   ['promos', 'Promos'],
@@ -236,6 +238,8 @@ export default function AdminPortal() {
           </div>
         </div>
       )}
+
+      {tab === 'setup' && <AdminSetup />}
 
       {tab === 'ads' && <AdminAds />}
 

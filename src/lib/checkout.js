@@ -3,7 +3,7 @@
  * A Payment Link (or a server PaymentIntent) is what actually charges a card.
  */
 import {
-  isStripeConfigured, stripeMode, getStripePaymentLink, buildPaymentLink, loadStripeJs,
+  isStripeConfigured, getStripePaymentLink, buildPaymentLink, loadStripeJs,
 } from './stripeConfig'
 
 export function checkoutCanCharge() {
@@ -33,8 +33,8 @@ export async function startPremiumCheckout({ already = false, email = '', refere
       status: loaded.ok ? 'key_ready' : 'key_bad',
       url: '',
       message: loaded.ok
-        ? `Stripe ${stripeMode()} key is live on this deploy. Add a Payment Link as VITE_STRIPE_PAYMENT_LINK on Render (match the creator’s list price), set the success URL to https://calabi.us/#/checkout?paid=1, then redeploy. Cards charge on Stripe’s page. Payouts are not live.`
-        : 'The publishable key on this deploy did not load Stripe.js. Check it is pk_live_ or pk_test_ and named VITE_STRIPE_PUBLISHABLE_KEY.',
+        ? 'Card checkout is not fully set up yet. You will not be charged until it is.'
+        : 'Card checkout could not start. Try again later.',
     }
   }
 
@@ -42,6 +42,6 @@ export async function startPremiumCheckout({ already = false, email = '', refere
     granted: false,
     status: 'no_key_in_build',
     url: '',
-    message: 'This build did not receive a publishable key. On Render the name must be exactly VITE_STRIPE_PUBLISHABLE_KEY, then Manual Deploy so Vite bakes it in.',
+    message: 'Card checkout is not set up on this site yet.',
   }
 }

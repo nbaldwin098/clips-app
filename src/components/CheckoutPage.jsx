@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { getMembershipPrice, isPremiumSub, addPremiumSub, markContentPurchased } from '../lib/engagement'
-import { isStripeConfigured, stripeMode, getStripePaymentLink, membershipReturnPaid } from '../lib/stripeConfig'
+import { isStripeConfigured, getStripePaymentLink, membershipReturnPaid } from '../lib/stripeConfig'
 import { startPremiumCheckout } from '../lib/checkout'
 import { openSafeUrl } from '../lib/safeUrl'
 import PageHeader from './PageHeader'
@@ -56,8 +56,8 @@ export default function CheckoutPage({ onNavigate, creatorId, returnParams = {} 
         </ul>
         <p className="text-[11px] text-zinc-500">
           {configured
-            ? `Stripe ${stripeMode()} publishable key is on this deploy${hasLink ? ' · Payment Link ready' : ' · add VITE_STRIPE_PAYMENT_LINK to charge cards'}`
-            : 'This build did not receive VITE_STRIPE_PUBLISHABLE_KEY — Render has it after a redeploy'}
+            ? (hasLink ? 'Card checkout is ready.' : 'Card checkout is not set up yet. Subscribe will not charge until it is.')
+            : 'Card checkout is not set up on this site yet.'}
         </p>
         {already ? (
           <p className="text-sm text-white">You already have premium on this channel.</p>
