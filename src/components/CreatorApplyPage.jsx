@@ -31,7 +31,7 @@ export default function CreatorApplyPage({ onOpenAuth, onNavigate }) {
   if (user.creatorStatus === 'approved') {
     return (
       <div className="p-6 max-w-md mx-auto rounded-2xl border border-zinc-800 bg-[#121218] text-sm text-zinc-200">
-        You are an approved creator. Studio and live tools are unlocked.
+        You are approved to earn. Studio, upload, and live are already open to everyone who is signed in.
       </div>
     )
   }
@@ -78,9 +78,9 @@ export default function CreatorApplyPage({ onOpenAuth, onNavigate }) {
 
   return (
     <div className="p-4 md:p-6 max-w-2xl mx-auto">
-      <h1 className="text-lg font-semibold text-white">Create on Clips</h1>
+      <h1 className="text-lg font-semibold text-white">Apply to earn</h1>
       <p className="text-sm text-zinc-400 mt-2 leading-relaxed">
-        We recruit people who will post work they own. Viewers follow you, not a fake catalog. Share a link to a video, clip, pic, or your profile. Membership is a real Stripe charge when a Payment Link is set. That is the pitch — nothing else is invented to close the deal.
+        Anyone signed in can upload, post pics, and list a live lobby. This form is only to earn. Payouts are sent by hand after approval. Views are not worth a dollar rate. Membership is a real Stripe charge when a Payment Link is set.
       </p>
 
       <div className="mt-5 grid sm:grid-cols-2 gap-3">
@@ -97,7 +97,7 @@ export default function CreatorApplyPage({ onOpenAuth, onNavigate }) {
         <div className="rounded-xl border border-zinc-800 bg-[#121218] p-4">
           <p className="text-sm font-semibold text-white">What is not live</p>
           <ul className="mt-2 text-xs text-zinc-400 space-y-1.5 list-disc pl-4">
-            <li>Ad RPM / a shared ad pool</li>
+            <li>Ad RPM / a shared ad pool / $1 per 1,000 views</li>
             <li>Bank payouts (Stripe Connect is not connected)</li>
             <li>Live video ingest — Live is a lobby</li>
             <li>Auto captions or Content ID</li>
@@ -107,7 +107,7 @@ export default function CreatorApplyPage({ onOpenAuth, onNavigate }) {
       </div>
 
       <div className="mt-4 rounded-xl border border-zinc-800 bg-[#121218] p-4">
-        <p className="text-sm font-semibold text-white">Rules before you apply</p>
+        <p className="text-sm font-semibold text-white">Rules before you apply to earn</p>
         <ul className="mt-2 text-xs text-zinc-400 space-y-1.5 list-disc pl-4">
           {CONTENT_RULES_SHORT.map((r) => <li key={r}>{r}</li>)}
         </ul>

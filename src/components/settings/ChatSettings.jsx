@@ -10,23 +10,27 @@ export default function ChatSettings() {
   const [subOnly, setSubOnly] = useState(!!stream.subscriberOnlyChat)
   const [blockedTerms, setBlockedTerms] = useState(() => getUserSettings().blockedTerms || '')
   const [saved, setSaved] = useState(false)
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
     const s = getStreamSettings(user?.id)
     setSlowMode(s.slowModeSeconds || 0)
     setSubOnly(!!s.subscriberOnlyChat)
     setBlockedTerms(getUserSettings().blockedTerms || '')
+    setReady(true)
   }, [user?.id])
 
-  const save = () => {
+  useEffect(() => {
+    if (!ready) return
     setStreamSettings(user?.id, {
       slowModeSeconds: Number(slowMode) || 0,
       subscriberOnlyChat: subOnly,
     })
     saveUserSettings({ blockedTerms })
     setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
-  }
+    const t = setTimeout(() => setSaved(false), 1500)
+    return () => clearTimeout(t)
+  }, [ready, user?.id, slowMode, subOnly, blockedTerms])
 
   return (
     <div className="space-y-8">
@@ -68,9 +72,7 @@ export default function ChatSettings() {
           className="w-full rounded-lg border border-zinc-800 bg-[#000000] px-3 py-2 text-sm text-zinc-100"
           placeholder="One phrase per line"
         />
-        <button type="button" onClick={save} className="h-9 px-4 rounded-lg bg-white text-black text-sm font-medium">
-          {saved ? 'Saved' : 'Save'}
-        </button>
+        <p className="text-[11px] text-zinc-500">{saved ? 'Saved' : 'Saved as you type.'}</p>
       </section>
     </div>
   )

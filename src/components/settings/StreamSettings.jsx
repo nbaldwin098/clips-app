@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { getStreamSettings, setStreamSettings } from '../../lib/streamSettings'
 import { ensureStreamKey, rotateStreamKey } from '../../lib/streamKeys'
@@ -19,8 +19,9 @@ export default function StreamSettings() {
   const [saved, setSaved] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  const save = () => {
-    setStreamSettings(user?.id, {
+  useEffect(() => {
+    if (!user?.id) return
+    setStreamSettings(user.id, {
       latency,
       defaultQuality: quality,
       streamTitleTemplate: title,
@@ -28,15 +29,16 @@ export default function StreamSettings() {
       autoPublishVod: autoPub,
       vodVisibility: vis,
     })
-    setVodChannel(user?.id, {
+    setVodChannel(user.id, {
       enabled: vodOn,
       handle: vodHandle,
       autoPublish: autoPub,
       visibility: vis,
     }, user)
     setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
-  }
+    const t = setTimeout(() => setSaved(false), 1500)
+    return () => clearTimeout(t)
+  }, [user?.id, latency, quality, title, vodOn, vodHandle, autoPub, vis])
 
   return (
     <div className="space-y-8">
@@ -130,9 +132,7 @@ export default function StreamSettings() {
           <span className="text-xs font-medium text-zinc-400">Title template</span>
           <input value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#000000] px-3 text-sm text-zinc-100" placeholder="Optional" />
         </label>
-        <button type="button" onClick={save} className="h-9 px-4 rounded-lg bg-white text-black text-sm font-medium">
-          {saved ? 'Saved' : 'Save'}
-        </button>
+        <p className="text-[11px] text-zinc-500">{saved ? 'Saved' : 'Saved as you change these.'}</p>
       </section>
     </div>
   )

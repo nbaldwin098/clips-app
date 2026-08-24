@@ -61,17 +61,8 @@ export default function ChannelPage({ onNavigate }) {
     || displayName !== (user?.displayName || '')
     || handle !== (user?.handle || '')
     || bio !== (user?.bio || '')
+    || Number(price) !== Number(getMembershipPrice(user?.id))
   )
-
-  const cancel = () => {
-    setDisplayName(user?.displayName || '')
-    setHandle(user?.handle || '')
-    setBio(user?.bio || '')
-    setAvatarDraft(null)
-    setBannerDraft(null)
-    setErr('')
-    if (user?.id) setPrice(getMembershipPrice(user.id))
-  }
 
   const save = async () => {
     setErr('')
@@ -90,6 +81,12 @@ export default function ChannelPage({ onNavigate }) {
       setBusy(false)
     }
   }
+
+  useEffect(() => {
+    if (!dirty || !user) return
+    const t = setTimeout(() => { save() }, 600)
+    return () => clearTimeout(t)
+  }, [dirty, displayName, handle, bio, avatarDraft, bannerDraft, price, user?.id])
 
   const avatarSrc = avatarDraft || user?.avatarUrl
   const bannerSrc = bannerDraft || user?.bannerUrl
@@ -213,6 +210,7 @@ export default function ChannelPage({ onNavigate }) {
           </span>
         </label>
         {err ? <p className="text-sm text-red-400">{err}</p> : null}
+        <p className="text-[11px] text-zinc-500">{busy ? 'Saving…' : 'Saved as you type.'}</p>
         {user?.creatorStatus === 'approved' && (
           <div className="rounded-xl border border-zinc-800 bg-[#121218] p-4">
             <p className="text-xs text-white mb-2">Subscriber emotes</p>
@@ -228,15 +226,6 @@ export default function ChannelPage({ onNavigate }) {
           </div>
         )}
       </div>
-
-      {dirty ? (
-        <div className="sticky bottom-0 z-20 border-t border-zinc-800 bg-black px-4 py-3 flex gap-2 justify-end">
-          <button type="button" onClick={cancel} className="h-10 px-4 rounded-lg border border-zinc-700 text-sm text-zinc-200">Cancel</button>
-          <button type="button" onClick={save} disabled={busy} className="h-10 px-4 rounded-lg bg-white text-black text-sm font-semibold disabled:opacity-50">
-            {busy ? 'Saving…' : 'Save'}
-          </button>
-        </div>
-      ) : null}
     </div>
   )
 }

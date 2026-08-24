@@ -15,7 +15,6 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { isPlatformOwner } from '../lib/moderation'
-import { cn } from '../lib/utils'
 import BrandMark from './BrandMark'
 import ChannelAvatar from './ChannelAvatar'
 import NotificationsMenu from './NotificationsMenu'
@@ -31,7 +30,15 @@ export default function StreamingNavbar({
 }) {
   const { user, isAuthenticated, logout } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [menuDeg, setMenuDeg] = useState(0)
+  const lastOpen = useRef(!!sidebarOpen)
   const menuRef = useRef(null)
+
+  useEffect(() => {
+    if (lastOpen.current === !!sidebarOpen) return
+    lastOpen.current = !!sidebarOpen
+    setMenuDeg((d) => d + 90)
+  }, [sidebarOpen])
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -55,12 +62,15 @@ export default function StreamingNavbar({
           <button
             type="button"
             onClick={onToggleSidebar}
-            className="flex h-14 w-14 items-center justify-center text-zinc-200 hover:bg-white/10 transition-colors"
+            className="flex h-14 w-14 items-center justify-center text-zinc-200"
             aria-label={sidebarOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={!!sidebarOpen}
             title={sidebarOpen ? 'Close menu' : 'Open menu'}
           >
-            <Menu className={cn('h-5 w-5 transition-transform duration-200 ease-out', sidebarOpen && 'rotate-90')} />
+            <Menu
+              className="h-5 w-5 origin-center transition-transform duration-300 ease-in-out"
+              style={{ transform: `rotate(${menuDeg}deg)` }}
+            />
           </button>
 
           <button
