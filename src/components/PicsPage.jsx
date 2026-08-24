@@ -236,7 +236,7 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
     <div className="h-full overflow-y-auto bg-[#000000]">
       <div className="sticky top-0 z-10 border-b border-zinc-800/80 bg-[#000000]/95 backdrop-blur px-4 py-3 flex items-center justify-between gap-3">
         <h1 className="text-lg font-semibold text-zinc-100">Pics</h1>
-        <button type="button" onClick={openUpload} disabled={busy} className="h-9 px-3 rounded-lg bg-white text-black text-sm font-semibold disabled:opacity-60 inline-flex items-center gap-1.5">
+        <button type="button" onClick={openUpload} disabled={busy} className="h-9 px-4 rounded-full bg-white text-black text-sm font-semibold disabled:opacity-60 inline-flex items-center gap-1.5">
           <ImagePlus className="h-4 w-4" />
           {busy ? 'Uploading…' : 'Upload'}
         </button>

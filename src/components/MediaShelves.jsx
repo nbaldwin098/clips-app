@@ -13,7 +13,7 @@ export default function MediaShelves({ items, onPlayItem, onOpenPic, pinOverlay 
       {videos.length > 0 && (
         <section>
           <h2 className="text-base font-semibold text-zinc-200 mb-3">Videos</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-8 md:gap-x-5">
             {videos.map((item) => (
               <div key={item.id} className="relative">
                 {pinOverlay?.(item)}
@@ -26,7 +26,7 @@ export default function MediaShelves({ items, onPlayItem, onOpenPic, pinOverlay 
       {shorts.length > 0 && (
         <section>
           <h2 className="text-base font-semibold text-zinc-200 mb-3">Clips</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
             {shorts.map((item) => (
               <div key={item.id} className="relative">
                 {pinOverlay?.(item)}

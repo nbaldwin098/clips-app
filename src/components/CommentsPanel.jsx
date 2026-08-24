@@ -45,7 +45,7 @@ export default function CommentsPanel({ contentId, creatorId }) {
       {isAuthenticated ? (
         <form onSubmit={submit} className="flex gap-2 mb-4">
           <input value={text} onChange={(e) => setText(e.target.value)} placeholder={replyTo ? 'Write a reply…' : 'Add a comment…'} className="flex-1 h-10 rounded-lg border border-zinc-800 bg-[#000000] px-3 text-sm text-zinc-100" maxLength={5000} />
-          <button type="submit" className="h-10 px-3 rounded-lg bg-white text-black text-xs">Post</button>
+          <button type="submit" className="h-10 px-4 rounded-full bg-white text-black text-xs font-semibold">Post</button>
           {replyTo && <button type="button" onClick={() => setReplyTo(null)} className="text-xs text-zinc-500">Cancel</button>}
         </form>
       ) : (
