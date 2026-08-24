@@ -60,7 +60,12 @@ export default function AdBanner({ ad }) {
 
 export function InFeedAd({ ad, variant = 'clip' }) {
   if (ad?.provider === 'exoclick') {
-    const frame = variant === 'pic' ? 'relative w-full aspect-square overflow-hidden bg-[#1a1a1a]' : 'relative block w-full aspect-[9/16] overflow-hidden rounded-xl bg-[#1a1a1a]'
+    const frame =
+      variant === 'pic-row'
+        ? 'relative col-span-3 sm:col-span-4 md:col-span-5 lg:col-span-6 w-full overflow-hidden bg-[#1a1a1a] aspect-[3/1] sm:aspect-[4/1] md:aspect-[5/1] lg:aspect-[6/1]'
+        : variant === 'pic'
+          ? 'relative w-full aspect-square overflow-hidden bg-[#1a1a1a]'
+          : 'relative block w-full aspect-[9/16] overflow-hidden rounded-xl bg-[#1a1a1a]'
     return (
       <div className={frame}>
         <ExoClickDisplay zoneId={ad.zoneId} />
@@ -84,9 +89,13 @@ function CampaignInFeedAd({ ad, variant = 'clip' }) {
     if (href) openSafeUrl(href)
   }
 
-  if (variant === 'pic') {
+  if (variant === 'pic' || variant === 'pic-row') {
+    const frame =
+      variant === 'pic-row'
+        ? 'relative col-span-3 sm:col-span-4 md:col-span-5 lg:col-span-6 w-full aspect-[3/1] sm:aspect-[4/1] md:aspect-[5/1] lg:aspect-[6/1] overflow-hidden bg-[#1a1a1a] text-left'
+        : 'relative block w-full aspect-square overflow-hidden bg-[#1a1a1a] text-left'
     return (
-      <button type="button" onClick={open} className="relative block w-full aspect-square overflow-hidden bg-[#1a1a1a] text-left">
+      <button type="button" onClick={open} className={frame}>
         {img ? (
           <img src={img} alt="" className="absolute inset-0 h-full w-full object-cover" />
         ) : (

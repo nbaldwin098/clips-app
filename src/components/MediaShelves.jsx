@@ -66,7 +66,7 @@ export default function MediaShelves({ items, onPlayItem, onOpenPic, pinOverlay,
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1">
             {picRows.map((row) => (
               row.kind === 'ad' ? (
-                <InFeedAd key={row.key} ad={row.ad} variant="pic" />
+                <InFeedAd key={row.key} ad={row.ad} variant="pic-row" />
               ) : (
                 <button
                   key={row.key || row.item.id}

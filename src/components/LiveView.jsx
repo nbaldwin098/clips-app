@@ -38,6 +38,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
   const [liveNow, setLiveNow] = useState(() => (lsGet('live_board', []) || []).filter((b) => b.isLive))
   const [, setTick] = useState(0)
   const [sharing, setSharing] = useState(false)
+  const [adNote, setAdNote] = useState('')
   const screenRef = useRef(null)
 
   const [draftReady, setDraftReady] = useState(false)
@@ -223,7 +224,10 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
                 <>
                 <button
                   type="button"
-                  onClick={() => cueLiveAd(focusedStream.userId, 'live-creator')}
+                  onClick={() => {
+                    const res = cueLiveAd(focusedStream.userId, 'live-creator')
+                    setAdNote(res.ok ? 'Ad queued. Next break in 5 minutes.' : (res.error || 'Could not run ad.'))
+                  }}
                   className="h-9 px-3 rounded-full bg-white text-black text-xs font-semibold"
                 >
                   Run ad
@@ -239,6 +243,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
               )}
               <SubscribeButton creatorId={focusedStream.userId} handle={focusedStream.handle} onOpenAuth={onOpenAuth} />
             </div>
+            {adNote ? <p className="w-full text-[11px] text-zinc-500">{adNote}</p> : null}
           </div>
         </div>
       )}
