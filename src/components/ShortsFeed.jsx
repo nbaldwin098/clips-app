@@ -12,8 +12,7 @@ import { copyShareUrl } from '../lib/routes'
 import CommentsPanel from './CommentsPanel'
 import ShortsStage, { ShortsCard } from './ShortsStage'
 import ShortsGrid from './ShortsGrid'
-import { PlacementBanner } from './AdUnits'
-import ExoClickDisplay from './ExoClickDisplay'
+import ExoClickDisplay, { clipBannerAllowed, EXOCLICK_BANNER_ZONE, EXOCLICK_BANNER_CLASS } from './ExoClickDisplay'
 import { mixFeedAds } from '../lib/adEngine'
 
 function resolvePlayUrl(item) {
@@ -37,6 +36,7 @@ function RailBtn({ onClick, label, children, active = false, circled = true }) {
 
 function ClipSlide({
   item, active, muted, onToggleMute, user, onOpenAuth, onOpenProfile, onOpenSound, onStitch, onBack, onSearch,
+  showBanner = false,
 }) {
   const vidRef = useRef(null)
   const [src, setSrc] = useState(() => resolvePlayUrl(item))
@@ -313,8 +313,12 @@ function ClipSlide({
               <span className="truncate">{item.soundTitle}</span>
             </button>
           ) : null}
+          {showBanner ? (
+            <div className="mt-2 mr-16 md:mr-4 min-h-[90px] rounded-lg overflow-hidden bg-black/40" onClick={(e) => e.stopPropagation()}>
+              <ExoClickDisplay zoneId={EXOCLICK_BANNER_ZONE} insClass={EXOCLICK_BANNER_CLASS} className="min-h-[90px]" />
+            </div>
+          ) : null}
         </div>
-        <PlacementBanner placement="clip-banner" itemId={item.id} />
         <div className="h-0.5 bg-white/20">
           <div className="h-full bg-white" style={{ width: `${Math.round((progress || 0) * 100)}%` }} />
         </div>
@@ -417,7 +421,7 @@ export default function ShortsFeed({
             </div>
           )
         }
-        return items[index] && row?.item ? (
+        return row?.item ? (
           <ClipSlide
             item={row.item}
             active={active}
@@ -430,6 +434,7 @@ export default function ShortsFeed({
             onStitch={onStitch}
             onBack={backToGrid}
             onSearch={() => onNavigate?.('explore')}
+            showBanner={clipBannerAllowed(mixed, index)}
           />
         ) : null
       }}

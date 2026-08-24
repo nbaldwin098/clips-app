@@ -356,6 +356,16 @@ export function mixFeedAds(items, placement) {
   return out
 }
 
+/** Banner under a clip: about every 15 clips, never on or next to a full in-feed ad. */
+export function clipBannerAllowed(mixed, index) {
+  if (!settingAllows('clip-banner')) return false
+  const row = mixed?.[index]
+  if (!row || row.kind === 'ad') return false
+  if (mixed[index - 1]?.kind === 'ad' || mixed[index + 1]?.kind === 'ad') return false
+  const n = mixed.slice(0, index + 1).filter((r) => r.kind === 'item').length
+  return n > 0 && n % 15 === 0
+}
+
 export function recordAdImpression(adId) {
   const metrics = lsGet(AD_METRICS_KEY, {}) || {}
   metrics.totalImpressions = (metrics.totalImpressions || 0) + 1

@@ -56,6 +56,23 @@ assert(EXOCLICK_VAST_URL.includes('idz=6010924'), 'exoClick zone is wired')
   assert(parsed?.mediaUrl?.includes('ad.mp4') && parsed.skipAfterSec === 5, 'vast parser reads mp4 and skip')
 }
 assert(!parseVastXml('<VAST version="3.0"></VAST>'), 'empty vast is not a fake ad')
+{
+  const mixed = []
+  for (let i = 0; i < 20; i += 1) {
+    mixed.push({ kind: 'item', item: { id: `c${i}` } })
+    if ((i + 1) % 4 === 0 && i < 19) mixed.push({ kind: 'ad', ad: { provider: 'exoclick' } })
+  }
+  function allowed(index) {
+    const row = mixed[index]
+    if (!row || row.kind === 'ad') return false
+    if (mixed[index - 1]?.kind === 'ad' || mixed[index + 1]?.kind === 'ad') return false
+    const n = mixed.slice(0, index + 1).filter((r) => r.kind === 'item').length
+    return n > 0 && n % 15 === 0
+  }
+  const bannerIdx = mixed.findIndex((_, i) => allowed(i))
+  assert(bannerIdx >= 0 && mixed[bannerIdx].kind === 'item', 'every 15th clip can show a banner')
+  assert(mixed[bannerIdx - 1]?.kind !== 'ad' && mixed[bannerIdx + 1]?.kind !== 'ad', 'clip banner is not next to a full ad')
+}
 assert(existsSync(new URL('../public/_redirects', import.meta.url)), 'static host rewrites unknown paths to the app')
 
 function isPromoLive(promo, now = Date.now()) {
@@ -202,6 +219,7 @@ assert(adEng.includes('if (!adsAreRunning()) return null'), 'preroll stays off u
 assert(adEng.includes('mixFeedAds'), 'clip and pic feeds can insert ads between items')
 assert(adEng.includes("provider: 'exoclick'"), 'clip and pic feeds use the ExoClick display zone')
 assert(adEng.includes('clipFeedEvery: 4'), 'clip ads sit every 4 items like Shorts')
+assert(adEng.includes('n % 15 === 0'), 'clip banners sit about every 15 clips')
 assert(shortsFeedSrc.includes('mixFeedAds'), 'clip player inserts ads between clips')
 assert(adEng.includes('clip-banner') && adEng.includes('pic-feed'), 'clip and pic placements exist')
 const paySrc = readFileSync(new URL('../src/lib/payouts.js', import.meta.url), 'utf8')
@@ -228,7 +246,10 @@ assert(adminAdsSrc.includes('Where ads show'), 'admin can toggle each placement'
 assert(adminAdsSrc.includes('clipBanner') && adminAdsSrc.includes('picInFeed'), 'admin has clip and pic placement switches')
 const shortsGridSrc = readFileSync(new URL('../src/components/ShortsGrid.jsx', import.meta.url), 'utf8')
 assert(shortsGridSrc.includes('mixFeedAds'), 'clip grid inserts in-feed ads')
-assert(shortsFeedSrc.includes('PlacementBanner'), 'clip player has a bottom banner')
+assert(shortsFeedSrc.includes('clipBannerAllowed'), 'clip player has banners under the description')
+assert(shortsFeedSrc.includes('EXOCLICK_BANNER_ZONE'), 'clip banners use the ExoClick banner zone')
+const exoSrc = readFileSync(new URL('../src/components/ExoClickDisplay.jsx', import.meta.url), 'utf8')
+assert(exoSrc.includes('6010930') && exoSrc.includes('eas6a97888e2'), 'clip banner zone id is 6010930')
 const picsSrc = readFileSync(new URL('../src/components/PicsPage.jsx', import.meta.url), 'utf8')
 assert(picsSrc.includes('mixFeedAds'), 'pic mosaic inserts in-feed ads')
 assert(picsSrc.includes('pic-banner'), 'pic viewer has a bottom banner')
