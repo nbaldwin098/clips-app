@@ -6,6 +6,7 @@ import { lsGet, lsSet, lsRemove } from './storage'
 import { safeHttpUrl } from './safeUrl'
 import { purgeDeadCatalog } from './catalogHealth'
 import { seedOfficialCatalog } from '../data/publicMediaSeed'
+import { seedNamedAccounts } from '../data/namedAccountsSeed'
 
 function isRecord(v) {
   return !!v && typeof v === 'object' && !Array.isArray(v)
@@ -76,6 +77,10 @@ export function healLocalState() {
 
   try {
     seedOfficialCatalog()
+  } catch {}
+
+  try {
+    seedNamedAccounts()
   } catch {}
 }
 

@@ -8,6 +8,7 @@ import { ensureOwnProfile, privilegesFromProfile } from '../lib/profiles'
 import { hashSecret, verifySecret } from '../lib/secrets'
 import { persistableMediaUrl, restoreProfilePictures, persistProfilePicture } from '../lib/profileMedia'
 import { findOfficialLogin } from '../data/publicMediaSeed'
+import { findNamedAccountLogin, verifyNamedAccountPassword } from '../data/namedAccountsSeed'
 import { sanitizeAuthError } from '../lib/authBrand'
 
 const AuthContext = createContext(null)
@@ -256,6 +257,37 @@ export function AuthProvider({ children }) {
       }
       setUser(next)
       setMode('creator')
+      try { indexUser(next) } catch {}
+      return next
+    }
+
+    const named = findNamedAccountLogin(email)
+    if (named) {
+      if (modeAuth === 'signup') {
+        throw new Error('That email is already a site account. Sign in instead.')
+      }
+      if (!password || password.length < 6) {
+        throw new Error('Email and a password of at least 6 characters are required.')
+      }
+      if (!verifyNamedAccountPassword(named.n, password)) {
+        throw new Error('Wrong email or password.')
+      }
+      const next = {
+        id: named.id,
+        email: named.email,
+        displayName: named.displayName,
+        handle: named.handle,
+        provider: 'local',
+        avatarUrl: named.avatarUrl,
+        bannerUrl: named.bannerUrl,
+        bio: '',
+        isCreator: false,
+        creatorStatus: 'none',
+        isPlatformAdmin: false,
+        role: 'user',
+      }
+      setUser(next)
+      setMode('viewer')
       try { indexUser(next) } catch {}
       return next
     }
