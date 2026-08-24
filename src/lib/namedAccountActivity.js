@@ -14,7 +14,6 @@ import { ensureUpvote, recordView, addWatchSeconds, getUserVote } from './engage
 import { recordInteraction, startSession } from './algorithmEngine'
 import { recordWatchProgress } from './watchProgress'
 import { notifyContentChanged } from './contentSync'
-import { getSupabase, isSupabaseConfigured } from './supabaseClient'
 
 const VIEWED_KEY = 'named_activity_viewed'
 const SESSION_KEY = 'named_activity_sessions'
@@ -190,29 +189,10 @@ function stepNamedActivity() {
 
 export { stepNamedActivity }
 
-async function namedCloudJobReady() {
-  if (!isSupabaseConfigured()) return false
-  try {
-    const sb = await getSupabase()
-    if (!sb) return false
-    const { error, count } = await sb.from('named_watches').select('user_id', { count: 'exact', head: true })
-    return !error && Number(count) > 0
-  } catch {
-    return false
-  }
-}
-
 export async function startNamedAccountActivity() {
   if (typeof window === 'undefined') return
   if (timer) return
-  const tick = async () => {
-    if (ticks > 0 && ticks % 40 === 0 && await namedCloudJobReady()) {
-      stopNamedAccountActivity()
-      return
-    }
-    stepNamedActivity()
-  }
-  if (await namedCloudJobReady()) return
+  const tick = () => { stepNamedActivity() }
   tick()
   timer = window.setInterval(tick, TICK_MS)
 }

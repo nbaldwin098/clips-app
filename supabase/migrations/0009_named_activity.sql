@@ -3,6 +3,18 @@
 -- Likes stay up. No comments. No live chat.
 -- If the cron lines at the bottom fail: Database → Extensions → enable pg_cron, then run only those last lines again.
 
+create table if not exists public.votes (
+  user_id text not null,
+  content_id text not null,
+  direction text not null check (direction in ('up', 'down')),
+  created_at timestamptz not null default now(),
+  primary key (user_id, content_id)
+);
+create index if not exists votes_content_idx on public.votes (content_id);
+alter table public.votes enable row level security;
+drop policy if exists "votes_select" on public.votes;
+create policy "votes_select" on public.votes for select using (true);
+
 create table if not exists public.named_people (
   n int primary key,
   id text not null unique,
@@ -750,6 +762,7 @@ end;
 $$;
 
 revoke all on function public.run_named_activity(integer) from public;
+grant execute on function public.run_named_activity(integer) to anon, authenticated;
 
 do $cron$
 begin
