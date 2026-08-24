@@ -17,7 +17,10 @@ import { OFFICIAL_CREATORS } from '../data/publicMediaSeed'
 const VIEW_KEY = 'clips_content_views'
 const PIN_KEY = 'clips_pinned_by_creator'
 
-function readViews() { return lsGet(VIEW_KEY, {}) || {} }
+function readViews() {
+  const map = lsGet(VIEW_KEY, {}) || {}
+  return map && typeof map === 'object' && !Array.isArray(map) ? map : {}
+}
 function writeViews(map) { lsSet(VIEW_KEY, map) }
 
 function withViewCounts(items) {

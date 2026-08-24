@@ -77,15 +77,18 @@ export function getUserUpvotedIds(userId) {
 
 export function recordView(contentId) {
   if (!contentId) return 0
-  const all = lsGet(VIEWS, {})
-  all[contentId] = (all[contentId] || 0) + 1
-  lsSet(VIEWS, all)
+  const all = lsGet(VIEWS, {}) || {}
+  const map = all && typeof all === 'object' && !Array.isArray(all) ? all : {}
+  map[contentId] = (map[contentId] || 0) + 1
+  lsSet(VIEWS, map)
   recordHourView(contentId)
-  return all[contentId]
+  return map[contentId]
 }
 
 export function getViews(contentId) {
-  return lsGet(VIEWS, {})[contentId] || 0
+  const all = lsGet(VIEWS, {}) || {}
+  const map = all && typeof all === 'object' && !Array.isArray(all) ? all : {}
+  return map[contentId] || 0
 }
 
 export function getSubscriptionsForUser(userId) {
