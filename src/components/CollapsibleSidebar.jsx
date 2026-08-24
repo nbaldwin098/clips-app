@@ -174,20 +174,6 @@ export default function CollapsibleSidebar({
         </div>
 
         <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
-          {!collapsed && <p className="px-2.5 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Library</p>}
-          <NavBtn collapsed={collapsed} active={currentView === 'history'} onClick={() => go('history')} icon={History} label="History" />
-          <NavBtn collapsed={collapsed} active={currentView === 'watch-again'} onClick={() => go('watch-again')} icon={RotateCcw} label="Watch again" />
-          <NavBtn collapsed={collapsed} active={currentView === 'watch-later'} onClick={() => go('watch-later')} icon={Clock} label="Watch later" />
-          <NavBtn collapsed={collapsed} active={currentView === 'liked'} onClick={() => go('liked')} icon={ThumbsUp} label="Liked" />
-          <NavBtn collapsed={collapsed} active={currentView === 'hearts'} onClick={() => go('hearts')} icon={Heart} label="Hearts" />
-          <NavBtn collapsed={collapsed} active={currentView === 'playlists'} onClick={() => go('playlists')} icon={ListVideo} label="Playlists" />
-        </div>
-
-        <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
-          <NavBtn collapsed={collapsed} active={currentView === 'subscriptions'} onClick={() => go('subscriptions')} icon={Users} label="Subscribed" />
-        </div>
-
-        <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
           {!collapsed && <p className="px-2.5 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Top creators</p>}
           <NavBtn collapsed={collapsed} active={currentView === 'creators'} onClick={() => go('creators')} icon={Users} label="Top creators" />
           {recommendedCreators.map((c) => (
@@ -220,6 +206,20 @@ export default function CollapsibleSidebar({
               )}
             </button>
           ))}
+        </div>
+
+        <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
+          <NavBtn collapsed={collapsed} active={currentView === 'subscriptions'} onClick={() => go('subscriptions')} icon={Users} label="Subscribed" />
+        </div>
+
+        <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
+          {!collapsed && <p className="px-2.5 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Library</p>}
+          <NavBtn collapsed={collapsed} active={currentView === 'history'} onClick={() => go('history')} icon={History} label="History" />
+          <NavBtn collapsed={collapsed} active={currentView === 'watch-again'} onClick={() => go('watch-again')} icon={RotateCcw} label="Watch again" />
+          <NavBtn collapsed={collapsed} active={currentView === 'watch-later'} onClick={() => go('watch-later')} icon={Clock} label="Watch later" />
+          <NavBtn collapsed={collapsed} active={currentView === 'liked'} onClick={() => go('liked')} icon={ThumbsUp} label="Liked" />
+          <NavBtn collapsed={collapsed} active={currentView === 'hearts'} onClick={() => go('hearts')} icon={Heart} label="Hearts" />
+          <NavBtn collapsed={collapsed} active={currentView === 'playlists'} onClick={() => go('playlists')} icon={ListVideo} label="Playlists" />
         </div>
 
         <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
