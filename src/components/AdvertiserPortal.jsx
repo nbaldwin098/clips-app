@@ -93,7 +93,7 @@ export default function AdvertiserPortal({ onNavigate }) {
         targetUrl: targetUrl.trim(),
         durationSec: Number(durationSec) || 15,
         skipAfterSec: 5,
-        status: 'active',
+        status: 'draft',
       })
       setCampaigns(getAdvertiserCampaigns(session.advertiserId))
       setCreateOpen(false)

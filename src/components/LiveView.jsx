@@ -7,16 +7,8 @@ import { notifyFollowersWentLive } from '../lib/notifications'
 import { pushLiveLobby, endLiveLobby } from '../lib/graphSync'
 import { cn } from '../lib/utils'
 import { LIVE_CATEGORIES } from '../lib/mediaMeta'
-
-function ensureStreamKey(userId) {
-  const keyName = `stream_key_${userId || 'anon'}`
-  let key = lsGet(keyName, null)
-  if (!key) {
-    key = `clips_live_${Math.random().toString(36).slice(2, 12)}`
-    lsSet(keyName, key)
-  }
-  return key
-}
+import { ensureStreamKey } from '../lib/streamKeys'
+import { archiveEndedLive } from '../lib/vods'
 
 function formatElapsed(startedAt) {
   if (!startedAt) return ''
@@ -41,7 +33,6 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
   const [, setTick] = useState(0)
 
   const streamKey = isAuthenticated && approved ? ensureStreamKey(user?.id) : null
-  const rtmpUrl = 'rtmp://ingest.clips.app/live'
 
   const refreshLiveBoard = useCallback(() => {
     setLiveNow((lsGet('live_board', []) || []).filter((b) => b.isLive))
@@ -119,6 +110,8 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
 
   const endLive = () => {
     if (!user?.id) return
+    const prev = lsGet(`live_state_${user.id}`, null)
+    if (prev?.isLive) archiveEndedLive(user, prev)
     lsSet(`live_state_${user.id}`, { isLive: false })
     lsSet('live_board', lsGet('live_board', []).filter((b) => b.userId !== user.id))
     setIsLive(false)
@@ -272,10 +265,8 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
             {LIVE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
           <p className="text-[11px] text-zinc-500">
-            Ingest is not connected. This lists you in the lobby. It does not start a video stream, clip-from-live, VOD, or raids. The key below is unused until a real ingest server exists.
+            Ingest is not connected. Listing yourself copies a VOD record when you end. The stream key is ready for later.
           </p>
-          <p className="text-[11px] text-zinc-600">Ingest URL — reserved, not receiving video</p>
-          <code className="block text-xs bg-[#000000] border border-[#272734] rounded-lg px-3 py-2 text-zinc-500">{rtmpUrl}</code>
           <div className="flex gap-2">
             <code className="flex-1 text-xs bg-[#000000] border border-[#272734] rounded-lg px-3 py-2 text-zinc-300 break-all">{streamKey}</code>
             <button

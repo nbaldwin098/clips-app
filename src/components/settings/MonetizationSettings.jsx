@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { getMembershipPrice, setMembershipPrice } from '../../lib/engagement'
+import { creatorBalance } from '../../lib/payouts'
+import { adsAreRunning } from '../../lib/adEngine'
 
 export default function MonetizationSettings() {
   const { user } = useAuth()
@@ -44,16 +46,19 @@ export default function MonetizationSettings() {
       </section>
 
       <section className="pt-6 border-t border-zinc-800 space-y-3">
-        <h2 className="text-sm font-semibold text-white">Ads</h2>
+        <h2 className="text-sm font-semibold text-white">View RPM</h2>
         <p className="text-sm text-zinc-500">
-          There is no ad payout pool yet. When ads are real, we will show actual impressions here — not zeros that look like traffic.
+          ${creatorBalance(user?.id, user?.handle).rpm} per 1,000 views (set in Admin). Wallet shows earned and pending. Payouts are marked sent by hand — not Stripe Connect.
+        </p>
+        <p className="text-sm text-zinc-500">
+          Site ads are {adsAreRunning() ? 'on' : 'off'}. There is no ad share in earnings until a pool exists.
         </p>
       </section>
 
       <section className="pt-6 border-t border-zinc-800 space-y-3">
         <h2 className="text-sm font-semibold text-white">Payouts</h2>
         <p className="text-sm text-zinc-500">
-          Stripe Connect is not connected. A Connect button would be fake, so there is none.
+          Save where to send money on Wallet. Stripe Connect is not connected, so there is no withdraw button.
         </p>
       </section>
     </div>

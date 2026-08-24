@@ -76,8 +76,8 @@ export default function HelpPage() {
       a: 'Paste a public short URL. We store only metadata and a reference — not the binary file.',
     },
     {
-      q: 'How do subscriptions work?',
-      a: 'Creators set a list price on Channel. Checkout shows that price. A Stripe Payment Link is what charges the card. Premium is marked only after Stripe sends you back. Payouts are not live — Wallet will not invent a balance.',
+      q: 'How do creator payouts work?',
+      a: 'Admin sets USD per 1,000 views. Wallet shows earned, pending, and paid. Nicholas marks a payout sent after paying you by hand. Ads stay off until Admin turns them on. There is no automatic bank withdraw.',
     },
     {
       q: 'How do I report copyright infringement?',

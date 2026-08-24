@@ -41,9 +41,9 @@ export default function AboutPage() {
           buyer back.
         </p>
         <p>
-          Payouts are not live. Wallet will not invent a balance or let anyone withdraw until Stripe
-          Connect is connected. When that ships, the creator keeps the list price and the buyer pays
-          the processing fee on top — not before.
+          Payouts are not live as a bank transfer. Admin sets dollars per 1,000 views. The owner marks
+          money sent after paying by hand. Wallet shows earned, pending, and paid. There is no
+          automatic withdraw.
         </p>
         <p>
           Discovery ranks by real watch signals — completion, rewatches, shares, skips — not follower

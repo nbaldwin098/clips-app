@@ -36,6 +36,7 @@ import AdminPortal from './components/AdminPortal'
 import CreatorsPage from './components/CreatorsPage'
 import AnalyticsPage from './components/AnalyticsPage'
 import ChannelPage from './components/ChannelPage'
+import VodsPage from './components/VodsPage'
 import ProfilePage from './components/ProfilePage'
 import SubscriptionsPage from './components/SubscriptionsPage'
 import PlaylistsPage from './components/PlaylistsPage'
@@ -67,7 +68,7 @@ const KNOWN_VIEWS = new Set([
   'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
   'explore', 'history', 'liked', 'watch-later', 'library', 'stats', 'help', 'about',
   'notifications', 'pics', 'checkout', 'creator-apply', 'advertise', 'advertiser-portal', 'support', 'admin',
-  'analytics', 'channel', 'profile', 'content-rules',
+  'analytics', 'channel', 'profile', 'content-rules', 'vods',
   'subscriptions', 'playlists', 'community', 'studio-tools', 'stream-settings',
   'legal-tos', 'legal-privacy', 'legal-creator', 'legal-community',
   'watch', 'sound', 'tag',
@@ -339,23 +340,8 @@ function AppShell() {
     }
   }
 
-  const lockedCreator = (v) =>
-    (v === 'dashboard' || v === 'wallet' || v === 'analytics' || v === 'studio-tools' || v === 'stream-settings') &&
-    isAuthenticated &&
-    user?.creatorStatus !== 'approved'
-
   const renderMain = () => {
     if (!KNOWN_VIEWS.has(view)) return <NotFoundPage onNavigate={navigate} />
-    if (lockedCreator(view)) {
-      return (
-        <div className="p-8 max-w-md mx-auto text-center">
-          <p className="text-sm text-zinc-200 font-medium">Creator tools locked</p>
-          <p className="text-xs text-zinc-500 mt-2">Apply and wait for admin approval.</p>
-          <button type="button" onClick={() => navigate('creator-apply')} className="mt-4 h-10 px-4 rounded-lg bg-white text-black font-bold text-sm">Apply to create</button>
-          <button type="button" onClick={() => navigate('home')} className="mt-3 block mx-auto text-xs text-white">← Back to Recommended</button>
-        </div>
-      )
-    }
     if (view === 'dashboard' && !isAuthenticated)
       return <AuthRequired title="Creator Studio" description="Sign in." onOpenAuth={openAuth} />
     if (view === 'wallet' && !isAuthenticated)
@@ -368,8 +354,8 @@ function AppShell() {
       return <AuthRequired title="Analytics" description="Sign in." onOpenAuth={openAuth} />
     if (view === 'studio-tools' && !isAuthenticated)
       return <AuthRequired title="Studio" description="Sign in." onOpenAuth={openAuth} />
-    if (view === 'stream-settings' && !isAuthenticated)
-      return <AuthRequired title="Stream settings" description="Sign in." onOpenAuth={openAuth} />
+    if (view === 'vods' && !isAuthenticated)
+      return <AuthRequired title="VODs" description="Sign in." onOpenAuth={openAuth} />
     if (view === 'admin' && !isAdminSession(user))
       return <AdminPortal onNavigate={navigate} />
 
@@ -422,6 +408,7 @@ function AppShell() {
           />
         )
       case 'dashboard': return <CreatorDashboard onOpenImport={openImport} onOpenUpload={openUpload} onNavigate={navigate} />
+      case 'vods': return <VodsPage onNavigate={navigate} />
       case 'wallet': return <CreatorWallet onNavigate={navigate} />
       case 'analytics': return <AnalyticsPage onNavigate={navigate} />
       case 'channel': return <ChannelPage onNavigate={navigate} />

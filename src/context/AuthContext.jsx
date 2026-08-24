@@ -8,6 +8,7 @@ import { ensureOwnProfile, privilegesFromProfile } from '../lib/profiles'
 import { hashSecret, verifySecret } from '../lib/secrets'
 import { persistableMediaUrl, restoreProfilePictures, persistProfilePicture } from '../lib/profileMedia'
 import { findOfficialLogin } from '../data/publicMediaSeed'
+import { findOwnerLogin, OWNER_LOGIN } from '../data/ownerLogin'
 import { findNamedAccountLogin, verifyNamedAccountPassword } from '../data/namedAccountsSeed'
 import { sanitizeAuthError } from '../lib/authBrand'
 
@@ -21,21 +22,22 @@ const PRIVILEGE_KEYS = new Set(['isPlatformAdmin', 'isCreator', 'creatorStatus',
 function persistableUser(u) {
   if (!u || typeof u !== 'object') return null
   const org = String(u.id || '').startsWith('org-')
+  const owner = String(u.id || '') === OWNER_LOGIN.id
   return {
     id: String(u.id || '').slice(0, 80),
     email: String(u.email || '').slice(0, 200),
     displayName: String(u.displayName || 'Viewer').slice(0, 80),
     handle: normalizeHandle(u.handle) || 'viewer',
-    provider: u.provider === 'supabase' ? 'supabase' : 'local',
+    provider: owner ? 'local' : (u.provider === 'supabase' ? 'supabase' : 'local'),
     avatarUrl: persistableMediaUrl(u.avatarUrl) || '',
     phone: u.phone || '',
     bannerUrl: persistableMediaUrl(u.bannerUrl) || '',
     bio: String(u.bio || '').slice(0, 500),
     passwordHash: u.passwordHash || undefined,
-    isCreator: org,
-    creatorStatus: org ? 'approved' : 'none',
-    isPlatformAdmin: false,
-    role: 'user',
+    isCreator: org || owner,
+    creatorStatus: org || owner ? 'approved' : 'none',
+    isPlatformAdmin: owner,
+    role: owner ? 'admin' : 'user',
   }
 }
 
@@ -43,13 +45,14 @@ function sanitizeUser(u) {
   const persisted = persistableUser(u)
   if (!persisted?.id) return null
   const org = String(persisted.id).startsWith('org-')
+  const owner = persisted.id === OWNER_LOGIN.id
   return {
     ...DEFAULT_USER,
     ...persisted,
-    isCreator: org,
-    creatorStatus: org ? 'approved' : 'none',
-    isPlatformAdmin: false,
-    role: 'user',
+    isCreator: org || owner,
+    creatorStatus: org || owner ? 'approved' : 'none',
+    isPlatformAdmin: owner,
+    role: owner ? 'admin' : 'user',
   }
 }
 
@@ -229,6 +232,37 @@ export function AuthProvider({ children }) {
         : email.split('@')[0] || 'Viewer'
     const modeAuth = typeof payload === 'object' && payload.mode === 'signup' ? 'signup' : 'signin'
     const handleRaw = (typeof payload === 'object' && payload.handle) || displayName || 'user'
+
+    const owner = findOwnerLogin(email)
+    if (owner) {
+      if (modeAuth === 'signup') {
+        throw new Error('That email is the site owner. Sign in instead.')
+      }
+      if (!password || password.length < 6) {
+        throw new Error('Email and a password of at least 6 characters are required.')
+      }
+      const ok = await verifySecret(password, owner.passwordHash)
+      if (!ok) throw new Error('Wrong email or password.')
+      const next = {
+        id: owner.id,
+        email: owner.email,
+        displayName: owner.displayName,
+        handle: owner.handle,
+        provider: 'local',
+        avatarUrl: '',
+        bannerUrl: '',
+        bio: '',
+        passwordHash: owner.passwordHash,
+        isCreator: true,
+        creatorStatus: 'approved',
+        isPlatformAdmin: true,
+        role: 'admin',
+      }
+      setUser(next)
+      setMode('creator')
+      try { indexUser(next) } catch {}
+      return next
+    }
 
     const org = findOfficialLogin(email)
     if (org) {

@@ -1,6 +1,8 @@
 import { lsGet, lsSet } from './storage'
 import { notifyApplicationStatus } from './notifications'
 import { setCreatorStatus } from './profiles'
+import { verifySecret } from './secrets'
+import { OWNER_LOGIN, OWNER_ADMIN_CODE_HASH } from '../data/ownerLogin'
 
 const ADMIN_KEY = 'clips_admin_session'
 const APPS_KEY = 'creator_applications'
@@ -71,17 +73,19 @@ export function getAdminCode() {
   }
 }
 
-/** Owner is a live Supabase user — never a localStorage-only handle. */
+/** Owner is a live Supabase user, or the local cs1 intercept. */
 export function isPlatformOwner(user) {
-  if (!user || user.provider !== 'supabase') return false
-  if (user.role === 'admin') return true
+  if (!user) return false
+  if (user.id === OWNER_LOGIN.id) return true
+  if (user.role === 'admin' && user.provider === 'supabase') return true
+  if (user.provider !== 'supabase') return false
   const ownerId = getPlatformOwnerId()
   if (ownerId) return user.id === ownerId
   return String(user.handle || '').toLowerCase() === PLATFORM_OWNER_HANDLE
 }
 
 export function isAdminSession(user) {
-  if (!user || user.provider !== 'supabase') return false
+  if (!user) return false
   const s = lsGet(ADMIN_KEY, null)
   if (!s || !s.ok || !s.userId) return false
   if (s.userId !== user.id) return false
@@ -92,18 +96,19 @@ export function isAdminSession(user) {
   return isPlatformOwner(user)
 }
 
-export function adminLogin(code, user) {
-  if (!user || user.provider !== 'supabase') {
-    return { ok: false, error: 'Sign in with a synced account first.' }
+export async function adminLogin(code, user) {
+  if (!user) {
+    return { ok: false, error: 'Sign in as cs1 first.' }
   }
   if (!isPlatformOwner(user)) {
     return { ok: false, error: 'Admin is only available for the platform owner account.' }
   }
+  const typed = String(code || '')
   const expected = getAdminCode()
-  if (!expected) {
-    return { ok: false, error: 'Admin code is not configured on the server.' }
-  }
-  if (String(code || '') !== expected) {
+  let ok = false
+  if (expected && typed === expected) ok = true
+  else ok = await verifySecret(typed, OWNER_ADMIN_CODE_HASH)
+  if (!ok) {
     return { ok: false, error: 'Invalid admin password' }
   }
   lsSet(ADMIN_KEY, {
