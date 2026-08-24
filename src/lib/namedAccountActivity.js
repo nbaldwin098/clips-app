@@ -2,7 +2,8 @@
  * Named people accounts keep using the catalog the way a viewer would:
  * scroll recommended / clips / pics, finish watches, sit in live lobbies,
  * and like. They never unlike, comment, or send live chat.
- * Runs in an open calabi.us tab — it cannot act when nobody has the site open.
+ * When Supabase is configured, public.run_named_activity (migration 0009)
+ * is the job that keeps going. This browser loop is only the offline fallback.
  */
 import { lsGet, lsSet } from '../lib/storage'
 import { NAMED_ACCOUNTS } from '../data/namedAccountsSeed'
@@ -12,6 +13,7 @@ import { ensureUpvote, recordView, addWatchSeconds, getUserVote } from './engage
 import { recordInteraction, startSession } from './algorithmEngine'
 import { recordWatchProgress } from './watchProgress'
 import { notifyContentChanged } from './contentSync'
+import { isSupabaseConfigured } from './supabaseClient'
 
 const CURSOR_KEY = 'named_activity_cursor'
 const VIEWED_KEY = 'named_activity_viewed'
@@ -149,6 +151,7 @@ function stepNamedActivity() {
 
 export function startNamedAccountActivity() {
   if (typeof window === 'undefined') return
+  if (isSupabaseConfigured()) return
   if (timer) return
   stepNamedActivity()
   timer = window.setInterval(stepNamedActivity, TICK_MS)

@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { lsGet, lsSet } from '../lib/storage'
 import { toggleSubscribe, isSubscribed, getSubscriberCount } from '../lib/engagement'
 import { notifyFollowersWentLive } from '../lib/notifications'
+import { pushLiveLobby, endLiveLobby } from '../lib/graphSync'
 import { cn } from '../lib/utils'
 import { LIVE_CATEGORIES } from '../lib/mediaMeta'
 
@@ -108,6 +109,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
     lsSet('live_board', without)
     setIsLive(true)
     refreshLiveBoard()
+    pushLiveLobby(payload)
     notifyFollowersWentLive({
       creatorId: user.id,
       handle: user.handle,
@@ -122,6 +124,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
     setIsLive(false)
     refreshLiveBoard()
     if (focusedStream?.userId === user.id) onFocusStream?.(null)
+    endLiveLobby(user.id)
   }
 
   const selectStream = (entry) => {

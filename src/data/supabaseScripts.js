@@ -2,6 +2,7 @@ import sitePromos from '../../supabase/migrations/0005_site_promos.sql?raw'
 import socialGraph from '../../supabase/migrations/0006_social_graph.sql?raw'
 import purgeDead from '../../supabase/migrations/0007_purge_dead_media.sql?raw'
 import purgeDead2 from '../../supabase/migrations/0008_purge_dead_media.sql?raw'
+import namedActivity from '../../supabase/migrations/0009_named_activity.sql?raw'
 
 export const SETUP_SCRIPTS = [
   {
@@ -27,5 +28,11 @@ export const SETUP_SCRIPTS = [
     title: 'Delete leftover broken clips and pics',
     file: '0008_purge_dead_media.sql',
     sql: String(purgeDead2 || ''),
+  },
+  {
+    id: '0009',
+    title: 'Named people activity job',
+    file: '0009_named_activity.sql',
+    sql: String(namedActivity || ''),
   },
 ]
