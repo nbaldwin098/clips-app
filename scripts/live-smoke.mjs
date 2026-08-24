@@ -166,6 +166,19 @@ const channelSrc = readFileSync(new URL('../src/components/ChannelPage.jsx', imp
 assert(channelSrc.includes('Save') && channelSrc.includes('Cancel'), 'channel has save and cancel')
 assert(channelSrc.includes('Change profile picture'), 'avatar camera is on the photo')
 
+const kidsSrc = readFileSync(new URL('../src/data/kidsEducationSeed.js', import.meta.url), 'utf8')
+assert((kidsSrc.match(/type: 'video'/g) || []).length >= 3, 'kids library has videos')
+assert((kidsSrc.match(/type: 'short'/g) || []).length >= 2, 'kids library has clips')
+assert((kidsSrc.match(/type: 'pic'/g) || []).length >= 4, 'kids library has photos')
+assert(kidsSrc.includes("'maths'"), 'maths topic present')
+assert(kidsSrc.includes("'nouns'"), 'nouns topic present')
+assert(kidsSrc.includes("'earth'"), 'earth topic present')
+assert(!/picsum|placekitten|sample-videos|gtv-videos/i.test(kidsSrc), 'kids media is not placeholder hosts')
+assert(kidsSrc.includes('https://images-assets.nasa.gov'), 'nasa public media')
+assert(kidsSrc.includes('https://upload.wikimedia.org'), 'wikimedia public media')
+const healSrc = readFileSync(new URL('../src/lib/selfHeal.js', import.meta.url), 'utf8')
+assert(healSrc.includes('seedKidsEducation'), 'kids education seeds on boot')
+
 if (failed) {
   console.error(`${failed} failed`)
   process.exit(1)

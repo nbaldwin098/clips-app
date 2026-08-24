@@ -5,6 +5,7 @@
 import { lsGet, lsSet, lsRemove } from './storage'
 import { safeHttpUrl } from './safeUrl'
 import { purgeDeadCatalog } from './catalogHealth'
+import { seedKidsEducation } from '../data/kidsEducationSeed'
 
 function isRecord(v) {
   return !!v && typeof v === 'object' && !Array.isArray(v)
@@ -63,6 +64,10 @@ export function healLocalState() {
   } catch {
     try { lsSet('imports', []) } catch {}
   }
+
+  try {
+    seedKidsEducation()
+  } catch {}
 }
 
 export function installRuntimeGuards() {
