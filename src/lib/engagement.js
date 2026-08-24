@@ -240,6 +240,45 @@ export function getCreatorAnalytics(creatorId) {
   }
 }
 
+export function listCreatorAnalyticsRows(creatorId) {
+  return clipsForCreator(creatorId).map((c) => {
+    const votes = getVotes(c.id)
+    return {
+      id: c.id,
+      title: c.title || 'Untitled',
+      type: c.type || 'short',
+      createdAt: c.createdAt || c.publishedAt || c.importedAt || '',
+      views: getViews(c.id),
+      likes: votes.up || 0,
+    }
+  })
+}
+
+export function filterAnalyticsRows(rows, range = 'all') {
+  const list = Array.isArray(rows) ? rows : []
+  if (range === 'all') return list
+  const days = range === '7d' ? 7 : 30
+  const cut = Date.now() - days * 86400000
+  return list.filter((r) => {
+    const t = Date.parse(r.createdAt)
+    return Number.isFinite(t) && t >= cut
+  })
+}
+
+export function summarizeAnalyticsRows(rows) {
+  const list = Array.isArray(rows) ? rows : []
+  const byType = { video: 0, short: 0, pic: 0 }
+  let views = 0
+  let likes = 0
+  for (const r of list) {
+    views += Number(r.views) || 0
+    likes += Number(r.likes) || 0
+    const t = r.type === 'video' || r.type === 'pic' ? r.type : 'short'
+    byType[t] = (byType[t] || 0) + 1
+  }
+  return { posts: list.length, views, likes, byType }
+}
+
 export function getCreatorRanking(creatorId) {
   const users = Object.keys(lsGet(SUBS, {})).concat(
     [...(lsGet('user_clips', []) || []), ...(lsGet('imports', []) || [])]
