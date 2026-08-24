@@ -1,8 +1,11 @@
+import BrandMark from './BrandMark'
+
 export default function AboutPage() {
   return (
     <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-white">About Clips</h1>
+        <BrandMark size={48} wordClassName="text-xl font-semibold text-white" />
+        <h1 className="sr-only">About Clips</h1>
         <p className="mt-2 text-sm text-[#adadb8] leading-relaxed">
           On big platforms, people come for the app — not for you. Clips is built so{' '}
           <strong className="font-semibold text-white">the audience comes to the creator</strong>
