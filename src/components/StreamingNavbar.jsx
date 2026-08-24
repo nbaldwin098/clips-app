@@ -12,6 +12,10 @@ import {
   Clapperboard,
   CircleUserRound,
   Radio,
+  BarChart3,
+  Wallet,
+  BadgeCheck,
+  ShieldCheck,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { cn } from '../lib/utils'
@@ -191,7 +195,7 @@ export default function StreamingNavbar({
                       onClick={() => handleNav('channel')}
                       className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-zinc-200 hover:bg-[#1f1f2a] hover:text-white"
                     >
-                      <Tv className="h-4 w-4 text-white" /> Channel Profile
+                      <Tv className="h-4 w-4 text-white" /> Channel
                     </button>
                     <button
                       type="button"
@@ -202,11 +206,48 @@ export default function StreamingNavbar({
                     </button>
                     <button
                       type="button"
+                      onClick={() => handleNav('analytics')}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-zinc-200 hover:bg-[#1f1f2a] hover:text-white"
+                    >
+                      <BarChart3 className="h-4 w-4 text-zinc-400" /> Analytics
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleNav('wallet')}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-zinc-200 hover:bg-[#1f1f2a] hover:text-white"
+                    >
+                      <Wallet className="h-4 w-4 text-zinc-400" /> Wallet
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleNav('vods')}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-zinc-200 hover:bg-[#1f1f2a] hover:text-white"
+                    >
+                      <Clapperboard className="h-4 w-4 text-zinc-400" /> VODs
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleNav('verify')}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-zinc-200 hover:bg-[#1f1f2a] hover:text-white"
+                    >
+                      <BadgeCheck className="h-4 w-4 text-zinc-400" /> Get verified
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => handleNav('settings')}
                       className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-zinc-200 hover:bg-[#1f1f2a] hover:text-white"
                     >
                       <Settings className="h-4 w-4 text-zinc-400" /> Settings
                     </button>
+                    {(user?.isPlatformAdmin || user?.id === 'owner-cs1') && (
+                      <button
+                        type="button"
+                        onClick={() => handleNav('admin')}
+                        className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-zinc-200 hover:bg-[#1f1f2a] hover:text-white"
+                      >
+                        <ShieldCheck className="h-4 w-4 text-zinc-400" /> Admin
+                      </button>
+                    )}
                     <div className="border-t border-[#23232d] my-1" />
                     <button
                       type="button"

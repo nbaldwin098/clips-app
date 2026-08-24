@@ -1,12 +1,11 @@
 import { useState, useRef } from 'react'
 import {
   Home, Clapperboard, Radio, Compass, History, Clock, ThumbsUp,
-  LayoutDashboard, Wallet, Music, Users, ChevronDown, ChevronRight,
+  Music, Users, ChevronDown, ChevronRight,
   HelpCircle, FileText, Shield, Scale, BookOpen, Copyright, LifeBuoy,
-  ShieldCheck, BarChart3, X, Activity, Megaphone,
+  X, Activity, Megaphone,
 } from 'lucide-react'
 import { cn } from '../lib/utils'
-import { useAuth } from '../context/AuthContext'
 import { listSidebarCreators } from '../lib/contentService'
 
 const itemCls = (active) =>
@@ -25,8 +24,6 @@ function NavBtn({ active, onClick, icon: Icon, label }) {
 }
 
 export default function Sidebar({ currentView, onNavigate, open, onClose }) {
-  const { isAuthenticated, user } = useAuth()
-  const isApprovedCreator = user?.creatorStatus === 'approved'
   const [moreOpen, setMoreOpen] = useState(false)
 
   const go = (id) => {
@@ -71,14 +68,6 @@ export default function Sidebar({ currentView, onNavigate, open, onClose }) {
 
       <div className="mx-3 border-t border-zinc-800" />
       <div className="p-2 space-y-0.5">
-        <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">Creator</p>
-        {isApprovedCreator && (
-          <>
-            <NavBtn active={currentView === 'dashboard'} onClick={() => go('dashboard')} icon={LayoutDashboard} label="Studio" />
-            <NavBtn active={currentView === 'wallet'} onClick={() => go('wallet')} icon={Wallet} label="Wallet" />
-            <NavBtn active={currentView === 'analytics'} onClick={() => go('analytics')} icon={BarChart3} label="Analytics" />
-          </>
-        )}
         <NavBtn active={currentView === 'creators'} onClick={() => go('creators')} icon={Users} label="Top creators" />
         {recommendedCreators.length > 0 && (
           <>
@@ -106,12 +95,6 @@ export default function Sidebar({ currentView, onNavigate, open, onClose }) {
           <div className="ml-2 space-y-0.5 border-l border-zinc-800 pl-2">
             <NavBtn active={currentView === 'stats'} onClick={() => go('stats')} icon={Activity} label="Stats" />
             <NavBtn active={currentView === 'support'} onClick={() => go('support')} icon={LifeBuoy} label="Support" />
-            {isAuthenticated && (
-              <NavBtn active={currentView === 'verify'} onClick={() => go('verify')} icon={ShieldCheck} label="Get verified" />
-            )}
-            {isAuthenticated && user?.creatorStatus !== 'approved' && (
-              <NavBtn active={currentView === 'creator-apply'} onClick={() => go('creator-apply')} icon={ShieldCheck} label="Apply to create" />
-            )}
             <NavBtn active={currentView === 'advertise' || currentView === 'advertiser-portal'} onClick={() => go('advertise')} icon={Megaphone} label="Advertise with us" />
             <NavBtn active={currentView === 'about'} onClick={() => go('about')} icon={BookOpen} label="About" />
             <NavBtn active={currentView === 'help'} onClick={() => go('help')} icon={HelpCircle} label="Help" />
@@ -120,7 +103,6 @@ export default function Sidebar({ currentView, onNavigate, open, onClose }) {
             <NavBtn active={currentView === 'legal-creator'} onClick={() => go('legal-creator')} icon={Scale} label="Creator Agreement" />
             <NavBtn active={currentView === 'legal-community'} onClick={() => go('legal-community')} icon={Users} label="Community Guidelines" />
             <NavBtn active={currentView === 'help'} onClick={() => go('help')} icon={Copyright} label="Copyright & DMCA" />
-            <NavBtn active={currentView === 'admin'} onClick={() => go('admin')} icon={ShieldCheck} label="Admin" />
           </div>
         )}
       </div>

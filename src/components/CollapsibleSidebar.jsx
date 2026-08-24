@@ -7,9 +7,6 @@ import {
   Clock,
   ThumbsUp,
   Users,
-  LayoutDashboard,
-  Wallet,
-  BarChart3,
   ChevronDown,
   ChevronRight,
   ChevronLeft,
@@ -20,13 +17,11 @@ import {
   BookOpen,
   ListVideo,
   LifeBuoy,
-  ShieldCheck,
   X,
   Image as ImageIcon,
   Bell,
   Activity,
   Megaphone,
-  BadgeCheck,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { lsGet } from '../lib/storage'
@@ -78,7 +73,7 @@ export default function CollapsibleSidebar({
   onSelectLiveStream,
   focusedStreamUserId,
 }) {
-  const { isAuthenticated, user } = useAuth()
+  const { isAuthenticated } = useAuth()
   const [moreOpen, setMoreOpen] = useState(false)
   const [liveNow, setLiveNow] = useState(() => (lsGet('live_board', []) || []).filter((b) => b.isLive))
   const [recommendedCreators, setRecommendedCreators] = useState(() => listSidebarCreators(8))
@@ -192,16 +187,6 @@ export default function CollapsibleSidebar({
 
         <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
           {!collapsed && <p className="px-2.5 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Top creators</p>}
-          {isAuthenticated && (
-            <>
-              <NavBtn collapsed={collapsed} active={currentView === 'dashboard'} onClick={() => go('dashboard')} icon={LayoutDashboard} label="Creator Dashboard" />
-              <NavBtn collapsed={collapsed} active={currentView === 'analytics'} onClick={() => go('analytics')} icon={BarChart3} label="Analytics" />
-              <NavBtn collapsed={collapsed} active={currentView === 'wallet'} onClick={() => go('wallet')} icon={Wallet} label="Wallet" />
-              <NavBtn collapsed={collapsed} active={currentView === 'vods'} onClick={() => go('vods')} icon={Clapperboard} label="VODs" />
-              <NavBtn collapsed={collapsed} active={currentView === 'channel'} onClick={() => go('channel')} icon={Users} label="Channel" />
-              <NavBtn collapsed={collapsed} active={currentView === 'settings'} onClick={() => go('settings')} icon={ShieldCheck} label="Creator settings" />
-            </>
-          )}
           <NavBtn collapsed={collapsed} active={currentView === 'creators'} onClick={() => go('creators')} icon={Users} label="Top creators" />
           {recommendedCreators.map((c) => (
             <button
@@ -250,12 +235,6 @@ export default function CollapsibleSidebar({
             <div className={cn('space-y-0.5', collapsed ? '' : 'ml-2 border-l border-[#23232c] pl-2')}>
               <NavBtn collapsed={collapsed} active={currentView === 'stats'} onClick={() => go('stats')} icon={Activity} label="Stats" />
               <NavBtn collapsed={collapsed} active={currentView === 'support'} onClick={() => go('support')} icon={LifeBuoy} label="Support" />
-              {isAuthenticated && (
-                <NavBtn collapsed={collapsed} active={currentView === 'verify'} onClick={() => go('verify')} icon={BadgeCheck} label="Get verified" />
-              )}
-              {isAuthenticated && user?.creatorStatus !== 'approved' && (
-                <NavBtn collapsed={collapsed} active={currentView === 'creator-apply'} onClick={() => go('creator-apply')} icon={ShieldCheck} label="Apply to create" />
-              )}
               <NavBtn collapsed={collapsed} active={currentView === 'advertise' || currentView === 'advertiser-portal'} onClick={() => go('advertise')} icon={Megaphone} label="Advertise with us" />
               <NavBtn collapsed={collapsed} active={currentView === 'about'} onClick={() => go('about')} icon={BookOpen} label="About" />
               <NavBtn collapsed={collapsed} active={currentView === 'help'} onClick={() => go('help')} icon={HelpCircle} label="Help" />
@@ -263,9 +242,6 @@ export default function CollapsibleSidebar({
               <NavBtn collapsed={collapsed} active={currentView === 'legal-privacy'} onClick={() => go('legal-privacy')} icon={Shield} label="Privacy Policy" />
               <NavBtn collapsed={collapsed} active={currentView === 'legal-creator'} onClick={() => go('legal-creator')} icon={Scale} label="Creator Agreement" />
               <NavBtn collapsed={collapsed} active={currentView === 'legal-community'} onClick={() => go('legal-community')} icon={Users} label="Community Guidelines" />
-              {(user?.isPlatformAdmin || user?.id === 'owner-cs1') && (
-                <NavBtn collapsed={collapsed} active={currentView === 'admin'} onClick={() => go('admin')} icon={ShieldCheck} label="Admin" />
-              )}
             </div>
           )}
         </div>
