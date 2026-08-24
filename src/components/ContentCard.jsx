@@ -29,6 +29,7 @@ export default function ContentCard({ item, onOpen, variant }) {
   const [showComments, setShowComments] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
   const [gone, setGone] = useState(false)
+  const [playlistOpen, setPlaylistOpen] = useState(false)
   const progress = user?.id ? getWatchProgress(user.id, item?.id) : null
   const resumeRatio = progress && !progress.completed ? (progress.lastRatio || progress.watchRatio || 0) : 0
   const viewStartTime = useRef(null)

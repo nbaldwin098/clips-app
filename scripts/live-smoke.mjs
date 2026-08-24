@@ -94,6 +94,7 @@ assert(authSrc.includes('loginWithOAuth'), 'oauth handler wired')
 assert(authSrc.includes('Phone'), 'phone sign-in')
 assert(!/supabase/i.test(authSrc), 'auth modal never says supabase')
 assert(authSrc.includes('CapCut cannot sign people'), 'capcut is not a fake login')
+assert(!authSrc.includes("&& synced &&"), 'oauth buttons show even when cloud auth is off')
 
 const brandSrc = readFileSync(new URL('../src/lib/authBrand.js', import.meta.url), 'utf8')
 assert(brandSrc.includes('Your Clips code is'), 'sms template says clips')
