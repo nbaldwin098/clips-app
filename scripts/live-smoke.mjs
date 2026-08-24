@@ -124,7 +124,7 @@ const graphSrc = readFileSync(new URL('../src/lib/graphSync.js', import.meta.url
 assert(graphSrc.includes('export async function syncGraphFromCloud'), 'cloud graph pull')
 
 const helpSrc = readFileSync(new URL('../src/components/HelpPage.jsx', import.meta.url), 'utf8')
-assert(helpSrc.includes('never type the file name'), 'help says not to type the sql filename')
+assert(/never type the file name/i.test(helpSrc), 'help says not to type the sql filename')
 assert(helpSrc.includes('Copy SQL'), 'help has copy buttons for sql')
 
 const settingsHub = readFileSync(new URL('../src/components/settings/SettingsHub.jsx', import.meta.url), 'utf8')
@@ -245,7 +245,9 @@ const scriptsSrc = readFileSync(new URL('../src/data/supabaseScripts.js', import
 assert(scriptsSrc.includes('0009_named_activity.sql'), 'help can copy 0009')
 assert(helpSrc.includes('0009'), 'help mentions 0009')
 assert(helpSrc.includes('Open SQL Editor'), 'help has a link to the sql editor')
-assert(helpSrc.includes('supabase.com/dashboard'), 'help points at supabase.com not calabi.us')
+assert(helpSrc.includes('ORG.supabaseSqlEditor'), 'help uses the supabase sql editor url')
+const orgSrc = readFileSync(new URL('../src/lib/orgConfig.js', import.meta.url), 'utf8')
+assert(orgSrc.includes('supabase.com/dashboard/project/'), 'sql editor url is the supabase dashboard')
 const namedAct2 = readFileSync(new URL('../src/lib/namedAccountActivity.js', import.meta.url), 'utf8')
 assert(namedAct2.includes('namedCloudJobReady'), 'browser bots run until the supabase job tables exist')
 const graphSrc2 = readFileSync(new URL('../src/lib/graphSync.js', import.meta.url), 'utf8')
