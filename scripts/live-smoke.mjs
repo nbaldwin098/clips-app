@@ -213,6 +213,7 @@ const profileSrc = readFileSync(new URL('../src/lib/profileMedia.js', import.met
 assert(profileSrc.includes('isSiteProfileAsset'), 'black site avatars are allowed to persist')
 const healSrc = readFileSync(new URL('../src/lib/selfHeal.js', import.meta.url), 'utf8')
 assert(healSrc.includes('seedOfficialCatalog'), 'official catalog seeds on boot')
+assert(healSrc.includes('seedNamedAccounts'), 'named people accounts seed on boot')
 assert(!healSrc.includes('seedKidsEducation'), 'kids filler seed is gone')
 const healthSrc2 = readFileSync(new URL('../src/lib/catalogHealth.js', import.meta.url), 'utf8')
 assert(healthSrc2.includes('isRetiredCatalogItem'), 'old kids seed rows cannot return')
