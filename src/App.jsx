@@ -67,7 +67,7 @@ import { syncPromotionsFromCloud } from './lib/promotions'
 import PromoBanner from './components/PromoBanner'
 import { claimStripeReturn } from './lib/tips'
 import { membershipReturnPaid } from './lib/stripeConfig'
-import { addPremiumSub } from './lib/engagement'
+import { isOwnerAccount } from './data/ownerLogin'
 
 const KNOWN_VIEWS = new Set([
   'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
@@ -121,29 +121,26 @@ function AppShell() {
   }, [user?.id, routeParams, checkoutTarget.id])
 
   useEffect(() => {
-    syncContentFromCloud(user)
-    pushLibraryCatalogToCloud().catch(() => {})
-    flushScheduledPublishes()
-    syncPromotionsFromCloud()
-    syncGraphFromCloud().catch(() => {})
-    syncPublicEngagementFromCloud().catch(() => {})
-    const interval = setInterval(() => {
+    const pull = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
       syncContentFromCloud(user)
       flushScheduledPublishes()
       syncPromotionsFromCloud()
       syncGraphFromCloud().catch(() => {})
       syncPublicEngagementFromCloud().catch(() => {})
-    }, 45_000)
-    const onFocus = () => {
-      syncContentFromCloud(user)
-      flushScheduledPublishes()
-      syncGraphFromCloud().catch(() => {})
-      syncPublicEngagementFromCloud().catch(() => {})
     }
+    pull()
+    if (isOwnerAccount(user)) pushLibraryCatalogToCloud().catch(() => {})
+    const intervalMs = user?.id ? 90_000 : 180_000
+    const interval = setInterval(pull, intervalMs)
+    const onFocus = () => pull()
+    const onVis = () => { if (document.visibilityState === 'visible') pull() }
     window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onVis)
     return () => {
       clearInterval(interval)
       window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onVis)
     }
   }, [user])
 

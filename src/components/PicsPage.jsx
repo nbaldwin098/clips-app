@@ -12,7 +12,7 @@ import { mixFeedAds } from '../lib/adEngine'
 import { InFeedAd, PlacementBanner } from './AdUnits'
 import ExoClickDisplay from './ExoClickDisplay'
 
-function PicImage({ pic, className, alt = '', full = false, fill = false, onUnplayable }) {
+function PicImage({ pic, className, alt = '', full = false, fill = false, eager = false, onUnplayable }) {
   const immediate = pickImmediatePhotoSrc(pic, { full })
   const [recovered, setRecovered] = useState(null)
   const [failed, setFailed] = useState(false)
@@ -67,14 +67,14 @@ function PicImage({ pic, className, alt = '', full = false, fill = false, onUnpl
         alt={alt}
         className="absolute inset-0 h-full w-full object-cover"
         onError={onError}
-        decoding="sync"
-        loading="eager"
-        fetchPriority="high"
+        decoding="async"
+        loading={eager ? 'eager' : 'lazy'}
+        fetchPriority={eager ? 'high' : 'low'}
       />
     )
   }
 
-  return <img src={src} alt={alt} className={className} onError={onError} decoding="sync" loading="eager" fetchPriority="high" />
+  return <img src={src} alt={alt} className={className} onError={onError} decoding="async" loading={eager ? 'eager' : 'lazy'} fetchPriority={eager ? 'high' : 'low'} />
 }
 
 function PicSlide({ pic, onOpenProfile }) {
@@ -101,7 +101,7 @@ function PicSlide({ pic, onOpenProfile }) {
   return (
     <ShortsCard actions={actions}>
       <div className="absolute inset-0 bg-black flex items-center justify-center">
-        <PicImage pic={pic} full className="max-h-full max-w-full w-auto h-auto object-contain" />
+        <PicImage pic={pic} full eager className="max-h-full max-w-full w-auto h-auto object-contain" />
       </div>
       {handle ? (
         <div className="absolute inset-x-0 bottom-0 z-10">

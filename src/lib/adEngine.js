@@ -32,7 +32,7 @@ const DEFAULT_AD_SETTINGS = {
   picBanner: true,
   picInFeed: true,
   clipFeedEvery: 5,
-  picFeedEvery: 4,
+  picFeedEvery: 6,
   videoSkipAfterSec: 5,
 }
 
@@ -238,7 +238,8 @@ export function setAdsRunning(on) {
 export function getAdSettings() {
   const stored = lsGet(AD_SETTINGS_KEY, {}) || {}
   const clipEvery = Math.max(2, Math.min(24, Number(stored.clipFeedEvery) || DEFAULT_AD_SETTINGS.clipFeedEvery))
-  const picEvery = Math.max(2, Math.min(24, Number(stored.picFeedEvery) || DEFAULT_AD_SETTINGS.picFeedEvery))
+  const picRaw = Number(stored.picFeedEvery)
+  const picEvery = Math.max(2, Math.min(24, !picRaw || picRaw === 4 ? DEFAULT_AD_SETTINGS.picFeedEvery : picRaw))
   const skip = Math.max(3, Math.min(30, Number(stored.videoSkipAfterSec) || DEFAULT_AD_SETTINGS.videoSkipAfterSec))
   return {
     ...DEFAULT_AD_SETTINGS,

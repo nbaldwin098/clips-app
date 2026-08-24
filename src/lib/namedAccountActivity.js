@@ -187,9 +187,17 @@ function stepNamedActivity() {
 
 export { stepNamedActivity }
 
+function namedBotsAllowedHere() {
+  if (typeof window === 'undefined') return false
+  if (import.meta.env.DEV) return true
+  const host = String(window.location.hostname || '')
+  return host === 'localhost' || host === '127.0.0.1'
+}
+
 export async function startNamedAccountActivity() {
   if (typeof window === 'undefined') return
   if (timer) return
+  if (!namedBotsAllowedHere()) return
   const tick = () => { stepNamedActivity() }
   tick()
   timer = window.setInterval(tick, TICK_MS)

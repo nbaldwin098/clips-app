@@ -532,8 +532,8 @@ export function seedOfficialCatalog() {
     if (!isHttpUrl(next.mediaUrl) || isKnownDeadUrl(next.mediaUrl)) continue
     const stamped = {
       ...next,
-      createdAt: new Date().toISOString(),
-      publishedAt: new Date().toISOString(),
+      createdAt: next.createdAt || '2026-08-24T12:00:00.000Z',
+      publishedAt: next.publishedAt || next.createdAt || '2026-08-24T12:00:00.000Z',
     }
     const prev = byId[next.id]
     const record = prev
