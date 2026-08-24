@@ -181,7 +181,7 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
           </button>
         </div>
         <div className="p-5">
-          {(mode === 'signin' || mode === 'signup') && synced && (
+          {(mode === 'signin' || mode === 'signup') && (
             <>
               <div className="space-y-2">
                 {OAUTH.map((p) => (
