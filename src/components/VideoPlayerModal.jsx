@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { X, ExternalLink, Clock, SkipForward, ArrowUpRight, AlertCircle, Loader2, Music } from 'lucide-react'
+import { X, ExternalLink, Clock, SkipForward, ArrowUpRight, AlertCircle, Loader2, Music, Download } from 'lucide-react'
 import { getMediaBlobUrl } from '../lib/videoStorage'
 import { parseEmbedUrl } from '../lib/videoEmbed'
 import { recordView, getViews } from '../lib/engagement'
@@ -9,6 +9,7 @@ import { getActiveAdForVideo, recordAdImpression, recordAdClick, recordAdSkip } 
 import { useAuth } from '../context/AuthContext'
 import { openSafeUrl, safeIframeSrc, safeMediaUrl } from '../lib/safeUrl'
 import PostedStamp from './PostedStamp'
+import { downloadPostedMedia } from '../lib/mediaDownload'
 
 function isHttp(url) {
   return typeof url === 'string' && (url.startsWith('https://') || url.startsWith('http://'))
@@ -300,6 +301,9 @@ export default function VideoPlayerModal({ item, onClose }) {
             <span className="font-semibold text-zinc-200">@{item.handle || item.creatorName || 'creator'}</span>
             <span>·</span>
             <span>{views} views</span>
+            <button type="button" className="text-white hover:underline inline-flex items-center gap-1" onClick={() => downloadPostedMedia(item)}>
+              <Download className="h-3 w-3" /> Download
+            </button>
             {item.createdAt || item.publishedAt ? (
               <>
                 <span>·</span>

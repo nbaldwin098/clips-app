@@ -177,10 +177,10 @@ function ClipSlide({
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); onOpenProfile?.(item.handle, creatorId) }}
-        className="h-11 w-11 rounded-full bg-white/20 text-white text-sm font-semibold flex items-center justify-center ring-2 ring-white/80"
+        className="h-11 w-11 rounded-full overflow-hidden bg-white/20 text-white text-sm font-semibold flex items-center justify-center ring-2 ring-white/80"
         aria-label={handle}
       >
-        {initial}
+        {item.avatarUrl ? <img src={item.avatarUrl} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" /> : initial}
       </button>
     </>
   )
@@ -286,7 +286,7 @@ function ClipSlide({
             onClick={(e) => { e.stopPropagation(); onOpenProfile?.(item.handle, creatorId) }}
             className="text-sm font-semibold text-white drop-shadow"
           >
-            {handle}
+            {item.displayName || handle}
           </button>
           <button
             type="button"

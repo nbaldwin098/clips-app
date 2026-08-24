@@ -21,6 +21,7 @@ const LEGAL_HOSTS = [
   /wikipedia\.org$/i,
   /upload\.wikimedia\.org$/i,
   /commons\.wikimedia\.org$/i,
+  /googleusercontent\.com$/i,
   /esa\.int$/i,
   /loc\.gov$/i,
 ]

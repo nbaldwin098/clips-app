@@ -72,6 +72,10 @@ export default function HelpPage() {
       a: 'No. It is ranked once when the page loads from watch completion, rewatches, shares, saves, comments, likes, and skips — not follower count. It does not auto-scroll and it does not swap videos while you sit there. Hard-refresh when you want a new mix.',
     },
     {
+      q: 'Can I download a video or pic?',
+      a: 'Yes. Anyone can download a post from the card menu, the watch page, or a pic. Creators can re-download their own uploads the same way. Uploads are converted to a smaller WebM/MP4 when the browser can do it, then stored.',
+    },
+    {
       q: 'What is a zero-storage import?',
       a: 'Paste a public short URL. We store only metadata and a reference — not the binary file.',
     },

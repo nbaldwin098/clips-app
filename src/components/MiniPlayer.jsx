@@ -41,8 +41,8 @@ export default function MiniPlayer({ item, onExpand, onClose }) {
       </div>
       <button type="button" onClick={onExpand} className="w-full text-left px-2.5 py-2">
         <p className="text-xs text-white truncate">{item.title || 'Untitled'}</p>
-        <p className="text-[10px] text-zinc-500 truncate">
-          @{item.handle || 'creator'}{item.durationSec ? ` · ${formatClock(item.durationSec)}` : ''}
+        <p className="text-[11px] text-[#aaa] truncate">
+          {item.displayName || item.handle || 'Creator'}{item.durationSec ? ` · ${formatClock(item.durationSec)}` : ''}
         </p>
       </button>
     </div>

@@ -7,7 +7,7 @@ import { getImports, saveImport, lsGet, lsSet } from '../lib/storage'
 import { hiddenBrokenIds, isHttpUrl, isKnownDeadUrl } from '../lib/catalogHealth'
 import { indexUser } from '../lib/moderation'
 
-export const CATALOG_GENERATION = 'official-pd-v4'
+export const CATALOG_GENERATION = 'official-pd-v5'
 const GEN_KEY = 'clips_catalog_generation'
 
 export const OFFICIAL_CREATORS = [
@@ -20,8 +20,8 @@ export const OFFICIAL_CREATORS = [
     isCreator: true,
     email: 'nasa@calabi.local',
     passwordHash: 'sha256$a1b2c3d4e5f60718293a4b5c6d7e8f90$06c37682a05b7b08cd9661494ee7dd45014cc07ee74af2e7c46ddd382f7f1d53',
-    avatarUrl: 'https://images-assets.nasa.gov/image/as17-148-22727/as17-148-22727~medium.jpg',
-    bannerUrl: 'https://images-assets.nasa.gov/image/PIA18033/PIA18033~medium.jpg',
+    avatarUrl: 'https://yt3.googleusercontent.com/eIf5fNPcIcj9ig-wZBeq4stFy1lgjWTW1nLT5dYlFkHZprZ03QBiMcbpwNMB6XSBjrSFGtAGQg=s900-c-k-c0x00ffffff-no-rj',
+    bannerUrl: 'https://yt3.googleusercontent.com/wene-k08O5GIa5h7syMVe6IKiiRiKh6vpajQSUYma01_wG5aMOCqvvAdd2NuljADPuUNPpMkrw=w1707-fcrop64=1,00005a57ffffa5a8-k-c0xffffffff-no-nd-rj',
   },
   {
     id: 'org-noaa',
@@ -33,9 +33,9 @@ export const OFFICIAL_CREATORS = [
     creatorStatus: 'approved',
     isCreator: true,
     avatarUrl:
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Hurricane_John_Seen_by_NOAA-21_%28CIRA_2024-09-23_-_nolabels%29.webm/960px--Hurricane_John_Seen_by_NOAA-21_%28CIRA_2024-09-23_-_nolabels%29.webm.jpg',
+      'https://yt3.googleusercontent.com/ZzC_NmDSYP4IJPG1a75R8SKFYJzmdAE2lNj0Ij7dabKbCN4yOjJxb3cNuAORr2Hv2GsCPYCgcI4=s900-c-k-c0x00ffffff-no-rj',
     bannerUrl:
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fd/Dual_satellite_view_of_Hurricane_Iota_%28CIRA_2020-11-17%29.webm/960px--Dual_satellite_view_of_Hurricane_Iota_%28CIRA_2020-11-17%29.webm.jpg',
+      'https://yt3.googleusercontent.com/FgfgE3TbfS1LJYonfbQ4r_W9LzvDtHoarLvGYOUqbWXOIn_FJvphyIylAQz5R14RifQWYDRc=w1707-fcrop64=1,00005a57ffffa5a8-k-c0xffffffff-no-nd-rj',
   },
   {
     id: 'org-esa',
@@ -47,9 +47,9 @@ export const OFFICIAL_CREATORS = [
     creatorStatus: 'approved',
     isCreator: true,
     avatarUrl:
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Earth_as_seen_from_ESA_Rosetta_2009_%2851688879651%29.png/960px-Earth_as_seen_from_ESA_Rosetta_2009_%2851688879651%29.png',
+      'https://yt3.googleusercontent.com/pvp0P35jE_uZ8mf4b0ihGj0xJVId7-457KtfsNJnO9mE14OqNJMqbTcBYbLaAGwjBSjI055x=s900-c-k-c0x00ffffff-no-rj',
     bannerUrl:
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Earth_as_seen_from_ESA_Rosetta_2009_%2851688879651%29.png/960px-Earth_as_seen_from_ESA_Rosetta_2009_%2851688879651%29.png',
+      'https://yt3.googleusercontent.com/8SBD0WB27GA2CAgD9wBzV2vwOvu3d3HI7HDJgoTj4GY0nUv_xAIwG1jnqDcj-KqfGy28NOrF2Uo=w1707-fcrop64=1,00005a57ffffa5a8-k-c0xffffffff-no-nd-rj',
   },
   {
     id: 'org-usfws',
@@ -61,9 +61,9 @@ export const OFFICIAL_CREATORS = [
     creatorStatus: 'approved',
     isCreator: true,
     avatarUrl:
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bd/Moose_at_Seedskadee_National_Wildlife_Refuge_%2849025793918%29.webm/960px--Moose_at_Seedskadee_National_Wildlife_Refuge_%2849025793918%29.webm.jpg',
+      'https://yt3.googleusercontent.com/ytc/AIdro_nnb_-jDuGW2QQhuTXC7QomGdd0zs25rJihLmaZGpUtRw=s900-c-k-c0x00ffffff-no-rj',
     bannerUrl:
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bd/Moose_at_Seedskadee_National_Wildlife_Refuge_%2849025793918%29.webm/960px--Moose_at_Seedskadee_National_Wildlife_Refuge_%2849025793918%29.webm.jpg',
+      'https://yt3.googleusercontent.com/rDwoJtoEboZ_BU8UwBmSfnH9Nadfs4F_A2L0wufOmkLYiYyeS695gaIwYXHpqGpqwroxJm4q=w1707-fcrop64=1,00005a57ffffa5a8-k-c0xffffffff-no-nd-rj',
   },
   {
     id: 'org-nasaconnect',
@@ -74,8 +74,8 @@ export const OFFICIAL_CREATORS = [
     bio: 'Classroom science, maths, and history films NASA made for kids. Public domain.',
     creatorStatus: 'approved',
     isCreator: true,
-    avatarUrl: 'https://archive.org/services/img/NasaConnect-Iss-IssBasics',
-    bannerUrl: 'https://archive.org/services/img/NasaConnect-BetterHealthFromSpaceToEarth',
+    avatarUrl: 'https://yt3.googleusercontent.com/bpfrBmM6vZk_p4mFIkMny87Hn0GsuB-Fx9TdY7tBsOjW10-6jn6OEGHTTv3wy0OnGRMT1A-o7ww=s900-c-k-c0x00ffffff-no-rj',
+    bannerUrl: 'https://yt3.googleusercontent.com/tJcaHTXaSsGmUCAqrNqpCHFXUpxk4m6nySU4H5TjEzN1GBLrcoAv1VXsTTNehYqpa-Im01K6RA=w1707-fcrop64=1,00005a57ffffa5a8-k-c0xffffffff-no-nd-rj',
   },
   {
     id: 'org-classroom',
@@ -86,8 +86,8 @@ export const OFFICIAL_CREATORS = [
     bio: 'Public-domain school films for reading, maths, English, and manners.',
     creatorStatus: 'approved',
     isCreator: true,
-    avatarUrl: 'https://archive.org/services/img/Everyday1948',
-    bannerUrl: 'https://archive.org/services/img/0261_Hoppy_the_Bunny_Background_for_Reading_and_Expression_E00420_00_26_23_14',
+    avatarUrl: 'https://yt3.googleusercontent.com/o6HhJR65S6QLzBdfLVzuohmCuhq4ajQ0Y0MFlCgfzhp0fq8HYBOGM4bQI-aOtkS8NZ5rurhK=s900-c-k-c0x00ffffff-no-rj',
+    bannerUrl: 'https://yt3.googleusercontent.com/uKU80Zp3sHG-1DBBsbiN78U6vG8xFDAuoBLVWXynRXXJJuSVluOMeAL-2RgoKBBckHI5ssfRDQ=w1707-fcrop64=1,00005a57ffffa5a8-k-c0xffffffff-no-nd-rj',
   },
   {
     id: 'org-nara',
@@ -98,8 +98,8 @@ export const OFFICIAL_CREATORS = [
     bio: 'US government history films and documentaries. Public domain.',
     creatorStatus: 'approved',
     isCreator: true,
-    avatarUrl: 'https://archive.org/services/img/gov.archives.arc.45017',
-    bannerUrl: 'https://archive.org/services/img/wwf_prelude_to_war',
+    avatarUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_lbyMtBC27JVL62Bd9YIeWaT4JbXoTxe6qe46UpgaFivCM=s900-c-k-c0x00ffffff-no-rj',
+    bannerUrl: 'https://yt3.googleusercontent.com/wIU4xXck4dlL_Ev5fiOxgFEMxk0hVrqBPg1p9J3850JnZ2bwB5SyP1zSQ6udh4w2KCOxJqyNKtY=w1707-fcrop64=1,00005a57ffffa5a8-k-c0xffffffff-no-nd-rj',
   },
 ]
 
@@ -120,44 +120,10 @@ function byCreator(handle) {
   }
 }
 
-/** Real release / capture times — not the moment the catalog was seeded. */
-const POSTED_AT = {
-  'org-nasa-iss-earth': '2016-03-12T15:00:00.000Z',
-  'org-nasa-hubble-29': '2019-04-24T16:00:00.000Z',
-  'org-nasa-perseverance-drive': '2022-04-05T18:00:00.000Z',
-  'org-nasa-zero-g': '2018-09-14T14:00:00.000Z',
-  'org-nasa-earth-clip': '2026-04-22T12:00:00.000Z',
-  'org-nasa-blue-marble': '1972-12-07T10:39:00.000Z',
-  'org-nasa-pale-blue': '2013-07-19T21:27:00.000Z',
-  'org-noaa-hurricane-john': '2024-09-23T18:00:00.000Z',
-  'org-noaa-iota': '2020-11-17T12:00:00.000Z',
-  'org-noaa-iota-pic': '2020-11-17T12:30:00.000Z',
-  'org-esa-rosetta-clip': '2014-08-06T09:00:00.000Z',
-  'org-esa-earth-pic': '2009-11-13T00:00:00.000Z',
-  'org-usfws-moose': '2019-09-18T16:00:00.000Z',
-  'org-usfws-moose-pic': '2019-09-18T16:20:00.000Z',
-  'org-nc-math-graph': '2004-05-12T14:00:00.000Z',
-  'org-nc-parallax': '2004-03-02T14:00:00.000Z',
-  'org-nc-weather': '2004-01-20T14:00:00.000Z',
-  'org-nc-jamestown': '2004-04-08T14:00:00.000Z',
-  'org-nc-iss': '2004-06-15T14:00:00.000Z',
-  'org-nc-sun-earth': '2004-02-10T14:00:00.000Z',
-  'org-nc-rockets': '2004-07-22T14:00:00.000Z',
-  'org-nc-health-doc': '2004-08-30T14:00:00.000Z',
-  'org-class-math-multiply': '1948-01-15T12:00:00.000Z',
-  'org-class-math-angles': '1955-03-01T12:00:00.000Z',
-  'org-class-reading-hoppy': '1952-04-01T12:00:00.000Z',
-  'org-class-courtesy': '1950-09-01T12:00:00.000Z',
-  'org-class-nouns-pic': '1951-02-01T12:00:00.000Z',
-  'org-class-math-pic': '1953-05-01T12:00:00.000Z',
-  'org-nara-apollo11-doc': '1969-07-24T16:00:00.000Z',
-  'org-nara-prelude-doc': '1942-05-27T12:00:00.000Z',
-}
-
 function item(handle, partial) {
   const mediaUrl = partial.mediaUrl
   const thumbUrl = partial.thumbUrl || mediaUrl
-  const createdAt = POSTED_AT[partial.id] || partial.createdAt
+  const createdAt = partial.createdAt || new Date().toISOString()
   return {
     ...byCreator(handle),
     origin: 'public-domain-org',
@@ -555,7 +521,6 @@ function seedCreators() {
 export function seedOfficialCatalog() {
   const gen = lsGet(GEN_KEY, '')
   if (gen !== CATALOG_GENERATION) {
-    lsSet('imports', [])
     lsSet(GEN_KEY, CATALOG_GENERATION)
   }
   seedCreators()

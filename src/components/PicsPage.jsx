@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { ImagePlus, X, Share2 } from 'lucide-react'
+import { ImagePlus, X, Share2, Download } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getPicsFeed, publishPhoto, pickImmediatePhotoSrc, isHttpUrl, isDataImageUrl } from '../lib/picsService'
 import { subscribeContentUpdates, deleteContentRecord } from '../lib/contentSync'
@@ -7,6 +7,7 @@ import { hideBrokenMedia } from '../lib/catalogHealth'
 import { getMediaBlobUrl } from '../lib/videoStorage'
 import { copyShareUrl, replaceHash } from '../lib/routes'
 import ShortsStage, { ShortsCard } from './ShortsStage'
+import { downloadPostedMedia } from '../lib/mediaDownload'
 
 function PicImage({ pic, className, alt = '', full = false, fill = false, onUnplayable }) {
   const immediate = pickImmediatePhotoSrc(pic, { full })
@@ -80,11 +81,18 @@ function PicSlide({ pic, onOpenProfile }) {
   }
   const handle = pic.handle ? `@${String(pic.handle).replace(/^@/, '')}` : ''
   const actions = (
-    <button type="button" onClick={share} className="flex flex-col items-center gap-1">
-      <span className="h-11 w-11 rounded-full bg-[#272727] hover:bg-[#3d3d3d] flex items-center justify-center text-white">
-        <Share2 className="h-5 w-5" />
-      </span>
-    </button>
+    <>
+      <button type="button" onClick={share} className="flex flex-col items-center gap-1">
+        <span className="h-11 w-11 rounded-full bg-[#272727] hover:bg-[#3d3d3d] flex items-center justify-center text-white">
+          <Share2 className="h-5 w-5" />
+        </span>
+      </button>
+      <button type="button" onClick={() => downloadPostedMedia(pic)} className="flex flex-col items-center gap-1">
+        <span className="h-11 w-11 rounded-full bg-[#272727] hover:bg-[#3d3d3d] flex items-center justify-center text-white">
+          <Download className="h-5 w-5" />
+        </span>
+      </button>
+    </>
   )
 
   return (
@@ -250,7 +258,7 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
           <button type="button" onClick={openUpload} className="mt-4 h-9 px-4 rounded-lg bg-white text-black text-sm font-semibold">Upload first pic</button>
         </div>
       ) : (
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-0.5 p-0.5 pb-20">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1 p-1 pb-20">
           {items.map((pic, index) => (
             <button
               key={pic.id}
@@ -259,7 +267,12 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
               className="relative block w-full aspect-square overflow-hidden bg-zinc-800 group focus:outline-none"
             >
               <PicImage key={pic.id} pic={pic} fill onUnplayable={dropBroken} />
-              <div className="pointer-events-none absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+              <div className="pointer-events-none absolute inset-0 bg-black/0 group-hover:bg-black/35 transition-colors" />
+              {pic.title ? (
+                <span className="pointer-events-none absolute bottom-1.5 left-1.5 right-1.5 text-[11px] text-white line-clamp-2 opacity-0 group-hover:opacity-100 drop-shadow">
+                  {pic.title}
+                </span>
+              ) : null}
             </button>
           ))}
         </div>

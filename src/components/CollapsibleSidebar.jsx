@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   Radio,
   Home,
@@ -29,9 +29,12 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { lsGet } from '../lib/storage'
-import { listPopularCreators } from '../lib/contentService'
+import { listSidebarCreators } from '../lib/contentService'
 import BrandMark from './BrandMark'
+import ChannelAvatar from './ChannelAvatar'
+import VerifiedBadge from './VerifiedBadge'
 import { cn } from '../lib/utils'
+import { isOfficialCreator } from '../lib/uiFormat'
 
 const itemCls = (active) =>
   cn(
@@ -82,7 +85,10 @@ export default function CollapsibleSidebar({
     return () => clearInterval(interval)
   }, [refreshLiveBoard, currentView])
 
-  const recommendedCreators = listPopularCreators(5)
+  const lastCreators = useRef([])
+  const rankedCreators = listSidebarCreators(5)
+  if (rankedCreators.length) lastCreators.current = rankedCreators
+  const recommendedCreators = rankedCreators.length ? rankedCreators : lastCreators.current
 
   const go = (id) => {
     onNavigate(id)
@@ -211,14 +217,15 @@ export default function CollapsibleSidebar({
                       go('creators')
                     }
                   }}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left hover:bg-[#181820]"
+                  className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left hover:bg-[#181820]"
                 >
-                  <span className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0 overflow-hidden bg-white/10 text-white">
-                    {c.avatarUrl ? <img src={c.avatarUrl} alt="" className="h-full w-full object-cover" /> : (c.displayName || '?')[0].toUpperCase()}
-                  </span>
+                  <ChannelAvatar src={c.avatarUrl} name={c.displayName} size={28} official={isOfficialCreator(c.id, c.handle)} />
                   <span className="min-w-0">
-                    <span className="block text-[11px] text-zinc-200 truncate">{c.displayName}</span>
-                    <span className="block text-[10px] text-zinc-500 truncate">@{c.handle}</span>
+                    <span className="flex items-center gap-1 text-[12px] text-zinc-200 truncate">
+                      {c.displayName}
+                      {isOfficialCreator(c.id, c.handle) ? <VerifiedBadge /> : null}
+                    </span>
+                    <span className="block text-[11px] text-[#aaa] truncate">@{c.handle}</span>
                   </span>
                 </button>
               ))}
@@ -265,7 +272,7 @@ export default function CollapsibleSidebar({
           )}
           title="calabi"
         >
-          <BrandMark size={collapsed ? 28 : 32} />
+          <BrandMark size={collapsed ? 28 : 32} withWord={!collapsed} />
         </button>
       </div>
     </div>

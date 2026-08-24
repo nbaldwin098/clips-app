@@ -168,7 +168,7 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
       <div className="w-full max-w-md rounded-2xl border border-[#2f2f37] bg-[#1f1f23] shadow-2xl">
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#2f2f37]">
           <div className="flex items-center gap-3 min-w-0">
-            <BrandMark size={32} />
+            <BrandMark size={32} withWord />
             <div>
               <h2 className="text-lg font-semibold text-[#efeff1]">{title}</h2>
               <p className="text-[10px] text-zinc-500 mt-0.5">

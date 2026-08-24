@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getExplore, listCatalogTags } from '../lib/contentService'
 import { useContentSyncTick } from '../lib/useContentSync'
-import { cn } from '../lib/utils'
+import FilterChips from './FilterChips'
 import { filterExploreItems } from '../lib/mediaMeta'
 import { getSearchHistory, pushSearchHistory, clearSearchHistory } from '../lib/youtubeParity'
 import MediaShelves from './MediaShelves'
@@ -47,26 +47,12 @@ export default function ExplorePage({ onPlayItem, onOpenPic, onOpenTag, initialQ
   }, [q])
 
   return (
-    <div className="p-4 md:p-6 max-w-[1400px] mx-auto space-y-6">
-      <h1 className="text-lg font-semibold text-zinc-100">
+    <div className="p-4 md:p-6 max-w-[1600px] mx-auto space-y-5">
+      <h1 className="text-xl font-semibold text-white">
         {q ? `Results for “${q}”` : 'Explore'}
       </h1>
 
-      <div className="flex flex-wrap gap-2">
-        {KINDS.map((k) => (
-          <button
-            key={k.id}
-            type="button"
-            onClick={() => setKind(k.id)}
-            className={cn(
-              'h-9 px-4 rounded-full text-sm font-medium border',
-              kind === k.id ? 'bg-white text-black border-white' : 'border-zinc-800 text-zinc-400 hover:bg-[#181818]'
-            )}
-          >
-            {k.label}
-          </button>
-        ))}
-      </div>
+      <FilterChips value={kind} onChange={setKind} options={KINDS} />
 
       <div className="flex flex-wrap gap-2">
         <select value={date} onChange={(e) => setDate(e.target.value)} className="h-8 rounded-lg border border-zinc-800 bg-[#000000] px-2 text-xs text-zinc-200">
