@@ -225,7 +225,7 @@ export function saveAdvertiserCampaign(campaign) {
 }
 
 export function adsAreRunning() {
-  return lsGet(ADS_RUNNING_KEY, false) === true
+  return lsGet(ADS_RUNNING_KEY, true) === true
 }
 
 export function setAdsRunning(on) {
@@ -323,6 +323,7 @@ export function getVideoAdDurationSec(ad) {
 export function mixFeedAds(items, placement) {
   const list = Array.isArray(items) ? items : []
   const mapped = list.map((item) => ({ kind: 'item', item, key: item?.id }))
+  if (!adsAreRunning()) return mapped
   const settings = getAdSettings()
   if (!settingAllows(placement, settings)) return mapped
   if (placement === 'clip-feed') {
@@ -336,6 +337,7 @@ export function mixFeedAds(items, placement) {
 
 /** Banner under a clip every 10 clips, never on or next to a full in-feed ad. */
 export function clipBannerAllowed(mixed, index) {
+  if (!adsAreRunning()) return false
   if (!settingAllows('clip-banner')) return false
   return clipBannerAllowedOnMixed(mixed, index)
 }

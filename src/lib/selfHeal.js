@@ -124,6 +124,12 @@ export function healLocalState() {
   }
 
   try {
+    if (lsGet('clips_ads_running', null) === null) {
+      lsSet('clips_ads_running', true)
+    }
+  } catch {}
+
+  try {
     seedOfficialCatalog()
   } catch {}
 
