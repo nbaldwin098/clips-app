@@ -55,9 +55,7 @@ function NextStrip({ title, items, onOpen }) {
   if (!items?.length) return null
   return (
     <section className="mt-10">
-      <div className="flex items-baseline justify-between gap-3 mb-3">
-        <h2 className="text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-500">{title}</h2>
-      </div>
+        <h2 className="text-lg font-semibold text-white mb-3">{title}</h2>
       <div className="-mx-4 md:-mx-6 px-4 md:px-6 flex gap-3 overflow-x-auto pb-2">
         {items.map((rel) => {
           const vertical = rel.type === 'short' || rel.type === 'pic'
