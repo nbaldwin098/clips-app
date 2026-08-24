@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useRef } from 'react'
 import {
   Home, Clapperboard, Radio, Compass, History, Clock, ThumbsUp,
   LayoutDashboard, Wallet, Music, Users, ChevronDown, ChevronRight,
@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { useAuth } from '../context/AuthContext'
-import { listPopularCreators } from '../lib/contentService'
+import { listSidebarCreators } from '../lib/contentService'
 
 const itemCls = (active) =>
   cn(
@@ -34,7 +34,10 @@ export default function Sidebar({ currentView, onNavigate, open, onClose }) {
     if (typeof window !== 'undefined' && window.innerWidth < 768) onClose?.()
   }
 
-  const recommendedCreators = useMemo(() => listPopularCreators(5), [currentView, user?.id])
+  const lastCreators = useRef([])
+  const rankedCreators = listSidebarCreators(5)
+  if (rankedCreators.length) lastCreators.current = rankedCreators
+  const recommendedCreators = rankedCreators.length ? rankedCreators : lastCreators.current
 
   const body = (
     <div className="flex flex-col h-full text-white">

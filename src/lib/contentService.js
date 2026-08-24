@@ -11,6 +11,7 @@ import { mergeTags, isReleased } from './mediaMeta'
 import { setChapters, setCaptions, deleteScheduled } from './youtubeParity'
 import { isFeedable, isReferenceItem } from './catalogHealth'
 import { listIndexedUsers } from './moderation'
+import { OFFICIAL_CREATORS } from '../data/publicMediaSeed'
 
 const VIEW_KEY = 'clips_content_views'
 const PIN_KEY = 'clips_pinned_by_creator'
@@ -215,6 +216,18 @@ export function listPopularCreators(limit = 24) {
     })
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)
+}
+
+export function listSidebarCreators(limit = 5) {
+  const ranked = listPopularCreators(limit)
+  if (ranked.length) return ranked
+  return OFFICIAL_CREATORS.slice(0, limit).map((c) => ({
+    id: c.id,
+    handle: c.handle,
+    displayName: c.displayName,
+    avatarUrl: c.avatarUrl,
+    postCount: 0,
+  }))
 }
 
 function matchesQuery(i, q) {

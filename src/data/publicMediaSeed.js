@@ -7,7 +7,7 @@ import { getImports, saveImport, lsGet, lsSet } from '../lib/storage'
 import { hiddenBrokenIds, isHttpUrl, isKnownDeadUrl } from '../lib/catalogHealth'
 import { indexUser } from '../lib/moderation'
 
-export const CATALOG_GENERATION = 'official-pd-v4'
+export const CATALOG_GENERATION = 'official-pd-v5'
 const GEN_KEY = 'clips_catalog_generation'
 
 export const OFFICIAL_CREATORS = [
@@ -120,44 +120,10 @@ function byCreator(handle) {
   }
 }
 
-/** Real release / capture times — not the moment the catalog was seeded. */
-const POSTED_AT = {
-  'org-nasa-iss-earth': '2016-03-12T15:00:00.000Z',
-  'org-nasa-hubble-29': '2019-04-24T16:00:00.000Z',
-  'org-nasa-perseverance-drive': '2022-04-05T18:00:00.000Z',
-  'org-nasa-zero-g': '2018-09-14T14:00:00.000Z',
-  'org-nasa-earth-clip': '2026-04-22T12:00:00.000Z',
-  'org-nasa-blue-marble': '1972-12-07T10:39:00.000Z',
-  'org-nasa-pale-blue': '2013-07-19T21:27:00.000Z',
-  'org-noaa-hurricane-john': '2024-09-23T18:00:00.000Z',
-  'org-noaa-iota': '2020-11-17T12:00:00.000Z',
-  'org-noaa-iota-pic': '2020-11-17T12:30:00.000Z',
-  'org-esa-rosetta-clip': '2014-08-06T09:00:00.000Z',
-  'org-esa-earth-pic': '2009-11-13T00:00:00.000Z',
-  'org-usfws-moose': '2019-09-18T16:00:00.000Z',
-  'org-usfws-moose-pic': '2019-09-18T16:20:00.000Z',
-  'org-nc-math-graph': '2004-05-12T14:00:00.000Z',
-  'org-nc-parallax': '2004-03-02T14:00:00.000Z',
-  'org-nc-weather': '2004-01-20T14:00:00.000Z',
-  'org-nc-jamestown': '2004-04-08T14:00:00.000Z',
-  'org-nc-iss': '2004-06-15T14:00:00.000Z',
-  'org-nc-sun-earth': '2004-02-10T14:00:00.000Z',
-  'org-nc-rockets': '2004-07-22T14:00:00.000Z',
-  'org-nc-health-doc': '2004-08-30T14:00:00.000Z',
-  'org-class-math-multiply': '1948-01-15T12:00:00.000Z',
-  'org-class-math-angles': '1955-03-01T12:00:00.000Z',
-  'org-class-reading-hoppy': '1952-04-01T12:00:00.000Z',
-  'org-class-courtesy': '1950-09-01T12:00:00.000Z',
-  'org-class-nouns-pic': '1951-02-01T12:00:00.000Z',
-  'org-class-math-pic': '1953-05-01T12:00:00.000Z',
-  'org-nara-apollo11-doc': '1969-07-24T16:00:00.000Z',
-  'org-nara-prelude-doc': '1942-05-27T12:00:00.000Z',
-}
-
 function item(handle, partial) {
   const mediaUrl = partial.mediaUrl
   const thumbUrl = partial.thumbUrl || mediaUrl
-  const createdAt = POSTED_AT[partial.id] || partial.createdAt
+  const createdAt = partial.createdAt || new Date().toISOString()
   return {
     ...byCreator(handle),
     origin: 'public-domain-org',
@@ -555,7 +521,6 @@ function seedCreators() {
 export function seedOfficialCatalog() {
   const gen = lsGet(GEN_KEY, '')
   if (gen !== CATALOG_GENERATION) {
-    lsSet('imports', [])
     lsSet(GEN_KEY, CATALOG_GENERATION)
   }
   seedCreators()

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   Radio,
   Home,
@@ -29,7 +29,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { lsGet } from '../lib/storage'
-import { listPopularCreators } from '../lib/contentService'
+import { listSidebarCreators } from '../lib/contentService'
 import BrandMark from './BrandMark'
 import { cn } from '../lib/utils'
 
@@ -82,7 +82,10 @@ export default function CollapsibleSidebar({
     return () => clearInterval(interval)
   }, [refreshLiveBoard, currentView])
 
-  const recommendedCreators = listPopularCreators(5)
+  const lastCreators = useRef([])
+  const rankedCreators = listSidebarCreators(5)
+  if (rankedCreators.length) lastCreators.current = rankedCreators
+  const recommendedCreators = rankedCreators.length ? rankedCreators : lastCreators.current
 
   const go = (id) => {
     onNavigate(id)

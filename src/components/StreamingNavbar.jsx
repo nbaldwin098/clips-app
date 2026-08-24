@@ -21,23 +21,6 @@ import { cn } from '../lib/utils'
 import BrandMark from './BrandMark'
 import { subscribeNotifications, unreadCount } from '../lib/notifications'
 
-function SiteClock() {
-  const [now, setNow] = useState(() => new Date())
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 1000)
-    return () => clearInterval(id)
-  }, [])
-  return (
-    <time
-      dateTime={now.toISOString()}
-      title={now.toLocaleString()}
-      className="hidden sm:block text-[11px] tabular-nums text-zinc-500 pr-1"
-    >
-      {now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
-    </time>
-  )
-}
-
 export default function StreamingNavbar({
   onNavigate,
   onOpenAuth,
@@ -166,7 +149,6 @@ export default function StreamingNavbar({
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          <SiteClock />
           <div className="relative" ref={createRef}>
             <button
               type="button"

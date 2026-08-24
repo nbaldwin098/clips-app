@@ -1,11 +1,16 @@
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import { Users } from 'lucide-react'
-import { listPopularCreators } from '../lib/contentService'
+import { listSidebarCreators } from '../lib/contentService'
 import { useContentSyncTick } from '../lib/useContentSync'
 
 export default function CreatorsPage() {
   const syncTick = useContentSyncTick()
-  const ranked = useMemo(() => listPopularCreators(24), [syncTick])
+  const lastGood = useRef([])
+  const ranked = useMemo(() => {
+    const next = listSidebarCreators(24)
+    if (next.length) lastGood.current = next
+    return next.length ? next : lastGood.current
+  }, [syncTick])
 
   return (
     <div className="p-4 md:p-6 max-w-[900px] mx-auto">

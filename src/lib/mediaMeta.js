@@ -58,6 +58,11 @@ export function formatPostedAt(iso, now = Date.now()) {
   if (!t) return ''
   const diff = now - t
   if (diff < 15_000) return 'just now'
+  const a = new Date(t)
+  const b = new Date(now)
+  if (a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()) {
+    return 'today'
+  }
   const mins = Math.floor(diff / 60_000)
   if (diff < 60_000) return `${Math.max(1, Math.floor(diff / 1000))}s ago`
   if (mins < 60) return `${mins}m ago`
