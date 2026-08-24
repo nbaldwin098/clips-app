@@ -30,6 +30,7 @@ import {
 import { useAuth } from '../context/AuthContext'
 import { lsGet } from '../lib/storage'
 import { listPopularCreators } from '../lib/contentService'
+import BrandMark from './BrandMark'
 import { cn } from '../lib/utils'
 
 const itemCls = (active) =>
@@ -251,6 +252,25 @@ export default function CollapsibleSidebar({
             )}
           </div>
         )}
+      </div>
+
+      <div className="mt-auto shrink-0 border-t border-[#23232c] p-2">
+        <button
+          type="button"
+          onClick={() => go('home')}
+          className={cn(
+            'w-full flex items-center rounded-lg hover:bg-[#181820] text-left',
+            collapsed ? 'justify-center p-1' : 'gap-2 px-1.5 py-1.5'
+          )}
+          title="calabi"
+        >
+          <BrandMark
+            size={collapsed ? 28 : 32}
+            withWord={!collapsed}
+            word="calabi"
+            wordClassName="text-sm font-extrabold tracking-tight text-white"
+          />
+        </button>
       </div>
     </div>
   )

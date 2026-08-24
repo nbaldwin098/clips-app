@@ -28,7 +28,7 @@ export default function Navbar({ onNavigate, onOpenAuth, onOpenUpload, onToggleS
             <Menu className="h-5 w-5" color="#ffffff" stroke="#ffffff" />
           </button>
           <button type="button" onClick={() => onNavigate('home')} className="flex items-center gap-2">
-            <BrandMark size={32} wordClassName="hidden sm:block text-lg font-semibold tracking-tight text-white" />
+            <BrandMark size={32} word="calabi" wordClassName="hidden sm:block text-lg font-semibold tracking-tight text-white" />
           </button>
         </div>
         <div className="flex-1 flex justify-center px-2">

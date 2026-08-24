@@ -84,7 +84,7 @@ export default function StreamingNavbar({
             onClick={() => handleNav('home')}
             className="flex items-center gap-2 group text-left focus:outline-none"
           >
-            <BrandMark size={32} />
+            <BrandMark size={32} word="calabi" wordClassName="text-base font-extrabold tracking-tight text-white" />
           </button>
 
           <nav className="hidden lg:flex items-center gap-1 pl-2">

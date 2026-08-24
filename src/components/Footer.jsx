@@ -18,7 +18,7 @@ export default function Footer({ onNavigate }) {
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
           <div>
             <div className="mb-2">
-              <BrandMark size={28} wordClassName="font-semibold text-zinc-100" />
+            <BrandMark size={28} word="calabi" wordClassName="font-semibold text-zinc-100" />
             </div>
             <p className="text-xs text-zinc-500 max-w-xs leading-relaxed">
               Short video, live, and creator tools. Bootstrapped MVP.
