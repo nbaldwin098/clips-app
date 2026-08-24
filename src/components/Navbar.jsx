@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Search, Bell, LogIn, Menu, Plus, User, Tv, Settings, LogOut, ChevronDown } from 'lucide-react'
-import { useAuth } from '../context/AuthContext'
+import BrandMark from './BrandMark'
 
 export default function Navbar({ onNavigate, onOpenAuth, onOpenUpload, onToggleSidebar }) {
   const { user, isAuthenticated, logout } = useAuth()
@@ -28,8 +28,7 @@ export default function Navbar({ onNavigate, onOpenAuth, onOpenUpload, onToggleS
             <Menu className="h-5 w-5" color="#ffffff" stroke="#ffffff" />
           </button>
           <button type="button" onClick={() => onNavigate('home')} className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-black font-bold text-sm">C</div>
-            <span className="hidden sm:block text-lg font-semibold tracking-tight text-white">Clips</span>
+            <BrandMark size={32} wordClassName="hidden sm:block text-lg font-semibold tracking-tight text-white" />
           </button>
         </div>
         <div className="flex-1 flex justify-center px-2">

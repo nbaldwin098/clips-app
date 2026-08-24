@@ -1,3 +1,5 @@
+import BrandMark from './BrandMark'
+
 export default function Footer({ onNavigate }) {
   const link = (label, view) => (
     <button
@@ -15,11 +17,8 @@ export default function Footer({ onNavigate }) {
       <div className="max-w-[1400px] mx-auto px-4 py-8">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-7 w-7 rounded-lg bg-white text-black text-xs font-bold flex items-center justify-center">
-                C
-              </div>
-              <span className="font-semibold text-zinc-100">Clips</span>
+            <div className="mb-2">
+              <BrandMark size={28} wordClassName="font-semibold text-zinc-100" />
             </div>
             <p className="text-xs text-zinc-500 max-w-xs leading-relaxed">
               Short video, live, and creator tools. Bootstrapped MVP.

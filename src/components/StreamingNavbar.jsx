@@ -17,7 +17,7 @@ import {
   Clapperboard,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { cn } from '../lib/utils'
+import BrandMark from './BrandMark'
 import { subscribeNotifications, unreadCount } from '../lib/notifications'
 
 export default function StreamingNavbar({
@@ -83,10 +83,7 @@ export default function StreamingNavbar({
             onClick={() => handleNav('home')}
             className="flex items-center gap-2 group text-left focus:outline-none"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-black font-black text-sm tracking-wider transition-transform group-hover:scale-105">
-              C
-            </div>
-            <span className="text-base font-extrabold tracking-tight text-white">Clips</span>
+            <BrandMark size={32} />
           </button>
 
           <nav className="hidden lg:flex items-center gap-1 pl-2">
