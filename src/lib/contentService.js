@@ -117,6 +117,9 @@ export function normalizeItem(raw) {
     creatorId: raw.creatorId || raw.userId,
     userId: raw.userId || raw.creatorId,
     handle: raw.handle || raw.creatorHandle,
+    displayName: raw.displayName || raw.creatorName || '',
+    avatarUrl: raw.avatarUrl || '',
+    priceUsd: Number(raw.priceUsd) > 0 ? Math.round(Number(raw.priceUsd) * 100) / 100 : 0,
     engagement: raw.engagement || { completionRate: 0, loops: 0, shares: 0, comments: 0, saves: 0, earlySkips: 0, likes: 0 },
     createdAt: raw.createdAt || raw.publishedAt || raw.importedAt || '',
     crossPost: raw.crossPost || null,
@@ -218,16 +221,69 @@ export function listPopularCreators(limit = 24) {
     .slice(0, limit)
 }
 
-export function listSidebarCreators(limit = 5) {
-  const ranked = listPopularCreators(limit)
-  if (ranked.length) return ranked
-  return OFFICIAL_CREATORS.slice(0, limit).map((c) => ({
+const TOP_CREATORS_KEY = 'clips_top_creators_cache'
+let topCreatorCache = []
+
+function officialCreatorCards() {
+  return OFFICIAL_CREATORS.map((c) => ({
     id: c.id,
     handle: c.handle,
     displayName: c.displayName,
     avatarUrl: c.avatarUrl,
     postCount: 0,
   }))
+}
+
+function readPersistedCreators() {
+  if (topCreatorCache.length) return topCreatorCache
+  try {
+    const stored = lsGet(TOP_CREATORS_KEY, [])
+    if (Array.isArray(stored) && stored.length) {
+      topCreatorCache = stored
+      return stored
+    }
+  } catch {}
+  return []
+}
+
+function persistCreators(list) {
+  if (!list.length) return
+  topCreatorCache = list
+  try { lsSet(TOP_CREATORS_KEY, list.slice(0, 32)) } catch {}
+}
+
+export function resolvePublicCreator(handle, userId = null) {
+  const h = String(handle || '').toLowerCase().replace(/^@/, '')
+  const official =
+    OFFICIAL_CREATORS.find((c) => String(c.handle || '').toLowerCase() === h) ||
+    OFFICIAL_CREATORS.find((c) => c.id === userId) ||
+    null
+  if (official) return official
+  const users = listIndexedUsers()
+  return (
+    users.find((u) => String(u.handle || '').toLowerCase() === h) ||
+    users.find((u) => u.id === userId) ||
+    (userId ? { id: userId, handle: h, displayName: h || 'Creator' } : null)
+  )
+}
+
+export function listSidebarCreators(limit = 8) {
+  let ranked = []
+  try {
+    ranked = listPopularCreators(Math.max(limit, 8))
+  } catch {
+    ranked = []
+  }
+  const merged = []
+  const seen = new Set()
+  for (const c of [...ranked, ...officialCreatorCards(), ...readPersistedCreators()]) {
+    if (!c?.id || seen.has(c.id)) continue
+    seen.add(c.id)
+    merged.push(c)
+  }
+  if (merged.length) persistCreators(merged)
+  const stable = topCreatorCache.length ? topCreatorCache : merged
+  return (stable.length ? stable : officialCreatorCards()).slice(0, limit)
 }
 
 function matchesQuery(i, q) {
@@ -427,6 +483,7 @@ export function importUserLink(url, actor = null) {
 export async function publishLocalMedia(file, actor = null, {
   type = null, title = null, description = null, sound = null, tags = [],
   stitchOf = null, chapters = [], captionsText = '', scheduledFor = null, status = 'published',
+  priceUsd = 0,
 } = {}) {
   if (!file) return { ok: false, item: null, error: 'Choose a video file.' }
   try {
@@ -499,6 +556,7 @@ export async function publishLocalMedia(file, actor = null, {
       scheduledFor: isFuture ? new Date(when).toISOString() : null,
       status: finalStatus,
       publishedAt: finalStatus === 'published' ? new Date().toISOString() : null,
+      priceUsd: Number(priceUsd) > 0 ? Math.round(Number(priceUsd) * 100) / 100 : 0,
     }
 
     if (actor?.id) {

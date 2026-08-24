@@ -16,7 +16,7 @@ import VerifiedBadge from './VerifiedBadge'
 import { downloadPostedMedia } from '../lib/mediaDownload'
 import {
   creatorDisplayName,
-  followersLabel,
+  subscribersLabel,
   formatDuration,
   isOfficialCreator,
   viewsLabel,
@@ -117,7 +117,7 @@ export default function ContentCard({ item, onOpen, variant }) {
   const name = creatorDisplayName(item)
   const official = isOfficialCreator(item.creatorId || item.userId, item.handle)
   const handle = item.handle ? `@${String(item.handle).replace(/^@/, '')}` : ''
-  const followLine = followersLabel(subs)
+  const followLine = subscribersLabel(subs)
 
   const menu = (
     <div className="relative shrink-0" ref={menuRef}>
@@ -176,6 +176,11 @@ export default function ContentCard({ item, onOpen, variant }) {
             {item.durationSec > 0 && (
               <span className="absolute bottom-1.5 right-1.5 rounded px-1 py-0.5 text-[11px] text-white font-medium bg-black/80">
                 {formatDuration(item.durationSec)}
+              </span>
+            )}
+            {Number(item.priceUsd) > 0 && (
+              <span className="absolute top-1.5 left-1.5 rounded px-1.5 py-0.5 text-[10px] font-semibold text-black bg-white">
+                ${Number(item.priceUsd).toFixed(2)}
               </span>
             )}
             {resumeRatio > 0.05 && (
@@ -241,6 +246,11 @@ export default function ContentCard({ item, onOpen, variant }) {
           {item.durationSec > 0 && (
             <span className="absolute top-2 right-2 rounded px-1 py-0.5 text-[10px] text-white font-medium bg-black/80">
               {formatDuration(item.durationSec)}
+            </span>
+          )}
+          {Number(item.priceUsd) > 0 && (
+            <span className="absolute top-2 left-2 rounded px-1.5 py-0.5 text-[10px] font-semibold text-black bg-white">
+              ${Number(item.priceUsd).toFixed(2)}
             </span>
           )}
           {resumeRatio > 0.05 && (

@@ -6,7 +6,7 @@
  */
 
 import { attachCrossPostMeta, detectPlatformFromUrl } from './crossPostDetector'
-import { olderIso } from './mediaMeta'
+import { olderIso, isLibraryRecord } from './mediaMeta'
 
 export const STORAGE_TARGETS = {
   ZERO_REF: 'zero-storage-reference',
@@ -168,8 +168,14 @@ export function mergeImports(records) {
     next.thumbUrl = pickMergedUrl(rec.thumbUrl, prev.thumbUrl)
     const localMosaic = prev.mosaicThumb || (String(prev.thumbUrl || '').startsWith('data:image/') ? prev.thumbUrl : '')
     next.mosaicThumb = localMosaic || next.mosaicThumb || ''
-    next.createdAt = olderIso(prev.createdAt, rec.createdAt)
-    next.publishedAt = olderIso(prev.publishedAt, rec.publishedAt)
+    if (isLibraryRecord(next) || isLibraryRecord(rec) || isLibraryRecord(prev)) {
+      const now = new Date().toISOString()
+      next.createdAt = now
+      next.publishedAt = now
+    } else {
+      next.createdAt = olderIso(prev.createdAt, rec.createdAt)
+      next.publishedAt = olderIso(prev.publishedAt, rec.publishedAt)
+    }
     byId.set(rec.id, next)
   }
   const merged = [...byId.values()]

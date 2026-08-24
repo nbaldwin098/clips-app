@@ -13,6 +13,7 @@ export default function UploadModal({
   const { user, isAuthenticated } = useAuth()
   const inputRef = useRef(null)
   const [file, setFile] = useState(null)
+  const [draftSaved, setDraftSaved] = useState(false)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [kind, setKind] = useState(initialKind === 'short' ? 'short' : 'video')
@@ -26,7 +27,7 @@ export default function UploadModal({
   const [captionsText, setCaptionsText] = useState('')
   const [scheduledFor, setScheduledFor] = useState('')
   const [stitchId, setStitchId] = useState(initialStitch?.id || '')
-  const [draftSaved, setDraftSaved] = useState(false)
+  const [priceUsd, setPriceUsd] = useState('')
 
   const stitchOptions = useMemo(() => getShortsFeed(user?.id || null).slice(0, 40), [user?.id, open])
   const stitchItem = stitchId ? (getById(stitchId) || initialStitch) : initialStitch
@@ -49,6 +50,7 @@ export default function UploadModal({
     setScheduledFor('')
     setStitchId(initialStitch?.id || '')
     setDraftSaved(false)
+    setPriceUsd('')
   }
 
   const onPick = (e) => {
@@ -70,6 +72,7 @@ export default function UploadModal({
     chapters: parseChaptersInput(chapters),
     captionsText: captionsText.trim(),
     scheduledFor: scheduledFor || null,
+    priceUsd: priceUsd ? Number(priceUsd) : 0,
   })
 
   const submit = async (asDraft = false) => {
@@ -171,6 +174,19 @@ export default function UploadModal({
 
           <label className="block text-xs text-zinc-400">Tags
             <input value={tags} onChange={(e) => setTags(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-zinc-700 bg-[#000000] px-3 text-sm text-white" placeholder="music, gaming, comedy" />
+          </label>
+
+          <label className="block text-xs text-zinc-400">Price (USD, optional)
+            <input
+              type="number"
+              min="0"
+              max="50"
+              step="0.01"
+              value={priceUsd}
+              onChange={(e) => setPriceUsd(e.target.value)}
+              className="mt-1 w-full h-10 rounded-lg border border-zinc-700 bg-[#000000] px-3 text-sm text-white"
+              placeholder="0 = free. Subscribe is always free."
+            />
           </label>
 
           <SoundPicker value={sound} onChange={setSound} onOpenAuth={onOpenAuth} />

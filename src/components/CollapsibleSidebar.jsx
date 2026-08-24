@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Radio,
   Home,
@@ -44,7 +44,12 @@ const itemCls = (active) =>
 
 function NavBtn({ active, onClick, icon: Icon, label, collapsed }) {
   return (
-    <button type="button" onClick={onClick} className={itemCls(active)} title={collapsed ? label : undefined}>
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(itemCls(active), collapsed && 'justify-center px-0')}
+      title={collapsed ? label : undefined}
+    >
       {Icon && <Icon className={cn('h-4 w-4 shrink-0', active && 'text-white')} />}
       {!collapsed && <span className="truncate">{label}</span>}
     </button>
@@ -74,6 +79,7 @@ export default function CollapsibleSidebar({
   const { isAuthenticated, user } = useAuth()
   const [moreOpen, setMoreOpen] = useState(false)
   const [liveNow, setLiveNow] = useState(() => (lsGet('live_board', []) || []).filter((b) => b.isLive))
+  const [recommendedCreators, setRecommendedCreators] = useState(() => listSidebarCreators(8))
 
   const refreshLiveBoard = useCallback(() => {
     setLiveNow((lsGet('live_board', []) || []).filter((b) => b.isLive))
@@ -85,10 +91,10 @@ export default function CollapsibleSidebar({
     return () => clearInterval(interval)
   }, [refreshLiveBoard, currentView])
 
-  const lastCreators = useRef([])
-  const rankedCreators = listSidebarCreators(5)
-  if (rankedCreators.length) lastCreators.current = rankedCreators
-  const recommendedCreators = rankedCreators.length ? rankedCreators : lastCreators.current
+  useEffect(() => {
+    const next = listSidebarCreators(8)
+    if (next.length) setRecommendedCreators(next)
+  }, [currentView])
 
   const go = (id) => {
     onNavigate(id)
@@ -101,7 +107,7 @@ export default function CollapsibleSidebar({
   }
 
   const body = (
-    <div className="flex flex-col h-full text-zinc-300">
+    <div className="flex flex-col h-full min-h-0 text-zinc-300">
       <div className="flex items-center justify-between p-2.5 border-b border-[#23232c] md:hidden">
         <span className="text-xs font-semibold text-zinc-200">Menu</span>
         <button type="button" onClick={onMobileClose} className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-[#1e1e27]" aria-label="Close menu">
@@ -120,7 +126,7 @@ export default function CollapsibleSidebar({
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto py-2 px-1.5 space-y-4">
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden py-2 px-1.5 space-y-4">
         <nav className="space-y-0.5">
           <NavBtn collapsed={collapsed} active={currentView === 'home'} onClick={() => go('home')} icon={Home} label="Recommended" />
           <NavBtn collapsed={collapsed} active={currentView === 'clips' || currentView === 'shorts'} onClick={() => go('clips')} icon={Clapperboard} label="Clips" />
@@ -170,24 +176,20 @@ export default function CollapsibleSidebar({
           )}
         </div>
 
-        {!collapsed && (
-          <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
-            <p className="px-2.5 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Library</p>
-            <NavBtn collapsed={collapsed} active={currentView === 'history'} onClick={() => go('history')} icon={History} label="History" />
-            <NavBtn collapsed={collapsed} active={currentView === 'watch-later'} onClick={() => go('watch-later')} icon={Clock} label="Watch later" />
-            <NavBtn collapsed={collapsed} active={currentView === 'liked'} onClick={() => go('liked')} icon={ThumbsUp} label="Liked" />
-            <NavBtn collapsed={collapsed} active={currentView === 'playlists'} onClick={() => go('playlists')} icon={ListVideo} label="Playlists" />
-          </div>
-        )}
-
-        {!collapsed && (
-          <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
-            <NavBtn collapsed={collapsed} active={currentView === 'subscriptions'} onClick={() => go('subscriptions')} icon={Users} label="Following" />
-          </div>
-        )}
+        <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
+          {!collapsed && <p className="px-2.5 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Library</p>}
+          <NavBtn collapsed={collapsed} active={currentView === 'history'} onClick={() => go('history')} icon={History} label="History" />
+          <NavBtn collapsed={collapsed} active={currentView === 'watch-later'} onClick={() => go('watch-later')} icon={Clock} label="Watch later" />
+          <NavBtn collapsed={collapsed} active={currentView === 'liked'} onClick={() => go('liked')} icon={ThumbsUp} label="Liked" />
+          <NavBtn collapsed={collapsed} active={currentView === 'playlists'} onClick={() => go('playlists')} icon={ListVideo} label="Playlists" />
+        </div>
 
         <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
-          {!collapsed && <p className="px-2.5 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Creators</p>}
+          <NavBtn collapsed={collapsed} active={currentView === 'subscriptions'} onClick={() => go('subscriptions')} icon={Users} label="Subscribed" />
+        </div>
+
+        <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
+          {!collapsed && <p className="px-2.5 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Top creators</p>}
           {isAuthenticated && (
             <>
               <NavBtn collapsed={collapsed} active={currentView === 'dashboard'} onClick={() => go('dashboard')} icon={LayoutDashboard} label="Creator Dashboard" />
@@ -198,68 +200,70 @@ export default function CollapsibleSidebar({
               <NavBtn collapsed={collapsed} active={currentView === 'settings'} onClick={() => go('settings')} icon={ShieldCheck} label="Creator settings" />
             </>
           )}
-          <NavBtn collapsed={collapsed} active={currentView === 'creators'} onClick={() => go('creators')} icon={Users} label="All creators" />
-          {!collapsed && recommendedCreators.length === 0 && (
-            <p className="px-2.5 text-[11px] text-zinc-600 pt-1">No one has posted yet.</p>
-          )}
-          {!collapsed && recommendedCreators.length > 0 && (
-            <>
-              <p className="px-2.5 pt-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Recommended</p>
-              {recommendedCreators.map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => {
-                    if (typeof window !== 'undefined' && window.__clipsOpenProfile) {
-                      window.__clipsOpenProfile(c.handle, c.id)
-                      if (window.innerWidth < 768) onMobileClose?.()
-                    } else {
-                      go('creators')
-                    }
-                  }}
-                  className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left hover:bg-[#181820]"
-                >
-                  <ChannelAvatar src={c.avatarUrl} name={c.displayName} size={28} official={isOfficialCreator(c.id, c.handle)} />
-                  <span className="min-w-0">
-                    <span className="flex items-center gap-1 text-[12px] text-zinc-200 truncate">
-                      {c.displayName}
-                      {isOfficialCreator(c.id, c.handle) ? <VerifiedBadge /> : null}
-                    </span>
-                    <span className="block text-[11px] text-[#aaa] truncate">@{c.handle}</span>
+          <NavBtn collapsed={collapsed} active={currentView === 'creators'} onClick={() => go('creators')} icon={Users} label="Top creators" />
+          {recommendedCreators.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              title={c.displayName || c.handle}
+              onClick={() => {
+                if (typeof window !== 'undefined' && window.__clipsOpenProfile) {
+                  window.__clipsOpenProfile(c.handle, c.id)
+                  if (window.innerWidth < 768) onMobileClose?.()
+                } else {
+                  go('creators')
+                }
+              }}
+              className={cn(
+                'w-full flex items-center rounded-lg text-left hover:bg-[#181820]',
+                collapsed ? 'justify-center py-1.5' : 'gap-2.5 px-2.5 py-1.5'
+              )}
+            >
+              <ChannelAvatar src={c.avatarUrl} name={c.displayName} size={collapsed ? 32 : 28} official={!collapsed && isOfficialCreator(c.id, c.handle)} />
+              {!collapsed && (
+                <span className="min-w-0">
+                  <span className="flex items-center gap-1 text-[12px] text-zinc-200 truncate">
+                    {c.displayName}
+                    {isOfficialCreator(c.id, c.handle) ? <VerifiedBadge /> : null}
                   </span>
-                </button>
-              ))}
-            </>
-          )}
+                  <span className="block text-[11px] text-[#aaa] truncate">@{c.handle}</span>
+                </span>
+              )}
+            </button>
+          ))}
         </div>
 
-        {!collapsed && (
-          <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
+        <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
+          {collapsed ? (
+            <button type="button" onClick={() => setMoreOpen((v) => !v)} className={itemCls(false)} title="More">
+              {moreOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            </button>
+          ) : (
             <button type="button" onClick={() => setMoreOpen((v) => !v)} className={itemCls(false)}>
               {moreOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
               <span>More</span>
             </button>
-            {moreOpen && (
-              <div className="ml-2 space-y-0.5 border-l border-[#23232c] pl-2">
-                <NavBtn collapsed={collapsed} active={currentView === 'stats'} onClick={() => go('stats')} icon={Activity} label="Stats" />
-                <NavBtn collapsed={collapsed} active={currentView === 'support'} onClick={() => go('support')} icon={LifeBuoy} label="Support" />
-                {isAuthenticated && user?.creatorStatus !== 'approved' && (
-                  <NavBtn collapsed={collapsed} active={currentView === 'creator-apply'} onClick={() => go('creator-apply')} icon={ShieldCheck} label="Apply to create" />
-                )}
-                <NavBtn collapsed={collapsed} active={currentView === 'advertise' || currentView === 'advertiser-portal'} onClick={() => go('advertise')} icon={Megaphone} label="Advertise with us" />
-                <NavBtn collapsed={collapsed} active={currentView === 'about'} onClick={() => go('about')} icon={BookOpen} label="About" />
-                <NavBtn collapsed={collapsed} active={currentView === 'help'} onClick={() => go('help')} icon={HelpCircle} label="Help" />
-                <NavBtn collapsed={collapsed} active={currentView === 'legal-tos'} onClick={() => go('legal-tos')} icon={FileText} label="Terms of Service" />
-                <NavBtn collapsed={collapsed} active={currentView === 'legal-privacy'} onClick={() => go('legal-privacy')} icon={Shield} label="Privacy Policy" />
-                <NavBtn collapsed={collapsed} active={currentView === 'legal-creator'} onClick={() => go('legal-creator')} icon={Scale} label="Creator Agreement" />
-                <NavBtn collapsed={collapsed} active={currentView === 'legal-community'} onClick={() => go('legal-community')} icon={Users} label="Community Guidelines" />
-                {(user?.isPlatformAdmin || user?.id === 'owner-cs1') && (
-                  <NavBtn collapsed={collapsed} active={currentView === 'admin'} onClick={() => go('admin')} icon={ShieldCheck} label="Admin" />
-                )}
-              </div>
-            )}
-          </div>
-        )}
+          )}
+          {moreOpen && (
+            <div className={cn('space-y-0.5', collapsed ? '' : 'ml-2 border-l border-[#23232c] pl-2')}>
+              <NavBtn collapsed={collapsed} active={currentView === 'stats'} onClick={() => go('stats')} icon={Activity} label="Stats" />
+              <NavBtn collapsed={collapsed} active={currentView === 'support'} onClick={() => go('support')} icon={LifeBuoy} label="Support" />
+              {isAuthenticated && user?.creatorStatus !== 'approved' && (
+                <NavBtn collapsed={collapsed} active={currentView === 'creator-apply'} onClick={() => go('creator-apply')} icon={ShieldCheck} label="Apply to create" />
+              )}
+              <NavBtn collapsed={collapsed} active={currentView === 'advertise' || currentView === 'advertiser-portal'} onClick={() => go('advertise')} icon={Megaphone} label="Advertise with us" />
+              <NavBtn collapsed={collapsed} active={currentView === 'about'} onClick={() => go('about')} icon={BookOpen} label="About" />
+              <NavBtn collapsed={collapsed} active={currentView === 'help'} onClick={() => go('help')} icon={HelpCircle} label="Help" />
+              <NavBtn collapsed={collapsed} active={currentView === 'legal-tos'} onClick={() => go('legal-tos')} icon={FileText} label="Terms of Service" />
+              <NavBtn collapsed={collapsed} active={currentView === 'legal-privacy'} onClick={() => go('legal-privacy')} icon={Shield} label="Privacy Policy" />
+              <NavBtn collapsed={collapsed} active={currentView === 'legal-creator'} onClick={() => go('legal-creator')} icon={Scale} label="Creator Agreement" />
+              <NavBtn collapsed={collapsed} active={currentView === 'legal-community'} onClick={() => go('legal-community')} icon={Users} label="Community Guidelines" />
+              {(user?.isPlatformAdmin || user?.id === 'owner-cs1') && (
+                <NavBtn collapsed={collapsed} active={currentView === 'admin'} onClick={() => go('admin')} icon={ShieldCheck} label="Admin" />
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="mt-auto shrink-0 border-t border-[#23232c] p-2">
@@ -282,7 +286,7 @@ export default function CollapsibleSidebar({
     <>
       <aside
         className={cn(
-          'hidden md:block shrink-0 h-[calc(100vh-3.5rem)] sticky top-14 bg-[#000000] border-r border-[#23232c] transition-all duration-200 z-30',
+          'hidden md:flex flex-col shrink-0 h-[calc(100vh-3.5rem)] sticky top-14 bg-[#000000] border-r border-[#23232c] transition-all duration-200 z-30 overflow-hidden',
           collapsed ? 'w-14' : 'w-60'
         )}
       >

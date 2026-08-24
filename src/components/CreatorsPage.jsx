@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { Users } from 'lucide-react'
 import { listSidebarCreators } from '../lib/contentService'
 import { useContentSyncTick } from '../lib/useContentSync'
@@ -8,16 +8,16 @@ import { isOfficialCreator } from '../lib/uiFormat'
 
 export default function CreatorsPage() {
   const syncTick = useContentSyncTick()
-  const lastGood = useRef([])
-  const ranked = useMemo(() => {
+  const [ranked, setRanked] = useState(() => listSidebarCreators(24))
+
+  useEffect(() => {
     const next = listSidebarCreators(24)
-    if (next.length) lastGood.current = next
-    return next.length ? next : lastGood.current
+    if (next.length) setRanked(next)
   }, [syncTick])
 
   return (
     <div className="p-4 md:p-6 max-w-[720px] mx-auto">
-      <h1 className="text-2xl font-bold text-white">Creators</h1>
+      <h1 className="text-2xl font-bold text-white">Top creators</h1>
       <p className="text-sm text-[#aaa] mt-1 mb-6">
         People who posted, ranked by watch time, rewatches, and skips.
       </p>

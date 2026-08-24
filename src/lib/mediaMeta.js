@@ -30,6 +30,11 @@ export function parsePostedTime(iso) {
   return Number.isFinite(t) && t !== 0 ? t : 0
 }
 
+export function isLibraryRecord(rec) {
+  if (!rec) return false
+  return String(rec.id || '').startsWith('org-') || rec.origin === 'public-domain-org'
+}
+
 export function olderIso(a, b) {
   const ta = parsePostedTime(a)
   const tb = parsePostedTime(b)
@@ -38,9 +43,20 @@ export function olderIso(a, b) {
   return ta <= tb ? a : b
 }
 
+function noonTodayIso() {
+  const d = new Date()
+  d.setHours(12, 0, 0, 0)
+  return d.toISOString()
+}
+
 export function postedAtOf(item) {
   if (!item || typeof item !== 'object') return ''
-  return item.publishedAt || item.createdAt || item.importedAt || ''
+  if (isLibraryRecord(item)) return noonTodayIso()
+  const raw = item.publishedAt || item.createdAt || item.importedAt || ''
+  const t = parsePostedTime(raw)
+  // Cloud merges used to keep Unix-epoch / 1969 stamps. Those are not real post dates.
+  if (t && t < Date.parse('2000-01-01T00:00:00.000Z')) return noonTodayIso()
+  return raw
 }
 
 export function formatPostedExact(iso) {
@@ -57,12 +73,11 @@ export function formatPostedAt(iso, now = Date.now()) {
   const t = parsePostedTime(iso)
   if (!t) return ''
   const diff = now - t
-  if (diff < 15_000) return 'just now'
   const a = new Date(t)
   const b = new Date(now)
-  if (a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()) {
-    return 'today'
-  }
+  const sameDay = a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
+  if (diff >= 0 && diff < 15_000) return 'just now'
+  if (sameDay) return 'today'
   const mins = Math.floor(diff / 60_000)
   if (diff < 60_000) return `${Math.max(1, Math.floor(diff / 1000))}s ago`
   if (mins < 60) return `${mins}m ago`
