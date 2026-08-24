@@ -17,6 +17,7 @@ export function useLiveStreamAds(channelId, { isHost = false } = {}) {
   const play = useCallback((ad, nextSlot) => {
     if (!ad?.mediaUrl) return
     if (showing.current) {
+      if (nextSlot === 'live-midroll' && pending.current?.slot === 'live-midroll') return
       pending.current = { ad, slot: nextSlot }
       return
     }

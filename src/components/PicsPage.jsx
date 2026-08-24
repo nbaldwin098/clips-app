@@ -247,9 +247,9 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
             const row = mixed[index]
             if (row?.kind === 'ad') {
               return (
-                <div className="h-full w-full max-w-md mx-auto bg-black flex flex-col">
-                  <p className="shrink-0 px-3 py-2 text-[11px] text-white/70">Sponsored · swipe for the next pic</p>
-                  <div className="flex-1 min-h-0">
+                <div className="h-full w-full bg-black flex flex-col items-center justify-center p-4">
+                  <p className="shrink-0 pb-3 text-[11px] text-white/70">Sponsored · swipe for the next pic</p>
+                  <div className="w-full max-w-md aspect-square overflow-hidden bg-[#111]">
                     <ExoClickDisplay zoneId={row.ad?.zoneId} />
                   </div>
                 </div>
@@ -283,7 +283,7 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1 p-1 pb-20">
           {mixed.map((row) => {
             if (row.kind === 'ad') {
-              return <InFeedAd key={row.key} ad={row.ad} variant="pic" />
+              return <InFeedAd key={row.key} ad={row.ad} variant="pic-row" />
             }
             const pic = row.item
             return (

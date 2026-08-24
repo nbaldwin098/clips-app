@@ -31,9 +31,14 @@ export default function ExoClickDisplay({
   }, [rid, zoneId])
 
   return (
-    <div className={`relative h-full w-full bg-[#111] overflow-hidden ${className}`}>
+    <div className={`relative h-full w-full overflow-hidden bg-[#111] flex items-center justify-center ${className}`}>
       <span className="absolute top-1.5 left-1.5 z-10 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-black/70 text-white">Ad</span>
-      <ins className={insClass} data-zoneid={String(zoneId)} data-instance={rid} />
+      <ins
+        className={`${insClass} max-h-full max-w-full`}
+        data-zoneid={String(zoneId)}
+        data-instance={rid}
+        style={{ display: 'block', maxWidth: '100%', maxHeight: '100%' }}
+      />
     </div>
   )
 }

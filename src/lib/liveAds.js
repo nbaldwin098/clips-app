@@ -6,6 +6,8 @@ import { lsGet, lsSet } from './storage'
 import { isChannelMod } from './channelStaff'
 
 export const LIVE_VIEWER_AD_DELAY_SEC = 30
+/** Minimum gap between mid-stream commercial breaks (!ad, Run ad, repeat timers). */
+export const LIVE_AD_COOLDOWN_SEC = 300
 export const EXOCLICK_LIVE_CREATOR_ZONE = '6010934'
 export const EXOCLICK_LIVE_CREATOR_VAST_URL = 'https://s.magsrv.com/v1/vast.php?idz=6010934'
 
@@ -22,6 +24,7 @@ export function getLiveAdState(channelId) {
     schedules: Array.isArray(row.schedules) ? row.schedules : [],
     cue: row.cue || null,
     autoFrom: Number(row.autoFrom) || 0,
+    lastCueAt: Number(row.lastCueAt) || 0,
     updatedAt: row.updatedAt || '',
   }
 }
@@ -42,16 +45,41 @@ function stampLiveBoard(channelId, cue) {
   if (state?.isLive) lsSet(`live_state_${channelId}`, { ...state, adCue: cue })
 }
 
-export function cueLiveAd(channelId, zone = 'live-creator') {
-  if (!channelId) return null
+export function liveAdLockedUntil(channelId, now = Date.now()) {
+  const last = Number(getLiveAdState(channelId).lastCueAt || 0)
+  if (!last) return 0
+  return last + LIVE_AD_COOLDOWN_SEC * 1000
+}
+
+export function liveAdCooldownRemaining(channelId, now = Date.now()) {
+  return Math.max(0, liveAdLockedUntil(channelId, now) - now)
+}
+
+export function clampLiveAdIntervalSec(sec) {
+  const n = Math.max(0, Number(sec) || 0)
+  if (!n) return 0
+  return Math.max(LIVE_AD_COOLDOWN_SEC, n)
+}
+
+export function cueLiveAd(channelId, zone = 'live-creator', now = Date.now()) {
+  if (!channelId) return { ok: false, error: 'No live channel.' }
+  const waitMs = liveAdCooldownRemaining(channelId, now)
+  if (waitMs > 0) {
+    const waitSec = Math.ceil(waitMs / 1000)
+    return {
+      ok: false,
+      waitSec,
+      error: `Wait ${formatWait(waitSec)} between commercial breaks (minimum 5 minutes).`,
+    }
+  }
   const cue = {
-    id: `cue-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    at: Date.now(),
+    id: `cue-${now}-${Math.random().toString(36).slice(2, 7)}`,
+    at: now,
     zone,
   }
-  setLiveAdState(channelId, { cue })
+  setLiveAdState(channelId, { cue, lastCueAt: now })
   stampLiveBoard(channelId, cue)
-  return cue
+  return { ok: true, cue }
 }
 
 export function readLiveAdCue(channelId) {
@@ -63,13 +91,16 @@ export function readLiveAdCue(channelId) {
 export function scheduleLiveAd(channelId, atMs) {
   const t = Number(atMs)
   if (!channelId || !t) return { ok: false, error: 'Pick a time.' }
-  if (t < Date.now() + 5000) return { ok: false, error: 'Schedule at least 5 seconds ahead.' }
-  const schedules = [...getLiveAdState(channelId).schedules, { id: `sch-${t}`, at: t }]
-    .filter((s) => s.at > Date.now())
+  const now = Date.now()
+  const earliest = Math.max(now + 5000, liveAdLockedUntil(channelId, now))
+  const at = Math.max(t, earliest)
+  if (at < now + 5000) return { ok: false, error: 'Schedule at least 5 seconds ahead.' }
+  const schedules = [...getLiveAdState(channelId).schedules, { id: `sch-${at}`, at }]
+    .filter((s) => s.at > now)
     .sort((a, b) => a.at - b.at)
     .slice(0, 20)
   setLiveAdState(channelId, { schedules })
-  return { ok: true, at: t }
+  return { ok: true, at }
 }
 
 export function cancelLiveAdSchedule(channelId, id) {
@@ -79,26 +110,32 @@ export function cancelLiveAdSchedule(channelId, id) {
 }
 
 export function setLiveAdInterval(channelId, sec) {
-  const n = Math.max(0, Number(sec) || 0)
+  const n = clampLiveAdIntervalSec(sec)
   setLiveAdState(channelId, { intervalSec: n, autoFrom: n ? Date.now() : 0 })
   return n
 }
 
 export function consumeDueSchedule(channelId, now = Date.now()) {
+  if (liveAdCooldownRemaining(channelId, now) > 0) return false
   const st = getLiveAdState(channelId)
   const due = (st.schedules || []).filter((s) => s.at <= now)
   if (!due.length) return false
-  setLiveAdState(channelId, { schedules: st.schedules.filter((s) => s.at > now) })
-  cueLiveAd(channelId, 'live-creator')
+  const rest = st.schedules.filter((s) => s.at > now)
+  const cued = cueLiveAd(channelId, 'live-creator', now)
+  if (!cued.ok) return false
+  setLiveAdState(channelId, { schedules: rest, cue: cued.cue, lastCueAt: now })
   return true
 }
 
 export function consumeDueInterval(channelId, now = Date.now()) {
+  if (liveAdCooldownRemaining(channelId, now) > 0) return false
   const st = getLiveAdState(channelId)
-  if (!st.intervalSec || !st.autoFrom) return false
-  if (now - st.autoFrom < st.intervalSec * 1000) return false
-  setLiveAdState(channelId, { autoFrom: now })
-  cueLiveAd(channelId, 'live-creator')
+  const interval = clampLiveAdIntervalSec(st.intervalSec)
+  if (!interval || !st.autoFrom) return false
+  if (now - st.autoFrom < interval * 1000) return false
+  const cued = cueLiveAd(channelId, 'live-creator', now)
+  if (!cued.ok) return false
+  setLiveAdState(channelId, { intervalSec: interval, autoFrom: now, cue: cued.cue, lastCueAt: now })
   return true
 }
 
@@ -144,7 +181,9 @@ export function liveAdStatusText(channelId) {
   else bits.push('repeat is off')
   const upcoming = (st.schedules || []).filter((s) => s.at > Date.now())
   if (upcoming.length) bits.push(`${upcoming.length} scheduled`)
-  return `Live ads: ${bits.join(' · ')}. !ad now · !ad 5m · !ad every 15m · !ad off`
+  const wait = liveAdCooldownRemaining(channelId)
+  if (wait > 0) bits.push(`next break in ${formatWait(wait / 1000)}`)
+  return `Live ads: ${bits.join(' · ')}. Minimum 5 minutes between breaks. !ad now · !ad 5m · !ad every 15m · !ad off`
 }
 
 export function applyAdSlash(channelId, user, text) {
@@ -158,22 +197,26 @@ export function applyAdSlash(channelId, user, text) {
     return { ok: true, botReply: liveAdStatusText(channelId) }
   }
   if (parsed.action === 'now') {
-    cueLiveAd(channelId, 'live-creator')
-    return { ok: true, botReply: 'Playing a mid-stream ad now.' }
+    const cued = cueLiveAd(channelId, 'live-creator')
+    if (!cued.ok) return { ok: false, botReply: cued.error }
+    return { ok: true, botReply: 'Playing a mid-stream ad now. Next break in 5 minutes.' }
   }
   if (parsed.action === 'off') {
     setLiveAdInterval(channelId, 0)
     return { ok: true, botReply: 'Stopped repeating live ads.' }
   }
   if (parsed.action === 'interval') {
-    setLiveAdInterval(channelId, parsed.sec)
-    return { ok: true, botReply: `Repeating a mid-stream ad every ${formatWait(parsed.sec)}.` }
+    const sec = clampLiveAdIntervalSec(parsed.sec)
+    setLiveAdInterval(channelId, sec)
+    const note = parsed.sec < LIVE_AD_COOLDOWN_SEC ? ' (raised to the 5 minute minimum)' : ''
+    return { ok: true, botReply: `Repeating a mid-stream ad every ${formatWait(sec)}.${note}` }
   }
   if (parsed.action === 'schedule') {
     const at = Date.now() + parsed.sec * 1000
     const res = scheduleLiveAd(channelId, at)
-    if (!res.ok) return res
-    return { ok: true, botReply: `Ad scheduled in ${formatWait(parsed.sec)}.` }
+    if (!res.ok) return { ok: false, botReply: res.error || 'Could not schedule.' }
+    const waitSec = Math.max(1, Math.round((res.at - Date.now()) / 1000))
+    return { ok: true, botReply: `Ad scheduled in ${formatWait(waitSec)}.` }
   }
   return { ok: false }
 }

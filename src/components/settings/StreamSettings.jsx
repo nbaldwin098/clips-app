@@ -138,8 +138,8 @@ export default function StreamSettings() {
             className="h-9 px-3 rounded-lg bg-white text-black text-xs font-semibold"
             onClick={() => {
               if (!user?.id) return
-              cueLiveAd(user.id, 'live-creator')
-              setAdNote('Ad queued. Open Live and watch the stage.')
+              const res = cueLiveAd(user.id, 'live-creator')
+              setAdNote(res.ok ? 'Ad queued. Open Live and watch the stage. Next break in 5 minutes.' : (res.error || 'Could not run ad.'))
               refreshAds()
             }}
           >
@@ -189,8 +189,8 @@ export default function StreamSettings() {
             onClick={() => {
               if (!user?.id) return
               const mins = Math.max(0, Number(adEveryMin) || 0)
-              setLiveAdInterval(user.id, mins ? Math.max(2, mins) * 60 : 0)
-              setAdNote(mins ? `Repeating every ${Math.max(2, mins)}m.` : 'Repeat is off.')
+              const used = setLiveAdInterval(user.id, mins ? mins * 60 : 0)
+              setAdNote(used ? `Repeating every ${Math.round(used / 60)}m (5 minute minimum).` : 'Repeat is off.')
               refreshAds()
             }}
           >
@@ -216,7 +216,7 @@ export default function StreamSettings() {
           <p className="text-[11px] text-zinc-600">No one-off times queued.</p>
         )}
         <p className="text-[11px] text-zinc-500 leading-relaxed">
-          Chat (creator or mod): <code className="text-zinc-300">!ad</code> now, <code className="text-zinc-300">!ad 5m</code> schedule, <code className="text-zinc-300">!ad every 15m</code> repeat, <code className="text-zinc-300">!ad off</code>, <code className="text-zinc-300">!ads</code> status.
+          Chat (creator or mod): <code className="text-zinc-300">!ad</code> now, <code className="text-zinc-300">!ad 5m</code> schedule, <code className="text-zinc-300">!ad every 15m</code> repeat, <code className="text-zinc-300">!ad off</code>, <code className="text-zinc-300">!ads</code> status. Mid-stream ads cannot run more than once every 5 minutes, including repeat timers.
         </p>
         {adNote ? <p className="text-[11px] text-white">{adNote}</p> : null}
       </section>
