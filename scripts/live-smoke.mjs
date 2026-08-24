@@ -245,7 +245,7 @@ const scriptsSrc = readFileSync(new URL('../src/data/supabaseScripts.js', import
 assert(scriptsSrc.includes('0009_named_activity.sql'), 'help can copy 0009')
 assert(helpSrc.includes('0009'), 'help mentions 0009')
 const namedAct2 = readFileSync(new URL('../src/lib/namedAccountActivity.js', import.meta.url), 'utf8')
-assert(namedAct2.includes('isSupabaseConfigured'), 'browser bots stop when the database job exists')
+assert(namedAct2.includes('namedCloudJobReady'), 'browser bots run until the supabase job tables exist')
 const graphSrc2 = readFileSync(new URL('../src/lib/graphSync.js', import.meta.url), 'utf8')
 assert(graphSrc2.includes('syncPublicEngagementFromCloud'), 'clients pull like tallies without signing in')
 assert(graphSrc2.includes('vote_tallies'), 'like counts come from vote_tallies')

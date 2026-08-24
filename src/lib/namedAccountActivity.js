@@ -13,7 +13,7 @@ import { ensureUpvote, recordView, addWatchSeconds, getUserVote } from './engage
 import { recordInteraction, startSession } from './algorithmEngine'
 import { recordWatchProgress } from './watchProgress'
 import { notifyContentChanged } from './contentSync'
-import { isSupabaseConfigured } from './supabaseClient'
+import { getSupabase, isSupabaseConfigured } from './supabaseClient'
 
 const CURSOR_KEY = 'named_activity_cursor'
 const VIEWED_KEY = 'named_activity_viewed'
@@ -149,10 +149,24 @@ function stepNamedActivity() {
   if (ticks % 6 === 0) notifyContentChanged()
 }
 
-export function startNamedAccountActivity() {
+export { stepNamedActivity }
+
+async function namedCloudJobReady() {
+  if (!isSupabaseConfigured()) return false
+  try {
+    const sb = await getSupabase()
+    if (!sb) return false
+    const { error, count } = await sb.from('named_people').select('n', { count: 'exact', head: true })
+    return !error && Number(count) > 0
+  } catch {
+    return false
+  }
+}
+
+export async function startNamedAccountActivity() {
   if (typeof window === 'undefined') return
-  if (isSupabaseConfigured()) return
   if (timer) return
+  if (await namedCloudJobReady()) return
   stepNamedActivity()
   timer = window.setInterval(stepNamedActivity, TICK_MS)
 }
