@@ -303,6 +303,9 @@ function ClipSlide({
             </button>
           </div>
           <p className="text-sm text-white mt-2 line-clamp-2 drop-shadow pr-16 md:pr-4">{item.title || 'Untitled'}</p>
+          {item.description && String(item.description).trim() !== String(item.title || '').trim() ? (
+            <p className="text-[12px] text-white/80 mt-1 line-clamp-2 drop-shadow pr-16 md:pr-4">{item.description}</p>
+          ) : null}
           {item.soundTitle ? (
             <button
               type="button"
@@ -315,7 +318,7 @@ function ClipSlide({
           ) : null}
           {showBanner ? (
             <div className="mt-2 mr-16 md:mr-4 min-h-[90px] rounded-lg overflow-hidden bg-black/40" onClick={(e) => e.stopPropagation()}>
-              <ExoClickDisplay zoneId={EXOCLICK_BANNER_ZONE} insClass={EXOCLICK_BANNER_CLASS} className="min-h-[90px]" />
+              <ExoClickDisplay zoneId={EXOCLICK_BANNER_ZONE} insClass={EXOCLICK_BANNER_CLASS} className="min-h-[90px] h-[90px]" />
             </div>
           ) : null}
         </div>

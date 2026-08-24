@@ -358,7 +358,7 @@ export function mixFeedAds(items, placement) {
   return out
 }
 
-/** Banner under a clip: about every 15 clips, never on or next to a full in-feed ad. */
+/** Banner under a clip: about every 15 clips (in the 10–20 range), never on or next to a full in-feed ad. */
 export function clipBannerAllowed(mixed, index) {
   if (!settingAllows('clip-banner')) return false
   const row = mixed?.[index]
