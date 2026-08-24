@@ -59,15 +59,33 @@ export function createEmptyTaste() {
   }
 }
 
+export function normalizeTaste(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return createEmptyTaste()
+  return {
+    ...createEmptyTaste(),
+    ...raw,
+    signalAffinity: { ...PRIOR_WEIGHTS, ...(raw.signalAffinity || {}) },
+    tagAffinity: { ...(raw.tagAffinity || {}) },
+    platformAffinity: { ...(raw.platformAffinity || {}) },
+    creatorAffinity: { ...(raw.creatorAffinity || {}) },
+    recentPositiveIds: Array.isArray(raw.recentPositiveIds) ? raw.recentPositiveIds : [],
+    recentNegativeIds: Array.isArray(raw.recentNegativeIds) ? raw.recentNegativeIds : [],
+    recentViewedCreatorIds: Array.isArray(raw.recentViewedCreatorIds) ? raw.recentViewedCreatorIds : [],
+    sessions: Number(raw.sessions) || 0,
+    totalInteractions: Number(raw.totalInteractions) || 0,
+  }
+}
+
 export function loadTaste(userId = 'anon') {
-  const all = lsGet('taste_profiles', {})
-  return all[userId] || createEmptyTaste()
+  const all = lsGet('taste_profiles', {}) || {}
+  return normalizeTaste(all[userId])
 }
 
 export function saveTaste(userId, taste) {
-  const all = lsGet('taste_profiles', {})
-  all[userId] = taste
-  lsSet('taste_profiles', all)
+  const all = lsGet('taste_profiles', {}) || {}
+  const store = all && typeof all === 'object' && !Array.isArray(all) ? all : {}
+  store[userId] = normalizeTaste(taste)
+  lsSet('taste_profiles', store)
 }
 
 function normalizeWeights(w) {
@@ -279,26 +297,27 @@ export function shouldGraduate(quality, velocity, tierName) {
  * Calculate user affinity with topic tags, platform, and creator
  */
 function affinityForContent(taste, content) {
+  const profile = normalizeTaste(taste)
   let a = 1
   const tags = content.tags || []
   if (tags.length) {
     let tagSum = 0
-    for (const t of tags) tagSum += taste.tagAffinity[t] || 0
+    for (const t of tags) tagSum += profile.tagAffinity[t] || 0
     a += tagSum / tags.length
   }
-  if (content.platform && taste.platformAffinity[content.platform]) {
-    a += taste.platformAffinity[content.platform] * 0.5
+  if (content.platform && profile.platformAffinity[content.platform]) {
+    a += profile.platformAffinity[content.platform] * 0.5
   }
   const cid = content.creatorId || content.userId
-  if (cid && taste.creatorAffinity[cid]) {
-    a += taste.creatorAffinity[cid] * 0.7
+  if (cid && profile.creatorAffinity[cid]) {
+    a += profile.creatorAffinity[cid] * 0.7
   }
-  if (taste.recentNegativeIds.includes(content.id)) a *= 0.20
-  if (taste.recentPositiveIds.includes(content.id)) a *= 0.50
+  if (profile.recentNegativeIds.includes(content.id)) a *= 0.20
+  if (profile.recentPositiveIds.includes(content.id)) a *= 0.50
 
   // Creator repetition fatigue
-  if (cid && (taste.recentViewedCreatorIds || []).includes(cid)) {
-    const idx = taste.recentViewedCreatorIds.indexOf(cid)
+  if (cid && profile.recentViewedCreatorIds.includes(cid)) {
+    const idx = profile.recentViewedCreatorIds.indexOf(cid)
     if (idx === 0) a *= 0.45 // Just saw this creator
     else if (idx < 3) a *= 0.75
   }

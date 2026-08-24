@@ -6,6 +6,7 @@ import { isOwnerAccount } from '../data/ownerLogin'
 import { lsGet, lsSet, lsRemove } from './storage'
 import { safeHttpUrl } from './safeUrl'
 import { purgeDeadCatalog } from './catalogHealth'
+import { normalizeTaste } from './algorithmEngine'
 import { seedOfficialCatalog } from '../data/publicMediaSeed'
 import { seedNamedAccounts } from '../data/namedAccountsSeed'
 
@@ -106,6 +107,21 @@ export function healLocalState() {
     }
     lsSet('users_index', users)
   } catch {}
+
+  try {
+    const profiles = lsGet('taste_profiles', {}) || {}
+    if (profiles && typeof profiles === 'object' && !Array.isArray(profiles)) {
+      const healed = {}
+      for (const [userId, taste] of Object.entries(profiles)) {
+        healed[userId] = normalizeTaste(taste)
+      }
+      lsSet('taste_profiles', healed)
+    } else {
+      lsSet('taste_profiles', {})
+    }
+  } catch {
+    try { lsSet('taste_profiles', {}) } catch {}
+  }
 
   try {
     seedOfficialCatalog()

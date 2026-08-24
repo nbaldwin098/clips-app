@@ -217,6 +217,8 @@ assert(copySrc.includes('copyright@calabi.us') || copySrc.includes('ORG.copyrigh
 assert(!copySrc.includes('platform.internal'), 'no internal placeholder emails')
 
 const algoSrc = readFileSync(new URL('../src/lib/algorithmEngine.js', import.meta.url), 'utf8')
+assert(algoSrc.includes('normalizeTaste'), 'taste profiles heal missing creator affinity maps')
+assert(algoSrc.includes('creatorAffinity: { ...(raw.creatorAffinity || {}) }'), 'taste profiles default creator affinity')
 assert(algoSrc.includes('explorationRoll'), 'for you exploration is session-stable')
 assert(!algoSrc.includes('Math.random()'), 'ranker does not reshuffle every render')
 const homeSrc = readFileSync(new URL('../src/components/HomeFeed.jsx', import.meta.url), 'utf8')
