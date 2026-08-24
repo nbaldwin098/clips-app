@@ -2,6 +2,7 @@ import { lsGet, lsSet } from './storage'
 import { notifyNewLike, notifyNewSubscriber, notifyPremium, notifyMentions } from './notifications'
 import { notifyContentChanged } from './contentSync'
 import { pushFollow, pushVote } from './graphSync'
+import { recordHourView } from './hourViewEvents'
 
 const LIKES = 'engagement_likes'
 const USER_VOTES = 'engagement_votes'
@@ -79,6 +80,7 @@ export function recordView(contentId) {
   const all = lsGet(VIEWS, {})
   all[contentId] = (all[contentId] || 0) + 1
   lsSet(VIEWS, all)
+  recordHourView(contentId)
   return all[contentId]
 }
 

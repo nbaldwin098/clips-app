@@ -5,6 +5,7 @@ import { extractHashtags, mergeTags, parseClock, parseCaptionCues, isReleased, f
 import { parseRoute, buildHash } from '../src/lib/routes.js'
 import { sanitizeAuthError, normalizePhone } from '../src/lib/authBrand.js'
 import { findOwnerLogin, isLocalOwnerLogin, isOwnerAccount, OWNER_LOGIN } from '../src/data/ownerLogin.js'
+import { featuredWindowStart, nextFeaturedRefreshAt, lastHourRange, interleaveHourlyHits, HOURLY_PATTERN, HOURLY_VIDEO_COUNT, HOURLY_CLIP_COUNT, HOURLY_PIC_COUNT } from '../src/lib/hourWindow.js'
 
 let failed = 0
 function assert(cond, msg) {
@@ -434,6 +435,35 @@ assert(namedAct2.includes('setInterval'), 'named bots keep running in the open s
 const graphSrc2 = readFileSync(new URL('../src/lib/graphSync.js', import.meta.url), 'utf8')
 assert(graphSrc2.includes('syncPublicEngagementFromCloud'), 'clients pull like tallies without signing in')
 assert(graphSrc2.includes('vote_tallies'), 'like counts come from vote_tallies')
+
+const before31 = new Date(2026, 7, 24, 14, 10, 0).getTime()
+const at31 = new Date(2026, 7, 24, 14, 31, 0).getTime()
+const startBefore = new Date(featuredWindowStart(before31))
+assert(startBefore.getHours() === 13 && startBefore.getMinutes() === 31, 'before :31 the lineup is from last hour :31')
+const startAt = new Date(featuredWindowStart(at31))
+assert(startAt.getHours() === 14 && startAt.getMinutes() === 31, 'at :31 the lineup refreshes')
+assert(nextFeaturedRefreshAt(at31) === featuredWindowStart(at31) + 3600000, 'next refresh is one hour later')
+const range = lastHourRange(at31)
+assert(range.end - range.start === 3600000, 'ranking window is the previous hour')
+assert(HOURLY_PATTERN.filter((t) => t === 'video').length === HOURLY_VIDEO_COUNT, 'stage mix has 5 videos')
+assert(HOURLY_PATTERN.filter((t) => t === 'short').length === HOURLY_CLIP_COUNT, 'stage mix has 10 clips')
+assert(HOURLY_PATTERN.filter((t) => t === 'pic').length === HOURLY_PIC_COUNT, 'stage mix has 3 pics')
+const mixed = interleaveHourlyHits(
+  Array.from({ length: 5 }, (_, i) => ({ id: `v${i}`, type: 'video' })),
+  Array.from({ length: 10 }, (_, i) => ({ id: `c${i}`, type: 'short' })),
+  Array.from({ length: 3 }, (_, i) => ({ id: `p${i}`, type: 'pic' })),
+)
+assert(mixed.length === 18, 'hourly stage holds 18 posts when the catalog is full')
+assert(mixed.filter((i) => i.type === 'video').length === 5, 'interleave keeps 5 videos')
+assert(mixed.filter((i) => i.type === 'short').length === 10, 'interleave keeps 10 clips')
+assert(mixed.filter((i) => i.type === 'pic').length === 3, 'interleave keeps 3 pics')
+const homeSrc2 = readFileSync(new URL('../src/components/HomeFeed.jsx', import.meta.url), 'utf8')
+assert(homeSrc2.includes('HourlyHitsCarousel'), 'home puts the hourly stage under the search bar')
+const carouselSrc = readFileSync(new URL('../src/components/HourlyHitsCarousel.jsx', import.meta.url), 'utf8')
+assert(carouselSrc.includes('ChevronLeft') && carouselSrc.includes('ChevronRight'), 'hourly stage has twitch-style arrows')
+assert(carouselSrc.includes('New lineup at'), 'hourly stage says when it changes')
+const engagementHits = readFileSync(new URL('../src/lib/engagement.js', import.meta.url), 'utf8')
+assert(engagementHits.includes('recordHourView'), 'views in the last hour are counted for the stage')
 
 if (failed) {
   console.error(`${failed} failed`)

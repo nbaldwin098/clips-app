@@ -10,6 +10,7 @@ import ContentCard from './ContentCard'
 import TastePicker from './TastePicker'
 import Footer from './Footer'
 import FilterChips from './FilterChips'
+import HourlyHitsCarousel from './HourlyHitsCarousel'
 
 const FILTERS = [
   { id: 'all', label: 'All' },
@@ -35,7 +36,9 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onNavigate }) {
   }, [user?.id])
 
   return (
-    <div className="px-4 md:px-6 py-4 max-w-[1600px] mx-auto w-full space-y-6">
+    <div className="w-full">
+      <HourlyHitsCarousel onPlayItem={onPlayItem} onOpenPic={onOpenPic} />
+      <div className="px-4 md:px-6 py-4 max-w-[1600px] mx-auto w-full space-y-6">
       <FilterChips value={filter} onChange={setFilter} options={FILTERS} />
 
       {!picked && <TastePicker userId={user?.id} onDone={() => setPicked(true)} />}
@@ -103,6 +106,7 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onNavigate }) {
         <MediaShelves items={items} onPlayItem={onPlayItem} onOpenPic={onOpenPic} filter={filter} />
       )}
       <Footer onNavigate={onNavigate} />
+      </div>
     </div>
   )
 }
