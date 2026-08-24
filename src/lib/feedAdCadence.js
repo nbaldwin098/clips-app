@@ -88,11 +88,16 @@ export function mixPicFeedRows(list) {
   return out
 }
 
-export function clipBannerAllowedOnMixed(mixed, index) {
+/**
+ * `sinceBanner` is how many clips the viewer has scrolled since the last banner,
+ * so a short catalog on an endless reel still reaches a banner every 10 clips.
+ */
+export function clipBannerAllowedOnMixed(mixed, index, sinceBanner = 0) {
   const row = mixed?.[index]
   if (!row || row.kind === 'ad') return false
   if (mixed[index - 1]?.kind === 'ad' || mixed[index + 1]?.kind === 'ad') return false
   if (row.banner) return true
+  if (sinceBanner >= CLIP_BANNER_EVERY) return true
   const n = mixed.slice(0, index + 1).filter((r) => r.kind === 'item').length
   return n > 0 && n % CLIP_BANNER_EVERY === 0
 }

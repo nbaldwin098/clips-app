@@ -261,6 +261,7 @@ assert(cadenceSrc.includes('CLIP_AD_GAPS = [4, 5, 6]'), 'clip ads sit every 4-6 
 assert(cadenceSrc.includes('PIC_AD_GAPS = [6, 7, 8, 9, 10]'), 'pic ads sit every 6-10 items')
 assert(cadenceSrc.includes('randomGap'), 'ad gaps are random not fixed')
 assert(cadenceSrc.includes('CLIP_BANNER_EVERY = 10'), 'clip banners sit every 10 clips')
+assert(cadenceSrc.includes('sinceBanner >= CLIP_BANNER_EVERY'), 'banners count clips scrolled so a short catalog still reaches one')
 assert(shortsFeedSrc.includes('mixFeedAds'), 'clip player inserts ads between clips')
 assert(adEng.includes('clip-banner') && adEng.includes('pic-feed'), 'clip and pic placements exist')
 const adUnitsSrc = readFileSync(new URL('../src/components/AdUnits.jsx', import.meta.url), 'utf8')

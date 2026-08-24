@@ -422,6 +422,8 @@ export default function ShortsFeed({
   const mixed = useMemo(() => mixFeedAds(shuffleFeed(items), 'clip-feed'), [items])
   const [activeIdx, setActiveIdx] = useState(0)
   const [muted, setMuted] = useState(true)
+  const [bannerSlide, setBannerSlide] = useState(null)
+  const sinceBanner = useRef(0)
   const shownAt = useRef(Date.now())
   const prevIdx = useRef(0)
   const inPlayer = Boolean(focusId)
@@ -470,6 +472,15 @@ export default function ShortsFeed({
             creatorId: prev.creatorId || prev.userId,
           })
         }
+        if (i !== prevIdx.current && mixed[i]?.kind === 'item') {
+          sinceBanner.current += 1
+          if (clipBannerAllowed(mixed, i, sinceBanner.current)) {
+            sinceBanner.current = 0
+            setBannerSlide(i)
+          } else {
+            setBannerSlide(null)
+          }
+        }
         shownAt.current = Date.now()
         prevIdx.current = i
         setActiveIdx(i)
@@ -505,7 +516,7 @@ export default function ShortsFeed({
             onStitch={onStitch}
             onBack={backToGrid}
             onSearch={() => onNavigate?.('explore')}
-            showBanner={clipBannerAllowed(mixed, index)}
+            showBanner={(active && bannerSlide === index) || clipBannerAllowed(mixed, index)}
           />
         ) : null
       }}

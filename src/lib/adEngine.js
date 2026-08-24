@@ -335,11 +335,11 @@ export function mixFeedAds(items, placement) {
   return mapped
 }
 
-/** Banner under a clip every 10 clips, never on or next to a full in-feed ad. */
-export function clipBannerAllowed(mixed, index) {
+/** Banner under a clip every 10 clips scrolled, never on or next to a full in-feed ad. */
+export function clipBannerAllowed(mixed, index, sinceBanner = 0) {
   if (!adsAreRunning()) return false
   if (!settingAllows('clip-banner')) return false
-  return clipBannerAllowedOnMixed(mixed, index)
+  return clipBannerAllowedOnMixed(mixed, index, sinceBanner)
 }
 
 export function recordAdImpression(adId) {
