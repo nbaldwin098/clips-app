@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useState, useRef } from 'react'
 import { ChevronLeft, Clapperboard, Heart, MessageCircle, Search, Share2, Volume2, VolumeX, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { getStableShortsFeed, getStableFollowingFeed } from '../lib/contentService'
+import { getStableShortsFeed, getStableFollowingFeed, getById } from '../lib/contentService'
 import { getMediaBlobUrl } from '../lib/videoStorage'
 import { parseEmbedUrl } from '../lib/videoEmbed'
 import { safeIframeSrc, safeMediaUrl } from '../lib/safeUrl'
@@ -355,7 +355,13 @@ export default function ShortsFeed({
   const [tab, setTab] = useState('recommended')
   const recommended = useMemo(() => getStableShortsFeed(user?.id || null), [user?.id])
   const following = useMemo(() => getStableFollowingFeed(user?.id, { shortsOnly: true }), [user?.id])
-  const items = tab === 'following' ? following : recommended
+  const items = useMemo(() => {
+    const base = tab === 'following' ? following : recommended
+    if (!focusId) return base
+    if (base.some((i) => i.id === focusId)) return base
+    const extra = getById(focusId)
+    return extra?.type === 'short' ? [extra, ...base] : base
+  }, [tab, following, recommended, focusId])
   const mixed = useMemo(() => mixFeedAds(items, 'clip-feed'), [items])
   const [activeIdx, setActiveIdx] = useState(0)
   const [muted, setMuted] = useState(true)

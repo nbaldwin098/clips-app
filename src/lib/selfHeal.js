@@ -86,6 +86,28 @@ export function healLocalState() {
   }
 
   try {
+    const imports = lsGet('imports', []) || []
+    const users = lsGet('users_index', {}) || {}
+    for (const item of imports) {
+      const id = item?.creatorId || item?.userId
+      if (!id || String(id).startsWith('ref-')) continue
+      const handle = String(item.handle || item.creatorHandle || '').replace(/^@/, '').toLowerCase()
+      const prev = users[id] && typeof users[id] === 'object' ? users[id] : {}
+      users[id] = {
+        ...prev,
+        id,
+        handle: handle || prev.handle || '',
+        displayName: prev.displayName || item.displayName || item.creatorName || handle || prev.handle,
+        avatarUrl: prev.avatarUrl || item.avatarUrl || null,
+        bannerUrl: prev.bannerUrl || null,
+        bio: prev.bio || '',
+        updatedAt: prev.updatedAt || new Date().toISOString(),
+      }
+    }
+    lsSet('users_index', users)
+  } catch {}
+
+  try {
     seedOfficialCatalog()
   } catch {}
 

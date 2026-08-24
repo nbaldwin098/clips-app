@@ -55,7 +55,7 @@ import {
 } from './components/legal/LegalPages'
 import { startSession } from './lib/algorithmEngine'
 import { lsGet, lsSet } from './lib/storage'
-import { syncContentFromCloud } from './lib/contentSync'
+import { syncContentFromCloud, notifyContentChanged } from './lib/contentSync'
 import { setGraphActor, syncGraphFromCloud, syncPublicEngagementFromCloud } from './lib/graphSync'
 import { installRuntimeGuards } from './lib/selfHeal'
 import { startNamedAccountActivity } from './lib/namedAccountActivity'
@@ -114,6 +114,7 @@ function AppShell() {
     if (!user?.id || typeof window === 'undefined') return
     if (!membershipReturnPaid(routeParams, window.location.search)) return
     const claimed = claimStripeReturn(user, routeParams, window.location.search)
+    if (claimed.ok) notifyContentChanged()
     if (claimed.kind === 'premium') {
       addPremiumSub(user.id, claimed.creatorId || checkoutTarget.id || user.id)
     }
@@ -167,8 +168,9 @@ function AppShell() {
     }
     if (kind === 'profile') {
       const handle = String(id || '').replace(/^@/, '')
-      const found = resolvePublicCreator(handle, null)
-      setProfileTarget({ handle, userId: found?.id || null })
+      const uid = params?.u || null
+      const found = resolvePublicCreator(handle, uid)
+      setProfileTarget({ handle: found?.handle || handle, userId: found?.id || uid || null })
       setView('profile')
       return
     }
@@ -213,7 +215,8 @@ function AppShell() {
       const nextId = dest === 'profile' ? (id || profileTarget.handle) : id
       setRouteId(nextId || '')
       if (dest === 'profile') {
-        pushHash('profile', nextId)
+        const uid = profileTarget.userId
+        pushHash('profile', nextId, uid ? { u: uid } : null)
       } else {
         pushHash(dest, nextId)
       }
@@ -300,7 +303,7 @@ function AppShell() {
     const found = resolvePublicCreator(h, userId)
     setProfileTarget({ handle: h || found?.handle || '', userId: found?.id || userId || null })
     setView('profile')
-    pushHash('profile', h || found?.handle || '')
+    pushHash('profile', h || found?.handle || '', (found?.id || userId) ? { u: found?.id || userId } : null)
     try { window.scrollTo({ top: 0, behavior: 'smooth' }) } catch {}
   }
   if (typeof window !== 'undefined') {

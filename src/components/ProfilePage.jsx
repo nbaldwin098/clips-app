@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import MediaShelves from './MediaShelves'
 import { useAuth } from '../context/AuthContext'
 import { getCreatorPublicContent, togglePin, isPinned, resolvePublicCreator } from '../lib/contentService'
@@ -19,7 +19,12 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
   const { user } = useAuth()
   const handle = String(profileHandle || '').toLowerCase().replace(/^@/, '')
   const found = resolvePublicCreator(handle, profileUserId)
-  const isSelf = user && found && user.id === found.id
+  const isSelf = Boolean(
+    user && (
+      (found?.id && user.id === found.id)
+      || (handle && String(user.handle || '').toLowerCase().replace(/^@/, '') === handle)
+    )
+  )
   const creatorId = found?.id || profileUserId || null
   const [tick, setTick] = useState(0)
   const syncTick = useContentSyncTick()
@@ -40,6 +45,13 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
   const [tab, setTab] = useState('videos')
   const videos = items.filter((i) => i.type === 'video')
   const clips = items.filter((i) => i.type === 'short')
+  const pickedTab = useRef(false)
+  useEffect(() => {
+    if (pickedTab.current) return
+    if (videos.length) { pickedTab.current = true; return }
+    if (clips.length) { setTab('clips'); pickedTab.current = true; return }
+    if (pics.length) { setTab('pics'); pickedTab.current = true }
+  }, [videos.length, clips.length, pics.length])
   const tabItems = tab === 'pics' ? pics : tab === 'clips' ? clips : tab === 'playlists' || tab === 'live' ? [] : videos
   const displayName = found?.displayName || handle || 'Creator'
   const avatar = found?.avatarUrl || (isSelf ? user?.avatarUrl : null)
@@ -80,7 +92,14 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
           {isSelf ? (
             <button type="button" onClick={() => onNavigate?.('channel')} className="h-9 px-4 rounded-full border border-zinc-700 text-xs text-zinc-200">Customize channel</button>
           ) : (
-            <SubscribeButton creatorId={resolvedId} handle={handle || found?.handle} onOpenAuth={onOpenAuth} />
+            <>
+              <SubscribeButton creatorId={resolvedId} handle={handle || found?.handle} onOpenAuth={onOpenAuth} />
+              {onOpenCheckout && resolvedId ? (
+                <button type="button" onClick={() => onOpenCheckout(resolvedId, handle || found?.handle)} className="h-9 px-4 rounded-full bg-white text-black text-xs font-semibold">
+                  Premium
+                </button>
+              ) : null}
+            </>
           )}
         </div>
       </div>

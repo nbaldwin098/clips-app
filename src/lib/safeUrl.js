@@ -48,6 +48,14 @@ export function openSafeUrl(raw) {
   return true
 }
 
+/** Stripe Checkout must return to this tab so paid posts unlock. */
+export function redirectSafeUrl(raw) {
+  const url = safeOpenUrl(raw)
+  if (!url || typeof window === 'undefined') return false
+  window.location.assign(url)
+  return true
+}
+
 const IFRAME_HOSTS = new Set([
   'www.youtube-nocookie.com',
   'www.youtube.com',
