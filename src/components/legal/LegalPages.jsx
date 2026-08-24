@@ -1,3 +1,5 @@
+import { ORG } from '../../lib/orgConfig'
+
 function LegalShell({ title, children }) {
   return (
     <div className="p-4 md:p-6 max-w-3xl mx-auto">
@@ -24,7 +26,7 @@ export function TermsOfService() {
       <h2>5. Copyright</h2>
       <p>Clips operates a notice-and-takedown process under the DMCA. See Settings → Copyright &amp; DMCA for intake addresses, strike policy, and counter-notification procedures.</p>
       <h2>6. Monetization</h2>
-      <p>Subscription revenue is paid 100% to creators (processing fees charged on top to buyers). Ad revenue is shared 90% to creators by verified impression share and 10% retained by the platform, subject to eligibility and policy compliance.</p>
+      <p>Membership list prices are shown at checkout. Payouts to creators are not live until Stripe Connect is connected. We do not promise a split we cannot pay.</p>
       <h2>7. Disclaimers</h2>
       <p>The service is provided “as is.” To the fullest extent permitted by law, Clips disclaims warranties of merchantability, fitness for a particular purpose, and non-infringement.</p>
       <h2>8. Limitation of liability</h2>
@@ -32,7 +34,7 @@ export function TermsOfService() {
       <h2>9. Changes</h2>
       <p>We may update these Terms. Continued use after changes constitutes acceptance of the revised Terms.</p>
       <h2>10. Contact</h2>
-      <p>Legal inquiries: legal@platform.internal</p>
+      <p>Legal inquiries: {ORG.legalEmail}</p>
     </LegalShell>
   )
 }
@@ -42,17 +44,17 @@ export function PrivacyPolicy() {
     <LegalShell title="Privacy Policy">
       <p>Last updated: August 22, 2026</p>
       <h2>1. Data we collect</h2>
-      <p>Account data, content and import metadata, usage signals for recommendations, and technical logs required to operate the service.</p>
+      <p>Account data, content, usage signals for recommendations, and technical logs needed to run the service.</p>
       <h2>2. How we use data</h2>
       <p>To provide the product, personalize discovery, process payouts, enforce policies, and improve reliability. Follower count is not used as a ranking feature.</p>
       <h2>3. Storage</h2>
-      <p>MVP sessions and taste profiles may be stored locally in your browser until a backend is connected. We do not sell personal data.</p>
+      <p>Sessions and taste may be stored in your browser. Signed-in accounts also sync through Clips. We do not sell personal data.</p>
       <h2>4. Sharing</h2>
       <p>We share data with service providers only as needed to operate the platform, or when required by law.</p>
       <h2>5. Your rights</h2>
       <p>You may request access, correction, export, or deletion via Settings → Security. Regional rights apply where required by law.</p>
       <h2>6. Contact</h2>
-      <p>Privacy: privacy@platform.internal</p>
+      <p>Privacy: {ORG.privacyEmail}</p>
     </LegalShell>
   )
 }
@@ -62,8 +64,8 @@ export function CreatorAgreement() {
     <LegalShell title="Creator Agreement">
       <p>Last updated: August 22, 2026</p>
       <h2>1. Revenue</h2>
-      <p>Subscriptions and tips: 100% of the listed price is paid to the creator. Processing fees are charged on top to the buyer.</p>
-      <p>Advertising: 90% of the aggregated ad pool is distributed to eligible creators by verified impression share; 10% is retained by the platform.</p>
+      <p>Checkout can charge a membership via Stripe when a Payment Link is configured. Money is not paid out to creators until Connect is live. Do not treat list price as a bank deposit.</p>
+      <p>Advertising payouts are not running yet.</p>
       <h2>2. Eligibility</h2>
       <p>Monetization may require identity verification, minimum activity, and compliance with Community Guidelines and copyright policy.</p>
       <h2>3. Content license</h2>

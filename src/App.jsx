@@ -9,7 +9,7 @@ import ShortsFeed from './components/ShortsFeed'
 import LiveView from './components/LiveView'
 import CreatorDashboard from './components/CreatorDashboard'
 import CreatorWallet from './components/CreatorWallet'
-import SettingsPage from './components/SettingsPage'
+import SettingsHub from './components/settings/SettingsHub'
 import LibraryPage from './components/LibraryPage'
 import HistoryPage from './components/HistoryPage'
 import LikedPage from './components/LikedPage'
@@ -23,7 +23,7 @@ import NotFoundPage from './components/NotFoundPage'
 import AuthRequired from './components/AuthRequired'
 import ImportShortModal from './components/ImportShortModal'
 import AuthModal from './components/AuthModal'
-import MfaGate from './components/MfaGate'
+import PasswordRecoveryGate from './components/PasswordRecoveryGate'
 import UploadModal from './components/UploadModal'
 import PicsPage from './components/PicsPage'
 import CheckoutPage from './components/CheckoutPage'
@@ -72,7 +72,7 @@ const KNOWN_VIEWS = new Set([
 ])
 
 function AppShell() {
-  const { user, isAuthenticated, mfaPending } = useAuth()
+  const { user, isAuthenticated, mfaPending, passwordRecovery } = useAuth()
   const [view, setView] = useState('home')
   const [routeId, setRouteId] = useState('')
   const [importOpen, setImportOpen] = useState(false)
@@ -424,7 +424,7 @@ function AppShell() {
       case 'community': return <CommunityPage onNavigate={navigate} onOpenAuth={openAuth} />
       case 'studio-tools': return <StudioToolsPage onNavigate={navigate} />
       case 'stream-settings': return <StreamSettingsPage onNavigate={navigate} />
-      case 'settings': return <SettingsPage onNavigate={navigate} />
+      case 'settings': return <SettingsHub section={routeId} onNavigate={navigate} />
       case 'explore': return <ExplorePage onPlayItem={openWatch} onOpenPic={openPic} onOpenTag={openTag} initialQuery={searchQuery} onApplyQuery={setSearchQuery} />
       case 'pics': return <PicsPage onOpenAuth={openAuth} onOpenProfile={openProfile} initialPicId={routeId} />
       case 'checkout': return <CheckoutPage onNavigate={navigate} creatorId={checkoutTarget.id} returnParams={routeParams} />
@@ -498,6 +498,7 @@ function AppShell() {
       <ImportShortModal open={importOpen} onClose={() => setImportOpen(false)} />
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
       {mfaPending ? <MfaGate /> : null}
+      {passwordRecovery ? <PasswordRecoveryGate /> : null}
       <UploadModal
         key={`${uploadKind}-${uploadSound?.id || 'none'}-${uploadStitch?.id || 'none'}`}
         open={uploadOpen}

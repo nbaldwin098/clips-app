@@ -93,7 +93,7 @@ export async function loadStripeJs() {
 }
 
 export const STRIPE_PRODUCT_NOTES = {
-  model: 'Creator receives 100% of list price. Buyer pays list + fee on top.',
+  model: 'List price at checkout. Payouts require Stripe Connect (not live).',
   connect: 'Stripe Connect Express for creator payouts (Phase 4).',
   feeRate: 0.029,
   feeFixed: 0.3,

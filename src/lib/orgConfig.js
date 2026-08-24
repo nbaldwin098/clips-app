@@ -19,6 +19,8 @@ export const ORG = {
   supportEmail: env('VITE_SUPPORT_EMAIL', 'support@calabi.us'),
   copyrightEmail: env('VITE_COPYRIGHT_EMAIL', 'copyright@calabi.us'),
   privacyEmail: env('VITE_PRIVACY_EMAIL', 'privacy@calabi.us'),
+  legalEmail: env('VITE_LEGAL_EMAIL', 'legal@calabi.us'),
+  dmcaEmail: env('VITE_DMCA_EMAIL', 'dmca@calabi.us'),
   /** Owner handle — only this account is platform admin */
   ownerHandle: 'cs1',
   /** Creator applications open window (ISO dates, inclusive) */

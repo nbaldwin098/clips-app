@@ -125,6 +125,7 @@ export function AuthProvider({ children }) {
   const [authReady, setAuthReady] = useState(!isSupabaseConfigured())
   const [mfaPending, setMfaPending] = useState(false)
   const [mfaFactors, setMfaFactors] = useState([])
+  const [passwordRecovery, setPasswordRecovery] = useState(false)
 
   useEffect(() => {
     if (user) lsSet('user', persistableUser(user))
@@ -158,7 +159,8 @@ export function AuthProvider({ children }) {
           setGraphActor(null)
           setUser((prev) => (prev?.provider === 'supabase' ? null : sanitizeUser(prev)))
         }
-        const { data } = sb.auth.onAuthStateChange(async (_event, sess) => {
+        const { data } = sb.auth.onAuthStateChange(async (event, sess) => {
+          if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true)
           if (sess?.user) {
             const mfa = await readMfaState(sb)
             setMfaPending(mfa.pending)
@@ -435,6 +437,7 @@ export function AuthProvider({ children }) {
     if (!sb) throw new Error('Could not update password.')
     const { error } = await sb.auth.updateUser({ password: newPassword })
     if (error) throw new Error(sanitizeAuthError(error.message))
+    setPasswordRecovery(false)
     return true
   }, [])
 
@@ -481,6 +484,8 @@ export function AuthProvider({ children }) {
     sendPhoneCode,
     verifyPhoneCode,
     mfaPending,
+    passwordRecovery,
+    clearPasswordRecovery: () => setPasswordRecovery(false),
     completeMfa,
     listMfaFactors,
     startMfaEnroll,

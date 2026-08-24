@@ -1,19 +1,44 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { getUserSettings, saveUserSettings } from '../../lib/storage'
+
+const field = 'mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100'
 
 export default function ChannelSettings() {
-  const [category, setCategory] = useState('')
-  const [links, setLinks] = useState({ x: '', discord: '', website: '' })
+  const stored = getUserSettings()
+  const [category, setCategory] = useState(stored.channelCategory || '')
+  const [links, setLinks] = useState({
+    x: stored.links?.x || '',
+    discord: stored.links?.discord || '',
+    website: stored.links?.website || '',
+  })
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    const s = getUserSettings()
+    setCategory(s.channelCategory || '')
+    setLinks({
+      x: s.links?.x || '',
+      discord: s.links?.discord || '',
+      website: s.links?.website || '',
+    })
+  }, [])
+
+  const save = () => {
+    saveUserSettings({ channelCategory: category, links })
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-xl font-semibold text-slate-900">Channel & Branding</h1>
-        <p className="mt-1 text-sm text-slate-500">Public appearance, category, and external links.</p>
+        <h1 className="text-xl font-semibold text-white">Channel & Branding</h1>
+        <p className="mt-1 text-sm text-zinc-500">Category and links save on this device. They are not a verified badge.</p>
       </div>
 
       <section className="space-y-4">
-        <h2 className="text-sm font-semibold text-slate-900">Primary category</h2>
-        <select value={category} onChange={e => setCategory(e.target.value)} className="h-10 rounded-lg border border-slate-200 px-3 text-sm max-w-xs">
+        <h2 className="text-sm font-semibold text-white">Primary category</h2>
+        <select value={category} onChange={(e) => setCategory(e.target.value)} className={`${field} max-w-xs`}>
           <option value="">Select category</option>
           <option value="gaming">Gaming</option>
           <option value="tech">Technology</option>
@@ -25,29 +50,32 @@ export default function ChannelSettings() {
         </select>
       </section>
 
-      <section className="pt-6 border-t border-slate-200 space-y-4">
-        <h2 className="text-sm font-semibold text-slate-900">Social links</h2>
+      <section className="pt-6 border-t border-zinc-800 space-y-4">
+        <h2 className="text-sm font-semibold text-white">Social links</h2>
         <div className="grid gap-3 max-w-md">
           <label className="block">
-            <span className="text-xs font-medium text-slate-600">X / Twitter</span>
-            <input value={links.x} onChange={e => setLinks(l => ({ ...l, x: e.target.value }))} className="mt-1 w-full h-10 rounded-lg border border-slate-200 px-3 text-sm" placeholder="https://x.com/..." />
+            <span className="text-xs font-medium text-zinc-400">X</span>
+            <input value={links.x} onChange={(e) => setLinks((l) => ({ ...l, x: e.target.value }))} className={field} placeholder="https://x.com/..." />
           </label>
           <label className="block">
-            <span className="text-xs font-medium text-slate-600">Discord</span>
-            <input value={links.discord} onChange={e => setLinks(l => ({ ...l, discord: e.target.value }))} className="mt-1 w-full h-10 rounded-lg border border-slate-200 px-3 text-sm" placeholder="https://discord.gg/..." />
+            <span className="text-xs font-medium text-zinc-400">Discord</span>
+            <input value={links.discord} onChange={(e) => setLinks((l) => ({ ...l, discord: e.target.value }))} className={field} placeholder="https://discord.gg/..." />
           </label>
           <label className="block">
-            <span className="text-xs font-medium text-slate-600">Website</span>
-            <input value={links.website} onChange={e => setLinks(l => ({ ...l, website: e.target.value }))} className="mt-1 w-full h-10 rounded-lg border border-slate-200 px-3 text-sm" placeholder="https://..." />
+            <span className="text-xs font-medium text-zinc-400">Website</span>
+            <input value={links.website} onChange={(e) => setLinks((l) => ({ ...l, website: e.target.value }))} className={field} placeholder="https://..." />
           </label>
         </div>
-        <button className="h-9 px-4 rounded-lg bg-[#000000] text-white text-sm font-medium">Save links</button>
+        <button type="button" onClick={save} className="h-9 px-4 rounded-lg bg-white text-black text-sm font-medium">
+          {saved ? 'Saved' : 'Save links'}
+        </button>
       </section>
 
-      <section className="pt-6 border-t border-slate-200 space-y-3">
-        <h2 className="text-sm font-semibold text-slate-900">Verified badge</h2>
-        <p className="text-sm text-slate-500">Submit a verification request after meeting eligibility criteria (identity, activity, authenticity).</p>
-        <button className="h-9 px-4 rounded-lg border border-slate-200 text-sm text-slate-700 hover:bg-slate-50">Request verification</button>
+      <section className="pt-6 border-t border-zinc-800 space-y-3">
+        <h2 className="text-sm font-semibold text-white">Verified badge</h2>
+        <p className="text-sm text-zinc-500">
+          There is no verification queue yet. Do not expect a checkmark from a button on this page.
+        </p>
       </section>
     </div>
   )
