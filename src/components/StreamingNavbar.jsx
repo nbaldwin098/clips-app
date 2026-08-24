@@ -17,6 +17,7 @@ import {
   Clapperboard,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { cn } from '../lib/utils'
 import BrandMark from './BrandMark'
 import { subscribeNotifications, unreadCount } from '../lib/notifications'
 
