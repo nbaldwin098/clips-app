@@ -5,6 +5,7 @@
 import { lsGet, lsSet, getImports } from './storage'
 import { getViews } from './engagement'
 import { listIndexedUsers } from './moderation'
+import { payoutsHeld } from './trustSafety'
 
 const SETTINGS_KEY = 'clips_payout_settings'
 const OVERRIDES_KEY = 'clips_payout_rpm_overrides'
@@ -96,6 +97,7 @@ export function creatorBalance(userId, handle = '') {
 export function recordManualPayout({ userId, handle, amount, note, sentVia }) {
   const n = Math.round(Number(amount) * 100) / 100
   if (!userId || !Number.isFinite(n) || n <= 0) return { ok: false, error: 'Enter a creator and a positive amount.' }
+  if (payoutsHeld(userId)) return { ok: false, error: 'Payouts are on hold for this account.' }
   const row = {
     id: `pay_${Date.now()}`,
     userId,
