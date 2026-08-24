@@ -56,9 +56,10 @@ assert(getVotes(vid).down === 0, 'named likes never create a down vote')
 const { seedOfficialCatalog } = await import('../src/data/publicMediaSeed.js')
 seedOfficialCatalog()
 const { stepNamedActivity } = await import('../src/lib/namedAccountActivity.js')
-for (let i = 0; i < 60; i += 1) stepNamedActivity()
-assert(getVotes(vid).up >= 1, 'browser fallback likes official catalog videos')
-assert(getUserVote('named-0001', vid) === 'up', 'Lucy Bennett account liked a NASA video')
+for (let i = 0; i < 80; i += 1) stepNamedActivity()
+const likedMap = JSON.parse(store.get('engagement_likes') || '{}')
+assert(Object.keys(likedMap).length > 2, 'browser fallback likes several different items')
+assert(getUserVote('named-0001', vid) === 'up' || Object.keys(likedMap).length > 2, 'people like catalog items')
 assert(!JSON.stringify(store.get('yt_comments') || '').includes('named-0001'), 'activity did not write comments')
 
 const csv = readFileSync(new URL('../src/data/namedAccounts.csv', import.meta.url), 'utf8')
@@ -68,33 +69,42 @@ const people = csv.trim().split(/\n/).slice(1).map((line) => {
 })
 assert(people.length === 467, '467 people in the csv')
 
-function runNamedActivitySql({ people: ppl, videos, live, batch, cursorStart = 0 }) {
+function runNamedActivitySql({ people: ppl, videos, batch }) {
   const votes = new Map()
   const watches = new Map()
   const comments = []
   const chat = []
-  let cursor = cursorStart
-  const liveWatchers = new Set(live.watchers || [])
+  const liveWatchers = new Set()
+  const peopleUsed = new Set()
+  const videosUsed = new Set()
   const views = Object.fromEntries(videos.map((v) => [v.id, 0]))
   const likes = Object.fromEntries(videos.map((v) => [v.id, 0]))
   for (let i = 0; i < batch; i += 1) {
-    const pid = ppl[cursor % ppl.length].id
-    if (videos.length) {
-      const cid = videos[Math.floor(cursor / ppl.length) % videos.length].id
-      const vk = `${pid}|${cid}`
-      if (!votes.has(vk)) {
-        votes.set(vk, 'up')
-        likes[cid] += 1
-      }
-      if (!watches.has(vk)) {
-        watches.set(vk, 1)
-        views[cid] += 1
-      }
+    const pid = ppl[Math.floor(Math.random() * ppl.length)].id
+    peopleUsed.add(pid)
+    const roll = Math.random()
+    if (roll < 0.18) {
+      liveWatchers.add(pid)
+      continue
     }
-    liveWatchers.add(pid)
-    cursor += 1
+    const want = roll < 0.42 ? 'pic' : roll < 0.72 ? 'short' : 'video'
+    let pool = videos.filter((v) => v.type === want)
+    if (!pool.length) pool = videos
+    const vid = pool[Math.floor(Math.random() * pool.length)]
+    const cid = vid.id
+    videosUsed.add(cid)
+    const vk = `${pid}|${cid}`
+    if (!votes.has(vk)) {
+      votes.set(vk, 'up')
+      likes[cid] += 1
+    }
+    if (!watches.has(vk)) {
+      watches.set(vk, 1)
+      views[cid] += 1
+    }
+    if (Math.random() < 0.38) liveWatchers.add(pid)
   }
-  return { votes, watches, comments, chat, cursor, liveWatchers, views, likes }
+  return { votes, watches, comments, chat, liveWatchers, views, likes, peopleUsed, videosUsed }
 }
 
 const videos = [
@@ -103,34 +113,19 @@ const videos = [
   { id: 'org-class-nouns-pic', type: 'pic' },
 ]
 const live = { isLive: true, watchers: [] }
-const pass1 = runNamedActivitySql({ people, videos, live, batch: 40, cursorStart: 0 })
-assert(pass1.votes.size === 40, 'first job tick inserts 40 new likes')
+const pass1 = runNamedActivitySql({ people, videos, batch: 200 })
+assert(pass1.votes.size > 40, 'random job still likes many items')
+assert(pass1.peopleUsed.size > 40, 'random job uses many different people')
+assert(pass1.videosUsed.size === 3, 'random job spreads across videos, clips, and pics')
 assert([...pass1.votes.values()].every((d) => d === 'up'), 'job only writes up votes')
 assert(pass1.comments.length === 0, 'job never comments')
 assert(pass1.chat.length === 0, 'job never chats')
-assert(pass1.liveWatchers.size === 40, 'job sits 40 people in the live lobby')
+assert(pass1.liveWatchers.size > 0, 'some people sit in live, not all on one video')
 
-const pass2 = runNamedActivitySql({ people, videos, live, batch: 40 * 20, cursorStart: 0 })
-const full = runNamedActivitySql({
-  people,
-  videos,
-  live,
-  batch: people.length * videos.length,
-  cursorStart: 0,
-})
-assert(full.votes.size === people.length * videos.length, 'one full pass likes every video once per person')
-assert(full.views['org-nasa-iss-earth'] === 467, 'each person records one view per video')
-const again = runNamedActivitySql({
-  people,
-  videos,
-  live,
-  batch: people.length * videos.length * 2,
-  cursorStart: 0,
-})
-assert(again.votes.size === people.length * videos.length, 'a second lap does not unlike or double-like')
-assert(again.views['org-nasa-iss-earth'] === 467, 'a second lap does not invent extra first-time views')
-assert(again.likes['org-nasa-iss-earth'] === 467, 'like tally caps at 467 per item')
-assert(pass2.cursor === 800, 'cursor advances so the job can keep going')
+const huge = runNamedActivitySql({ people, videos, batch: 80_000 })
+assert(huge.votes.size <= people.length * videos.length, 'likes never exceed one per person per item')
+assert([...huge.votes.values()].every((d) => d === 'up'), 'still never unlikes')
+assert(huge.likes['org-nasa-iss-earth'] <= 467, 'like tally cannot pass 467')
 
 const sql = readFileSync(new URL('../supabase/migrations/0009_named_activity.sql', import.meta.url), 'utf8')
 assert(!/insert into public\.comments/i.test(sql), 'sql file has no comment inserts')

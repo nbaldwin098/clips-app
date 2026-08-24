@@ -160,13 +160,15 @@ as $$
 declare
   n_people int;
   n_videos int;
-  cur bigint;
   i int;
   pid text;
   cid text;
   vtype text;
   liked int;
   watched int;
+  roll double precision;
+  want text;
+  live_id text;
 begin
   if batch is null or batch < 1 then batch := 40; end if;
   if batch > 200 then batch := 200; end if;
@@ -175,77 +177,132 @@ begin
   select count(*) into n_videos from public.videos;
   if n_people < 1 then return 0; end if;
 
-  insert into public.named_activity_state (id, cursor) values (1, 0)
-  on conflict (id) do nothing;
-  select cursor into cur from public.named_activity_state where id = 1;
-
   for i in 1..batch loop
-    select id into pid from public.named_people order by n offset (cur % n_people) limit 1;
-
-    if n_videos > 0 then
-      select id, type into cid, vtype
-      from public.videos
-      order by id
-      offset ((cur / n_people) % n_videos)
+    pid := null;
+    cid := null;
+    vtype := null;
+    live_id := null;
+    select id into pid from public.named_people
+      offset floor(random() * n_people)::int
       limit 1;
+    if pid is null then continue; end if;
 
-      insert into public.votes (user_id, content_id, direction)
-      values (pid, cid, 'up')
-      on conflict (user_id, content_id) do nothing;
-      get diagnostics liked = row_count;
-      if liked > 0 then
-        insert into public.vote_tallies (content_id, up, down)
-        values (cid, 1, 0)
-        on conflict (content_id) do update set up = public.vote_tallies.up + 1;
-        update public.videos
-        set engagement = jsonb_set(
-          coalesce(engagement, '{}'::jsonb),
-          '{likes}',
-          to_jsonb(coalesce((engagement->>'likes')::int, 0) + 1)
-        )
-        where id = cid;
+    roll := random();
+
+    if roll < 0.18 then
+      select user_id into live_id
+      from public.live_lobby
+      where is_live = true
+      order by random()
+      limit 1;
+      if live_id is not null then
+        update public.live_lobby
+        set watcher_ids = case
+          when watcher_ids @> array[pid]::text[] then watcher_ids
+          else array_append(watcher_ids, pid)
+        end
+        where user_id = live_id;
       end if;
+      continue;
+    end if;
 
-      insert into public.named_watches (user_id, content_id)
-      values (pid, cid)
-      on conflict (user_id, content_id) do nothing;
-      get diagnostics watched = row_count;
-      if watched > 0 then
-        if vtype = 'short' then
-          update public.videos
-          set
-            views = views + 1,
-            engagement = jsonb_set(
-              coalesce(engagement, '{}'::jsonb),
-              '{loops}',
-              to_jsonb(coalesce((engagement->>'loops')::int, 0) + 1)
-            )
-          where id = cid;
-        else
-          update public.videos
-          set
-            views = views + 1,
-            engagement = jsonb_set(
-              coalesce(engagement, '{}'::jsonb),
-              '{completes}',
-              to_jsonb(coalesce((engagement->>'completes')::int, 0) + 1)
-            )
-          where id = cid;
-        end if;
+    if n_videos < 1 then continue; end if;
+
+    want := case
+      when roll < 0.42 then 'pic'
+      when roll < 0.72 then 'short'
+      else 'video'
+    end;
+
+    select v.id, v.type into cid, vtype
+    from public.videos v
+    where v.type = want
+      and not exists (
+        select 1 from public.votes vo
+        where vo.user_id = pid and vo.content_id = v.id
+      )
+    order by random()
+    limit 1;
+
+    if cid is null then
+      select v.id, v.type into cid, vtype
+      from public.videos v
+      where v.type = want
+      order by random()
+      limit 1;
+    end if;
+
+    if cid is null then
+      select v.id, v.type into cid, vtype
+      from public.videos v
+      order by random()
+      limit 1;
+    end if;
+
+    if cid is null then continue; end if;
+
+    insert into public.votes (user_id, content_id, direction)
+    values (pid, cid, 'up')
+    on conflict (user_id, content_id) do nothing;
+    get diagnostics liked = row_count;
+    if liked > 0 then
+      insert into public.vote_tallies (content_id, up, down)
+      values (cid, 1, 0)
+      on conflict (content_id) do update set up = public.vote_tallies.up + 1;
+      update public.videos
+      set engagement = jsonb_set(
+        coalesce(engagement, '{}'::jsonb),
+        '{likes}',
+        to_jsonb(coalesce((engagement->>'likes')::int, 0) + 1)
+      )
+      where id = cid;
+    end if;
+
+    insert into public.named_watches (user_id, content_id)
+    values (pid, cid)
+    on conflict (user_id, content_id) do nothing;
+    get diagnostics watched = row_count;
+    if watched > 0 then
+      if vtype = 'short' then
+        update public.videos
+        set
+          views = views + 1,
+          engagement = jsonb_set(
+            coalesce(engagement, '{}'::jsonb),
+            '{loops}',
+            to_jsonb(coalesce((engagement->>'loops')::int, 0) + 1)
+          )
+        where id = cid;
+      else
+        update public.videos
+        set
+          views = views + 1,
+          engagement = jsonb_set(
+            coalesce(engagement, '{}'::jsonb),
+            '{completes}',
+            to_jsonb(coalesce((engagement->>'completes')::int, 0) + 1)
+          )
+        where id = cid;
       end if;
     end if;
 
-    update public.live_lobby
-    set watcher_ids = case
-      when watcher_ids @> array[pid]::text[] then watcher_ids
-      else array_append(watcher_ids, pid)
-    end
-    where is_live = true;
-
-    cur := cur + 1;
+    if random() < 0.38 then
+      select user_id into live_id
+      from public.live_lobby
+      where is_live = true
+      order by random()
+      limit 1;
+      if live_id is not null then
+        update public.live_lobby
+        set watcher_ids = case
+          when watcher_ids @> array[pid]::text[] then watcher_ids
+          else array_append(watcher_ids, pid)
+        end
+        where user_id = live_id;
+      end if;
+    end if;
   end loop;
 
-  update public.named_activity_state set cursor = cur where id = 1;
   return batch;
 end;
 $$;
