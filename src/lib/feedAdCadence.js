@@ -46,6 +46,14 @@ export function mixClipFeedRows(list, { banners = true } = {}) {
     sinceAd = 0
     nextGap = randomGap(CLIP_AD_GAPS)
   })
+
+  if (!out.some((r) => r.kind === 'ad') && items.length >= 2) {
+    out.splice(Math.min(2, out.length), 0, {
+      kind: 'ad',
+      ad: { id: 'exo-clip-feed-fallback', provider: 'exoclick', zoneId: EXOCLICK_FEED_ZONE },
+      key: 'exo-clip-feed-fallback',
+    })
+  }
   return out
 }
 
@@ -69,6 +77,14 @@ export function mixPicFeedRows(list) {
     sinceAd = 0
     nextGap = randomGap(PIC_AD_GAPS)
   })
+
+  if (!out.some((r) => r.kind === 'ad') && items.length >= 2) {
+    out.splice(Math.min(3, out.length), 0, {
+      kind: 'ad',
+      ad: { id: 'exo-pic-feed-fallback', provider: 'exoclick', zoneId: EXOCLICK_FEED_ZONE },
+      key: 'exo-pic-feed-fallback',
+    })
+  }
   return out
 }
 

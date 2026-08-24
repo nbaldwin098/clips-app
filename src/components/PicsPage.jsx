@@ -11,6 +11,7 @@ import { copyShareUrl, replaceHash } from '../lib/routes'
 import ShortsStage, { ShortsCard } from './ShortsStage'
 import { downloadPostedMedia } from '../lib/mediaDownload'
 import { mixFeedAds } from '../lib/adEngine'
+import { shuffleFeed } from '../lib/shuffleFeed'
 import { InFeedAd, PlacementBanner } from './AdUnits'
 import ExoClickDisplay from './ExoClickDisplay'
 import { preloadPostedItems } from '../lib/preloadMedia'
@@ -252,7 +253,7 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
     return idx >= 0 ? idx : 0
   })
 
-  const mixed = useMemo(() => mixFeedAds(items, 'pic-feed'), [items])
+  const mixed = useMemo(() => mixFeedAds(shuffleFeed(items), 'pic-feed'), [items])
   const skipAutoOpen = useRef(false)
   const refresh = useCallback(() => setItems(getPicsFeed()), [])
   const dropBroken = useCallback((id) => {
@@ -351,7 +352,7 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
                 <div className="h-full w-full bg-black flex flex-col items-center justify-center p-4">
                   <p className="shrink-0 pb-3 text-[11px] text-white/70">Sponsored · swipe for the next pic</p>
                   <div className="w-full max-w-md aspect-square overflow-hidden bg-[#111]">
-                    <ExoClickDisplay zoneId={row.ad?.zoneId} />
+                    <ExoClickDisplay zoneId={row.ad?.zoneId} active={active} />
                   </div>
                 </div>
               )

@@ -20,15 +20,18 @@ export default function ExoClickDisplay({
   zoneId = EXOCLICK_DISPLAY_ZONE,
   insClass = EXOCLICK_INS_CLASS,
   className = '',
+  active = true,
 }) {
   const rid = useId().replace(/:/g, '')
 
   useEffect(() => {
+    if (!active) return undefined
     ensureExoClickScript()
     const w = window
     w.AdProvider = w.AdProvider || []
     w.AdProvider.push({ serve: {} })
-  }, [rid, zoneId])
+    return undefined
+  }, [rid, zoneId, active])
 
   return (
     <div className={`relative h-full w-full overflow-hidden bg-[#111] flex items-center justify-center ${className}`}>

@@ -30,16 +30,17 @@ export default function ShortsStage({
   renderSlide,
   empty = null,
   bleedMobile = false,
+  loop = true,
 }) {
   const scrollerRef = useRef(null)
   const n = Math.max(0, Number(count) || 0)
-  const loop = false
-  const copies = 1
+  const copies = loop && n > 0 ? 3 : 1
   const jumping = useRef(false)
   const lastStart = useRef(null)
+  const [reelPos, setReelPos] = useState(0)
 
   const pageHeight = () => scrollerRef.current?.clientHeight || 1
-  const toReel = (logical, copy = loop ? 1 : 0) => copy * n + logical
+  const middleReel = (logical) => (loop ? n : 0) + logical
 
   const scrollToReel = (reelIdx, behavior = 'auto') => {
     const el = scrollerRef.current
@@ -50,16 +51,18 @@ export default function ShortsStage({
   useEffect(() => {
     if (!n) return
     const start = Math.max(0, Math.min(n - 1, Number(initialIndex) || 0))
-    const token = `${n}:${start}`
+    const token = `${n}:${start}:${loop}`
     if (lastStart.current === token) return
     lastStart.current = token
+    const startReel = middleReel(start)
     const id = requestAnimationFrame(() => {
-      scrollToReel(toReel(start))
+      scrollToReel(startReel)
+      setReelPos(startReel)
       onActiveIndex?.(start)
     })
     return () => cancelAnimationFrame(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [n, initialIndex])
+  }, [n, initialIndex, loop])
 
   const onScroll = useCallback(() => {
     const el = scrollerRef.current
@@ -67,10 +70,13 @@ export default function ShortsStage({
     const h = pageHeight()
     const reelIdx = Math.round(el.scrollTop / h)
     const logical = ((reelIdx % n) + n) % n
+    setReelPos(reelIdx)
     onActiveIndex?.(logical)
-    if (loop && (reelIdx < n || reelIdx >= n * 2)) {
+    if (loop && n > 0 && (reelIdx < n || reelIdx >= n * 2)) {
       jumping.current = true
-      el.scrollTop = (n + logical) * h
+      const target = middleReel(logical)
+      el.scrollTop = target * h
+      setReelPos(target)
       requestAnimationFrame(() => { jumping.current = false })
     }
   }, [n, loop, onActiveIndex])
@@ -85,8 +91,7 @@ export default function ShortsStage({
   const step = useCallback((dir) => {
     if (!n) return
     const next = (activeIndex + dir + n) % n
-    const copy = loop ? 1 : 0
-    scrollToReel(copy * n + next, 'smooth')
+    scrollToReel(middleReel(next), 'smooth')
     onActiveIndex?.(next)
   }, [activeIndex, n, loop, onActiveIndex])
 
@@ -110,7 +115,9 @@ export default function ShortsStage({
 
   const reel = []
   for (let c = 0; c < copies; c += 1) {
-    for (let i = 0; i < n; i += 1) reel.push({ key: `${c}-${i}`, index: i })
+    for (let i = 0; i < n; i += 1) {
+      reel.push({ key: `${c}-${i}`, index: i, reelIdx: c * n + i })
+    }
   }
 
   return (
@@ -131,7 +138,9 @@ export default function ShortsStage({
                   : 'h-full w-full snap-start snap-always shrink-0 flex items-center justify-center px-3 py-4 sm:px-10 sm:py-8'
               }
             >
-              {Math.abs(row.index - activeIndex) <= PRELOAD_NEAR ? renderSlide(row.index, row.index === activeIndex, Math.abs(row.index - activeIndex) === 1) : null}
+              {Math.abs(row.reelIdx - reelPos) <= PRELOAD_NEAR
+                ? renderSlide(row.index, row.reelIdx === reelPos, Math.abs(row.reelIdx - reelPos) === 1)
+                : null}
             </div>
           ))}
         </div>

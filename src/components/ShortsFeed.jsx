@@ -15,6 +15,7 @@ import ShortsStage, { ShortsCard } from './ShortsStage'
 import ShortsGrid from './ShortsGrid'
 import ExoClickDisplay, { clipBannerAllowed, EXOCLICK_BANNER_ZONE, EXOCLICK_BANNER_CLASS } from './ExoClickDisplay'
 import { mixFeedAds } from '../lib/adEngine'
+import { shuffleFeed } from '../lib/shuffleFeed'
 import { preloadPostedItems } from '../lib/preloadMedia'
 
 function resolvePlayUrl(item) {
@@ -418,7 +419,7 @@ export default function ShortsFeed({
     const extra = getById(focusId)
     return extra?.type === 'short' ? [extra, ...base] : base
   }, [tab, following, recommended, focusId])
-  const mixed = useMemo(() => mixFeedAds(items, 'clip-feed'), [items])
+  const mixed = useMemo(() => mixFeedAds(shuffleFeed(items), 'clip-feed'), [items])
   const [activeIdx, setActiveIdx] = useState(0)
   const [muted, setMuted] = useState(true)
   const shownAt = useRef(Date.now())
@@ -485,7 +486,7 @@ export default function ShortsFeed({
             <div className="h-full w-full max-w-md mx-auto bg-black flex flex-col">
               <p className="shrink-0 px-3 py-2 text-[11px] text-white/70">Sponsored · swipe for the next clip</p>
               <div className="flex-1 min-h-0">
-                <ExoClickDisplay zoneId={row.ad?.zoneId} />
+                <ExoClickDisplay zoneId={row.ad?.zoneId} active={active} />
               </div>
             </div>
           )
