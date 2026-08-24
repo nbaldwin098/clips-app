@@ -3,6 +3,7 @@ import { Smartphone, Monitor, Key } from 'lucide-react'
 import { lsGet, lsRemove } from '../../lib/storage'
 import { useAuth } from '../../context/AuthContext'
 import { sanitizeAuthError } from '../../lib/authBrand'
+import { ORG } from '../../lib/orgConfig'
 
 export default function SecuritySettings() {
   const {
@@ -96,7 +97,7 @@ export default function SecuritySettings() {
   }
 
   const clearLocal = () => {
-    if (!confirm('Clear all local Clips data on this device? You will be signed out.')) return
+    if (!confirm(`Clear all local ${ORG.productName} data on this device? You will be signed out.`)) return
     lsRemove('user')
     lsRemove('mode')
     lsRemove('imports')
@@ -132,10 +133,10 @@ export default function SecuritySettings() {
       <section className="pt-6 border-t border-zinc-800 space-y-3">
         <h2 className="text-sm font-semibold text-white flex items-center gap-2"><Smartphone className="h-4 w-4" /> Two-factor authentication</h2>
         <p className="text-sm text-zinc-500">
-          An authenticator app on your phone. This is real 2FA for a Clips account — not a fake checkbox.
+          An authenticator app on your phone. This is real 2FA for a {ORG.productName} account — not a fake checkbox.
         </p>
         {!synced ? (
-          <p className="text-sm text-zinc-400">Sign in with a synced Clips account to turn on 2FA.</p>
+          <p className="text-sm text-zinc-400">Sign in with a synced {ORG.productName} account to turn on 2FA.</p>
         ) : totpOn ? (
           <div className="space-y-2">
             <p className="text-sm text-white">2FA is on.</p>

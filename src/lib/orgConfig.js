@@ -14,7 +14,7 @@ function env(key, fallback) {
 
 /** Public contact — set real inboxes before serious creator launch */
 export const ORG = {
-  productName: 'Clips',
+  productName: 'Calabi',
   domain: 'calabi.us',
   supportEmail: env('VITE_SUPPORT_EMAIL', 'support@calabi.us'),
   copyrightEmail: env('VITE_COPYRIGHT_EMAIL', 'copyright@calabi.us'),

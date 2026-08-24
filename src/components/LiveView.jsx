@@ -106,7 +106,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
     if (!canHost || !user?.id) return
     const payload = {
       isLive: true,
-      title: title.trim() || 'Live on Clips',
+      title: title.trim() || 'Live on Calabi',
       category,
       startedAt: new Date().toISOString(),
       userId: user.id,

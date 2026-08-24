@@ -1,13 +1,14 @@
 import BrandMark from './BrandMark'
+import { ORG } from '../lib/orgConfig'
 
 export default function AboutPage() {
   return (
     <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-6">
       <div>
         <BrandMark size={48} />
-        <h1 className="sr-only">About Clips</h1>
+        <h1 className="sr-only">About {ORG.productName}</h1>
         <p className="mt-2 text-sm text-[#adadb8] leading-relaxed">
-          On big platforms, people come for the app — not for you. Clips is built so{' '}
+          On big platforms, people come for the app — not for you. {ORG.productName} is built so{' '}
           <strong className="font-semibold text-white">the audience comes to the creator</strong>
           . Subscribe is free. Creators can price some posts. Paid posts charge only after Stripe. We do not invent
           viewers, balances, or a live picture.
@@ -22,7 +23,7 @@ export default function AboutPage() {
             Home keep people inside their product. Your channel is a stop along the way.
           </li>
           <li>
-            <strong className="text-white">Clips points the relationship at you.</strong> Your share
+            <strong className="text-white">{ORG.productName} points the relationship at you.</strong> Your share
             link, your membership price, your uploads. Formats stay clean: 16:9 videos, 9:16 clips,
             quiet pics. No stories or DMs.
           </li>

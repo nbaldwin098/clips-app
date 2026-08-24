@@ -226,7 +226,7 @@ export function AuthProvider({ children }) {
         })
         unsub = () => data.subscription.unsubscribe()
       } catch (e) {
-        console.warn('[Clips] Supabase session restore failed', e)
+        console.warn('[Calabi] Supabase session restore failed', e)
       } finally {
         setAuthReady(true)
       }
@@ -467,7 +467,7 @@ export function AuthProvider({ children }) {
       throw new Error('cs1 signs in with the site password. Email reset is not used for that account.')
     }
     if (!isSupabaseConfigured()) {
-      throw new Error('Password reset needs a Clips account on this site.')
+      throw new Error('Password reset needs a Calabi account on this site.')
     }
     const sb = await getSupabase()
     if (!sb) throw new Error('Could not send a reset email right now.')
@@ -561,10 +561,10 @@ export function AuthProvider({ children }) {
   }, [])
 
   const startMfaEnroll = useCallback(async () => {
-    if (!isSupabaseConfigured()) throw new Error('2FA is only for a signed-in Clips account.')
+    if (!isSupabaseConfigured()) throw new Error('2FA is only for a signed-in Calabi account.')
     const sb = await getSupabase()
     if (!sb) throw new Error('Could not start 2FA.')
-    const { data, error } = await sb.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Clips' })
+    const { data, error } = await sb.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Calabi' })
     if (error) throw new Error(sanitizeAuthError(error.message))
     return data
   }, [])

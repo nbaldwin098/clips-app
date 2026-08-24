@@ -62,7 +62,7 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
     setBusy(true)
     try {
       await sendReset(mail)
-      setInfo('If that email is on Clips, we sent a reset link. Check inbox and spam.')
+      setInfo('If that email is on Calabi, we sent a reset link. Check inbox and spam.')
     } catch (err) {
       setError(sanitizeAuthError(err?.message) || 'Could not send reset email.')
     } finally {
@@ -107,7 +107,7 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
         if (!smsSent) {
           await sendPhoneCode(phone)
           setSmsSent(true)
-          setInfo('We texted a Clips code to that number.')
+          setInfo('We texted a Calabi code to that number.')
         } else {
           const result = await verifyPhoneCode(phone, smsCode)
           if (!result?.needsMfa) onClose?.()
@@ -151,7 +151,7 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
         handle: handle.trim().toLowerCase().replace(/[^a-z0-9_]/g, '') || undefined,
       })
       if (result?.pendingEmailConfirm) {
-        setInfo('Check your email from Clips, then sign in.')
+        setInfo('Check your email from Calabi, then sign in.')
         setMode('signin')
         setBusy(false)
         return
@@ -207,7 +207,7 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
                 ))}
               </div>
               <p className="mt-2 text-[11px] text-zinc-500">
-                CapCut cannot sign people into Clips. It is an editor. Export the file, then upload.
+                CapCut cannot sign people into Calabi. It is an editor. Export the file, then upload.
               </p>
               <div className="my-4 flex items-center gap-3 text-[10px] uppercase tracking-wider text-zinc-600">
                 <span className="h-px flex-1 bg-[#2f2f37]" />
@@ -312,7 +312,7 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
             )}
 
             {mode === 'forgot-pass' && (
-              <p className="text-xs text-zinc-500">We’ll email a Clips reset link if this address has an account.</p>
+              <p className="text-xs text-zinc-500">We’ll email a Calabi reset link if this address has an account.</p>
             )}
             {mode === 'forgot-user' && (
               <p className="text-xs text-zinc-500">We’ll look up @username for this email on this device.</p>

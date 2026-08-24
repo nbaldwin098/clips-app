@@ -7,6 +7,7 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { submitAdApplication } from '../lib/adEngine'
+import { ORG } from '../lib/orgConfig'
 import PageHeader from './PageHeader'
 
 const inputCls =
@@ -41,7 +42,7 @@ export default function AdvertisePage({ onNavigate }) {
   return (
     <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-8">
       <PageHeader
-        title="Advertise on Clips"
+        title={`Advertise on ${ORG.productName}`}
         onBack={() => onNavigate?.('home')}
         actions={
           <button

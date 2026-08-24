@@ -597,6 +597,9 @@ assert(scriptsSrc.includes('0009_named_activity.sql'), 'admin can copy 0009')
 assert(scriptsSrc.includes('0010_stop_named_activity.sql'), 'admin can copy 0010')
 const orgSrc = readFileSync(new URL('../src/lib/orgConfig.js', import.meta.url), 'utf8')
 assert(orgSrc.includes('supabase.com/dashboard/project/'), 'sql editor url is the supabase dashboard')
+assert(orgSrc.includes("productName: 'Calabi'"), 'brand name matches the calabi logo, not the old Clips copy')
+const authModalSrc2 = readFileSync(new URL('../src/components/AuthModal.jsx', import.meta.url), 'utf8')
+assert(!authModalSrc2.includes('into Clips'), 'auth modal brand copy says Calabi, not Clips')
 const adminSetupSrc2 = readFileSync(new URL('../src/components/AdminSetup.jsx', import.meta.url), 'utf8')
 assert(adminSetupSrc2.includes('0010'), 'admin setup tells you to stop the named bot job')
 const graphSrc2 = readFileSync(new URL('../src/lib/graphSync.js', import.meta.url), 'utf8')
@@ -668,6 +671,7 @@ assert(panelSrc.includes('startTipCheckout'), 'live chat has donate amounts')
 assert(panelSrc.includes('placeholder="Other"') || panelSrc.includes('Give'), 'live chat has custom donate')
 assert(watchSrc2.includes('placeholder="Other"'), 'watch page has custom donate')
 assert(panelSrc.includes("kind === 'donation'"), 'live donations render in chat')
+assert(panelSrc.includes('const [chatSettingsOpen, setChatSettingsOpen] = useState'), 'chat settings state is declared, no crash opening live chat settings')
 
 {
   let live = null
