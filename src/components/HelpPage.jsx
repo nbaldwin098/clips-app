@@ -44,7 +44,7 @@ export default function HelpPage() {
     },
     {
       q: 'How do I sign in?',
-      a: 'Email and password, phone code, Apple, Microsoft, and X. CapCut cannot sign people in — it is an editor. Export from CapCut, then upload. 2FA is in Settings → Security after you sign in.',
+      a: 'Email and password, phone code, Apple, Microsoft, and X. CapCut cannot sign people in — it is an editor. Export from CapCut, then upload. 2FA is in Settings → Security after you sign in. NASA, NOAA, and the other library channels use @calabi.local emails on this site — they are not real nasa.gov logins.',
     },
     {
       q: 'Emails or texts say the wrong name',
