@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { listIndexedUsers } from '../lib/moderation'
 import { sanitizeAuthError } from '../lib/authBrand'
 import BrandMark from './BrandMark'
+import { findOwnerLogin } from '../data/ownerLogin'
 
 const OAUTH = [
   { id: 'apple', label: 'Continue with Apple' },
@@ -120,8 +121,8 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
     }
 
     const mail = email.trim().toLowerCase()
-    if (!mail || !mail.includes('@')) {
-      setError('Enter a valid email.')
+    if (!mail || (!mail.includes('@') && !findOwnerLogin(mail))) {
+      setError('Enter a valid email or username.')
       return
     }
     if (password.length < 6) {
@@ -283,13 +284,16 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
               </>
             ) : (
               <label className="block">
-                <span className="text-xs font-medium text-zinc-300">Email</span>
+                <span className="text-xs font-medium text-zinc-300">Email or username</span>
                 <input
-                  type="email"
+                  type="text"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#000000] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-white"
-                  autoComplete="email"
+                  autoComplete="username"
+                  inputMode="email"
+                  autoCapitalize="none"
+                  autoCorrect="off"
                 />
               </label>
             )}

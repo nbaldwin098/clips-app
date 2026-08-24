@@ -8,7 +8,7 @@ import { ensureOwnProfile, privilegesFromProfile } from '../lib/profiles'
 import { hashSecret, verifySecret } from '../lib/secrets'
 import { persistableMediaUrl, restoreProfilePictures, persistProfilePicture } from '../lib/profileMedia'
 import { findOfficialLogin } from '../data/publicMediaSeed'
-import { findOwnerLogin, OWNER_LOGIN } from '../data/ownerLogin'
+import { findOwnerLogin, isLocalOwnerLogin, OWNER_LOGIN } from '../data/ownerLogin'
 import { findNamedAccountLogin, verifyNamedAccountPassword } from '../data/namedAccountsSeed'
 import { sanitizeAuthError } from '../lib/authBrand'
 
@@ -241,27 +241,41 @@ export function AuthProvider({ children }) {
       if (!password || password.length < 6) {
         throw new Error('Email and a password of at least 6 characters are required.')
       }
-      const ok = await verifySecret(password, owner.passwordHash)
-      if (!ok) throw new Error('Wrong email or password.')
-      const next = {
-        id: owner.id,
-        email: owner.email,
-        displayName: owner.displayName,
-        handle: owner.handle,
-        provider: 'local',
-        avatarUrl: '',
-        bannerUrl: '',
-        bio: '',
-        passwordHash: owner.passwordHash,
-        isCreator: true,
-        creatorStatus: 'approved',
-        isPlatformAdmin: true,
-        role: 'admin',
+      const hashes = [owner.passwordHash, ...(owner.passwordHashes || [])]
+      let ok = false
+      const seen = new Set()
+      for (const stored of hashes) {
+        if (!stored || seen.has(stored)) continue
+        seen.add(stored)
+        if (await verifySecret(password, stored)) {
+          ok = true
+          break
+        }
       }
-      setUser(next)
-      setMode('creator')
-      try { indexUser(next) } catch {}
-      return next
+      if (ok) {
+        const next = {
+          id: owner.id,
+          email: owner.email,
+          displayName: owner.displayName,
+          handle: owner.handle,
+          provider: 'local',
+          avatarUrl: '',
+          bannerUrl: '',
+          bio: '',
+          passwordHash: owner.passwordHash,
+          isCreator: true,
+          creatorStatus: 'approved',
+          isPlatformAdmin: true,
+          role: 'admin',
+        }
+        setUser(next)
+        setMode('creator')
+        try { indexUser(next) } catch {}
+        return next
+      }
+      if (isLocalOwnerLogin(email) || !isSupabaseConfigured()) {
+        throw new Error('Wrong email or password.')
+      }
     }
 
     const org = findOfficialLogin(email)
@@ -431,6 +445,9 @@ export function AuthProvider({ children }) {
   const sendPasswordReset = useCallback(async (rawEmail) => {
     const mail = String(rawEmail || '').trim().toLowerCase()
     if (!mail || !mail.includes('@')) throw new Error('Enter the email on your account.')
+    if (isLocalOwnerLogin(mail)) {
+      throw new Error('cs1 signs in with the site password. Email reset is not used for that account.')
+    }
     if (!isSupabaseConfigured()) {
       throw new Error('Password reset needs a Clips account on this site.')
     }
