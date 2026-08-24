@@ -13,6 +13,15 @@ function isRecord(v) {
 
 function stripPrivileges(user) {
   if (!isRecord(user)) return null
+  if (String(user.id || '').startsWith('org-')) {
+    return {
+      ...user,
+      isPlatformAdmin: false,
+      isCreator: true,
+      creatorStatus: 'approved',
+      role: 'user',
+    }
+  }
   return {
     ...user,
     isPlatformAdmin: false,

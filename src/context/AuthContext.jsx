@@ -7,6 +7,8 @@ import { setGraphActor, syncGraphFromCloud } from '../lib/graphSync'
 import { ensureOwnProfile, privilegesFromProfile } from '../lib/profiles'
 import { hashSecret, verifySecret } from '../lib/secrets'
 import { persistableMediaUrl, restoreProfilePictures, persistProfilePicture } from '../lib/profileMedia'
+import { findOfficialLogin } from '../data/publicMediaSeed'
+import { sanitizeAuthError } from '../lib/authBrand'
 
 const AuthContext = createContext(null)
 const DEFAULT_USER = {
@@ -17,6 +19,7 @@ const PRIVILEGE_KEYS = new Set(['isPlatformAdmin', 'isCreator', 'creatorStatus',
 
 function persistableUser(u) {
   if (!u || typeof u !== 'object') return null
+  const org = String(u.id || '').startsWith('org-')
   return {
     id: String(u.id || '').slice(0, 80),
     email: String(u.email || '').slice(0, 200),
@@ -28,8 +31,8 @@ function persistableUser(u) {
     bannerUrl: persistableMediaUrl(u.bannerUrl) || '',
     bio: String(u.bio || '').slice(0, 500),
     passwordHash: u.passwordHash || undefined,
-    isCreator: false,
-    creatorStatus: 'none',
+    isCreator: org,
+    creatorStatus: org ? 'approved' : 'none',
     isPlatformAdmin: false,
     role: 'user',
   }
@@ -38,11 +41,12 @@ function persistableUser(u) {
 function sanitizeUser(u) {
   const persisted = persistableUser(u)
   if (!persisted?.id) return null
+  const org = String(persisted.id).startsWith('org-')
   return {
     ...DEFAULT_USER,
     ...persisted,
-    isCreator: false,
-    creatorStatus: 'none',
+    isCreator: org,
+    creatorStatus: org ? 'approved' : 'none',
     isPlatformAdmin: false,
     role: 'user',
   }
@@ -224,6 +228,37 @@ export function AuthProvider({ children }) {
         : email.split('@')[0] || 'Viewer'
     const modeAuth = typeof payload === 'object' && payload.mode === 'signup' ? 'signup' : 'signin'
     const handleRaw = (typeof payload === 'object' && payload.handle) || displayName || 'user'
+
+    const org = findOfficialLogin(email)
+    if (org) {
+      if (modeAuth === 'signup') {
+        throw new Error('That email is a library channel. Sign in instead.')
+      }
+      if (!password || password.length < 6) {
+        throw new Error('Email and a password of at least 6 characters are required.')
+      }
+      const ok = await verifySecret(password, org.passwordHash)
+      if (!ok) throw new Error('Wrong email or password.')
+      const next = {
+        id: org.id,
+        email: org.email,
+        displayName: org.displayName,
+        handle: org.handle,
+        provider: 'local',
+        avatarUrl: org.avatarUrl || '',
+        bannerUrl: org.bannerUrl || '',
+        bio: org.bio || '',
+        passwordHash: org.passwordHash,
+        isCreator: true,
+        creatorStatus: 'approved',
+        isPlatformAdmin: false,
+        role: 'user',
+      }
+      setUser(next)
+      setMode('creator')
+      try { indexUser(next) } catch {}
+      return next
+    }
 
     if (isSupabaseConfigured() && email && password) {
       const sb = await getSupabase()

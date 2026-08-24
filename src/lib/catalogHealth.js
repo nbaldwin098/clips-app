@@ -56,6 +56,8 @@ export function isRetiredCatalogItem(item) {
     || creator === 'edu-kids-class'
     || handle === 'kidsclass'
     || origin === 'public-education'
+    || id === 'org-class-english-nouns'
+    || /or%c3%a4knebara|oraknebara|substantiv/i.test(String(item.mediaUrl || '') + String(item.title || ''))
   )
 }
 

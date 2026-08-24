@@ -7,7 +7,7 @@ import { getImports, saveImport, lsGet, lsSet } from '../lib/storage'
 import { hiddenBrokenIds, isHttpUrl, isKnownDeadUrl } from '../lib/catalogHealth'
 import { indexUser } from '../lib/moderation'
 
-export const CATALOG_GENERATION = 'official-pd-v2'
+export const CATALOG_GENERATION = 'official-pd-v3'
 const GEN_KEY = 'clips_catalog_generation'
 
 export const OFFICIAL_CREATORS = [
@@ -18,6 +18,8 @@ export const OFFICIAL_CREATORS = [
     bio: 'Public domain films and photos from NASA. US government work.',
     creatorStatus: 'approved',
     isCreator: true,
+    email: 'nasa@calabi.local',
+    passwordHash: 'sha256$a1b2c3d4e5f60718293a4b5c6d7e8f90$06c37682a05b7b08cd9661494ee7dd45014cc07ee74af2e7c46ddd382f7f1d53',
     avatarUrl: 'https://images-assets.nasa.gov/image/as17-148-22727/as17-148-22727~medium.jpg',
     bannerUrl: 'https://images-assets.nasa.gov/image/PIA18033/PIA18033~medium.jpg',
   },
@@ -25,6 +27,8 @@ export const OFFICIAL_CREATORS = [
     id: 'org-noaa',
     handle: 'noaa',
     displayName: 'NOAA',
+    email: 'noaa@calabi.local',
+    passwordHash: 'sha256$b2c3d4e5f60718293a4b5c6d7e8f90a1$6450e2b834496a332afc82fe58f75720fae6e544948ef310518de360bd17c159',
     bio: 'Satellites and storms from NOAA / CIRA. US government work.',
     creatorStatus: 'approved',
     isCreator: true,
@@ -37,6 +41,8 @@ export const OFFICIAL_CREATORS = [
     id: 'org-esa',
     handle: 'esa',
     displayName: 'ESA',
+    email: 'esa@calabi.local',
+    passwordHash: 'sha256$c3d4e5f60718293a4b5c6d7e8f90a1b2$ea40b1a158ac970eac8087374dbe6fed7518abdf92e7d194b929692d90158973',
     bio: 'European Space Agency clips released on Wikimedia Commons.',
     creatorStatus: 'approved',
     isCreator: true,
@@ -49,6 +55,8 @@ export const OFFICIAL_CREATORS = [
     id: 'org-usfws',
     handle: 'usfws',
     displayName: 'U.S. Fish and Wildlife Service',
+    email: 'usfws@calabi.local',
+    passwordHash: 'sha256$d4e5f60718293a4b5c6d7e8f90a1b2c3$b94f7449fe13b7c1d32b205c7f6510f9eb92dbf5147295929c711fe198942e4f',
     bio: 'Wildlife from national refuges. US government work.',
     creatorStatus: 'approved',
     isCreator: true,
@@ -61,6 +69,8 @@ export const OFFICIAL_CREATORS = [
     id: 'org-nasaconnect',
     handle: 'nasaconnect',
     displayName: 'NASA Connect',
+    email: 'connect@calabi.local',
+    passwordHash: 'sha256$e5f60718293a4b5c6d7e8f90a1b2c3d4$22fe3f60d8b18bc0e7ac7d2bce66ea5af7f711559c616660e38067062b78f4cc',
     bio: 'Classroom science, maths, and history films NASA made for kids. Public domain.',
     creatorStatus: 'approved',
     isCreator: true,
@@ -71,6 +81,8 @@ export const OFFICIAL_CREATORS = [
     id: 'org-classroom',
     handle: 'classroom',
     displayName: 'Classroom Films',
+    email: 'classroom@calabi.local',
+    passwordHash: 'sha256$f60718293a4b5c6d7e8f90a1b2c3d4e5$3212d64431103417445dae0ea8ac4c11e933fc11646617dc804e587bb95bdd86',
     bio: 'Public-domain school films for reading, maths, English, and manners.',
     creatorStatus: 'approved',
     isCreator: true,
@@ -81,6 +93,8 @@ export const OFFICIAL_CREATORS = [
     id: 'org-nara',
     handle: 'nara',
     displayName: 'National Archives',
+    email: 'nara@calabi.local',
+    passwordHash: 'sha256$0718293a4b5c6d7e8f90a1b2c3d4e5f6$4d91b8d63dc71c5b466a9f86fdf4a2598665884bbbdacb2abeeff3863a827e5d',
     bio: 'US government history films and documentaries. Public domain.',
     creatorStatus: 'approved',
     isCreator: true,
@@ -88,6 +102,12 @@ export const OFFICIAL_CREATORS = [
     bannerUrl: 'https://archive.org/services/img/wwf_prelude_to_war',
   },
 ]
+
+export function findOfficialLogin(email) {
+  const e = String(email || '').trim().toLowerCase()
+  if (!e) return null
+  return OFFICIAL_CREATORS.find((c) => String(c.email || '').toLowerCase() === e) || null
+}
 
 function byCreator(handle) {
   const c = OFFICIAL_CREATORS.find((x) => x.handle === handle)
@@ -414,19 +434,6 @@ export const OFFICIAL_MEDIA = [
       'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Inscribed_angle.webm/960px--Inscribed_angle.webm.jpg',
   }),
   item('classroom', {
-    id: 'org-class-english-nouns',
-    type: 'video',
-    title: 'Nouns you cannot count',
-    description: 'Kids English: uncountable nouns. Wikimedia Commons.',
-    tags: ['kids', 'english', 'nouns', 'grammar'],
-    width: 480,
-    height: 360,
-    createdAt: '2026-08-24T11:10:00.000Z',
-    mediaUrl: 'https://upload.wikimedia.org/wikipedia/commons/4/41/Uncountable_nouns_Or%C3%A4knebara_substantiv.webm',
-    thumbUrl:
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Uncountable_nouns_Or%C3%A4knebara_substantiv.webm/330px--Uncountable_nouns_Or%C3%A4knebara_substantiv.webm.jpg',
-  }),
-  item('classroom', {
     id: 'org-class-reading-hoppy',
     type: 'video',
     title: 'Hoppy the Bunny — reading',
@@ -498,12 +505,12 @@ function seedCreators() {
       id: c.id,
       handle: c.handle,
       displayName: c.displayName,
+      email: c.email || '',
       bio: c.bio,
       avatarUrl: c.avatarUrl,
       bannerUrl: c.bannerUrl,
       creatorStatus: 'approved',
       isCreator: true,
-      email: '',
     })
   }
 }
