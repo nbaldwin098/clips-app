@@ -67,6 +67,10 @@ export function InFeedAd({ ad, variant = 'clip' }) {
       </div>
     )
   }
+  return <CampaignInFeedAd ad={ad} variant={variant} />
+}
+
+function CampaignInFeedAd({ ad, variant = 'clip' }) {
   useEffect(() => {
     if (ad?.id) recordAdImpression(ad.id)
   }, [ad?.id])
