@@ -46,6 +46,7 @@ import StudioToolsPage from './components/StudioToolsPage'
 import StreamSettingsPage from './components/StreamSettingsPage'
 import ContentRulesPage from './components/ContentRulesPage'
 import WatchPage from './components/WatchPage'
+import CreatePage from './components/CreatePage'
 import SoundPage from './components/SoundPage'
 import TagPage from './components/TagPage'
 import MiniPlayer from './components/MiniPlayer'
@@ -72,7 +73,7 @@ const KNOWN_VIEWS = new Set([
   'analytics', 'channel', 'profile', 'content-rules', 'vods',
   'subscriptions', 'playlists', 'community', 'studio-tools', 'stream-settings',
   'legal-tos', 'legal-privacy', 'legal-creator', 'legal-community',
-  'watch', 'sound', 'tag',
+  'watch', 'sound', 'tag', 'create',
 ])
 
 function AppShell() {
@@ -92,9 +93,8 @@ function AppShell() {
   const [searchQuery, setSearchQuery] = useState('')
   const [miniItem, setMiniItem] = useState(null)
 
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => lsGet('sidebar_collapsed', false) === true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [chatCollapsed, setChatCollapsed] = useState(() => lsGet('chat_collapsed', false) === true)
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [mobileChatOpen, setMobileChatOpen] = useState(false)
   const [focusedLiveStream, setFocusedLiveStream] = useState(null)
 
@@ -196,6 +196,7 @@ function AppShell() {
   const navigate = (next, id = '') => {
     try {
       const dest = next === 'shorts' ? 'clips' : String(next || 'home')
+      setSidebarOpen(false)
       dockWatchIfNeeded(view === 'watch' && dest !== 'watch')
       setView(dest)
       const nextId = dest === 'profile' ? (id || profileTarget.handle) : id
@@ -212,6 +213,7 @@ function AppShell() {
   }
 
   const openWatch = (itemOrId) => {
+    setSidebarOpen(false)
     const item = typeof itemOrId === 'string' ? getById(itemOrId) : itemOrId
     if (!item) return
     if (item.type === 'pic') {
@@ -281,6 +283,9 @@ function AppShell() {
       }
       navigate('live')
     }
+    if (kind === 'pic') {
+      navigate('pics')
+    }
   }
   const openProfile = (handle, userId = null) => {
     dockWatchIfNeeded(view === 'watch')
@@ -321,17 +326,7 @@ function AppShell() {
     navigate('live')
   }
 
-  const toggleSidebar = () => {
-    if (typeof window !== 'undefined' && window.innerWidth < 768) {
-      setMobileSidebarOpen((v) => !v)
-    } else {
-      setSidebarCollapsed((prev) => {
-        const next = !prev
-        lsSet('sidebar_collapsed', next)
-        return next
-      })
-    }
-  }
+  const toggleSidebar = () => setSidebarOpen((v) => !v)
 
   const toggleChat = () => {
     if (typeof window !== 'undefined' && window.innerWidth < 1024) {
@@ -443,6 +438,7 @@ function AppShell() {
       case 'help': return <HelpPage />
       case 'about': return <AboutPage />
       case 'notifications': return <NotificationsPage onNavigate={navigate} onOpenWatch={openWatch} />
+      case 'create': return <CreatePage onCreate={openCreate} onOpenAuth={openAuth} onNavigate={navigate} />
       case 'legal-tos': return <TermsOfService />
       case 'legal-privacy': return <PrivacyPolicy />
       case 'legal-creator': return <CreatorAgreement />
@@ -459,8 +455,9 @@ function AppShell() {
       <StreamingNavbar
         onNavigate={navigate}
         onOpenAuth={openAuth}
-        onCreate={openCreate}
         onToggleSidebar={toggleSidebar}
+        sidebarOpen={sidebarOpen}
+        onOpenWatch={openWatch}
         searchQuery={searchQuery}
         onSearchChange={(q) => {
           setSearchQuery(q)
@@ -471,12 +468,10 @@ function AppShell() {
 
       <div className="flex flex-1 min-h-0 relative">
         <CollapsibleSidebar
-          collapsed={sidebarCollapsed}
-          onToggleCollapse={toggleSidebar}
+          open={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
           currentView={view}
           onNavigate={navigate}
-          mobileOpen={mobileSidebarOpen}
-          onMobileClose={() => setMobileSidebarOpen(false)}
           onSelectLiveStream={selectLiveStreamFromSidebar}
           focusedStreamUserId={focusedLiveStream?.userId}
         />

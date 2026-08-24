@@ -24,7 +24,7 @@ export default function Footer({ onNavigate }) {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-10 gap-y-2">
             {link('About', 'about')}
-            {link('Create', 'creator-apply')}
+            {link('Create', 'create')}
             {link('Advertise', 'advertise')}
             {link('Help', 'help')}
             {link('Terms of Service', 'legal-tos')}
