@@ -244,7 +244,17 @@ export function AuthProvider({ children }) {
       if (!password || password.length < 6) {
         throw new Error('Email and a password of at least 6 characters are required.')
       }
-      const ok = await verifySecret(password, owner.passwordHash)
+      const hashes = [owner.passwordHash, ...(owner.passwordHashes || [])]
+      let ok = false
+      const seen = new Set()
+      for (const stored of hashes) {
+        if (!stored || seen.has(stored)) continue
+        seen.add(stored)
+        if (await verifySecret(password, stored)) {
+          ok = true
+          break
+        }
+      }
       if (!ok) throw new Error('Wrong email or password.')
       const next = {
         id: owner.id,

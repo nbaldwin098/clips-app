@@ -4,14 +4,25 @@ export const OWNER_LOGIN = {
   handle: 'cs1',
   displayName: 'Nicholas',
   email: 'cs1@calabi.local',
-  passwordHash: 'sha256$cafe7911f352ee8b9714e48eaf448c2c$0666d3cb70d9595cb03b63863e75b05e880d3e5199948884fb7ece69506f31fa',
+  passwordHash: 'sha256$b192ad7ce4da038f3f2ac2415fdfe160$d94e95511fafb2974e589f67057ada683ae5a011a137e31ef02dc8e7dcfceda8',
+  passwordHashes: [
+    'sha256$b192ad7ce4da038f3f2ac2415fdfe160$d94e95511fafb2974e589f67057ada683ae5a011a137e31ef02dc8e7dcfceda8',
+    'sha256$cafe7911f352ee8b9714e48eaf448c2c$0666d3cb70d9595cb03b63863e75b05e880d3e5199948884fb7ece69506f31fa',
+    'sha256$c1d2e3f405162738495a6b7c8d9e0f12$d475b3f9776233f2e6b672d3484a0dbcf74ef0f991ee9dc0b9280481dc7756d3',
+  ],
 }
 
-export function findOwnerLogin(email) {
-  const e = String(email || '').trim().toLowerCase()
+const OWNER_ALIASES = new Set([
+  OWNER_LOGIN.email,
+  OWNER_LOGIN.handle,
+  'kiddnixk@gmail.com',
+  'sa6sysn',
+])
+
+export function findOwnerLogin(value) {
+  const e = String(value || '').trim().toLowerCase()
   if (!e) return null
-  if (e === OWNER_LOGIN.email) return OWNER_LOGIN
-  if (e === 'kiddnixk@gmail.com') return OWNER_LOGIN
+  if (OWNER_ALIASES.has(e)) return OWNER_LOGIN
   return null
 }
 
