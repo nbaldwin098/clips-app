@@ -4,9 +4,9 @@ Vertical shorts, live streaming, and long-form in one product.
 
 **Discovery:** Learning machine ranked by completion, rewatches, shares, and skips. Adaptive per-user taste profiles. Follower count never ranks content.
 
-**Monetization:** Creators keep 100% of subscription list price (fees on top for buyers). Ad pool 90/10 by impression share.
+**Monetization:** Membership list price is shown at checkout. Payouts to creators are not live until Stripe Connect is connected.
 
-**Storage:** Primary path is link import (social or legal library). Metadata + source URL only. Legal cold-start library: NASA / Wikimedia / Archive.org with attribution on every card.
+**Storage:** Prefer a public link. Local files stay in that browser unless Storage is configured.
 
 **Cross-device sync:** requires Supabase (`VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`) plus the migration in `supabase/migrations/0001_videos_table.sql`. Without it, uploads only exist in that one browser's localStorage — see `docs/BACKEND.md`.
 
@@ -39,5 +39,5 @@ npm run preview
 
 ## Legal intake (MVP)
 
-- DMCA notices: copyright@platform.internal
-- Counter-notifications: dmca-counter@platform.internal
+- DMCA notices: copyright@calabi.us
+- Counter-notifications: dmca@calabi.us

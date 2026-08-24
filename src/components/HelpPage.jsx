@@ -1,5 +1,12 @@
 import { useState } from 'react'
 import { SETUP_SCRIPTS } from '../data/supabaseScripts'
+import {
+  CLIPS_RESET_EMAIL_SUBJECT,
+  CLIPS_RESET_EMAIL_BODY,
+  CLIPS_CONFIRM_EMAIL_SUBJECT,
+  CLIPS_CONFIRM_EMAIL_BODY,
+  CLIPS_SMS_TEMPLATE,
+} from '../lib/authBrand'
 
 function CopyScript({ script }) {
   const [copied, setCopied] = useState(false)
@@ -37,7 +44,11 @@ export default function HelpPage() {
     },
     {
       q: 'How do I sign in?',
-      a: 'Email and password always work. Apple and Microsoft appear when those providers are on in Supabase. CapCut cannot sign people into Clips — it is an editor. Export from CapCut, then upload here.',
+      a: 'Email and password, phone code, Apple, Microsoft, and X. CapCut cannot sign people in — it is an editor. Export from CapCut, then upload. 2FA is in Settings → Security after you sign in.',
+    },
+    {
+      q: 'Emails or texts say the wrong name',
+      a: 'The site never prints that name. Mail and texts are sent by the auth dashboard. Open Authentication → Email Templates and Phone. Paste the Clips text from the copy buttons on this Help page. Use your own mail sender if you have one.',
     },
     {
       q: 'Why is the feed empty?',
@@ -95,6 +106,22 @@ export default function HelpPage() {
         </p>
         {SETUP_SCRIPTS.map((script) => (
           <CopyScript key={script.id} script={script} />
+        ))}
+      </section>
+
+      <section className="mb-8 space-y-3">
+        <h2 className="text-sm font-semibold text-white">Make mail and texts say Clips</h2>
+        <p className="text-xs text-zinc-500">
+          Authentication → Providers: turn on Email, Phone, Apple, Azure (Microsoft), Twitter (X). Phone needs a text sender (Twilio). Then Email Templates and the SMS box: paste these.
+        </p>
+        {[
+          { title: 'Reset email subject', text: CLIPS_RESET_EMAIL_SUBJECT },
+          { title: 'Reset email body', text: CLIPS_RESET_EMAIL_BODY },
+          { title: 'Confirm email subject', text: CLIPS_CONFIRM_EMAIL_SUBJECT },
+          { title: 'Confirm email body', text: CLIPS_CONFIRM_EMAIL_BODY },
+          { title: 'Text message', text: CLIPS_SMS_TEMPLATE },
+        ].map((row) => (
+          <CopyScript key={row.title} script={{ id: row.title, title: row.title, sql: row.text }} />
         ))}
       </section>
 

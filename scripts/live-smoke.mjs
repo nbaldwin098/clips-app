@@ -2,6 +2,7 @@
 import { readFileSync } from 'node:fs'
 import { extractHashtags, mergeTags, parseClock, parseCaptionCues, isReleased, filterExploreItems } from '../src/lib/mediaMeta.js'
 import { parseRoute, buildHash } from '../src/lib/routes.js'
+import { sanitizeAuthError, normalizePhone } from '../src/lib/authBrand.js'
 
 let failed = 0
 function assert(cond, msg) {
@@ -12,6 +13,10 @@ function assert(cond, msg) {
     console.log('ok', msg)
   }
 }
+
+assert(sanitizeAuthError('Invalid login credentials') === 'Wrong email or password.', 'branded login error')
+assert(!/supabase/i.test(sanitizeAuthError('supabase provider is not enabled')), 'errors never say supabase')
+assert(normalizePhone('5551234567') === '+15551234567', 'us phone to e164')
 
 assert(extractHashtags('hello #Music and #gaming').join(',') === 'music,gaming', 'hashtags')
 assert(mergeTags('music, extra', 'more #music #live').includes('live'), 'merge tags')
@@ -84,8 +89,19 @@ const authSrc = readFileSync(new URL('../src/components/AuthModal.jsx', import.m
 assert(!authSrc.includes('Continue with Google'), 'google sign-in removed')
 assert(authSrc.includes('Continue with Apple'), 'apple sign-in button')
 assert(authSrc.includes('Continue with Microsoft'), 'microsoft sign-in button')
+assert(authSrc.includes('Continue with X'), 'x sign-in button')
 assert(authSrc.includes('loginWithOAuth'), 'oauth handler wired')
-assert(authSrc.includes('CapCut is an editor'), 'capcut is not a fake login')
+assert(authSrc.includes('Phone'), 'phone sign-in')
+assert(!/supabase/i.test(authSrc), 'auth modal never says supabase')
+assert(authSrc.includes('CapCut cannot sign people'), 'capcut is not a fake login')
+
+const brandSrc = readFileSync(new URL('../src/lib/authBrand.js', import.meta.url), 'utf8')
+assert(brandSrc.includes('Your Clips code is'), 'sms template says clips')
+assert(brandSrc.includes('sanitizeAuthError'), 'auth errors are branded')
+
+const secSrc = readFileSync(new URL('../src/components/settings/SecuritySettings.jsx', import.meta.url), 'utf8')
+assert(secSrc.includes('startMfaEnroll'), 'real 2fa enroll')
+assert(!secSrc.includes('Backend integration required'), '2fa is not a fake checkbox')
 
 const shortsSrc = readFileSync(new URL('../src/components/ShortsFeed.jsx', import.meta.url), 'utf8')
 assert(shortsSrc.includes('onStitch'), 'stitch on clip player')
@@ -109,6 +125,22 @@ assert(graphSrc.includes('export async function syncGraphFromCloud'), 'cloud gra
 const helpSrc = readFileSync(new URL('../src/components/HelpPage.jsx', import.meta.url), 'utf8')
 assert(helpSrc.includes('never type the file name'), 'help says not to type the sql filename')
 assert(helpSrc.includes('Copy SQL'), 'help has copy buttons for sql')
+
+const settingsHub = readFileSync(new URL('../src/components/settings/SettingsHub.jsx', import.meta.url), 'utf8')
+assert(settingsHub.includes('SecuritySettings'), 'settings hub includes real 2FA page')
+const appSrc = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8')
+assert(appSrc.includes('SettingsHub'), 'settings layout is mounted')
+assert(appSrc.includes('PasswordRecoveryGate'), 'reset-email landing exists')
+assert(!appSrc.includes("from './components/SettingsPage'"), 'old fake-2fa settings page is gone')
+const moneySrc = readFileSync(new URL('../src/components/settings/MonetizationSettings.jsx', import.meta.url), 'utf8')
+assert(!moneySrc.includes('100% of the listed price'), 'settings does not promise 100% payouts')
+assert(!moneySrc.includes('Connect payout method'), 'no fake connect payout button')
+const streamSet = readFileSync(new URL('../src/components/settings/StreamSettings.jsx', import.meta.url), 'utf8')
+assert(!streamSet.includes('rtmp://'), 'no fake rtmp url')
+assert(streamSet.includes('Live ingest is not connected'), 'stream settings honest')
+const copySrc = readFileSync(new URL('../src/components/settings/CopyrightSettings.jsx', import.meta.url), 'utf8')
+assert(copySrc.includes('copyright@calabi.us') || copySrc.includes('ORG.copyrightEmail'), 'dmca uses calabi.us')
+assert(!copySrc.includes('platform.internal'), 'no internal placeholder emails')
 
 const algoSrc = readFileSync(new URL('../src/lib/algorithmEngine.js', import.meta.url), 'utf8')
 assert(algoSrc.includes('explorationRoll'), 'for you exploration is session-stable')

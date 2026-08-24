@@ -12,6 +12,7 @@ export const QUALITY_PRESETS = [
 
 export const DEFAULT_STREAM_SETTINGS = {
   defaultQuality: '720p30',
+  latency: 'low',
   storePastBroadcasts: true,
   vodRetentionDays: 14,
   autoPublishVod: true,

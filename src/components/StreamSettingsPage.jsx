@@ -13,6 +13,9 @@ export default function StreamSettingsPage({ onNavigate }) {
   return (
     <div className="p-4 md:p-6 max-w-lg mx-auto">
       <PageHeader title="Stream settings" onBack={() => onNavigate?.('dashboard')} />
+      <p className="mb-4 text-sm text-zinc-500">
+        Live ingest is not connected. These are preferences on this device only — not a stream key.
+      </p>
       <div className="rounded-xl border border-[#2f2f37] bg-[#1f1f23] p-5 space-y-4">
         <label className="block text-xs text-white">
           Quality

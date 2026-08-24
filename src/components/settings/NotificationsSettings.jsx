@@ -19,9 +19,7 @@ export default function NotificationsSettings() {
     if (s.notifications) setPrefs({ ...DEFAULTS, ...s.notifications })
   }, [])
 
-  const toggle = (key) => {
-    setPrefs((p) => ({ ...p, [key]: !p[key] }))
-  }
+  const toggle = (key) => setPrefs((p) => ({ ...p, [key]: !p[key] }))
 
   const save = () => {
     saveUserSettings({ notifications: prefs })
@@ -30,39 +28,36 @@ export default function NotificationsSettings() {
   }
 
   const Row = ({ id, label, hint }) => (
-    <label className="flex items-start justify-between gap-4 py-3 border-b border-slate-100 last:border-0">
+    <label className="flex items-start justify-between gap-4 py-3 border-b border-zinc-800 last:border-0">
       <div>
-        <p className="text-sm font-medium text-slate-800">{label}</p>
-        {hint && <p className="text-xs text-slate-500 mt-0.5">{hint}</p>}
+        <p className="text-sm font-medium text-zinc-200">{label}</p>
+        {hint ? <p className="text-xs text-zinc-500 mt-0.5">{hint}</p> : null}
       </div>
-      <input
-        type="checkbox"
-        checked={!!prefs[id]}
-        onChange={() => toggle(id)}
-        className="mt-1 rounded border-slate-300 text-[#000000] focus:ring-[#000000]"
-      />
+      <input type="checkbox" checked={!!prefs[id]} onChange={() => toggle(id)} className="mt-1" />
     </label>
   )
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-xl font-semibold text-slate-900">Notifications</h1>
-        <p className="mt-1 text-sm text-slate-500">Email and push preferences for this account.</p>
+        <h1 className="text-xl font-semibold text-white">Notifications</h1>
+        <p className="mt-1 text-sm text-zinc-500">
+          Saved on this device. Email and push are not sent from a server yet except copyright-related mail you configure later.
+        </p>
       </div>
-      <section className="rounded-xl border border-slate-200 bg-white px-4">
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 pt-3 pb-1">Email</p>
-        <Row id="emailLive" label="Live stream starts" hint="When channels you follow go live" />
-        <Row id="emailSubs" label="New subscribers" hint="Creator accounts only" />
-        <Row id="emailStrikes" label="Copyright strikes" hint="Required for policy compliance" />
+      <section className="rounded-xl border border-zinc-800 bg-[#121218] px-4">
+        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 pt-3 pb-1">Email</p>
+        <Row id="emailLive" label="Live stream starts" hint="When channels you follow go live — after live is real" />
+        <Row id="emailSubs" label="New subscribers" />
+        <Row id="emailStrikes" label="Copyright strikes" hint="Keep on for policy mail" />
       </section>
-      <section className="rounded-xl border border-slate-200 bg-white px-4">
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 pt-3 pb-1">Push</p>
+      <section className="rounded-xl border border-zinc-800 bg-[#121218] px-4">
+        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 pt-3 pb-1">On this device</p>
         <Row id="pushLive" label="Live alerts" />
         <Row id="pushChat" label="Chat mentions" />
         <Row id="pushMarketing" label="Product updates" />
       </section>
-      <button onClick={save} className="h-9 px-4 rounded-lg bg-[#000000] text-white text-sm font-medium hover:bg-[#27272a]">
+      <button type="button" onClick={save} className="h-9 px-4 rounded-lg bg-white text-black text-sm font-medium">
         {saved ? 'Saved' : 'Save preferences'}
       </button>
     </div>

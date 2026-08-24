@@ -20,7 +20,18 @@ const SECTIONS = [
 
 export default function SettingsLayout({ section, onSection, children }) {
   return (
-    <div className="flex min-h-[calc(100vh-3.5rem)]">
+    <div className="flex flex-col lg:flex-row min-h-[calc(100vh-3.5rem)]">
+      <div className="lg:hidden p-3 border-b border-zinc-800 w-full">
+        <select
+          value={section}
+          onChange={(e) => onSection(e.target.value)}
+          className="w-full h-10 rounded-lg border border-zinc-800 bg-[#121218] px-3 text-sm text-white"
+        >
+          {SECTIONS.map((s) => (
+            <option key={s.id} value={s.id}>{s.label}</option>
+          ))}
+        </select>
+      </div>
       <aside className="hidden lg:flex w-56 shrink-0 flex-col border-r border-zinc-800 bg-[#0e0e12] p-3">
         <p className="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">Settings</p>
         <nav className="space-y-0.5">

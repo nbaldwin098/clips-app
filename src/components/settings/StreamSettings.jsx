@@ -1,91 +1,62 @@
 import { useState } from 'react'
-import { Copy, Check, Key, Globe } from 'lucide-react'
+import { useAuth } from '../../context/AuthContext'
+import { getStreamSettings, setStreamSettings } from '../../lib/streamSettings'
 
 export default function StreamSettings() {
-  const [region, setRegion] = useState('us-east')
-  const [latency, setLatency] = useState('ultra')
-  const [delay, setDelay] = useState(0)
-  const [autoVod, setAutoVod] = useState(true)
-  const [allowClips, setAllowClips] = useState(true)
-  const [copied, setCopied] = useState(false)
+  const { user } = useAuth()
+  const initial = getStreamSettings(user?.id)
+  const [latency, setLatency] = useState(initial.latency || 'low')
+  const [quality, setQuality] = useState(initial.defaultQuality || '720p30')
+  const [title, setTitle] = useState(initial.streamTitleTemplate || '')
+  const [saved, setSaved] = useState(false)
 
-  const streamKey = 'clips_live_••••••••••••••••'
-  const rtmpUrl = 'rtmp://ingest.clips.tv/live'
-  const srtUrl = 'srt://ingest.clips.tv:9000'
-
-  const copy = (text) => {
-    navigator.clipboard?.writeText(text)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1500)
+  const save = () => {
+    setStreamSettings(user?.id, {
+      latency,
+      defaultQuality: quality,
+      streamTitleTemplate: title,
+    })
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
   }
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-xl font-semibold text-slate-900">Stream & Ingest</h1>
-        <p className="mt-1 text-sm text-slate-500">RTMP / SRT keys, region, latency, and archive controls.</p>
+        <h1 className="text-xl font-semibold text-white">Stream & Ingest</h1>
+        <p className="mt-1 text-sm text-zinc-500">
+          Live ingest is not connected. There is no RTMP URL or stream key to copy. These fields only remember how you want a future stream labeled.
+        </p>
       </div>
 
+      <section className="rounded-xl border border-zinc-800 bg-[#121218] p-4 text-sm text-zinc-400">
+        The Live lobby on calabi.us cannot take OBS yet. When ingest is real, keys will appear here.
+      </section>
+
       <section className="space-y-4">
-        <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2"><Key className="h-4 w-4" /> Stream key</h2>
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3">
-          <div>
-            <p className="text-xs font-medium text-slate-500 mb-1">RTMP URL</p>
-            <div className="flex gap-2">
-              <code className="flex-1 text-sm bg-white border border-slate-200 rounded px-3 py-2 truncate">{rtmpUrl}</code>
-              <button onClick={() => copy(rtmpUrl)} className="h-9 w-9 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-white">
-                {copied ? <Check className="h-4 w-4 text-black" /> : <Copy className="h-4 w-4 text-slate-500" />}
-              </button>
-            </div>
-          </div>
-          <div>
-            <p className="text-xs font-medium text-slate-500 mb-1">Stream key</p>
-            <div className="flex gap-2">
-              <code className="flex-1 text-sm bg-white border border-slate-200 rounded px-3 py-2">{streamKey}</code>
-              <button onClick={() => copy('clips_live_demo_key')} className="h-9 w-9 flex items-center justify-center rounded-lg border border-slate-200 hover:bg-white">
-                <Copy className="h-4 w-4 text-slate-500" />
-              </button>
-            </div>
-          </div>
-          <div>
-            <p className="text-xs font-medium text-slate-500 mb-1">SRT URL</p>
-            <code className="block text-sm bg-white border border-slate-200 rounded px-3 py-2">{srtUrl}</code>
-          </div>
-          <button className="h-9 px-4 rounded-lg border border-slate-200 text-sm text-slate-700 hover:bg-white">Reset stream key</button>
-        </div>
-      </section>
-
-      <section className="pt-6 border-t border-slate-200 space-y-4">
-        <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2"><Globe className="h-4 w-4" /> Ingest region</h2>
-        <select value={region} onChange={e => setRegion(e.target.value)} className="h-10 rounded-lg border border-slate-200 px-3 text-sm">
-          <option value="us-east">US East</option>
-          <option value="us-west">US West</option>
-          <option value="eu">Europe</option>
-          <option value="asia">Asia Pacific</option>
-        </select>
-      </section>
-
-      <section className="pt-6 border-t border-slate-200 space-y-4">
-        <h2 className="text-sm font-semibold text-slate-900">Latency mode</h2>
-        <div className="flex gap-3">
-          <button onClick={() => setLatency('ultra')} className={`h-9 px-4 rounded-lg text-sm font-medium border ${latency === 'ultra' ? 'bg-[#000000] text-white border-[#000000]' : 'border-slate-200 text-slate-700'}`}>Ultra-low</button>
-          <button onClick={() => setLatency('standard')} className={`h-9 px-4 rounded-lg text-sm font-medium border ${latency === 'standard' ? 'bg-[#000000] text-white border-[#000000]' : 'border-slate-200 text-slate-700'}`}>Standard</button>
-        </div>
+        <h2 className="text-sm font-semibold text-white">Preferences on this device</h2>
         <label className="block max-w-xs">
-          <span className="text-xs font-medium text-slate-600">Broadcast delay (seconds)</span>
-          <input type="number" min={0} max={10} value={delay} onChange={e => setDelay(Number(e.target.value))} className="mt-1 w-full h-10 rounded-lg border border-slate-200 px-3 text-sm" />
+          <span className="text-xs font-medium text-zinc-400">Preferred quality</span>
+          <select value={quality} onChange={(e) => setQuality(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100">
+            <option value="1080p30">1080p30</option>
+            <option value="720p30">720p30</option>
+            <option value="480p30">480p30</option>
+          </select>
         </label>
-      </section>
-
-      <section className="pt-6 border-t border-slate-200 space-y-3">
-        <label className="flex items-center gap-3">
-          <input type="checkbox" checked={autoVod} onChange={e => setAutoVod(e.target.checked)} className="rounded border-slate-300 text-[#000000]" />
-          <span className="text-sm text-slate-700">Auto-archive live streams to VOD library</span>
+        <label className="block max-w-xs">
+          <span className="text-xs font-medium text-zinc-400">Latency preference</span>
+          <select value={latency} onChange={(e) => setLatency(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100">
+            <option value="low">Low</option>
+            <option value="normal">Normal</option>
+          </select>
         </label>
-        <label className="flex items-center gap-3">
-          <input type="checkbox" checked={allowClips} onChange={e => setAllowClips(e.target.checked)} className="rounded border-slate-300 text-[#000000]" />
-          <span className="text-sm text-slate-700">Allow viewers to create clips</span>
+        <label className="block max-w-md">
+          <span className="text-xs font-medium text-zinc-400">Title template</span>
+          <input value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100" placeholder="Optional" />
         </label>
+        <button type="button" onClick={save} className="h-9 px-4 rounded-lg bg-white text-black text-sm font-medium">
+          {saved ? 'Saved' : 'Save'}
+        </button>
       </section>
     </div>
   )

@@ -1,13 +1,23 @@
 import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { getSupabase, isSupabaseConfigured } from '../lib/supabaseClient'
 import { listIndexedUsers } from '../lib/moderation'
+import { sanitizeAuthError } from '../lib/authBrand'
+
+const OAUTH = [
+  { id: 'apple', label: 'Continue with Apple' },
+  { id: 'azure', label: 'Continue with Microsoft' },
+  { id: 'twitter', label: 'Continue with X' },
+]
 
 export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
-  const { login, loginWithOAuth, backend } = useAuth()
-  const [mode, setMode] = useState(initialMode) // signin | signup | forgot-pass | forgot-user
+  const { login, loginWithOAuth, sendPhoneCode, verifyPhoneCode, sendPasswordReset: sendReset, synced } = useAuth()
+  const [mode, setMode] = useState(initialMode)
+  const [via, setVia] = useState('email')
   const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
+  const [smsSent, setSmsSent] = useState(false)
+  const [smsCode, setSmsCode] = useState('')
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [handle, setHandle] = useState('')
@@ -18,9 +28,12 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
   useEffect(() => {
     if (open) {
       setMode(initialMode)
+      setVia('email')
       setError('')
       setInfo('')
       setPassword('')
+      setSmsSent(false)
+      setSmsCode('')
       setBusy(false)
     }
   }, [open, initialMode])
@@ -46,25 +59,10 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
     }
     setBusy(true)
     try {
-      if (!isSupabaseConfigured()) {
-        setError('Password reset needs Supabase. Sign up again on this device if you only used local login.')
-        setBusy(false)
-        return
-      }
-      const sb = await getSupabase()
-      if (!sb) {
-        setError('Could not reach auth service.')
-        setBusy(false)
-        return
-      }
-      const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined
-      const { error: resetErr } = await sb.auth.resetPasswordForEmail(mail, {
-        redirectTo,
-      })
-      if (resetErr) throw new Error(resetErr.message)
-      setInfo('If that email is registered, a reset link was sent. Check inbox and spam.')
+      await sendReset(mail)
+      setInfo('If that email is on Clips, we sent a reset link. Check inbox and spam.')
     } catch (err) {
-      setError(err?.message || 'Could not send reset email.')
+      setError(sanitizeAuthError(err?.message) || 'Could not send reset email.')
     } finally {
       setBusy(false)
     }
@@ -83,9 +81,7 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
     if (match?.handle) {
       setInfo(`Your username is @${match.handle}`)
     } else {
-      setInfo(
-        'No username found on this device for that email. Sign in with email — your @username shows on your profile after login. Or check Supabase → Authentication → Users.'
-      )
+      setInfo('No username found on this device for that email. Sign in with email or phone — your @username is on your profile after you log in.')
     }
   }
 
@@ -100,6 +96,25 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
     }
     if (mode === 'forgot-user') {
       findUsername()
+      return
+    }
+
+    if (via === 'phone' && (mode === 'signin' || mode === 'signup')) {
+      setBusy(true)
+      try {
+        if (!smsSent) {
+          await sendPhoneCode(phone)
+          setSmsSent(true)
+          setInfo('We texted a Clips code to that number.')
+        } else {
+          const result = await verifyPhoneCode(phone, smsCode)
+          if (!result?.needsMfa) onClose?.()
+        }
+      } catch (err) {
+        setError(sanitizeAuthError(err?.message))
+      } finally {
+        setBusy(false)
+      }
       return
     }
 
@@ -134,14 +149,14 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
         handle: handle.trim().toLowerCase().replace(/[^a-z0-9_]/g, '') || undefined,
       })
       if (result?.pendingEmailConfirm) {
-        setError('Check your email to confirm, then sign in.')
+        setInfo('Check your email from Clips, then sign in.')
         setMode('signin')
         setBusy(false)
         return
       }
-      onClose?.()
+      if (!result?.needsMfa) onClose?.()
     } catch (err) {
-      setError(err?.message || 'Sign in failed.')
+      setError(sanitizeAuthError(err?.message) || 'Sign in failed.')
     } finally {
       setBusy(false)
     }
@@ -154,7 +169,7 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
           <div>
             <h2 className="text-lg font-semibold text-[#efeff1]">{title}</h2>
             <p className="text-[10px] text-zinc-500 mt-0.5">
-              {backend === 'supabase' ? 'Synced across devices' : 'Local this device'}
+              {synced ? 'Synced across devices' : 'Local this device'}
             </p>
           </div>
           <button type="button" onClick={onClose} className="text-zinc-400 hover:text-white">
@@ -162,13 +177,10 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
           </button>
         </div>
         <div className="p-5">
-          {(mode === 'signin' || mode === 'signup') && backend === 'supabase' && (
+          {(mode === 'signin' || mode === 'signup') && synced && (
             <>
               <div className="space-y-2">
-                {[
-                  { id: 'apple', label: 'Continue with Apple' },
-                  { id: 'azure', label: 'Continue with Microsoft' },
-                ].map((p) => (
+                {OAUTH.map((p) => (
                   <button
                     key={p.id}
                     type="button"
@@ -179,7 +191,7 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
                       try {
                         await loginWithOAuth(p.id)
                       } catch (err) {
-                        setError(err?.message || `${p.label.replace('Continue with ', '')} sign-in is not turned on in Supabase yet.`)
+                        setError(sanitizeAuthError(err?.message))
                         setBusy(false)
                       }
                     }}
@@ -190,17 +202,29 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
                 ))}
               </div>
               <p className="mt-2 text-[11px] text-zinc-500">
-                CapCut is an editor, not a sign-in. Export the file, then upload here.
+                CapCut cannot sign people into Clips. It is an editor. Export the file, then upload.
               </p>
               <div className="my-4 flex items-center gap-3 text-[10px] uppercase tracking-wider text-zinc-600">
                 <span className="h-px flex-1 bg-[#2f2f37]" />
-                or email
+                or
                 <span className="h-px flex-1 bg-[#2f2f37]" />
+              </div>
+              <div className="mb-3 flex gap-1 rounded-full bg-white/10 p-1 w-fit">
+                {['email', 'phone'].map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => { setVia(id); setError(''); setInfo(''); setSmsSent(false) }}
+                    className={`h-7 px-3 rounded-full text-[11px] font-semibold ${via === id ? 'bg-white text-black' : 'text-white/70'}`}
+                  >
+                    {id === 'email' ? 'Email' : 'Phone'}
+                  </button>
+                ))}
               </div>
             </>
           )}
           <form onSubmit={submit} className="space-y-3">
-            {mode === 'signup' && (
+            {mode === 'signup' && via === 'email' && (
               <>
                 <label className="block">
                   <span className="text-xs font-medium text-zinc-300">Display name</span>
@@ -228,18 +252,45 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
               </>
             )}
 
-            <label className="block">
-              <span className="text-xs font-medium text-zinc-300">Email</span>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-white"
-                autoComplete="email"
-              />
-            </label>
+            {via === 'phone' && (mode === 'signin' || mode === 'signup') ? (
+              <>
+                <label className="block">
+                  <span className="text-xs font-medium text-zinc-300">Phone</span>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+1 555 123 4567"
+                    className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1]"
+                    autoComplete="tel"
+                  />
+                </label>
+                {smsSent ? (
+                  <label className="block">
+                    <span className="text-xs font-medium text-zinc-300">Text code</span>
+                    <input
+                      value={smsCode}
+                      onChange={(e) => setSmsCode(e.target.value.replace(/\D/g, '').slice(0, 8))}
+                      inputMode="numeric"
+                      className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] tracking-widest"
+                    />
+                  </label>
+                ) : null}
+              </>
+            ) : (
+              <label className="block">
+                <span className="text-xs font-medium text-zinc-300">Email</span>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-white"
+                  autoComplete="email"
+                />
+              </label>
+            )}
 
-            {(mode === 'signin' || mode === 'signup') && (
+            {(mode === 'signin' || mode === 'signup') && via === 'email' && (
               <label className="block">
                 <span className="text-xs font-medium text-zinc-300">Password</span>
                 <input
@@ -253,10 +304,10 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
             )}
 
             {mode === 'forgot-pass' && (
-              <p className="text-xs text-zinc-500">We’ll email a reset link if this address has an account.</p>
+              <p className="text-xs text-zinc-500">We’ll email a Clips reset link if this address has an account.</p>
             )}
             {mode === 'forgot-user' && (
-              <p className="text-xs text-zinc-500">We’ll look up @username for this email on this device / index.</p>
+              <p className="text-xs text-zinc-500">We’ll look up @username for this email on this device.</p>
             )}
 
             {error && <p className="text-sm text-red-400">{error}</p>}
@@ -269,22 +320,26 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
             >
               {busy
                 ? 'Please wait…'
-                : mode === 'signup'
+                : mode === 'signup' && via === 'email'
                   ? 'Create account'
                   : mode === 'forgot-pass'
                     ? 'Send reset link'
                     : mode === 'forgot-user'
                       ? 'Find username'
-                      : 'Sign in'}
+                      : via === 'phone' && !smsSent
+                        ? 'Text me a code'
+                        : via === 'phone'
+                          ? 'Sign in'
+                          : 'Sign in'}
             </button>
           </form>
 
           {mode === 'signin' && (
             <div className="mt-3 flex flex-wrap justify-center gap-x-3 gap-y-1 text-xs text-zinc-500">
-              <button type="button" className="text-white font-medium" onClick={() => { setMode('forgot-pass'); setError(''); setInfo('') }}>
+              <button type="button" className="text-white font-medium" onClick={() => { setMode('forgot-pass'); setVia('email'); setError(''); setInfo('') }}>
                 Forgot password?
               </button>
-              <button type="button" className="text-white font-medium" onClick={() => { setMode('forgot-user'); setError(''); setInfo('') }}>
+              <button type="button" className="text-white font-medium" onClick={() => { setMode('forgot-user'); setVia('email'); setError(''); setInfo('') }}>
                 Forgot username?
               </button>
             </div>

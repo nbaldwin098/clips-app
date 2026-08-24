@@ -47,7 +47,7 @@ export default function CreatorOnboarding({ onOpenImport, onDone, onNavigate }) 
       <div className="flex items-center justify-between gap-3 mb-4">
         <div>
           <h2 className="text-base font-semibold text-slate-900">Creator setup</h2>
-          <p className="text-xs text-slate-500 mt-0.5">About 60 seconds · you keep 100% of the sub price</p>
+          <p className="text-xs text-slate-500 mt-0.5">About 60 seconds · payouts are not live yet</p>
         </div>
         <div className="flex gap-1.5">
           {[1, 2, 3].map((n) => (

@@ -6,6 +6,7 @@ import { pullWatchProgressFromCloud } from '../lib/watchProgress'
 import { setGraphActor, syncGraphFromCloud } from '../lib/graphSync'
 import { ensureOwnProfile, privilegesFromProfile } from '../lib/profiles'
 import { hashSecret, verifySecret } from '../lib/secrets'
+import { sanitizeAuthError, normalizePhone } from '../lib/authBrand'
 
 const AuthContext = createContext(null)
 const DEFAULT_USER = {
@@ -23,6 +24,7 @@ function persistableUser(u) {
     handle: normalizeHandle(u.handle) || 'viewer',
     provider: u.provider === 'supabase' ? 'supabase' : 'local',
     avatarUrl: u.avatarUrl || null,
+    phone: u.phone || '',
     bannerUrl: u.bannerUrl || null,
     bio: String(u.bio || '').slice(0, 500),
     passwordHash: u.passwordHash || undefined,
@@ -62,14 +64,17 @@ function pickUniqueHandle(raw, exceptUserId = null) {
 
 function mapSbUser(sbUser, meta = {}) {
   const email = sbUser.email || meta.email || ''
+  const phone = sbUser.phone || meta.phone || ''
+  const seed = email.split('@')[0] || phone.slice(-4) || 'user'
   const handle =
-    meta.handle || sbUser.user_metadata?.handle || pickUniqueHandle(email.split('@')[0] || 'user')
+    meta.handle || sbUser.user_metadata?.handle || pickUniqueHandle(seed)
   const displayName =
-    meta.displayName || sbUser.user_metadata?.display_name || email.split('@')[0] || 'Viewer'
+    meta.displayName || sbUser.user_metadata?.display_name || seed || 'Viewer'
   return {
     ...DEFAULT_USER,
     id: sbUser.id,
     email,
+    phone,
     displayName,
     handle: String(handle).toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24) || 'user',
     provider: 'supabase',
@@ -80,6 +85,18 @@ function mapSbUser(sbUser, meta = {}) {
     avatarUrl: meta.avatarUrl || sbUser.user_metadata?.avatar_url || null,
     bannerUrl: meta.bannerUrl || null,
     bio: meta.bio || '',
+  }
+}
+
+async function readMfaState(sb) {
+  try {
+    const aal = await sb.auth.mfa.getAuthenticatorAssuranceLevel()
+    const needs = aal.data?.nextLevel === 'aal2' && aal.data?.currentLevel !== 'aal2'
+    if (!needs) return { pending: false, factors: [] }
+    const listed = await sb.auth.mfa.listFactors()
+    return { pending: true, factors: listed.data?.totp || [] }
+  } catch {
+    return { pending: false, factors: [] }
   }
 }
 
@@ -106,6 +123,9 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => sanitizeUser(lsGet('user', null)))
   const [mode, setMode] = useState(() => lsGet('mode', 'viewer'))
   const [authReady, setAuthReady] = useState(!isSupabaseConfigured())
+  const [mfaPending, setMfaPending] = useState(false)
+  const [mfaFactors, setMfaFactors] = useState([])
+  const [passwordRecovery, setPasswordRecovery] = useState(false)
 
   useEffect(() => {
     if (user) lsSet('user', persistableUser(user))
@@ -122,25 +142,40 @@ export function AuthProvider({ children }) {
         if (!sb) { setAuthReady(true); return }
         const { data: { session } } = await sb.auth.getSession()
         if (session?.user) {
+          const mfa = await readMfaState(sb)
+          setMfaPending(mfa.pending)
+          setMfaFactors(mfa.factors)
           const mapped = await hydratePrivileges(mapSbUser(session.user))
           setUser(mapped)
           try { indexUser(mapped) } catch {}
-          try { await pullWatchProgressFromCloud(mapped.id) } catch {}
-          setGraphActor(mapped)
-          try { await syncGraphFromCloud() } catch {}
-        } else {
-          setGraphActor(null)
-          setUser((prev) => (prev?.provider === 'supabase' ? null : sanitizeUser(prev)))
-        }
-        const { data } = sb.auth.onAuthStateChange(async (_event, sess) => {
-          if (sess?.user) {
-            const mapped = await hydratePrivileges(mapSbUser(sess.user))
-            setUser(mapped)
-            try { indexUser(mapped) } catch {}
+          if (!mfa.pending) {
             try { await pullWatchProgressFromCloud(mapped.id) } catch {}
             setGraphActor(mapped)
             try { await syncGraphFromCloud() } catch {}
+          }
+        } else {
+          setMfaPending(false)
+          setMfaFactors([])
+          setGraphActor(null)
+          setUser((prev) => (prev?.provider === 'supabase' ? null : sanitizeUser(prev)))
+        }
+        const { data } = sb.auth.onAuthStateChange(async (event, sess) => {
+          if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true)
+          if (sess?.user) {
+            const mfa = await readMfaState(sb)
+            setMfaPending(mfa.pending)
+            setMfaFactors(mfa.factors)
+            const mapped = await hydratePrivileges(mapSbUser(sess.user))
+            setUser(mapped)
+            try { indexUser(mapped) } catch {}
+            if (!mfa.pending) {
+              try { await pullWatchProgressFromCloud(mapped.id) } catch {}
+              setGraphActor(mapped)
+              try { await syncGraphFromCloud() } catch {}
+            }
           } else {
+            setMfaPending(false)
+            setMfaFactors([])
             setGraphActor(null)
             setUser((prev) => (prev?.provider === 'supabase' ? null : prev))
           }
@@ -175,7 +210,7 @@ export function AuthProvider({ children }) {
             password,
             options: { data: { display_name: displayName, handle } },
           })
-          if (error) throw new Error(error.message)
+          if (error) throw new Error(sanitizeAuthError(error.message))
           if (data.user) {
             const mapped = await hydratePrivileges(mapSbUser(data.user, { displayName, handle }))
             setUser(mapped)
@@ -191,15 +226,20 @@ export function AuthProvider({ children }) {
           email: email.trim().toLowerCase(),
           password,
         })
-        if (error) throw new Error(error.message)
+        if (error) throw new Error(sanitizeAuthError(error.message))
         const mapped = await hydratePrivileges(mapSbUser(data.user, { displayName }))
         setUser(mapped)
         setMode('viewer')
         try { indexUser(mapped) } catch {}
-        try { await pullWatchProgressFromCloud(mapped.id) } catch {}
-        setGraphActor(mapped)
-        try { await syncGraphFromCloud() } catch {}
-        return mapped
+        const mfa = await readMfaState(sb)
+        setMfaPending(mfa.pending)
+        setMfaFactors(mfa.factors)
+        if (!mfa.pending) {
+          try { await pullWatchProgressFromCloud(mapped.id) } catch {}
+          setGraphActor(mapped)
+          try { await syncGraphFromCloud() } catch {}
+        }
+        return { ...mapped, needsMfa: mfa.pending }
       }
       throw new Error('Sign-in is temporarily unavailable. Try again.')
     }
@@ -262,21 +302,143 @@ export function AuthProvider({ children }) {
     lsSet('mode', 'viewer')
   }, [])
 
-  const loginWithOAuth = useCallback(async (provider) => {
-    const labels = { apple: 'Apple', azure: 'Microsoft' }
-    if (!labels[provider]) throw new Error('That sign-in is not available.')
+  const sendPasswordReset = useCallback(async (rawEmail) => {
+    const mail = String(rawEmail || '').trim().toLowerCase()
+    if (!mail || !mail.includes('@')) throw new Error('Enter the email on your account.')
     if (!isSupabaseConfigured()) {
-      throw new Error(`${labels[provider]} sign-in needs Supabase on this deploy.`)
+      throw new Error('Password reset needs a Clips account on this site.')
     }
     const sb = await getSupabase()
-    if (!sb) throw new Error('Could not reach auth.')
+    if (!sb) throw new Error('Could not send a reset email right now.')
+    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined
+    const { error } = await sb.auth.resetPasswordForEmail(mail, { redirectTo })
+    if (error) throw new Error(sanitizeAuthError(error.message))
+    return true
+  }, [])
+
+  const loginWithOAuth = useCallback(async (provider) => {
+    const labels = { apple: 'Apple', azure: 'Microsoft', twitter: 'X' }
+    if (!labels[provider]) throw new Error('That sign-in is not available.')
+    if (!isSupabaseConfigured()) {
+      throw new Error(`${labels[provider]} sign-in is not turned on yet.`)
+    }
+    const sb = await getSupabase()
+    if (!sb) throw new Error('Could not reach sign-in.')
     const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined
     const { error } = await sb.auth.signInWithOAuth({
       provider,
       options: { redirectTo },
     })
-    if (error) throw new Error(error.message)
+    if (error) throw new Error(sanitizeAuthError(error.message))
     return { redirected: true }
+  }, [])
+
+  const sendPhoneCode = useCallback(async (rawPhone) => {
+    const phone = normalizePhone(rawPhone)
+    if (!phone) throw new Error('Enter a real phone number.')
+    if (!isSupabaseConfigured()) throw new Error('Phone sign-in is not turned on yet.')
+    const sb = await getSupabase()
+    if (!sb) throw new Error('Could not reach sign-in.')
+    const { error } = await sb.auth.signInWithOtp({ phone })
+    if (error) throw new Error(sanitizeAuthError(error.message))
+    return { phone }
+  }, [])
+
+  const verifyPhoneCode = useCallback(async (rawPhone, token) => {
+    const phone = normalizePhone(rawPhone)
+    if (!phone || !String(token || '').trim()) throw new Error('Enter the code from your text.')
+    if (!isSupabaseConfigured()) throw new Error('Phone sign-in is not turned on yet.')
+    const sb = await getSupabase()
+    if (!sb) throw new Error('Could not reach sign-in.')
+    const { data, error } = await sb.auth.verifyOtp({ phone, token: String(token).trim(), type: 'sms' })
+    if (error) throw new Error(sanitizeAuthError(error.message))
+    if (!data.user) throw new Error('That code did not work.')
+    const mapped = await hydratePrivileges(mapSbUser(data.user, { phone }))
+    setUser(mapped)
+    setMode('viewer')
+    try { indexUser(mapped) } catch {}
+    const mfa = await readMfaState(sb)
+    setMfaPending(mfa.pending)
+    setMfaFactors(mfa.factors)
+    if (!mfa.pending) {
+      try { await pullWatchProgressFromCloud(mapped.id) } catch {}
+      setGraphActor(mapped)
+      try { await syncGraphFromCloud() } catch {}
+    }
+    return { ...mapped, needsMfa: mfa.pending }
+  }, [])
+
+  const completeMfa = useCallback(async (code) => {
+    const factor = mfaFactors[0]
+    if (!factor?.id) throw new Error('No authenticator is set on this account.')
+    const sb = await getSupabase()
+    if (!sb) throw new Error('Could not reach sign-in.')
+    const challenge = await sb.auth.mfa.challenge({ factorId: factor.id })
+    if (challenge.error) throw new Error(sanitizeAuthError(challenge.error.message))
+    const verified = await sb.auth.mfa.verify({
+      factorId: factor.id,
+      challengeId: challenge.data.id,
+      code: String(code || '').trim(),
+    })
+    if (verified.error) throw new Error(sanitizeAuthError(verified.error.message))
+    setMfaPending(false)
+    if (user) {
+      try { await pullWatchProgressFromCloud(user.id) } catch {}
+      setGraphActor(user)
+      try { await syncGraphFromCloud() } catch {}
+    }
+    return true
+  }, [mfaFactors, user])
+
+  const listMfaFactors = useCallback(async () => {
+    if (!isSupabaseConfigured()) return []
+    const sb = await getSupabase()
+    if (!sb) return []
+    const { data, error } = await sb.auth.mfa.listFactors()
+    if (error) throw new Error(sanitizeAuthError(error.message))
+    return data?.totp || []
+  }, [])
+
+  const startMfaEnroll = useCallback(async () => {
+    if (!isSupabaseConfigured()) throw new Error('2FA is only for a signed-in Clips account.')
+    const sb = await getSupabase()
+    if (!sb) throw new Error('Could not start 2FA.')
+    const { data, error } = await sb.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Clips' })
+    if (error) throw new Error(sanitizeAuthError(error.message))
+    return data
+  }, [])
+
+  const finishMfaEnroll = useCallback(async (factorId, code) => {
+    const sb = await getSupabase()
+    if (!sb) throw new Error('Could not finish 2FA.')
+    const challenge = await sb.auth.mfa.challenge({ factorId })
+    if (challenge.error) throw new Error(sanitizeAuthError(challenge.error.message))
+    const verified = await sb.auth.mfa.verify({
+      factorId,
+      challengeId: challenge.data.id,
+      code: String(code || '').trim(),
+    })
+    if (verified.error) throw new Error(sanitizeAuthError(verified.error.message))
+    return true
+  }, [])
+
+  const removeMfaFactor = useCallback(async (factorId) => {
+    const sb = await getSupabase()
+    if (!sb) throw new Error('Could not turn off 2FA.')
+    const { error } = await sb.auth.mfa.unenroll({ factorId })
+    if (error) throw new Error(sanitizeAuthError(error.message))
+    return true
+  }, [])
+
+  const updatePassword = useCallback(async (newPassword) => {
+    if (!newPassword || newPassword.length < 6) throw new Error('Password must be at least 6 characters.')
+    if (!isSupabaseConfigured()) throw new Error('Change password after you sign in with email.')
+    const sb = await getSupabase()
+    if (!sb) throw new Error('Could not update password.')
+    const { error } = await sb.auth.updateUser({ password: newPassword })
+    if (error) throw new Error(sanitizeAuthError(error.message))
+    setPasswordRecovery(false)
+    return true
   }, [])
 
   const updateProfile = useCallback((partial) => {
@@ -314,9 +476,22 @@ export function AuthProvider({ children }) {
     isAuthenticated: !!user,
     mode,
     authReady,
-    backend: isSupabaseConfigured() ? 'supabase' : 'local',
+    backend: isSupabaseConfigured() ? 'cloud' : 'local',
+    synced: isSupabaseConfigured(),
     login,
+    sendPasswordReset,
     loginWithOAuth,
+    sendPhoneCode,
+    verifyPhoneCode,
+    mfaPending,
+    passwordRecovery,
+    clearPasswordRecovery: () => setPasswordRecovery(false),
+    completeMfa,
+    listMfaFactors,
+    startMfaEnroll,
+    finishMfaEnroll,
+    removeMfaFactor,
+    updatePassword,
     logout,
     updateProfile,
     enableCreatorMode,
