@@ -16,17 +16,6 @@ export function ensureExoClickScript() {
   document.head.appendChild(s)
 }
 
-export function exoClickInsClass(zoneId, format = 'display') {
-  if (format === 'banner') return EXOCLICK_BANNER_CLASS
-  if (format === 'display') return EXOCLICK_INS_CLASS
-  if (String(zoneId) === EXOCLICK_BANNER_ZONE) return EXOCLICK_BANNER_CLASS
-  return EXOCLICK_INS_CLASS
-}
-
-export function exoClickZoneForFormat(format) {
-  return format === 'banner' ? EXOCLICK_BANNER_ZONE : EXOCLICK_DISPLAY_ZONE
-}
-
 /**
  * Render an ExoClick unit at its native zone size.
  * Never stretch the <ins>/iframe into 9:16 or 16:9 frames — the parent
