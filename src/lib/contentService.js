@@ -465,6 +465,35 @@ export function getById(id) {
   return normalizeItem(withViewCounts([fromImport])[0])
 }
 
+const watchStash = new Map()
+
+/** Remember the item the user clicked so watch can play even if the frozen feed is stale. */
+export function stashWatchItem(item) {
+  if (!item?.id) return
+  watchStash.set(String(item.id), item)
+  if (watchStash.size > 32) {
+    const oldest = watchStash.keys().next().value
+    watchStash.delete(oldest)
+  }
+}
+
+function peekWatchStash(id) {
+  return watchStash.get(String(id)) || null
+}
+
+/** Resolve an item for playback — strict catalog first, then click stash, then raw import. */
+export function getWatchItem(id, fallback = null) {
+  if (!id) return null
+  const strict = getById(id)
+  if (strict) return strict
+  const stashed = peekWatchStash(id)
+  const fb = fallback && String(fallback.id) === String(id) ? fallback : stashed
+  if (fb) return normalizeItem(withViewCounts([fb])[0])
+  const raw = getImports().find((i) => i.id === id)
+  if (raw) return normalizeItem(withViewCounts([raw])[0])
+  return null
+}
+
 export function listImportsNormalized() {
   return withViewCounts(getImports().map(normalizeItem))
 }

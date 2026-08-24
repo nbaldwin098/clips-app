@@ -50,6 +50,7 @@ export default function VideoPlayerModal({ item, onClose }) {
   const [adDismissed, setAdDismissed] = useState(false)
   const showingAdRef = useRef(false)
   const viewCountedRef = useRef(false)
+  const iframeViewTimerRef = useRef(null)
   const candidatesRef = useRef([])
   const attemptRef = useRef(0)
   const videoRef = useRef(null)
@@ -59,6 +60,10 @@ export default function VideoPlayerModal({ item, onClose }) {
     if (!item?.id) return
     let cancelled = false
     viewCountedRef.current = false
+    if (iframeViewTimerRef.current) {
+      clearTimeout(iframeViewTimerRef.current)
+      iframeViewTimerRef.current = null
+    }
     setViews(getViews(item.id))
     setPhase('loading')
     setAdDismissed(false)
@@ -143,11 +148,17 @@ export default function VideoPlayerModal({ item, onClose }) {
     tryNextSource()
   }
 
-  const countViewOnPlay = useCallback(() => {
+  const countViewOnProgress = useCallback((currentTime = 0) => {
     if (!item?.id || viewCountedRef.current) return
+    if (currentTime < 1) return
     viewCountedRef.current = true
     setViews(recordView(item.id))
   }, [item?.id])
+
+  const onIframeLoad = useCallback(() => {
+    if (iframeViewTimerRef.current) clearTimeout(iframeViewTimerRef.current)
+    iframeViewTimerRef.current = setTimeout(() => countViewOnProgress(1), 3000)
+  }, [countViewOnProgress])
 
   const onVideoCanPlay = () => {
     const el = videoRef.current
@@ -190,6 +201,7 @@ export default function VideoPlayerModal({ item, onClose }) {
   const handleTimeUpdate = (e) => {
     const video = e.target
     if (!video?.duration || !item?.id) return
+    countViewOnProgress(video.currentTime)
     if (mode === 'video' && item.type === 'video') {
       vast.onContentTime(video.currentTime, video.duration)
     }
@@ -261,7 +273,7 @@ export default function VideoPlayerModal({ item, onClose }) {
               sandbox="allow-scripts allow-same-origin allow-presentation"
               referrerPolicy="strict-origin-when-cross-origin"
               className="w-full h-full border-0"
-              onLoad={countViewOnPlay}
+              onLoad={onIframeLoad}
             />
           )}
 
@@ -275,7 +287,6 @@ export default function VideoPlayerModal({ item, onClose }) {
               playsInline
               preload="auto"
               onCanPlay={onVideoCanPlay}
-              onPlaying={countViewOnPlay}
               onTimeUpdate={handleTimeUpdate}
               onError={onVideoError}
               className="w-full h-full object-contain bg-black"

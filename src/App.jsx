@@ -60,7 +60,7 @@ import { setGraphActor, syncGraphFromCloud, syncPublicEngagementFromCloud } from
 import { installRuntimeGuards } from './lib/selfHeal'
 import { pushLibraryCatalogToCloud } from './data/publicMediaSeed'
 import { isAdminSession } from './lib/moderation'
-import { getById, flushScheduledPublishes, resolvePublicCreator } from './lib/contentService'
+import { getById, getWatchItem, stashWatchItem, flushScheduledPublishes, resolvePublicCreator } from './lib/contentService'
 import { parseRoute, pushHash, migrateHashToPath } from './lib/routes'
 import { syncPromotionsFromCloud } from './lib/promotions'
 import PromoBanner from './components/PromoBanner'
@@ -223,8 +223,9 @@ function AppShell() {
 
   const openWatch = (itemOrId) => {
     setSidebarOpen(false)
-    const item = typeof itemOrId === 'string' ? getById(itemOrId) : itemOrId
+    const item = typeof itemOrId === 'string' ? getWatchItem(itemOrId) : itemOrId
     if (!item) return
+    stashWatchItem(item)
     if (item.type === 'pic') {
       openPic(item)
       return

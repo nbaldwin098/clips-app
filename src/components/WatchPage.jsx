@@ -6,8 +6,8 @@ import {
   MoreHorizontal, Flag, Download,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { getById, getRelated, getMoreFromCreator, getWatchQueue } from '../lib/contentService'
-import { recordView, toggleVote, getVotes, getUserVote, canAccessPaidPost } from '../lib/engagement'
+import { getById, getWatchItem, getRelated, getMoreFromCreator, getWatchQueue } from '../lib/contentService'
+import { recordView, getViews, toggleVote, getVotes, getUserVote, canAccessPaidPost } from '../lib/engagement'
 import { getWatchProgress, recordWatchProgress } from '../lib/watchProgress'
 import { recordInteraction } from '../lib/algorithmEngine'
 import { getActiveAdForVideo, recordAdImpression, recordAdSkip } from '../lib/adEngine'
@@ -115,7 +115,7 @@ export default function WatchPage({
 }) {
   const { user, isAuthenticated } = useAuth()
   const syncTick = useContentSyncTick()
-  const item = useMemo(() => getById(itemId), [itemId, syncTick])
+  const item = useMemo(() => getWatchItem(itemId), [itemId, syncTick])
   const related = useMemo(() => getRelated(item, 8), [item, syncTick])
   const moreFrom = useMemo(() => getMoreFromCreator(item, 6), [item, syncTick])
   const queue = useMemo(() => getWatchQueue(item), [item, syncTick])
@@ -152,6 +152,7 @@ export default function WatchPage({
   const appliedStart = useRef(false)
   const showingAdRef = useRef(false)
   const viewCountedRef = useRef(false)
+  const iframeViewTimerRef = useRef(null)
   const vast = useVideoVastAds(item)
 
   const [descOpen, setDescOpen] = useState(false)
@@ -184,6 +185,10 @@ export default function WatchPage({
     setCueText('')
     setMoreOpen(false)
     viewCountedRef.current = false
+    if (iframeViewTimerRef.current) {
+      clearTimeout(iframeViewTimerRef.current)
+      iframeViewTimerRef.current = null
+    }
   }, [itemId, user?.id, item?.creatorId])
 
   useEffect(() => {
@@ -266,11 +271,17 @@ export default function WatchPage({
     try { el.currentTime = Math.max(0, Math.min(el.duration || sec, sec)) } catch {}
   }
 
-  const countViewOnPlay = useCallback(() => {
+  const countViewOnProgress = useCallback((currentTime = 0) => {
     if (!item?.id || viewCountedRef.current) return
+    if (currentTime < 1) return
     viewCountedRef.current = true
     setViews(recordView(item.id))
   }, [item?.id])
+
+  const onIframeLoad = useCallback(() => {
+    if (iframeViewTimerRef.current) clearTimeout(iframeViewTimerRef.current)
+    iframeViewTimerRef.current = setTimeout(() => countViewOnProgress(1), 3000)
+  }, [countViewOnProgress])
 
   const onLoadedMetadata = () => {
     const el = videoRef.current
@@ -326,6 +337,7 @@ export default function WatchPage({
   const handleTimeUpdate = (e) => {
     const video = e.target
     if (!video?.duration || !item?.id) return
+    countViewOnProgress(video.currentTime)
     if (mode === 'video' && item.type === 'video') {
       vast.onContentTime(video.currentTime, video.duration)
     }
@@ -375,7 +387,15 @@ export default function WatchPage({
     }, 1000)
   }
 
-  useEffect(() => () => { if (countRef.current) clearInterval(countRef.current) }, [itemId])
+  useEffect(() => {
+    if (phase !== 'ready' || mode !== 'iframe' || showingAd || !playSrc) return
+    if (!safeIframeSrc(playSrc)) tryNext()
+  }, [phase, mode, playSrc, showingAd])
+
+  useEffect(() => () => {
+    if (countRef.current) clearInterval(countRef.current)
+    if (iframeViewTimerRef.current) clearTimeout(iframeViewTimerRef.current)
+  }, [itemId])
 
   const share = async (withTime = false) => {
     try {
@@ -573,7 +593,7 @@ export default function WatchPage({
               </div>
             )}
             {phase === 'ready' && mode === 'iframe' && !showingAd && safeIframeSrc(playSrc) && (
-              <iframe src={safeIframeSrc(playSrc)} title={item.title || 'Video'} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen sandbox="allow-scripts allow-same-origin allow-presentation" referrerPolicy="strict-origin-when-cross-origin" className="absolute inset-0 w-full h-full border-0" onLoad={countViewOnPlay} />
+              <iframe src={safeIframeSrc(playSrc)} title={item.title || 'Video'} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen sandbox="allow-scripts allow-same-origin allow-presentation" referrerPolicy="strict-origin-when-cross-origin" className="absolute inset-0 w-full h-full border-0" onLoad={onIframeLoad} />
             )}
             {phase === 'ready' && mode === 'video' && safeMediaUrl(playSrc) && (
               <video
@@ -585,7 +605,6 @@ export default function WatchPage({
                 playsInline
                 preload="auto"
                 onLoadedMetadata={onLoadedMetadata}
-                onPlaying={countViewOnPlay}
                 onTimeUpdate={handleTimeUpdate}
                 onEnded={onEnded}
                 onError={tryNext}
