@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { getCommentPrefs, setCommentPrefs } from '../../lib/youtubeParity'
 
@@ -9,14 +9,15 @@ export default function CommentSettings() {
   const [sort, setSort] = useState(initial.defaultSort || 'top')
   const [saved, setSaved] = useState(false)
 
-  const save = () => {
+  useEffect(() => {
     setCommentPrefs(user?.id, {
       showDonationsOnComments: showDonations,
       defaultSort: sort,
     })
     setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
-  }
+    const t = setTimeout(() => setSaved(false), 1500)
+    return () => clearTimeout(t)
+  }, [user?.id, showDonations, sort])
 
   return (
     <div className="space-y-8">
@@ -52,9 +53,7 @@ export default function CommentSettings() {
           <option value="top">Top</option>
           <option value="new">Newest</option>
         </select>
-        <button type="button" onClick={save} className="h-9 px-4 rounded-lg bg-white text-black text-sm font-medium">
-          {saved ? 'Saved' : 'Save'}
-        </button>
+        <p className="text-[11px] text-zinc-500">{saved ? 'Saved' : 'Saved as you change these.'}</p>
       </section>
     </div>
   )

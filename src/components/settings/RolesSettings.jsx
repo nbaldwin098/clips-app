@@ -84,12 +84,17 @@ export default function RolesSettings() {
         <p className="text-xs text-zinc-500">Viewers can type !rules in live chat. Mods can timeout, ban, and delete messages in chat.</p>
         <textarea
           value={staff.rules || ''}
-          onChange={(e) => setStaff({ ...staff, rules: e.target.value })}
+          onChange={(e) => {
+            const rules = e.target.value
+            setStaff({ ...staff, rules })
+            if (channelId) setChannelStaff(channelId, { rules })
+            setSaved('Saved.')
+          }}
           rows={4}
           className="w-full rounded-lg border border-zinc-800 bg-black px-3 py-2 text-sm"
           placeholder="Be civil. No spam. No hate."
         />
-        <button type="button" onClick={() => saveRules({ rules: staff.rules })} className="h-9 px-4 rounded-lg bg-white text-black text-sm font-medium">Save rules</button>
+        <p className="text-[11px] text-zinc-500">{saved || 'Saved as you type.'}</p>
       </section>
 
       <section className="pt-6 border-t border-zinc-800 space-y-3">
@@ -100,8 +105,12 @@ export default function RolesSettings() {
         </label>
         <input
           value={staff.botName || ''}
-          onChange={(e) => setStaff({ ...staff, botName: e.target.value })}
-          onBlur={() => saveRules({ botName: staff.botName })}
+          onChange={(e) => {
+            const botName = e.target.value
+            setStaff({ ...staff, botName })
+            if (channelId) setChannelStaff(channelId, { botName })
+            setSaved('Saved.')
+          }}
           className="w-full h-10 rounded-lg border border-zinc-800 bg-black px-3 text-sm"
           placeholder="Bot name"
         />

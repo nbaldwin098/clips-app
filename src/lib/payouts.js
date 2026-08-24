@@ -1,6 +1,6 @@
 /**
- * Creator earnings from views. Money is sent by the owner by hand.
- * The dashboard shows earned / pending / paid. There is no Stripe Connect withdraw.
+ * Creator payouts are handed out by the owner after someone applies and is approved.
+ * Views do not mint a dollar amount. There is no Stripe Connect withdraw.
  */
 import { lsGet, lsSet, getImports } from './storage'
 import { getViews } from './engagement'
@@ -8,45 +8,20 @@ import { listIndexedUsers } from './moderation'
 import { payoutsHeld } from './trustSafety'
 
 const SETTINGS_KEY = 'clips_payout_settings'
-const OVERRIDES_KEY = 'clips_payout_rpm_overrides'
 const LEDGER_KEY = 'clips_payout_ledger'
 const CONTACT_KEY = 'clips_payout_contacts'
 
-const DEFAULT_RPM = 1
-
 export function getPayoutSettings() {
   const s = lsGet(SETTINGS_KEY, null) || {}
-  const rpm = Number(s.rpmPerThousand)
   return {
-    rpmPerThousand: Number.isFinite(rpm) && rpm >= 0 ? rpm : DEFAULT_RPM,
-    note: s.note || 'Paid by hand from Admin → Payouts. Not an automatic bank transfer.',
+    note: s.note || 'Paid by hand from Admin → Payouts after you apply and are approved. Not an automatic bank transfer.',
   }
 }
 
 export function setPayoutSettings(partial) {
   const next = { ...getPayoutSettings(), ...partial }
-  const rpm = Number(next.rpmPerThousand)
-  next.rpmPerThousand = Number.isFinite(rpm) ? Math.max(0, Math.min(1000, rpm)) : DEFAULT_RPM
   lsSet(SETTINGS_KEY, next)
   return next
-}
-
-export function getCreatorRpm(userId) {
-  const overrides = lsGet(OVERRIDES_KEY, {}) || {}
-  if (userId && overrides[userId] != null && Number.isFinite(Number(overrides[userId]))) {
-    return Math.max(0, Number(overrides[userId]))
-  }
-  return getPayoutSettings().rpmPerThousand
-}
-
-export function setCreatorRpm(userId, rpm) {
-  if (!userId) return getCreatorRpm(userId)
-  const overrides = lsGet(OVERRIDES_KEY, {}) || {}
-  const n = Number(rpm)
-  if (!Number.isFinite(n) || n < 0) delete overrides[userId]
-  else overrides[userId] = Math.min(1000, n)
-  lsSet(OVERRIDES_KEY, overrides)
-  return getCreatorRpm(userId)
 }
 
 export function viewsForCreator(userId, handle = '') {
@@ -62,12 +37,6 @@ export function viewsForCreator(userId, handle = '') {
   return views
 }
 
-export function earnedForCreator(userId, handle = '') {
-  const views = viewsForCreator(userId, handle)
-  const rpm = getCreatorRpm(userId)
-  return Math.round((views / 1000) * rpm * 100) / 100
-}
-
 export function listPayoutLedger() {
   return lsGet(LEDGER_KEY, []) || []
 }
@@ -79,19 +48,10 @@ export function paidForCreator(userId) {
     .reduce((n, r) => n + (Number(r.amount) || 0), 0)
 }
 
-export function pendingForCreator(userId, handle = '') {
-  const earned = earnedForCreator(userId, handle)
-  const paid = paidForCreator(userId)
-  return Math.round((earned - paid) * 100) / 100
-}
-
 export function creatorBalance(userId, handle = '') {
   const views = viewsForCreator(userId, handle)
-  const rpm = getCreatorRpm(userId)
-  const earned = earnedForCreator(userId, handle)
   const paid = paidForCreator(userId)
-  const pending = pendingForCreator(userId, handle)
-  return { views, rpm, earned, paid, pending }
+  return { views, paid }
 }
 
 export function recordManualPayout({ userId, handle, amount, note, sentVia }) {
@@ -140,5 +100,5 @@ export function listCreatorBalances() {
     if (!id || seen.has(id)) continue
     seen.set(id, { userId: id, handle: row.handle, displayName: row.handle, ...creatorBalance(id, row.handle) })
   }
-  return [...seen.values()].sort((a, b) => b.pending - a.pending)
+  return [...seen.values()].sort((a, b) => b.paid - a.paid)
 }

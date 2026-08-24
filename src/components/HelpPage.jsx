@@ -40,7 +40,7 @@ export default function HelpPage() {
     },
     {
       q: 'How do creator payouts work?',
-      a: 'Admin sets USD per 1,000 views. Wallet (profile menu) shows earned, pending, and paid. Payouts are sent by hand. There is no automatic bank withdraw.',
+      a: 'Anyone signed in can upload or go live from Create. To earn, apply from Wallet or the apply page. Admin sends payouts by hand after approval. Views are not worth $1 per 1,000. There is no automatic bank withdraw.',
     },
     {
       q: 'How do I report copyright infringement?',

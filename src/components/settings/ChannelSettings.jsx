@@ -16,6 +16,7 @@ export default function ChannelSettings({ onNavigate }) {
     website: stored.links?.website || '',
   })
   const [saved, setSaved] = useState(false)
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
     const s = getUserSettings()
@@ -25,13 +26,16 @@ export default function ChannelSettings({ onNavigate }) {
       discord: s.links?.discord || '',
       website: s.links?.website || '',
     })
+    setReady(true)
   }, [])
 
-  const save = () => {
+  useEffect(() => {
+    if (!ready) return
     saveUserSettings({ channelCategory: category, links })
     setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
-  }
+    const t = setTimeout(() => setSaved(false), 1500)
+    return () => clearTimeout(t)
+  }, [ready, category, links])
 
   return (
     <div className="space-y-8">
@@ -70,9 +74,7 @@ export default function ChannelSettings({ onNavigate }) {
             <input value={links.website} onChange={(e) => setLinks((l) => ({ ...l, website: e.target.value }))} className={field} placeholder="https://..." />
           </label>
         </div>
-        <button type="button" onClick={save} className="h-9 px-4 rounded-lg bg-white text-black text-sm font-medium">
-          {saved ? 'Saved' : 'Save links'}
-        </button>
+        <p className="text-[11px] text-zinc-500">{saved ? 'Saved' : 'Saved as you type.'}</p>
       </section>
 
       <section className="pt-6 border-t border-zinc-800 space-y-3">

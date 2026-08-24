@@ -62,7 +62,7 @@ import { startNamedAccountActivity } from './lib/namedAccountActivity'
 import { pushLibraryCatalogToCloud } from './data/publicMediaSeed'
 import { isAdminSession } from './lib/moderation'
 import { getById, flushScheduledPublishes, resolvePublicCreator } from './lib/contentService'
-import { parseRoute, pushHash } from './lib/routes'
+import { parseRoute, pushHash, migrateHashToPath } from './lib/routes'
 import { syncPromotionsFromCloud } from './lib/promotions'
 import PromoBanner from './components/PromoBanner'
 import { claimStripeReturn } from './lib/tips'
@@ -146,8 +146,8 @@ function AppShell() {
     }
   }, [user])
 
-  const applyRoute = (hash) => {
-    const { kind, id, params } = parseRoute(hash)
+  const applyRoute = () => {
+    const { kind, id, params } = parseRoute()
     setRouteParams(params || {})
     if (kind === 'watch' && id) {
       setMiniItem(null)
@@ -189,13 +189,12 @@ function AppShell() {
   }
 
   useEffect(() => {
-    applyRoute(window.location.hash)
-    const onPop = () => applyRoute(window.location.hash)
+    migrateHashToPath()
+    applyRoute()
+    const onPop = () => applyRoute()
     window.addEventListener('popstate', onPop)
-    window.addEventListener('hashchange', onPop)
     return () => {
       window.removeEventListener('popstate', onPop)
-      window.removeEventListener('hashchange', onPop)
     }
   }, [])
 
@@ -289,10 +288,6 @@ function AppShell() {
       return
     }
     if (kind === 'live') {
-      if (user?.creatorStatus !== 'approved') {
-        navigate('creator-apply')
-        return
-      }
       navigate('live')
     }
     if (kind === 'pic') {

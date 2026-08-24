@@ -50,16 +50,8 @@ export default function AccountSettings({ onNavigate }) {
     || bio !== (user?.bio || '')
   )
 
-  const cancel = () => {
-    setDisplayName(user?.displayName || '')
-    setHandle(user?.handle || '')
-    setBio(user?.bio || '')
-    setAvatarDraft(null)
-    setBannerDraft(null)
-    setErr('')
-  }
-
   const save = async () => {
+    if (!user) return
     setErr('')
     setBusy(true)
     try {
@@ -76,6 +68,12 @@ export default function AccountSettings({ onNavigate }) {
     }
   }
 
+  useEffect(() => {
+    if (!dirty || !user) return
+    const t = setTimeout(() => { save() }, 600)
+    return () => clearTimeout(t)
+  }, [dirty, displayName, handle, bio, avatarDraft, bannerDraft, user?.id])
+
   const avatarSrc = avatarDraft || user?.avatarUrl
   const bannerSrc = bannerDraft || user?.bannerUrl
 
@@ -83,7 +81,7 @@ export default function AccountSettings({ onNavigate }) {
     <div className="space-y-8 pb-20">
       <div>
         <h1 className="text-xl font-semibold text-white">Account</h1>
-        <p className="mt-1 text-sm text-zinc-500">Name, photo, and bio. Save when you are done — nothing is stored until then.</p>
+        <p className="mt-1 text-sm text-zinc-500">Name, photo, and bio. Changes save as you type.</p>
       </div>
 
       <section className="space-y-4">
@@ -141,18 +139,10 @@ export default function AccountSettings({ onNavigate }) {
           <input value={user?.email || ''} readOnly className={`${field} text-zinc-400`} />
         </label>
         {err ? <p className="text-sm text-red-400">{err}</p> : null}
+        <p className="text-[11px] text-zinc-500">{busy ? 'Saving…' : 'Saved as you type.'}</p>
       </section>
 
-      {dirty ? (
-        <div className="sticky bottom-0 z-20 -mx-4 md:-mx-6 px-4 md:px-6 py-3 border-t border-zinc-800 bg-black flex gap-2 justify-end">
-          <button type="button" onClick={cancel} className="h-10 px-4 rounded-lg border border-zinc-700 text-sm text-zinc-200">Cancel</button>
-          <button type="button" onClick={save} disabled={busy} className="h-10 px-4 rounded-lg bg-white text-black text-sm font-medium disabled:opacity-50">
-            {busy ? 'Saving…' : 'Save'}
-          </button>
-        </div>
-      ) : (
-        <button type="button" onClick={() => onNavigate?.('channel')} className="text-xs text-white underline">Open Channel page</button>
-      )}
+      <button type="button" onClick={() => onNavigate?.('channel')} className="text-xs text-white underline">Open Channel page</button>
     </div>
   )
 }

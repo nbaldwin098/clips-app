@@ -49,8 +49,8 @@ export default function CreatorDashboard({ onOpenImport, onOpenUpload, onNavigat
       <PageHeader title="Creator Dashboard" subtitle="Stream, content, analytics, wallet" onBack={() => onNavigate('home')} />
       {!approved ? (
         <div className="mb-4 rounded-xl border border-zinc-800 bg-[#121218] p-4 text-sm text-zinc-300">
-          Apply to go live and upload.{' '}
-          <button type="button" className="text-white underline" onClick={() => onNavigate('creator-apply')}>Open apply</button>
+          Anyone can upload and go live. Apply if you want to earn. Payouts are sent by hand after approval.{' '}
+          <button type="button" className="text-white underline" onClick={() => onNavigate('creator-apply')}>Apply to earn</button>
         </div>
       ) : null}
       <div className="grid sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
@@ -59,7 +59,7 @@ export default function CreatorDashboard({ onOpenImport, onOpenUpload, onNavigat
         {tile(Radio, 'Go live', live?.isLive ? 'Lobby live' : 'Lobby — ingest later', () => onNavigate('live'))}
         {tile(Video, 'VODs', `${vods.length} copies`, () => onNavigate('vods'))}
         {tile(BarChart3, 'Analytics', `${views} views`, () => onNavigate('analytics'))}
-        {tile(Wallet, 'Wallet', `$${b.pending.toFixed(2)} pending`, () => onNavigate('wallet'))}
+        {tile(Wallet, 'Wallet', approved ? `$${b.paid.toFixed(2)} paid` : 'Apply to earn', () => onNavigate('wallet'))}
         {tile(Settings, 'Channel', 'Profile & links', () => onNavigate('channel'))}
         {tile(Key, 'Stream', 'Key & VOD channel', () => onNavigate('settings', 'stream'))}
       </div>
@@ -68,7 +68,7 @@ export default function CreatorDashboard({ onOpenImport, onOpenUpload, onNavigat
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
           <div><p className="text-lg text-white font-semibold">{clips.length}</p><p className="text-[10px] text-zinc-500">Posts</p></div>
           <div><p className="text-lg text-white font-semibold">{views}</p><p className="text-[10px] text-zinc-500">Views</p></div>
-          <div><p className="text-lg text-white font-semibold">${b.earned.toFixed(2)}</p><p className="text-[10px] text-zinc-500">Earned</p></div>
+          <div><p className="text-lg text-white font-semibold">${b.paid.toFixed(2)}</p><p className="text-[10px] text-zinc-500">Paid</p></div>
           <div><p className="text-lg text-white font-semibold">{live?.isLive ? 'Live' : 'Off'}</p><p className="text-[10px] text-zinc-500">Lobby</p></div>
         </div>
         <div className="mt-4 flex flex-wrap gap-2">

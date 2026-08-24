@@ -12,20 +12,24 @@ const DEFAULTS = {
 
 export default function NotificationsSettings() {
   const [prefs, setPrefs] = useState(DEFAULTS)
+  const [ready, setReady] = useState(false)
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
     const s = getUserSettings()
     if (s.notifications) setPrefs({ ...DEFAULTS, ...s.notifications })
+    setReady(true)
   }, [])
 
   const toggle = (key) => setPrefs((p) => ({ ...p, [key]: !p[key] }))
 
-  const save = () => {
+  useEffect(() => {
+    if (!ready) return
     saveUserSettings({ notifications: prefs })
     setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
-  }
+    const t = setTimeout(() => setSaved(false), 1500)
+    return () => clearTimeout(t)
+  }, [prefs, ready])
 
   const Row = ({ id, label, hint }) => (
     <label className="flex items-start justify-between gap-4 py-3 border-b border-zinc-800 last:border-0">
@@ -57,9 +61,7 @@ export default function NotificationsSettings() {
         <Row id="pushChat" label="Chat mentions" />
         <Row id="pushMarketing" label="Product updates" />
       </section>
-      <button type="button" onClick={save} className="h-9 px-4 rounded-lg bg-white text-black text-sm font-medium">
-        {saved ? 'Saved' : 'Save preferences'}
-      </button>
+      <p className="text-[11px] text-zinc-500">{saved ? 'Saved' : 'Saved as you change these.'}</p>
     </div>
   )
 }

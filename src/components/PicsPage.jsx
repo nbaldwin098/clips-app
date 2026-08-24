@@ -185,7 +185,7 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
     setViewerIndex(index)
     const pic = items[index]
     if (pic && typeof window !== 'undefined') {
-      window.history.replaceState(null, '', `${window.location.pathname}#/pic/${encodeURIComponent(pic.id)}`)
+      replaceHash('pic', pic.id)
     }
   }
 
@@ -230,7 +230,7 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
             setViewerIndex(i)
             const pic = items[i]
             if (pic && typeof window !== 'undefined') {
-              window.history.replaceState(null, '', `${window.location.pathname}#/pic/${encodeURIComponent(pic.id)}`)
+              replaceHash('pic', pic.id)
             }
           }}
           initialIndex={openedAt}

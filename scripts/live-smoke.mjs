@@ -1,5 +1,5 @@
 /** Live-project smoke checks — no mock catalog, no invented checkout grant. */
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { extractHashtags, mergeTags, parseClock, parseCaptionCues, isReleased, filterExploreItems, formatPostedAt, olderIso, postedAtOf } from '../src/lib/mediaMeta.js'
 import { parseRoute, buildHash } from '../src/lib/routes.js'
@@ -39,7 +39,12 @@ assert(isReleased({ status: 'scheduled', scheduledFor: new Date(Date.now() + 864
 
 const { kind, id, params } = parseRoute('#/watch/abc?t=12')
 assert(kind === 'watch' && id === 'abc' && params.t === '12', 'watch timestamp route')
-assert(buildHash('watch', 'abc', { t: 12 }).includes('t=12'), 'build hash t')
+assert(buildHash('watch', 'abc', { t: 12 }) === '/watch/abc?t=12', 'path route with t')
+assert(!buildHash('watch', 'abc').includes('#'), 'share paths do not use hash')
+const pathParsed = parseRoute('/watch/abc?t=12')
+assert(pathParsed.kind === 'watch' && pathParsed.id === 'abc' && pathParsed.params.t === '12', 'pathname watch route')
+assert(buildHash('home') === '/', 'home is slash')
+assert(existsSync(new URL('../public/_redirects', import.meta.url)), 'static host rewrites unknown paths to the app')
 
 function isPromoLive(promo, now = Date.now()) {
   if (!promo || promo.published !== true) return false
@@ -185,8 +190,10 @@ assert(adEng.includes('if (!adsAreRunning()) return null'), 'preroll stays off u
 assert(adEng.includes('mixFeedAds'), 'clip and pic feeds can insert ads between items')
 assert(adEng.includes('clip-banner') && adEng.includes('pic-feed'), 'clip and pic placements exist')
 const paySrc = readFileSync(new URL('../src/lib/payouts.js', import.meta.url), 'utf8')
-assert(paySrc.includes('rpmPerThousand'), 'payouts use a per-1000-views rate')
+assert(!paySrc.includes('rpmPerThousand'), 'payouts are not a per-1000-views rate')
+assert(!paySrc.includes('DEFAULT_RPM'), 'no default view rpm')
 assert(paySrc.includes('recordManualPayout'), 'admin can mark a hand payout sent')
+assert(applySrc.includes('Apply to earn'), 'apply page is for earning not posting')
 const adminSrc = readFileSync(new URL('../src/components/AdminPortal.jsx', import.meta.url), 'utf8')
 assert(adminSrc.includes("id: 'payouts'"), 'admin has a payouts tab')
 assert(adminSrc.includes("id: 'setup'"), 'admin has a setup tab for sql')
@@ -269,7 +276,7 @@ assert(purgeSql8.includes('picsum'), 'sql 0008 removes leftover sample hosts')
 const profileMedia = readFileSync(new URL('../src/lib/profileMedia.js', import.meta.url), 'utf8')
 assert(profileMedia.includes('persistProfilePicture'), 'profile photos persist outside localStorage quota')
 const channelSrc = readFileSync(new URL('../src/components/ChannelPage.jsx', import.meta.url), 'utf8')
-assert(channelSrc.includes('Save') && channelSrc.includes('Cancel'), 'channel has save and cancel')
+assert(channelSrc.includes('Saved as you type'), 'channel saves while you type')
 assert(channelSrc.includes('Change profile picture'), 'avatar camera is on the photo')
 
 const cardSrc = readFileSync(new URL('../src/components/ContentCard.jsx', import.meta.url), 'utf8')
@@ -306,7 +313,11 @@ assert(sideSrc.includes('min-h-0 overflow-y-auto'), 'sidebar still scrolls')
 assert(sideSrc.includes('label="Create"'), 'sidebar has Create under Live')
 assert(!sideSrc.includes('label="Notifications"'), 'notifications are not a sidebar tab')
 assert(sideSrc.includes('if (!open) return null'), 'sidebar starts closed until the hamburger opens it')
-assert(navSrc.includes('rotate-90'), 'hamburger rotates when the menu is open')
+assert(navSrc.includes('d + 90'), 'hamburger makes full 90 degree turns')
+assert(navSrc.includes('flex h-14 w-14 items-center justify-center text-zinc-200"'), 'hamburger has no grey hover fill')
+assert(appSrc.includes('migrateHashToPath'), 'old hash urls redirect to paths')
+assert(!appSrc.includes('hashchange'), 'routing is not hash-based')
+assert(!appSrc.includes("user?.creatorStatus !== 'approved'"), 'going live is not locked behind apply')
 assert(!navSrc.includes('aria-label="Create"'), 'header has no Create button')
 const notifMenu = readFileSync(new URL('../src/components/NotificationsMenu.jsx', import.meta.url), 'utf8')
 assert(notifMenu.includes('slice(0, 5)'), 'header bell shows about five notifications')

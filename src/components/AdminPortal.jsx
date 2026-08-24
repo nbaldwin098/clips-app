@@ -9,7 +9,7 @@ import {
 } from '../lib/moderation'
 import { adsAreRunning } from '../lib/adEngine'
 import {
-  getPayoutSettings, setPayoutSettings, setCreatorRpm, listCreatorBalances,
+  listCreatorBalances,
   recordManualPayout, listPayoutLedger, getPayoutContact,
 } from '../lib/payouts'
 import { lsGet, lsSet } from '../lib/storage'
@@ -48,7 +48,6 @@ export default function AdminPortal() {
   const [, bump] = useState(0)
   const refresh = () => bump((n) => n + 1)
 
-  const [rpm, setRpm] = useState(() => getPayoutSettings().rpmPerThousand)
   const [payUser, setPayUser] = useState('')
   const [payAmt, setPayAmt] = useState('')
   const [payNote, setPayNote] = useState('')
@@ -215,22 +214,13 @@ export default function AdminPortal() {
         {tab === 'payouts' && (
           <div className="p-5 space-y-4 overflow-y-auto">
             <div className="rounded-2xl border border-white/10 bg-[#111113] p-4 space-y-3">
-              <p className="text-sm font-medium text-white">Rate</p>
-              <p className="text-xs text-zinc-500">USD per 1,000 views. You send money by hand. Hold payouts on People if you need to freeze an account.</p>
-              <div className="flex flex-wrap items-end gap-2">
-                <label className="text-xs text-zinc-400">USD / 1,000 views
-                  <input type="number" min="0" step="0.01" value={rpm} onChange={(e) => setRpm(e.target.value)} className="mt-1 block w-32 h-10 rounded-lg border border-white/10 bg-black px-3 text-sm text-white" />
-                </label>
-                <button type="button" className="h-10 px-4 rounded-lg bg-white text-black text-xs font-semibold" onClick={() => { setPayoutSettings({ rpmPerThousand: rpm }); refresh() }}>Save rate</button>
-              </div>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-[#111113] p-4 space-y-3">
               <p className="text-sm font-medium text-white">Mark a payout sent</p>
+              <p className="text-xs text-zinc-500">Views do not set a dollar rate. Pay people who applied and were approved. Hold payouts on People if you need to freeze an account.</p>
               <div className="grid sm:grid-cols-2 gap-2">
                 <select value={payUser} onChange={(e) => setPayUser(e.target.value)} className="h-10 rounded-lg border border-white/10 bg-black px-3 text-sm text-white">
                   <option value="">Creator</option>
                   {balances.map((b) => (
-                    <option key={b.userId} value={b.userId}>@{b.handle || b.userId} · ${b.pending.toFixed(2)}{payoutsHeld(b.userId) ? ' · HELD' : ''}</option>
+                    <option key={b.userId} value={b.userId}>@{b.handle || b.userId} · ${b.paid.toFixed(2)} paid{payoutsHeld(b.userId) ? ' · HELD' : ''}</option>
                   ))}
                 </select>
                 <input value={payAmt} onChange={(e) => setPayAmt(e.target.value)} placeholder="Amount USD" className="h-10 rounded-lg border border-white/10 bg-black px-3 text-sm text-white" />
@@ -253,9 +243,8 @@ export default function AdminPortal() {
                   <tr>
                     <th className="p-2 font-medium">Creator</th>
                     <th className="p-2 font-medium">Views</th>
-                    <th className="p-2 font-medium">Pending</th>
+                    <th className="p-2 font-medium">Paid</th>
                     <th className="p-2 font-medium">Hold</th>
-                    <th className="p-2 font-medium">RPM</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -263,11 +252,8 @@ export default function AdminPortal() {
                     <tr key={b.userId} className="border-t border-white/10 text-zinc-300">
                       <td className="p-2">@{b.handle || '—'}</td>
                       <td className="p-2">{b.views}</td>
-                      <td className="p-2 text-white">${b.pending.toFixed(2)}</td>
+                      <td className="p-2 text-white">${b.paid.toFixed(2)}</td>
                       <td className="p-2">{payoutsHeld(b.userId) ? 'Held' : 'Open'}</td>
-                      <td className="p-2">
-                        <input type="number" min="0" step="0.01" defaultValue={b.rpm} className="w-20 h-8 rounded border border-white/10 bg-black px-2" onBlur={(e) => { setCreatorRpm(b.userId, e.target.value); refresh() }} />
-                      </td>
                     </tr>
                   ))}
                 </tbody>

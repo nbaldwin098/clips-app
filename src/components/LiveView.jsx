@@ -26,7 +26,7 @@ function formatElapsed(startedAt) {
 
 export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream, onOpenAuth }) {
   const { user, isAuthenticated } = useAuth()
-  const approved = user?.creatorStatus === 'approved'
+  const canHost = isAuthenticated && canGoLive(user)
 
   const [copied, setCopied] = useState('')
   const [isLive, setIsLive] = useState(false)
@@ -37,7 +37,9 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
   const [sharing, setSharing] = useState(false)
   const screenRef = useRef(null)
 
-  const streamKey = isAuthenticated && approved ? ensureStreamKey(user?.id) : null
+  const [draftReady, setDraftReady] = useState(false)
+
+  const streamKey = canHost && user?.id ? ensureStreamKey(user.id) : null
 
   const refreshLiveBoard = useCallback(() => {
     setLiveNow((lsGet('live_board', []) || []).filter((b) => b.isLive))
@@ -54,12 +56,22 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
   useEffect(() => {
     if (!user?.id) return
     const state = lsGet(`live_state_${user.id}`, null)
+    const draft = lsGet(`live_draft_${user.id}`, null)
     if (state?.isLive) {
       setIsLive(true)
       setTitle(state.title || '')
       setCategory(state.category || 'Just chatting')
+    } else if (draft) {
+      setTitle(draft.title || '')
+      setCategory(draft.category || 'Just chatting')
     }
+    setDraftReady(true)
   }, [user?.id])
+
+  useEffect(() => {
+    if (!draftReady || !user?.id || isLive) return
+    lsSet(`live_draft_${user.id}`, { title, category })
+  }, [draftReady, user?.id, title, category, isLive])
 
   // Real-data poll: picks up live status changes from this device (e.g. another tab going live).
   useEffect(() => {
@@ -85,8 +97,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
   }
 
   const goLive = () => {
-    if (!approved || !user?.id) return
-    if (!canGoLive(user)) return
+    if (!canHost || !user?.id) return
     const payload = {
       isLive: true,
       title: title.trim() || 'Live on Clips',
@@ -264,7 +275,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
         )}
       </div>
 
-      {isAuthenticated && approved && (
+      {isAuthenticated && canHost && (
         <section className="rounded-2xl border border-[#23232c] bg-[#121218] p-5 space-y-3">
           <h2 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
             <Key className="h-4 w-4 text-white" /> List me in the lobby
