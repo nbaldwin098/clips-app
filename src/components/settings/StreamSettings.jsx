@@ -8,9 +8,14 @@ import {
   getLiveAdState,
   scheduleLiveAd,
   setLiveAdsPerHour,
+  snoozeLiveAds,
   cancelLiveAdSchedule,
   LIVE_VIEWER_AD_DELAY_SEC,
   LIVE_ADS_PER_HOUR_MAX,
+  LIVE_SNOOZE_SEC,
+  LIVE_HOURLY_AD_CAP_SEC,
+  MANUAL_AD_BREAKS,
+  manualAdCooldownSec,
   liveAdIntervalFromPerHour,
 } from '../../lib/liveAds'
 
@@ -131,21 +136,39 @@ export default function StreamSettings() {
       <section className="rounded-xl border border-zinc-800 bg-[#121218] p-4 space-y-3">
         <p className="text-sm font-semibold text-white">Live ads</p>
         <p className="text-xs text-zinc-400 leading-relaxed">
-          Viewers get the same video ad tag {LIVE_VIEWER_AD_DELAY_SEC} seconds after they open your stream. Set 1–5 mid-stream ads per hour below, or run one manually. Empty tags do not invent a fake overlay. Ingest is still not connected, so the ad plays over the live stage on this site.
+          Viewers get the video ad tag {LIVE_VIEWER_AD_DELAY_SEC} seconds after they open your stream. Set 1–5 automated ads per hour below. While live, use 60s / 90s / 3m manual breaks and Snooze ads 5m on the Live page. Manual cooldowns scale with break length (60s→1.5m, 90s→4.5m, 3m→9m). A manual ad resets the automated timer. Max {LIVE_HOURLY_AD_CAP_SEC / 60} minutes of ad time per hour combined.
         </p>
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            className="h-9 px-3 rounded-lg bg-white text-black text-xs font-semibold"
+            className="h-9 px-3 rounded-lg border border-zinc-700 text-white text-xs font-semibold"
             onClick={() => {
               if (!user?.id) return
-              const res = cueLiveAd(user.id, 'live-creator')
-              setAdNote(res.ok ? 'Ad queued. Open Live and watch the stage. Next break in 5 minutes.' : (res.error || 'Could not run ad.'))
+              snoozeLiveAds(user.id)
+              setAdNote(`All ads snoozed for ${LIVE_SNOOZE_SEC / 60} minutes.`)
               refreshAds()
             }}
           >
-            Run ad now
+            Snooze all ads 5m
           </button>
+          {MANUAL_AD_BREAKS.map((sec) => (
+            <button
+              key={sec}
+              type="button"
+              className="h-9 px-3 rounded-lg bg-white text-black text-xs font-semibold"
+              onClick={() => {
+                if (!user?.id) return
+                const res = cueLiveAd(user.id, 'live-creator', { kind: 'manual', breakSec: sec })
+                const cd = manualAdCooldownSec(sec)
+                setAdNote(res.ok
+                  ? `Manual ${sec}s ad queued. Cooldown after it ends: ${Math.round(cd / 60)}m.`
+                  : (res.error || 'Could not run ad.'))
+                refreshAds()
+              }}
+            >
+              Manual {sec === 180 ? '3m' : `${sec}s`}
+            </button>
+          ))}
         </div>
         <div className="flex flex-wrap items-end gap-2">
           <label className="text-xs text-zinc-400">
@@ -222,7 +245,7 @@ export default function StreamSettings() {
           <p className="text-[11px] text-zinc-600">No one-off times queued.</p>
         )}
         <p className="text-[11px] text-zinc-500 leading-relaxed">
-          Chat (creator or mod): <code className="text-zinc-300">!ad</code> now, <code className="text-zinc-300">!ad 5m</code> schedule, <code className="text-zinc-300">!ad 3/h</code> repeat (1–5 per hour), <code className="text-zinc-300">!ad off</code>, <code className="text-zinc-300">!ads</code> status. Mid-stream ads cannot run more than once every 5 minutes.
+          Chat (creator or mod): <code className="text-zinc-300">!ad</code> now, <code className="text-zinc-300">!ad 90s</code>, <code className="text-zinc-300">!ad snooze</code>, <code className="text-zinc-300">!ad 3/h</code> (automated), <code className="text-zinc-300">!ad off</code>, <code className="text-zinc-300">!ads</code> status. Manual cooldowns follow break length. Hourly cap is {LIVE_HOURLY_AD_CAP_SEC / 60} minutes of ads.
         </p>
         {adNote ? <p className="text-[11px] text-white">{adNote}</p> : null}
       </section>

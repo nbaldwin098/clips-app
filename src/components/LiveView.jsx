@@ -14,7 +14,7 @@ import { archiveEndedLive } from '../lib/vods'
 import { canGoLive } from '../lib/trustSafety'
 import VideoInStreamAd from './VideoInStreamAd'
 import { useLiveStreamAds } from '../hooks/useLiveStreamAds'
-import { cueLiveAd } from '../lib/liveAds'
+import { cueLiveAd, snoozeLiveAds, MANUAL_AD_BREAKS, manualAdCooldownSec, liveAdsSnoozed, manualAdCooldownRemaining, liveAdTimeUsedInHour, LIVE_HOURLY_AD_CAP_SEC, LIVE_SNOOZE_SEC } from '../lib/liveAds'
 
 function formatElapsed(startedAt) {
   if (!startedAt) return ''
@@ -39,6 +39,8 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
   const [, setTick] = useState(0)
   const [sharing, setSharing] = useState(false)
   const [adNote, setAdNote] = useState('')
+  const [, bumpAdUi] = useState(0)
+  const refreshAdUi = () => bumpAdUi((n) => n + 1)
   const screenRef = useRef(null)
 
   const [draftReady, setDraftReady] = useState(false)
@@ -165,6 +167,20 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
   const subCount = focusedStream?.userId ? getSubscriberCount(focusedStream.userId) : 0
   const isHost = Boolean(user?.id && focusedStream?.userId && user.id === focusedStream.userId)
   const liveAds = useLiveStreamAds(focusedStream?.userId || null, { isHost })
+  const adStateId = focusedStream?.userId
+  const snoozed = adStateId ? liveAdsSnoozed(adStateId) : false
+  const manualWait = adStateId ? manualAdCooldownRemaining(adStateId) : 0
+  const adUsedMin = adStateId ? Math.round(liveAdTimeUsedInHour(adStateId) / 60) : 0
+
+  const runManualAd = (breakSec) => {
+    if (!adStateId) return
+    const res = cueLiveAd(adStateId, 'live-creator', { kind: 'manual', breakSec })
+    const cd = manualAdCooldownSec(breakSec)
+    setAdNote(res.ok
+      ? `Manual ${breakSec}s ad queued. Cooldown after it ends: ${Math.round(cd / 60)}m ${cd % 60 ? `${cd % 60}s` : ''}.`
+      : (res.error || 'Could not run ad.'))
+    refreshAdUi()
+  }
 
   return (
     <div className="p-4 md:p-6 max-w-[1400px] mx-auto space-y-6">
@@ -219,19 +235,31 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
               <span className="text-zinc-200 font-semibold">@{focusedStream.handle}</span>
               {subCount > 0 && <span> · {subCount} subscribers</span>}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap justify-end">
               {isAuthenticated && user?.id === focusedStream.userId && (
                 <>
                 <button
                   type="button"
                   onClick={() => {
-                    const res = cueLiveAd(focusedStream.userId, 'live-creator')
-                    setAdNote(res.ok ? 'Ad queued. Next break in 5 minutes.' : (res.error || 'Could not run ad.'))
+                    snoozeLiveAds(focusedStream.userId)
+                    setAdNote(`All ads snoozed for ${LIVE_SNOOZE_SEC / 60} minutes.`)
+                    refreshAdUi()
                   }}
-                  className="h-9 px-3 rounded-full bg-white text-black text-xs font-semibold"
+                  disabled={snoozed}
+                  className="h-9 px-3 rounded-full border border-zinc-700 text-xs font-semibold text-white disabled:opacity-40"
                 >
-                  Run ad
+                  {snoozed ? 'Snoozed' : 'Snooze ads 5m'}
                 </button>
+                {MANUAL_AD_BREAKS.map((sec) => (
+                  <button
+                    key={sec}
+                    type="button"
+                    onClick={() => runManualAd(sec)}
+                    className="h-9 px-3 rounded-full bg-white text-black text-xs font-semibold"
+                  >
+                    {sec === 180 ? '3m ad' : `${sec}s ad`}
+                  </button>
+                ))}
                 <button
                   type="button"
                   onClick={shareScreen}
@@ -243,6 +271,13 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
               )}
               <SubscribeButton creatorId={focusedStream.userId} handle={focusedStream.handle} onOpenAuth={onOpenAuth} />
             </div>
+            {isAuthenticated && user?.id === focusedStream.userId ? (
+              <p className="w-full text-[11px] text-zinc-600">
+                Automated ads: set 1–5/hour in Stream settings.
+                {manualWait > 0 ? ` Manual cooldown ${Math.ceil(manualWait / 1000)}s.` : ''}
+                {` ${adUsedMin}m / ${LIVE_HOURLY_AD_CAP_SEC / 60}m ad time this hour.`}
+              </p>
+            ) : null}
             {adNote ? <p className="w-full text-[11px] text-zinc-500">{adNote}</p> : null}
           </div>
         </div>
