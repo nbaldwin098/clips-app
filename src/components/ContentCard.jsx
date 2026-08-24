@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Flag, Share2, Bookmark, Play, Music, MoreVertical } from 'lucide-react'
+import { Flag, Share2, Bookmark, Play, Music, MoreVertical, Download } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getViews, recordView, getSubscriberCount } from '../lib/engagement'
 import { recordInteraction } from '../lib/algorithmEngine'
@@ -11,6 +11,7 @@ import { hideBrokenMedia } from '../lib/catalogHealth'
 import { openSafeUrl } from '../lib/safeUrl'
 import ReportModal from './ReportModal'
 import PostedStamp from './PostedStamp'
+import { downloadPostedMedia } from '../lib/mediaDownload'
 
 /** video = YouTube row card; short = Shorts-style vertical */
 export default function ContentCard({ item, onOpen, variant }) {
@@ -124,6 +125,17 @@ export default function ContentCard({ item, onOpen, variant }) {
           <button type="button" onClick={handleSave} className="w-full px-3 py-2 text-left text-xs text-white hover:bg-white/10 inline-flex items-center gap-2">
             <Bookmark className={`h-3.5 w-3.5 ${isSaved ? 'fill-current' : ''}`} /> {isSaved ? 'Saved' : 'Save'}
           </button>
+          <button
+            type="button"
+            onClick={async (e) => {
+              e.stopPropagation()
+              setMenuOpen(false)
+              await downloadPostedMedia(item)
+            }}
+            className="w-full px-3 py-2 text-left text-xs text-white hover:bg-white/10 inline-flex items-center gap-2"
+          >
+            <Download className="h-3.5 w-3.5" /> Download
+          </button>
           <button type="button" onClick={(e) => { e.stopPropagation(); setMenuOpen(false); setReportOpen(true) }} className="w-full px-3 py-2 text-left text-xs text-white hover:bg-white/10 inline-flex items-center gap-2">
             <Flag className="h-3.5 w-3.5" /> Report
           </button>
@@ -161,9 +173,9 @@ export default function ContentCard({ item, onOpen, variant }) {
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); window.__clipsOpenProfile?.(item.handle, item.creatorId || item.userId) }}
-            className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center text-xs font-bold shrink-0"
+            className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden"
           >
-            {(item.creatorName || item.handle || '?')[0]?.toUpperCase()}
+            {item.avatarUrl ? <img src={item.avatarUrl} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" /> : (item.creatorName || item.handle || '?')[0]?.toUpperCase()}
           </button>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-zinc-100 line-clamp-2 leading-snug cursor-pointer" onClick={open}>{item.title || 'Untitled'}</p>

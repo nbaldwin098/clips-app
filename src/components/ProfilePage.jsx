@@ -61,11 +61,11 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
         <PageHeader title="Profile" onBack={() => onNavigate?.('home')} />
       </div>
       <div className="relative mx-4 h-36 sm:h-44 rounded-xl overflow-hidden bg-gradient-to-r from-zinc-900 via-zinc-800 to-white/30 border border-zinc-800">
-        {banner ? <img src={banner} alt="" className="h-full w-full object-cover" /> : null}
+        {banner ? <img src={banner} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" /> : null}
       </div>
       <div className="px-4 -mt-10 relative z-10 flex flex-wrap items-end gap-4">
         <div className="h-24 w-24 rounded-full border-4 border-[#000000] bg-white/30 flex items-center justify-center text-3xl font-semibold text-white overflow-hidden">
-          {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" /> : (displayName[0] || '?').toUpperCase()}
+          {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" /> : (displayName[0] || '?').toUpperCase()}
         </div>
         <div className="flex-1 min-w-[160px] pb-1">
           <h1 className="text-xl font-semibold text-zinc-100">{displayName}</h1>

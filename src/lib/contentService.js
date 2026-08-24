@@ -1,7 +1,7 @@
 import { getImports, saveImport, updateImport, removeImport, parseExternalShort, lsGet, lsSet } from './storage'
 import { rankForUser, computeContentQuality, computeVelocity } from './algorithmEngine'
 import { notifyFollowersOfUpload } from './notifications'
-import { storeMediaBlob, processVideoFile } from './videoStorage'
+import { storeMediaBlob, transcodeVideoForUpload } from './videoStorage'
 import { uploadVideoToSupabase } from './mediaUpload'
 import { isSupabaseConfigured } from './supabaseClient'
 import { pushContentRecord, notifyContentChanged } from './contentSync'
@@ -417,18 +417,16 @@ export async function publishLocalMedia(file, actor = null, {
 } = {}) {
   if (!file) return { ok: false, item: null, error: 'Choose a video file.' }
   try {
-    const processed = await processVideoFile(file)
+    const processed = await transcodeVideoForUpload(file, { asClip: type === 'short' })
+    const outFile = processed.file || file
     const id = `up_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
 
     let mediaUrl = processed.rawUrl
     let origin = 'upload-local'
     let hosted = false
 
-    // Never surface raw storage/database errors to viewers — log internally and
-    // fall back to the zero-storage local link. If the actor isn't signed in,
-    // uploads are local-only by design (no cloud write is even attempted).
     if (actor?.id && isSupabaseConfigured()) {
-      const up = await uploadVideoToSupabase(file, actor.id)
+      const up = await uploadVideoToSupabase(outFile, actor.id)
       if (up.ok && up.publicUrl) {
         mediaUrl = up.publicUrl
         origin = 'upload'
@@ -439,7 +437,7 @@ export async function publishLocalMedia(file, actor = null, {
     }
 
     try {
-      await storeMediaBlob(id, file)
+      await storeMediaBlob(id, outFile)
     } catch {}
 
     const isVertical = processed.height > processed.width
@@ -468,7 +466,7 @@ export async function publishLocalMedia(file, actor = null, {
       thumbUrl: processed.thumbUrl || '',
       origin,
       hosted,
-      storedBytes: file.size || 0,
+      storedBytes: outFile.size || file.size || 0,
       durationSec: processed.durationSec,
       width: processed.width,
       height: processed.height,

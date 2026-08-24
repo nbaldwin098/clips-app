@@ -117,6 +117,116 @@ function fitSize(width, height, maxEdge) {
   }
 }
 
+function fitBox(width, height, maxW, maxH) {
+  const w = width || maxW
+  const h = height || maxH
+  const scale = Math.min(1, maxW / w, maxH / h)
+  return {
+    width: Math.max(2, Math.round(w * scale / 2) * 2),
+    height: Math.max(2, Math.round(h * scale / 2) * 2),
+  }
+}
+
+function makeThumb(video, maxEdge = 1280) {
+  const w = video.videoWidth || 1280
+  const h = video.videoHeight || 720
+  const size = fitSize(w, h, maxEdge)
+  const canvas = document.createElement('canvas')
+  canvas.width = size.width
+  canvas.height = size.height
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return ''
+  ctx.drawImage(video, 0, 0, size.width, size.height)
+  try {
+    return canvas.toDataURL('image/jpeg', 0.86)
+  } catch {
+    return ''
+  }
+}
+
+function pickRecorderMime() {
+  const list = [
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=vp8,opus',
+    'video/webm',
+    'video/mp4',
+  ]
+  if (typeof MediaRecorder === 'undefined') return ''
+  return list.find((t) => MediaRecorder.isTypeSupported(t)) || ''
+}
+
+/**
+ * Re-encode to a smaller WebM/MP4 for storage while keeping a sharp JPEG poster.
+ * Falls back to the original file if the browser cannot record.
+ */
+export async function transcodeVideoForUpload(file, { asClip = false } = {}) {
+  const processed = await processVideoFile(file)
+  const maxW = asClip || processed.height > processed.width ? 1080 : 1920
+  const maxH = asClip || processed.height > processed.width ? 1920 : 1080
+  const target = fitBox(processed.width, processed.height, maxW, maxH)
+  const alreadySmall = file.size < 8 * 1024 * 1024
+    && processed.width <= maxW
+    && processed.height <= maxH
+  if (alreadySmall) {
+    return { ...processed, file, transcoded: false }
+  }
+
+  const mime = pickRecorderMime()
+  if (!mime) {
+    return { ...processed, file, transcoded: false }
+  }
+
+  try {
+    const video = document.createElement('video')
+    video.muted = true
+    video.playsInline = true
+    video.src = processed.rawUrl
+    await new Promise((resolve, reject) => {
+      video.onloadeddata = () => resolve()
+      video.onerror = () => reject(new Error('Could not read video'))
+    })
+    const stream = video.captureStream ? video.captureStream() : video.mozCaptureStream?.()
+    if (!stream) return { ...processed, file, transcoded: false }
+
+    const bits = asClip ? 1_800_000 : 2_500_000
+    const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: bits })
+    const chunks = []
+    rec.ondataavailable = (e) => { if (e.data?.size) chunks.push(e.data) }
+    const done = new Promise((resolve, reject) => {
+      rec.onstop = () => resolve()
+      rec.onerror = () => reject(new Error('Transcode failed'))
+    })
+    rec.start(400)
+    const play = video.play()
+    if (play?.catch) await play.catch(() => {})
+    await new Promise((resolve) => {
+      video.onended = resolve
+      setTimeout(resolve, Math.min(180_000, (processed.durationSec || 10) * 1000 + 1500))
+    })
+    if (rec.state !== 'inactive') rec.stop()
+    await done
+    video.pause()
+    const blob = new Blob(chunks, { type: mime.split(';')[0] })
+    if (blob.size < 1024) return { ...processed, file, transcoded: false }
+    const ext = mime.includes('mp4') ? 'mp4' : 'webm'
+    const out = new File(
+      [blob],
+      `${String(file.name || 'clip').replace(/\.[^.]+$/, '')}.${ext}`,
+      { type: blob.type },
+    )
+    return {
+      ...processed,
+      width: target.width || processed.width,
+      height: target.height || processed.height,
+      file: out,
+      transcoded: true,
+      storedBytes: out.size,
+    }
+  } catch {
+    return { ...processed, file, transcoded: false }
+  }
+}
+
 /**
  * Decode an image, keep a displayable JPEG in IndexedDB, and build a small
  * data-URL thumbnail so the Pics grid still paints after a refresh when the
@@ -193,23 +303,7 @@ export async function processVideoFile(file) {
       }
 
       video.onseeked = () => {
-        let thumbUrl = ''
-        try {
-          const canvas = document.createElement('canvas')
-          // Standardize thumbnail canvas
-          const w = video.videoWidth || 1280
-          const h = video.videoHeight || 720
-          canvas.width = w
-          canvas.height = h
-          const ctx = canvas.getContext('2d')
-          if (ctx) {
-            ctx.drawImage(video, 0, 0, w, h)
-            thumbUrl = canvas.toDataURL('image/jpeg', 0.82)
-          }
-        } catch {
-          // fallback if tainted
-        }
-
+        const thumbUrl = makeThumb(video, (video.videoHeight || 0) > (video.videoWidth || 0) ? 720 : 1280)
         resolve({
           width: video.videoWidth || 1920,
           height: video.videoHeight || 1080,

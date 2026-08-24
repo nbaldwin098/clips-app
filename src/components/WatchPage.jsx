@@ -3,7 +3,7 @@ import {
   ArrowLeft, Share2, ListPlus, Music, Clock, ExternalLink, AlertCircle,
   Loader2, SkipForward, SkipBack, ArrowUpRight, ThumbsUp, ThumbsDown,
   Bookmark, PictureInPicture2, Subtitles, Maximize2, Clapperboard,
-  MoreHorizontal, Flag,
+  MoreHorizontal, Flag, Download,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getById, getRelated, getMoreFromCreator, getWatchQueue } from '../lib/contentService'
@@ -23,6 +23,7 @@ import { notifyContentChanged } from '../lib/contentSync'
 import CommentsPanel from './CommentsPanel'
 import PlaylistPicker from './PlaylistPicker'
 import ReportModal from './ReportModal'
+import { downloadPostedMedia } from '../lib/mediaDownload'
 import PostedStamp from './PostedStamp'
 import ContentCard from './ContentCard'
 
@@ -534,9 +535,9 @@ export default function WatchPage({
                 <button
                   type="button"
                   onClick={() => onOpenProfile?.(item.handle, item.creatorId)}
-                  className="h-11 w-11 rounded-full bg-white/10 text-white text-sm font-bold shrink-0"
+                  className="h-11 w-11 rounded-full bg-white/10 text-white text-sm font-bold shrink-0 overflow-hidden"
                 >
-                  {(item.handle || '?')[0]?.toUpperCase()}
+                  {item.avatarUrl ? <img src={item.avatarUrl} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" /> : (item.handle || '?')[0]?.toUpperCase()}
                 </button>
                 <div className="min-w-0">
                   <button
@@ -592,6 +593,10 @@ export default function WatchPage({
                 <Pill onClick={save} active={isSaved}>
                   <Bookmark className={`h-4 w-4 ${isSaved ? 'fill-current' : ''}`} />
                   Save
+                </Pill>
+                <Pill onClick={() => downloadPostedMedia(item)}>
+                  <Download className="h-4 w-4" />
+                  Download
                 </Pill>
                 <div className="relative shrink-0" ref={moreRef}>
                   <Pill onClick={() => setMoreOpen((v) => !v)} active={moreOpen} title="More">

@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { ImagePlus, X, Share2 } from 'lucide-react'
+import { ImagePlus, X, Share2, Download } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getPicsFeed, publishPhoto, pickImmediatePhotoSrc, isHttpUrl, isDataImageUrl } from '../lib/picsService'
 import { subscribeContentUpdates, deleteContentRecord } from '../lib/contentSync'
@@ -7,6 +7,7 @@ import { hideBrokenMedia } from '../lib/catalogHealth'
 import { getMediaBlobUrl } from '../lib/videoStorage'
 import { copyShareUrl, replaceHash } from '../lib/routes'
 import ShortsStage, { ShortsCard } from './ShortsStage'
+import { downloadPostedMedia } from '../lib/mediaDownload'
 
 function PicImage({ pic, className, alt = '', full = false, fill = false, onUnplayable }) {
   const immediate = pickImmediatePhotoSrc(pic, { full })
@@ -80,11 +81,18 @@ function PicSlide({ pic, onOpenProfile }) {
   }
   const handle = pic.handle ? `@${String(pic.handle).replace(/^@/, '')}` : ''
   const actions = (
-    <button type="button" onClick={share} className="flex flex-col items-center gap-1">
-      <span className="h-11 w-11 rounded-full bg-[#272727] hover:bg-[#3d3d3d] flex items-center justify-center text-white">
-        <Share2 className="h-5 w-5" />
-      </span>
-    </button>
+    <>
+      <button type="button" onClick={share} className="flex flex-col items-center gap-1">
+        <span className="h-11 w-11 rounded-full bg-[#272727] hover:bg-[#3d3d3d] flex items-center justify-center text-white">
+          <Share2 className="h-5 w-5" />
+        </span>
+      </button>
+      <button type="button" onClick={() => downloadPostedMedia(pic)} className="flex flex-col items-center gap-1">
+        <span className="h-11 w-11 rounded-full bg-[#272727] hover:bg-[#3d3d3d] flex items-center justify-center text-white">
+          <Download className="h-5 w-5" />
+        </span>
+      </button>
+    </>
   )
 
   return (
