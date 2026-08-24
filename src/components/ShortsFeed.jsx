@@ -13,6 +13,8 @@ import CommentsPanel from './CommentsPanel'
 import ShortsStage, { ShortsCard } from './ShortsStage'
 import ShortsGrid from './ShortsGrid'
 import { PlacementBanner } from './AdUnits'
+import ExoClickDisplay from './ExoClickDisplay'
+import { mixFeedAds } from '../lib/adEngine'
 
 function resolvePlayUrl(item) {
   return item?.mediaUrl || item?.sourceUrl || ''
@@ -347,16 +349,17 @@ export default function ShortsFeed({
   const recommended = useMemo(() => getStableShortsFeed(user?.id || null), [user?.id])
   const following = useMemo(() => getStableFollowingFeed(user?.id, { shortsOnly: true }), [user?.id])
   const items = tab === 'following' ? following : recommended
+  const mixed = useMemo(() => mixFeedAds(items, 'clip-feed'), [items])
   const [activeIdx, setActiveIdx] = useState(0)
   const [muted, setMuted] = useState(true)
   const shownAt = useRef(Date.now())
   const prevIdx = useRef(0)
   const inPlayer = Boolean(focusId)
   const startIdx = useMemo(() => {
-    if (!focusId || !items.length) return 0
-    const idx = items.findIndex((i) => i.id === focusId)
+    if (!focusId || !mixed.length) return 0
+    const idx = mixed.findIndex((row) => row.item?.id === focusId)
     return idx >= 0 ? idx : 0
-  }, [focusId, items])
+  }, [focusId, mixed])
 
   useEffect(() => { setActiveIdx(startIdx) }, [startIdx])
 
@@ -380,10 +383,10 @@ export default function ShortsFeed({
   return (
     <ShortsStage
       key={`clips-player-${tab}`}
-      count={items.length}
+      count={mixed.length}
       activeIndex={activeIdx}
       onActiveIndex={(i) => {
-        const prev = items[prevIdx.current]
+        const prev = mixed[prevIdx.current]?.item
         const waited = Date.now() - shownAt.current
         if (prev && user?.id && i !== prevIdx.current) {
           recordInteraction(user.id, {
@@ -402,10 +405,21 @@ export default function ShortsFeed({
       empty={(
         <div className="h-full flex items-center justify-center text-sm text-zinc-400">No clips</div>
       )}
-      renderSlide={(index, active) => (
-        items[index] ? (
+      renderSlide={(index, active) => {
+        const row = mixed[index]
+        if (row?.kind === 'ad') {
+          return (
+            <div className="h-full w-full max-w-md mx-auto bg-black flex flex-col">
+              <p className="shrink-0 px-3 py-2 text-[11px] text-white/70">Sponsored · swipe for the next clip</p>
+              <div className="flex-1 min-h-0">
+                <ExoClickDisplay zoneId={row.ad?.zoneId} />
+              </div>
+            </div>
+          )
+        }
+        return items[index] && row?.item ? (
           <ClipSlide
-            item={items[index]}
+            item={row.item}
             active={active}
             muted={muted}
             onToggleMute={() => setMuted((m) => !m)}
@@ -418,7 +432,7 @@ export default function ShortsFeed({
             onSearch={() => onNavigate?.('explore')}
           />
         ) : null
-      )}
+      }}
     />
   )
 }

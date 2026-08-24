@@ -30,8 +30,8 @@ const DEFAULT_AD_SETTINGS = {
   clipInFeed: true,
   picBanner: true,
   picInFeed: true,
-  clipFeedEvery: 6,
-  picFeedEvery: 6,
+  clipFeedEvery: 4,
+  picFeedEvery: 4,
   videoSkipAfterSec: 5,
 }
 
@@ -328,20 +328,29 @@ export function getVideoAdDurationSec(ad) {
 export function mixFeedAds(items, placement) {
   const list = Array.isArray(items) ? items : []
   const mapped = list.map((item) => ({ kind: 'item', item, key: item?.id }))
-  if (!adsAreRunning()) return mapped
   const settings = getAdSettings()
-  const every = placement === 'pic-feed' ? settings.picFeedEvery : settings.clipFeedEvery
   if (!settingAllows(placement, settings)) return mapped
-  const ads = listActiveAds(placement)
-  if (!ads.length) return mapped
+  const every = placement === 'pic-feed' ? settings.picFeedEvery : settings.clipFeedEvery
+  const exoFeed = placement === 'clip-feed' || placement === 'pic-feed'
+  const campaigns = adsAreRunning() ? listActiveAds(placement) : []
+  if (!exoFeed && !campaigns.length) return mapped
   const out = []
   let adIdx = 0
   list.forEach((item, i) => {
     out.push({ kind: 'item', item, key: item?.id || `item-${i}` })
     if ((i + 1) % every === 0 && i < list.length - 1) {
-      const ad = ads[adIdx % ads.length]
-      out.push({ kind: 'ad', ad, key: `ad-${placement}-${i}-${ad.id}` })
-      adIdx += 1
+      if (exoFeed) {
+        out.push({
+          kind: 'ad',
+          ad: { id: `exo-${placement}-${i}`, provider: 'exoclick', zoneId: '6010926' },
+          key: `exo-${placement}-${i}`,
+        })
+      } else {
+        const ad = campaigns[adIdx % campaigns.length]
+        if (!ad) return
+        out.push({ kind: 'ad', ad, key: `ad-${placement}-${i}-${ad.id}` })
+        adIdx += 1
+      }
     }
   })
   return out
