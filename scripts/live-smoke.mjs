@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto'
 import { extractHashtags, mergeTags, parseClock, parseCaptionCues, isReleased, filterExploreItems, formatPostedAt, olderIso, postedAtOf } from '../src/lib/mediaMeta.js'
 import { parseRoute, buildHash } from '../src/lib/routes.js'
 import { sanitizeAuthError, normalizePhone } from '../src/lib/authBrand.js'
-import { findOwnerLogin, isLocalOwnerLogin, OWNER_LOGIN } from '../src/data/ownerLogin.js'
+import { findOwnerLogin, isLocalOwnerLogin, isOwnerAccount, OWNER_LOGIN } from '../src/data/ownerLogin.js'
 
 let failed = 0
 function assert(cond, msg) {
@@ -225,6 +225,13 @@ function ownerHashMatches(raw, stored) {
 }
 const ownerHashes = [OWNER_LOGIN.passwordHash, ...(OWNER_LOGIN.passwordHashes || [])]
 assert(ownerHashes.some((h) => ownerHashMatches('cs1cs1', h)), 'simple owner password hash is stored')
+assert(isOwnerAccount({ id: 'owner-cs1', handle: 'cs1' }), 'cs1 account is owner')
+const modSrc = readFileSync(new URL('../src/lib/moderation.js', import.meta.url), 'utf8')
+assert(modSrc.includes('if (isPlatformOwner(user)) return true'), 'signed-in owner skips a second admin password')
+assert(modSrc.includes('ownerPasswordHashes'), 'admin login accepts the site owner password')
+const avatarSrc = readFileSync(new URL('../src/components/ChannelAvatar.jsx', import.meta.url), 'utf8')
+assert(!avatarSrc.includes('VerifiedBadge'), 'checkmarks are not on profile pictures')
+assert(!avatarSrc.includes('official'), 'avatars do not take an official badge prop')
 const modalSrcAuth = readFileSync(new URL('../src/components/AuthModal.jsx', import.meta.url), 'utf8')
 assert(modalSrcAuth.includes('findOwnerLogin'), 'auth modal allows owner username without @')
 const authOwner = readFileSync(new URL('../src/context/AuthContext.jsx', import.meta.url), 'utf8')
@@ -259,6 +266,8 @@ const cardSrc = readFileSync(new URL('../src/components/ContentCard.jsx', import
 assert(cardSrc.includes('PostedStamp'), 'home cards show real post time')
 assert(cardSrc.includes('viewsLabel'), 'cards format view counts')
 assert(cardSrc.includes('Download'), 'cards can download a post')
+assert(cardSrc.includes('VerifiedBadge'), 'cards put the checkmark beside the name')
+assert(!cardSrc.includes('official={official}'), 'cards do not put the checkmark on the avatar')
 const watchSrc2 = readFileSync(new URL('../src/components/WatchPage.jsx', import.meta.url), 'utf8')
 assert(watchSrc2.includes('downloadPostedMedia'), 'watch page can download')
 const dlSrc = readFileSync(new URL('../src/lib/mediaDownload.js', import.meta.url), 'utf8')

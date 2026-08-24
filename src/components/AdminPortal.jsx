@@ -2,6 +2,7 @@ import { useState } from 'react'
 import {
   isAdminSession, adminLogin, adminLogout, listApplications, setApplicationStatus,
   listTickets, updateTicket, listIndexedUsers, listImports, listUserClips,
+  isPlatformOwner,
 } from '../lib/moderation'
 import { listIdVerifications, setIdVerificationStatus } from '../lib/verification'
 import { adsAreRunning } from '../lib/adEngine'
@@ -39,10 +40,11 @@ function Pill({ on, children }) {
 }
 
 export default function AdminPortal() {
-  const { user } = useAuth()
+  const { user, login } = useAuth()
   const [unlocked, setUnlocked] = useState(false)
+  const [identifier, setIdentifier] = useState('')
   const [code, setCode] = useState('')
-  const authed = unlocked || isAdminSession(user)
+  const authed = unlocked || isAdminSession(user) || isPlatformOwner(user)
   const [err, setErr] = useState('')
   const [tab, setTab] = useState('ops')
   const [, bump] = useState(0)
@@ -59,15 +61,44 @@ export default function AdminPortal() {
       <div className="p-6 max-w-sm mx-auto">
         <h1 className="text-lg font-semibold text-white">Admin portal</h1>
         <p className="text-xs text-zinc-500 mt-1 mb-4">
-          Sign in as @{ORG.ownerHandle} ({OWNER_HINT}), then enter the admin code.
+          Sign in as cs1 with the same password you use on the site.
         </p>
         <form onSubmit={async (e) => {
           e.preventDefault()
-          const result = await adminLogin(code.trim(), user)
-          if (result?.ok) { setUnlocked(true); setErr('') }
-          else setErr(result?.error || 'Invalid code')
+          setErr('')
+          try {
+            let u = user
+            if (!u) {
+              u = await login({
+                email: (identifier || 'cs1').trim(),
+                password: code,
+                mode: 'signin',
+              })
+            }
+            if (isPlatformOwner(u)) {
+              await adminLogin(code, u)
+              setUnlocked(true)
+              return
+            }
+            const result = await adminLogin(code.trim(), u)
+            if (result?.ok) { setUnlocked(true); setErr('') }
+            else setErr(result?.error || 'Wrong password.')
+          } catch (e2) {
+            setErr(e2?.message || 'Wrong password.')
+          }
         }} className="space-y-3">
-          <input type="password" value={code} onChange={(e) => setCode(e.target.value)} className="w-full h-10 rounded-lg border border-zinc-800 bg-[#121218] px-3 text-sm text-zinc-100" placeholder="Admin code" />
+          {!user ? (
+            <input
+              type="text"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              className="w-full h-10 rounded-lg border border-zinc-800 bg-[#121218] px-3 text-sm text-zinc-100"
+              placeholder="cs1"
+              autoCapitalize="none"
+              autoCorrect="off"
+            />
+          ) : null}
+          <input type="password" value={code} onChange={(e) => setCode(e.target.value)} className="w-full h-10 rounded-lg border border-zinc-800 bg-[#121218] px-3 text-sm text-zinc-100" placeholder="Password" />
           {err && <p className="text-xs text-red-400">{err}</p>}
           <button type="submit" className="w-full h-10 rounded-lg bg-white text-black text-sm">Enter</button>
         </form>
@@ -313,5 +344,3 @@ export default function AdminPortal() {
     </div>
   )
 }
-
-const OWNER_HINT = 'cs1@calabi.local'

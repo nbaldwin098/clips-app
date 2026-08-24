@@ -36,7 +36,7 @@ export default function CreatorsPage() {
               onClick={() => { if (typeof window !== 'undefined') window.__clipsOpenProfile?.(c.handle, c.id) }}
               className="w-full flex items-center gap-4 px-4 py-3 text-left hover:bg-[#181818]"
             >
-              <ChannelAvatar src={c.avatarUrl} name={c.displayName} size={48} official={isVerifiedChannel(c.id, c.handle)} />
+              <ChannelAvatar src={c.avatarUrl} name={c.displayName} size={48} />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white truncate inline-flex items-center gap-1.5">
                   {c.displayName}

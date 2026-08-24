@@ -2,6 +2,7 @@
  * Boot-time repair so a stale or tampered browser cache cannot brick the app
  * after months without a deploy.
  */
+import { isOwnerAccount } from '../data/ownerLogin'
 import { lsGet, lsSet, lsRemove } from './storage'
 import { safeHttpUrl } from './safeUrl'
 import { purgeDeadCatalog } from './catalogHealth'
@@ -14,6 +15,15 @@ function isRecord(v) {
 
 function stripPrivileges(user) {
   if (!isRecord(user)) return null
+  if (isOwnerAccount(user)) {
+    return {
+      ...user,
+      isPlatformAdmin: true,
+      isCreator: true,
+      creatorStatus: 'approved',
+      role: 'admin',
+    }
+  }
   if (String(user.id || '').startsWith('org-')) {
     return {
       ...user,

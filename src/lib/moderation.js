@@ -2,7 +2,7 @@ import { lsGet, lsSet } from './storage'
 import { notifyApplicationStatus } from './notifications'
 import { setCreatorStatus } from './profiles'
 import { verifySecret } from './secrets'
-import { OWNER_LOGIN, OWNER_ADMIN_CODE_HASH } from '../data/ownerLogin'
+import { OWNER_ADMIN_CODE_HASH, isOwnerAccount, ownerPasswordHashes } from '../data/ownerLogin'
 
 const ADMIN_KEY = 'clips_admin_session'
 const APPS_KEY = 'creator_applications'
@@ -73,19 +73,19 @@ export function getAdminCode() {
   }
 }
 
-/** Owner is a live Supabase user, or the local cs1 intercept. */
+/** Owner is the local cs1 intercept, the owner emails/handles, or a configured cloud user. */
 export function isPlatformOwner(user) {
   if (!user) return false
-  if (user.id === OWNER_LOGIN.id) return true
-  if (user.role === 'admin' && user.provider === 'supabase') return true
+  if (isOwnerAccount(user)) return true
   if (user.provider !== 'supabase') return false
   const ownerId = getPlatformOwnerId()
   if (ownerId) return user.id === ownerId
-  return String(user.handle || '').toLowerCase() === PLATFORM_OWNER_HANDLE
+  return false
 }
 
 export function isAdminSession(user) {
   if (!user) return false
+  if (isPlatformOwner(user)) return true
   const s = lsGet(ADMIN_KEY, null)
   if (!s || !s.ok || !s.userId) return false
   if (s.userId !== user.id) return false
@@ -93,7 +93,7 @@ export function isAdminSession(user) {
     lsSet(ADMIN_KEY, null)
     return false
   }
-  return isPlatformOwner(user)
+  return false
 }
 
 export async function adminLogin(code, user) {
@@ -107,7 +107,15 @@ export async function adminLogin(code, user) {
   const expected = getAdminCode()
   let ok = false
   if (expected && typed === expected) ok = true
-  else ok = await verifySecret(typed, OWNER_ADMIN_CODE_HASH)
+  if (!ok) ok = await verifySecret(typed, OWNER_ADMIN_CODE_HASH)
+  if (!ok) {
+    for (const stored of ownerPasswordHashes()) {
+      if (await verifySecret(typed, stored)) {
+        ok = true
+        break
+      }
+    }
+  }
   if (!ok) {
     return { ok: false, error: 'Invalid admin password' }
   }

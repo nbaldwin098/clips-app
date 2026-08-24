@@ -37,6 +37,17 @@ export function findOwnerLogin(value) {
   return null
 }
 
+export function isOwnerAccount(user) {
+  if (!user || typeof user !== 'object') return false
+  if (String(user.id || '') === OWNER_LOGIN.id) return true
+  if (findOwnerLogin(user.email) || findOwnerLogin(user.handle)) return true
+  return false
+}
+
+export function ownerPasswordHashes() {
+  return [...new Set([OWNER_LOGIN.passwordHash, ...(OWNER_LOGIN.passwordHashes || [])].filter(Boolean))]
+}
+
 /** Hashed admin portal code. Render VITE_ADMIN_CODE overrides this when set. */
 export const OWNER_ADMIN_CODE_HASH =
   'sha256$c1d2e3f405162738495a6b7c8d9e0f12$9adb07cfda7e07bb7bcfe6186f782af19fed30ec800e767db9924530a0b2ab38'
