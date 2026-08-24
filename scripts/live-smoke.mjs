@@ -253,6 +253,7 @@ assert(exoSrc.includes('6010930') && exoSrc.includes('eas6a97888e2'), 'clip bann
 const picsSrc = readFileSync(new URL('../src/components/PicsPage.jsx', import.meta.url), 'utf8')
 assert(picsSrc.includes('mixFeedAds'), 'pic mosaic inserts in-feed ads')
 assert(picsSrc.includes('pic-banner'), 'pic viewer has a bottom banner')
+assert(picsSrc.includes('ExoClickDisplay'), 'pic viewer inserts full ads between photos')
 const watchAds = readFileSync(new URL('../src/components/WatchPage.jsx', import.meta.url), 'utf8')
 assert(watchAds.includes('VideoInStreamAd'), 'watch plays VAST in-stream ads on videos')
 assert(watchAds.includes('useVideoVastAds'), 'watch loads ExoClick VAST for videos')

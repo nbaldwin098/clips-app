@@ -30,6 +30,8 @@ const DEFAULT_AD_SETTINGS = {
   clipInFeed: true,
   picBanner: true,
   picInFeed: true,
+  // YouTube Shorts puts ads *between* videos (swipe past). There is no public fixed N;
+  // typical feeds show one about every 3–6 shorts. Match that with every 4.
   clipFeedEvery: 4,
   picFeedEvery: 4,
   videoSkipAfterSec: 5,
