@@ -83,7 +83,7 @@ function ShortTile({ item, onOpen }) {
 export default function ShortsGrid({ items, onOpen, tab = 'recommended', onTab }) {
   return (
     <div className="h-full overflow-y-auto bg-[#000000]">
-      <div className="sticky top-0 z-10 bg-[#000000]/95 backdrop-blur px-3 py-3">
+      <div className="sticky top-0 z-10 bg-[#000000]/95 backdrop-blur px-4 py-3">
         {onTab ? (
           <div className="flex gap-1 rounded-full bg-white/10 p-1 w-fit">
             {['recommended', 'following'].map((id) => (
@@ -91,7 +91,7 @@ export default function ShortsGrid({ items, onOpen, tab = 'recommended', onTab }
                 key={id}
                 type="button"
                 onClick={() => onTab(id)}
-                className={`h-7 px-3 rounded-full text-[11px] font-semibold ${
+                className={`h-8 px-4 rounded-full text-sm font-semibold ${
                   tab === id ? 'bg-white text-black' : 'text-white/70'
                 }`}
               >
@@ -106,7 +106,7 @@ export default function ShortsGrid({ items, onOpen, tab = 'recommended', onTab }
           {tab === 'following' ? 'Follow creators to fill this shelf.' : 'No clips yet'}
         </p>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 p-2 pb-16">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 p-4 pb-16">
           {items.map((item) => (
             <ShortTile key={item.id} item={item} onOpen={onOpen} />
           ))}

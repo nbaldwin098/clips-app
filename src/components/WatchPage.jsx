@@ -3,6 +3,7 @@ import {
   ArrowLeft, Share2, ListPlus, Music, Clock, ExternalLink, AlertCircle,
   Loader2, SkipForward, SkipBack, ArrowUpRight, ThumbsUp, ThumbsDown,
   Bookmark, PictureInPicture2, Subtitles, Maximize2, Clapperboard,
+  MoreHorizontal, Flag,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getById, getRelated, getMoreFromCreator, getWatchQueue } from '../lib/contentService'
@@ -21,7 +22,24 @@ import { formatPostedAt, parseCaptionCues, cueAtTime } from '../lib/mediaMeta'
 import { notifyContentChanged } from '../lib/contentSync'
 import CommentsPanel from './CommentsPanel'
 import PlaylistPicker from './PlaylistPicker'
+import ReportModal from './ReportModal'
 import ContentCard from './ContentCard'
+
+function Pill({ children, onClick, active = false, title, disabled }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      disabled={disabled}
+      className={`h-9 px-4 rounded-full text-sm font-medium inline-flex items-center gap-2 shrink-0 transition-colors disabled:opacity-40 ${
+        active ? 'bg-white text-black' : 'bg-[#272727] text-white hover:bg-[#3f3f3f]'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
 
 function typingInField(el) {
   if (!el) return false
@@ -57,6 +75,9 @@ export default function WatchPage({
   const [speed, setSpeed] = useState(prefs.defaultSpeed || 1)
   const [copied, setCopied] = useState('')
   const [playlistOpen, setPlaylistOpen] = useState(false)
+  const [moreOpen, setMoreOpen] = useState(false)
+  const [reportOpen, setReportOpen] = useState(false)
+  const moreRef = useRef(null)
   const [activeAd, setActiveAd] = useState(null)
   const [adSecondsLeft, setAdSecondsLeft] = useState(5)
   const [canSkipAd, setCanSkipAd] = useState(false)
@@ -100,7 +121,16 @@ export default function WatchPage({
     setEndScreen(false)
     setCountdown(0)
     setCueText('')
+    setMoreOpen(false)
   }, [itemId, user?.id, item?.creatorId])
+
+  useEffect(() => {
+    const onDoc = (e) => {
+      if (moreRef.current && !moreRef.current.contains(e.target)) setMoreOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [])
 
   useEffect(() => {
     if (!item?.id) {
@@ -380,7 +410,7 @@ export default function WatchPage({
   const endPicks = [queue.next, ...related].filter((x, i, a) => x && a.findIndex((y) => y?.id === x.id) === i).slice(0, 3)
 
   return (
-    <div className={`p-3 md:p-6 mx-auto pb-20 ${theater ? 'max-w-[1400px]' : 'max-w-[1200px]'}`}>
+    <div className={`p-4 md:p-8 mx-auto pb-24 ${theater ? 'max-w-[1400px]' : 'max-w-[1280px]'}`}>
       <button type="button" onClick={onBack} className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white mb-3">
         <ArrowLeft className="h-4 w-4" /> Back
       </button>
@@ -495,113 +525,144 @@ export default function WatchPage({
             </div>
           )}
 
-          <div className="mt-4 space-y-3">
-            <h1 className="text-lg font-semibold text-white">{item.title || 'Untitled'}</h1>
-            <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400">
-              <button type="button" onClick={() => onOpenProfile?.(item.handle, item.creatorId)} className="font-semibold text-zinc-100 hover:underline">
-                @{item.handle || 'creator'}
-              </button>
-              <span>·</span>
-              <span>{views} views</span>
-              {item.createdAt ? (
-                <>
-                  <span>·</span>
-                  <span>{formatPostedAt(item.createdAt)}</span>
-                </>
-              ) : null}
-              {item.durationSec ? (
-                <>
-                  <span>·</span>
-                  <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />{formatClock(item.durationSec)}</span>
-                </>
-              ) : null}
-            </div>
+          <div className="mt-5 space-y-5">
+            <h1 className="text-xl font-semibold text-white leading-snug">{item.title || 'Untitled'}</h1>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <button type="button" onClick={() => vote('up')} className={`h-8 px-3 rounded-lg border text-xs inline-flex items-center gap-1.5 ${myVote === 'up' ? 'border-white text-white bg-white/10' : 'border-zinc-800 text-zinc-200'}`}>
-                <ThumbsUp className="h-3.5 w-3.5" /> {votes.up || 0}
-              </button>
-              <button type="button" onClick={() => vote('down')} className={`h-8 px-3 rounded-lg border text-xs inline-flex items-center gap-1.5 ${myVote === 'down' ? 'border-red-400 text-red-400' : 'border-zinc-800 text-zinc-200'}`}>
-                <ThumbsDown className="h-3.5 w-3.5" />
-              </button>
-              <button type="button" onClick={save} className={`h-8 px-3 rounded-lg border text-xs inline-flex items-center gap-1.5 ${isSaved ? 'border-white text-white' : 'border-zinc-800 text-zinc-200'}`}>
-                <Bookmark className={`h-3.5 w-3.5 ${isSaved ? 'fill-current' : ''}`} /> Save
-              </button>
-              {item.creatorId && item.creatorId !== user?.id ? (
-                <button type="button" onClick={follow} className={`h-8 px-3 rounded-lg text-xs font-medium ${followed ? 'border border-zinc-800 text-zinc-200' : 'bg-white text-black'}`}>
-                  {followed ? 'Following' : 'Follow'}
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-center gap-3 min-w-0">
+                <button
+                  type="button"
+                  onClick={() => onOpenProfile?.(item.handle, item.creatorId)}
+                  className="h-11 w-11 rounded-full bg-white/10 text-white text-sm font-bold shrink-0"
+                >
+                  {(item.handle || '?')[0]?.toUpperCase()}
                 </button>
-              ) : null}
-              <label className="text-[11px] text-zinc-500 inline-flex items-center gap-1.5">
-                Speed
-                <select value={speed} onChange={(e) => setSpeed(Number(e.target.value))} className="h-8 rounded-lg border border-zinc-800 bg-[#000000] px-2 text-xs text-zinc-200">
-                  {PLAYBACK_SPEEDS.map((s) => (
-                    <option key={s} value={s}>{s}×</option>
-                  ))}
-                </select>
-              </label>
-              <button type="button" onClick={() => share(false)} className="h-8 px-3 rounded-lg border border-zinc-800 text-xs text-zinc-200 inline-flex items-center gap-1.5">
-                <Share2 className="h-3.5 w-3.5" />{copied === 'link' ? 'Copied' : 'Copy link'}
-              </button>
-              <button type="button" onClick={() => share(true)} className="h-8 px-3 rounded-lg border border-zinc-800 text-xs text-zinc-200">
-                {copied === 'time' ? 'Copied' : 'Copy at time'}
-              </button>
-              <button type="button" onClick={() => { if (!isAuthenticated) { onOpenAuth?.(); return } setPlaylistOpen(true) }} className="h-8 px-3 rounded-lg border border-zinc-800 text-xs text-zinc-200 inline-flex items-center gap-1.5">
-                <ListPlus className="h-3.5 w-3.5" /> Playlist
-              </button>
-              <button type="button" onClick={togglePip} className="h-8 px-3 rounded-lg border border-zinc-800 text-xs text-zinc-200 inline-flex items-center gap-1.5" title="Picture in picture">
-                <PictureInPicture2 className="h-3.5 w-3.5" /> PiP
-              </button>
-              <button type="button" onClick={toggleFs} className="h-8 px-3 rounded-lg border border-zinc-800 text-xs text-zinc-200 inline-flex items-center gap-1.5">
-                <Maximize2 className="h-3.5 w-3.5" /> Full
-              </button>
-              <button
-                type="button"
-                onClick={() => setCaptionsOn((v) => !v)}
-                className={`h-8 px-3 rounded-lg border text-xs inline-flex items-center gap-1.5 ${captionsOn ? 'border-white text-white' : 'border-zinc-800 text-zinc-200'}`}
-              >
-                <Subtitles className="h-3.5 w-3.5" /> CC
-              </button>
-              <label className="text-[11px] text-zinc-500 inline-flex items-center gap-1.5">
-                <input
-                  type="checkbox"
-                  checked={autoplay}
-                  onChange={(e) => { setAutoplay(e.target.checked); setWatchPrefs({ autoplay: e.target.checked }) }}
-                />
-                Autoplay
-              </label>
-              <label className="text-[11px] text-zinc-500 inline-flex items-center gap-1.5">
-                <input
-                  type="checkbox"
-                  checked={theater}
-                  onChange={(e) => { setTheater(e.target.checked); setWatchPrefs({ theater: e.target.checked }) }}
-                />
-                Theater
-              </label>
-              <label className="text-[11px] text-zinc-500 inline-flex items-center gap-1.5">
-                <input
-                  type="checkbox"
-                  checked={ambient}
-                  onChange={(e) => { setAmbient(e.target.checked); setWatchPrefs({ ambient: e.target.checked }) }}
-                />
-                Ambient
-              </label>
-              {item.soundTitle ? (
-                <button type="button" onClick={() => onOpenSound?.(item.soundId || item.soundTitle)} className="h-8 px-3 rounded-lg border border-zinc-800 text-xs text-zinc-200 inline-flex items-center gap-1.5">
-                  <Music className="h-3.5 w-3.5" />{item.soundTitle}
-                </button>
-              ) : null}
-              {item.type === 'short' ? (
-                <button type="button" onClick={() => { if (!isAuthenticated) { onOpenAuth?.(); return } onStitch?.(item) }} className="h-8 px-3 rounded-lg border border-zinc-800 text-xs text-zinc-200 inline-flex items-center gap-1.5">
-                  <Clapperboard className="h-3.5 w-3.5" /> Stitch this
-                </button>
-              ) : null}
-              <button type="button" onClick={goPrev} disabled={!queue.prev} className="h-8 px-3 rounded-lg border border-zinc-800 text-xs text-zinc-200 disabled:opacity-40 inline-flex items-center gap-1">
-                <SkipBack className="h-3.5 w-3.5" /> Prev
-              </button>
-              <button type="button" onClick={goNext} disabled={!queue.next} className="h-8 px-3 rounded-lg border border-zinc-800 text-xs text-zinc-200 disabled:opacity-40 inline-flex items-center gap-1">
-                Next <SkipForward className="h-3.5 w-3.5" />
-              </button>
+                <div className="min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => onOpenProfile?.(item.handle, item.creatorId)}
+                    className="block text-[15px] font-semibold text-white hover:underline truncate"
+                  >
+                    @{item.handle || 'creator'}
+                  </button>
+                  <p className="text-xs text-zinc-400 mt-0.5">
+                    {views} views
+                    {item.createdAt ? ` · ${formatPostedAt(item.createdAt)}` : ''}
+                    {item.durationSec ? ` · ${formatClock(item.durationSec)}` : ''}
+                  </p>
+                </div>
+                {item.creatorId && item.creatorId !== user?.id ? (
+                  <button
+                    type="button"
+                    onClick={follow}
+                    className={`ml-2 h-9 px-4 rounded-full text-sm font-semibold shrink-0 ${
+                      followed ? 'bg-[#272727] text-white hover:bg-[#3f3f3f]' : 'bg-white text-black hover:bg-zinc-200'
+                    }`}
+                  >
+                    {followed ? 'Following' : 'Follow'}
+                  </button>
+                ) : null}
+              </div>
+
+              <div className="flex items-center gap-2 overflow-x-auto pb-0.5 lg:justify-end">
+                <div className="inline-flex h-9 rounded-full bg-[#272727] overflow-hidden shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => vote('up')}
+                    className={`h-full px-4 inline-flex items-center gap-2 text-sm font-medium hover:bg-[#3f3f3f] ${myVote === 'up' ? 'text-white' : 'text-zinc-100'}`}
+                  >
+                    <ThumbsUp className={`h-4 w-4 ${myVote === 'up' ? 'fill-current' : ''}`} />
+                    {votes.up || 0}
+                  </button>
+                  <span className="w-px my-2 bg-white/15" />
+                  <button
+                    type="button"
+                    onClick={() => vote('down')}
+                    className={`h-full px-3.5 inline-flex items-center hover:bg-[#3f3f3f] ${myVote === 'down' ? 'text-red-400' : 'text-zinc-100'}`}
+                    title="Dislike"
+                  >
+                    <ThumbsDown className={`h-4 w-4 ${myVote === 'down' ? 'fill-current' : ''}`} />
+                  </button>
+                </div>
+                <Pill onClick={() => share(false)}>
+                  <Share2 className="h-4 w-4" />
+                  {copied === 'link' ? 'Copied' : 'Share'}
+                </Pill>
+                <Pill onClick={save} active={isSaved}>
+                  <Bookmark className={`h-4 w-4 ${isSaved ? 'fill-current' : ''}`} />
+                  Save
+                </Pill>
+                <div className="relative shrink-0" ref={moreRef}>
+                  <Pill onClick={() => setMoreOpen((v) => !v)} active={moreOpen} title="More">
+                    <MoreHorizontal className="h-4 w-4" />
+                    More
+                  </Pill>
+                  {moreOpen ? (
+                    <div className="absolute right-0 top-[calc(100%+8px)] z-40 w-64 rounded-xl bg-[#212121] border border-white/10 py-2 shadow-2xl">
+                      <button type="button" onClick={() => { setMoreOpen(false); if (!isAuthenticated) { onOpenAuth?.(); return } setPlaylistOpen(true) }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 inline-flex items-center gap-3">
+                        <ListPlus className="h-4 w-4 text-zinc-400" /> Save to playlist
+                      </button>
+                      <button type="button" onClick={() => { share(true); setMoreOpen(false) }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 inline-flex items-center gap-3">
+                        <Clock className="h-4 w-4 text-zinc-400" /> {copied === 'time' ? 'Copied timestamp' : 'Copy link at time'}
+                      </button>
+                      <button type="button" onClick={() => { togglePip(); setMoreOpen(false) }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 inline-flex items-center gap-3">
+                        <PictureInPicture2 className="h-4 w-4 text-zinc-400" /> Picture in picture
+                      </button>
+                      <button type="button" onClick={() => { toggleFs(); setMoreOpen(false) }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 inline-flex items-center gap-3">
+                        <Maximize2 className="h-4 w-4 text-zinc-400" /> Full screen
+                      </button>
+                      <button type="button" onClick={() => setCaptionsOn((v) => !v)} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 inline-flex items-center gap-3">
+                        <Subtitles className="h-4 w-4 text-zinc-400" /> Captions {captionsOn ? 'on' : 'off'}
+                      </button>
+                      {item.soundTitle ? (
+                        <button type="button" onClick={() => { setMoreOpen(false); onOpenSound?.(item.soundId || item.soundTitle) }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 inline-flex items-center gap-3">
+                          <Music className="h-4 w-4 text-zinc-400" /> {item.soundTitle}
+                        </button>
+                      ) : null}
+                      {item.type === 'short' ? (
+                        <button type="button" onClick={() => { setMoreOpen(false); if (!isAuthenticated) { onOpenAuth?.(); return } onStitch?.(item) }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 inline-flex items-center gap-3">
+                          <Clapperboard className="h-4 w-4 text-zinc-400" /> Stitch this
+                        </button>
+                      ) : null}
+                      <div className="my-2 h-px bg-white/10" />
+                      <label className="flex items-center justify-between px-4 py-2 text-sm text-white">
+                        Speed
+                        <select
+                          value={speed}
+                          onChange={(e) => setSpeed(Number(e.target.value))}
+                          className="h-8 rounded-lg bg-[#121212] border border-white/10 px-2 text-xs"
+                        >
+                          {PLAYBACK_SPEEDS.map((s) => (
+                            <option key={s} value={s}>{s}×</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="flex items-center justify-between px-4 py-2 text-sm text-white">
+                        Autoplay
+                        <input type="checkbox" checked={autoplay} onChange={(e) => { setAutoplay(e.target.checked); setWatchPrefs({ autoplay: e.target.checked }) }} />
+                      </label>
+                      <label className="flex items-center justify-between px-4 py-2 text-sm text-white">
+                        Theater
+                        <input type="checkbox" checked={theater} onChange={(e) => { setTheater(e.target.checked); setWatchPrefs({ theater: e.target.checked }) }} />
+                      </label>
+                      <label className="flex items-center justify-between px-4 py-2 text-sm text-white">
+                        Ambient
+                        <input type="checkbox" checked={ambient} onChange={(e) => { setAmbient(e.target.checked); setWatchPrefs({ ambient: e.target.checked }) }} />
+                      </label>
+                      <div className="my-2 h-px bg-white/10" />
+                      <button type="button" onClick={goPrev} disabled={!queue.prev} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 disabled:opacity-40 inline-flex items-center gap-3">
+                        <SkipBack className="h-4 w-4 text-zinc-400" /> Previous
+                      </button>
+                      <button type="button" onClick={goNext} disabled={!queue.next} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 disabled:opacity-40 inline-flex items-center gap-3">
+                        <SkipForward className="h-4 w-4 text-zinc-400" /> Next
+                      </button>
+                      <button type="button" onClick={() => { setMoreOpen(false); setReportOpen(true) }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 inline-flex items-center gap-3">
+                        <Flag className="h-4 w-4 text-zinc-400" /> Report
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
             </div>
 
             {original ? (
@@ -610,33 +671,34 @@ export default function WatchPage({
               </button>
             ) : null}
 
-            {(item.tags || []).length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {item.tags.map((t) => (
-                  <button key={t} type="button" onClick={() => onOpenTag?.(t)} className="h-7 px-2.5 rounded-full bg-zinc-900 border border-zinc-800 text-[11px] text-zinc-300">
-                    #{t}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {desc ? (
-              <p className="text-sm text-zinc-400 whitespace-pre-wrap">
-                {desc.split(/(#[a-zA-Z0-9_]{1,40})/g).map((part, i) => {
-                  if (part.startsWith('#')) {
-                    const tag = part.slice(1)
-                    return (
-                      <button key={`${tag}-${i}`} type="button" onClick={() => onOpenTag?.(tag)} className="text-white hover:underline">
-                        {part}
+            {(desc || (item.tags || []).length > 0) ? (
+              <div className="rounded-xl bg-[#121212] px-4 py-3 space-y-2">
+                {(item.tags || []).length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {item.tags.map((t) => (
+                      <button key={t} type="button" onClick={() => onOpenTag?.(t)} className="text-xs font-medium text-zinc-300 hover:text-white">
+                        #{t}
                       </button>
-                    )
-                  }
-                  return <span key={i}>{part}</span>
-                })}
-              </p>
+                    ))}
+                  </div>
+                )}
+                {desc ? (
+                  <p className="text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">
+                    {desc.split(/(#[a-zA-Z0-9_]{1,40})/g).map((part, i) => {
+                      if (part.startsWith('#')) {
+                        const tag = part.slice(1)
+                        return (
+                          <button key={`${tag}-${i}`} type="button" onClick={() => onOpenTag?.(tag)} className="text-white hover:underline">
+                            {part}
+                          </button>
+                        )
+                      }
+                      return <span key={i}>{part}</span>
+                    })}
+                  </p>
+                ) : null}
+              </div>
             ) : null}
-
-            <p className="text-[10px] text-zinc-600">Keys: k play · j/l ±10s · f full · m mute · c captions · n next · t theater · p PiP · 0–9 seek</p>
 
             <CommentsPanel contentId={item.id} creatorId={item.creatorId || item.userId} />
           </div>
@@ -650,7 +712,7 @@ export default function WatchPage({
                 <p className="text-xs text-zinc-500">Nothing else in the catalog yet.</p>
               ) : (
                 related.map((rel) => (
-                  <ContentCard key={rel.id} item={rel} onOpen={onPlayItem} variant={rel.type === 'video' ? 'video' : 'short'} />
+                  <ContentCard key={rel.id} item={rel} onOpen={onPlayItem} variant="video" />
                 ))
               )}
             </div>
@@ -658,7 +720,7 @@ export default function WatchPage({
               <div className="space-y-3">
                 <h2 className="text-sm font-semibold text-zinc-200">More from this creator</h2>
                 {moreFrom.map((rel) => (
-                  <ContentCard key={rel.id} item={rel} onOpen={onPlayItem} variant={rel.type === 'video' ? 'video' : 'short'} />
+                  <ContentCard key={rel.id} item={rel} onOpen={onPlayItem} variant="video" />
                 ))}
               </div>
             )}
@@ -671,13 +733,14 @@ export default function WatchPage({
           <h2 className="text-sm font-semibold text-zinc-200 mb-3">More from this creator</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {moreFrom.map((rel) => (
-              <ContentCard key={rel.id} item={rel} onOpen={onPlayItem} variant={rel.type === 'video' ? 'video' : 'short'} />
+              <ContentCard key={rel.id} item={rel} onOpen={onPlayItem} variant="video" />
             ))}
           </div>
         </div>
       )}
 
       <PlaylistPicker open={playlistOpen} onClose={() => setPlaylistOpen(false)} contentId={item.id} onOpenAuth={onOpenAuth} />
+      <ReportModal open={reportOpen} onClose={() => setReportOpen(false)} target={{ id: item.id, contentId: item.id, userId: item.creatorId || item.userId, handle: item.handle }} />
     </div>
   )
 }

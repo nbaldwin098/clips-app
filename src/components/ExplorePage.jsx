@@ -52,15 +52,15 @@ export default function ExplorePage({ onPlayItem, onOpenPic, onOpenTag, initialQ
         {q ? `Results for “${q}”` : 'Explore'}
       </h1>
 
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap gap-2">
         {KINDS.map((k) => (
           <button
             key={k.id}
             type="button"
             onClick={() => setKind(k.id)}
             className={cn(
-              'h-8 px-3 rounded-full text-xs font-medium border',
-              kind === k.id ? 'bg-white text-black border-white' : 'border-zinc-800 text-zinc-400'
+              'h-9 px-4 rounded-full text-sm font-medium border',
+              kind === k.id ? 'bg-white text-black border-white' : 'border-zinc-800 text-zinc-400 hover:bg-[#181818]'
             )}
           >
             {k.label}

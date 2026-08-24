@@ -27,8 +27,8 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onNavigate }) {
   }, [user?.id, syncTick])
 
   return (
-    <div className="p-4 md:p-6 max-w-[1200px] mx-auto w-full space-y-8">
-      <h1 className="text-lg font-semibold text-zinc-100">Recommended</h1>
+    <div className="p-4 md:p-8 max-w-[1280px] mx-auto w-full space-y-8">
+      <h1 className="text-xl font-semibold text-zinc-100">Recommended</h1>
 
       {!picked && <TastePicker userId={user?.id} onDone={() => setPicked(true)} />}
 
