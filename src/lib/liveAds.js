@@ -1,6 +1,6 @@
 /**
  * Live ads: viewers get the video VAST tag 30s after they open a stream.
- * Creators run / schedule mid-stream ads on zone 6010934.
+ * Creators schedule mid-stream ads on zone 6010934 (1–5 per hour).
  */
 import { lsGet, lsSet } from './storage'
 import { isChannelMod } from './channelStaff'
@@ -8,19 +8,44 @@ import { isChannelMod } from './channelStaff'
 export const LIVE_VIEWER_AD_DELAY_SEC = 30
 /** Minimum gap between mid-stream commercial breaks (!ad, Run ad, repeat timers). */
 export const LIVE_AD_COOLDOWN_SEC = 300
+export const LIVE_ADS_PER_HOUR_MIN = 1
+export const LIVE_ADS_PER_HOUR_MAX = 5
 export const EXOCLICK_LIVE_CREATOR_ZONE = '6010934'
 export const EXOCLICK_LIVE_CREATOR_VAST_URL = 'https://s.magsrv.com/v1/vast.php?idz=6010934'
 
 const KEY = 'clips_live_ads'
 
+export function clampLiveAdsPerHour(n) {
+  const v = Math.round(Number(n) || 0)
+  if (v <= 0) return 0
+  return Math.max(LIVE_ADS_PER_HOUR_MIN, Math.min(LIVE_ADS_PER_HOUR_MAX, v))
+}
+
+export function liveAdIntervalFromPerHour(perHour) {
+  const n = clampLiveAdsPerHour(perHour)
+  if (!n) return 0
+  return Math.max(LIVE_AD_COOLDOWN_SEC, Math.floor(3600 / n))
+}
+
+function resolveAdsPerHour(row = {}) {
+  if (row.adsPerHour != null && row.adsPerHour !== '') {
+    return clampLiveAdsPerHour(row.adsPerHour)
+  }
+  const interval = Math.max(0, Number(row.intervalSec) || 0)
+  if (!interval) return 0
+  return clampLiveAdsPerHour(Math.round(3600 / interval))
+}
+
 export function getLiveAdState(channelId) {
   if (!channelId) {
-    return { intervalSec: 0, schedules: [], cue: null, autoFrom: 0 }
+    return { adsPerHour: 0, intervalSec: 0, schedules: [], cue: null, autoFrom: 0 }
   }
   const all = lsGet(KEY, {}) || {}
   const row = all[channelId] || {}
+  const adsPerHour = resolveAdsPerHour(row)
   return {
-    intervalSec: Math.max(0, Number(row.intervalSec) || 0),
+    adsPerHour,
+    intervalSec: liveAdIntervalFromPerHour(adsPerHour),
     schedules: Array.isArray(row.schedules) ? row.schedules : [],
     cue: row.cue || null,
     autoFrom: Number(row.autoFrom) || 0,
@@ -53,12 +78,6 @@ export function liveAdLockedUntil(channelId, now = Date.now()) {
 
 export function liveAdCooldownRemaining(channelId, now = Date.now()) {
   return Math.max(0, liveAdLockedUntil(channelId, now) - now)
-}
-
-export function clampLiveAdIntervalSec(sec) {
-  const n = Math.max(0, Number(sec) || 0)
-  if (!n) return 0
-  return Math.max(LIVE_AD_COOLDOWN_SEC, n)
 }
 
 export function cueLiveAd(channelId, zone = 'live-creator', now = Date.now()) {
@@ -109,10 +128,22 @@ export function cancelLiveAdSchedule(channelId, id) {
   return schedules
 }
 
+export function setLiveAdsPerHour(channelId, perHour) {
+  const adsPerHour = clampLiveAdsPerHour(perHour)
+  const intervalSec = liveAdIntervalFromPerHour(adsPerHour)
+  setLiveAdState(channelId, {
+    adsPerHour,
+    intervalSec,
+    autoFrom: adsPerHour ? Date.now() : 0,
+  })
+  return adsPerHour
+}
+
+/** @deprecated use setLiveAdsPerHour */
 export function setLiveAdInterval(channelId, sec) {
-  const n = clampLiveAdIntervalSec(sec)
-  setLiveAdState(channelId, { intervalSec: n, autoFrom: n ? Date.now() : 0 })
-  return n
+  const n = Math.max(0, Number(sec) || 0)
+  if (!n) return setLiveAdsPerHour(channelId, 0)
+  return setLiveAdsPerHour(channelId, Math.round(3600 / Math.max(n, LIVE_AD_COOLDOWN_SEC)))
 }
 
 export function consumeDueSchedule(channelId, now = Date.now()) {
@@ -130,12 +161,12 @@ export function consumeDueSchedule(channelId, now = Date.now()) {
 export function consumeDueInterval(channelId, now = Date.now()) {
   if (liveAdCooldownRemaining(channelId, now) > 0) return false
   const st = getLiveAdState(channelId)
-  const interval = clampLiveAdIntervalSec(st.intervalSec)
+  const interval = liveAdIntervalFromPerHour(st.adsPerHour)
   if (!interval || !st.autoFrom) return false
   if (now - st.autoFrom < interval * 1000) return false
   const cued = cueLiveAd(channelId, 'live-creator', now)
   if (!cued.ok) return false
-  setLiveAdState(channelId, { intervalSec: interval, autoFrom: now, cue: cued.cue, lastCueAt: now })
+  setLiveAdState(channelId, { autoFrom: now, cue: cued.cue, lastCueAt: now })
   return true
 }
 
@@ -160,7 +191,10 @@ export function parseAdSlash(text) {
   if (/^off$/i.test(parts[1])) return { action: 'off' }
   if (/^help$/i.test(parts[1])) return { action: 'help' }
   if (/^every$/i.test(parts[1])) {
-    const sec = parseLooseDuration(parts.slice(2).join(' '))
+    const rest = parts.slice(2).join(' ')
+    const perHourMatch = rest.match(/^(\d+)\s*(?:\/\s*h(?:our)?s?|per\s*hour|ph)?$/i)
+    if (perHourMatch) return { action: 'perHour', perHour: Number(perHourMatch[1]) }
+    const sec = parseLooseDuration(rest)
     return sec ? { action: 'interval', sec } : { action: 'help' }
   }
   const sec = parseLooseDuration(parts.slice(1).join(' '))
@@ -177,13 +211,15 @@ function formatWait(sec) {
 export function liveAdStatusText(channelId) {
   const st = getLiveAdState(channelId)
   const bits = []
-  if (st.intervalSec) bits.push(`repeats every ${formatWait(st.intervalSec)}`)
-  else bits.push('repeat is off')
+  if (st.adsPerHour) {
+    const gap = liveAdIntervalFromPerHour(st.adsPerHour)
+    bits.push(`${st.adsPerHour}/hour (about every ${formatWait(gap)})`)
+  } else bits.push('auto repeat is off')
   const upcoming = (st.schedules || []).filter((s) => s.at > Date.now())
   if (upcoming.length) bits.push(`${upcoming.length} scheduled`)
   const wait = liveAdCooldownRemaining(channelId)
   if (wait > 0) bits.push(`next break in ${formatWait(wait / 1000)}`)
-  return `Live ads: ${bits.join(' · ')}. Minimum 5 minutes between breaks. !ad now · !ad 5m · !ad every 15m · !ad off`
+  return `Live ads: ${bits.join(' · ')}. Minimum 5 minutes between breaks. !ad now · !ad 3/h · !ad off`
 }
 
 export function applyAdSlash(channelId, user, text) {
@@ -202,14 +238,20 @@ export function applyAdSlash(channelId, user, text) {
     return { ok: true, botReply: 'Playing a mid-stream ad now. Next break in 5 minutes.' }
   }
   if (parsed.action === 'off') {
-    setLiveAdInterval(channelId, 0)
+    setLiveAdsPerHour(channelId, 0)
     return { ok: true, botReply: 'Stopped repeating live ads.' }
   }
+  if (parsed.action === 'perHour') {
+    const n = setLiveAdsPerHour(channelId, parsed.perHour)
+    if (!n) return { ok: false, botReply: `Pick ${LIVE_ADS_PER_HOUR_MIN}–${LIVE_ADS_PER_HOUR_MAX} ads per hour.` }
+    const gap = liveAdIntervalFromPerHour(n)
+    return { ok: true, botReply: `Repeating about ${n} mid-stream ad${n === 1 ? '' : 's'} per hour (every ${formatWait(gap)}).` }
+  }
   if (parsed.action === 'interval') {
-    const sec = clampLiveAdIntervalSec(parsed.sec)
-    setLiveAdInterval(channelId, sec)
-    const note = parsed.sec < LIVE_AD_COOLDOWN_SEC ? ' (raised to the 5 minute minimum)' : ''
-    return { ok: true, botReply: `Repeating a mid-stream ad every ${formatWait(sec)}.${note}` }
+    const perHour = clampLiveAdsPerHour(Math.round(3600 / Math.max(parsed.sec, LIVE_AD_COOLDOWN_SEC)))
+    const n = setLiveAdsPerHour(channelId, perHour)
+    const gap = liveAdIntervalFromPerHour(n)
+    return { ok: true, botReply: `Repeating about ${n}/hour (every ${formatWait(gap)}).` }
   }
   if (parsed.action === 'schedule') {
     const at = Date.now() + parsed.sec * 1000

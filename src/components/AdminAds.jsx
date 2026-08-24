@@ -41,7 +41,7 @@ export default function AdminAds() {
         <div>
           <p className="text-sm font-medium text-white">Site ads</p>
           <p className="text-xs text-zinc-500 mt-0.5">
-            Videos use the ExoClick VAST tag as a skippable preroll (skip after 5 seconds, like YouTube). Videos 8 minutes or longer also get mid-rolls. Clip full ads sit every 4–6 clips, never twice in a row and never on a banner. Clip banners sit every 10 clips, never on a full ad. Pic full ads sit every 6 photos as a full-width mosaic row at photo height. Live viewers get the video tag 30 seconds after they open a stream. Creators can run a separate live tag with !ad, with at least 5 minutes between breaks. If a tag has no fill, we do not invent a fake ad.
+            Videos use the ExoClick VAST tag as a skippable preroll (skip after 5 seconds, like YouTube). Videos 8 minutes or longer also get mid-rolls. Clip full ads sit every 4–6 clips at random, never twice in a row and never on a banner. Clip banners sit every 10 clips, never on a full ad. Pic full ads sit every 6–10 photos at random as a full-width mosaic row at photo height. Live viewers get the video tag 30 seconds after they open a stream. Creators can run a separate live tag with !ad, with at least 5 minutes between breaks. If a tag has no fill, we do not invent a fake ad.
           </p>
         </div>
         <button
@@ -88,17 +88,7 @@ export default function AdminAds() {
               className={`${field} mt-1`}
             />
           </label>
-          <p className="text-[11px] text-zinc-500 sm:col-span-2">Clip full ads cycle every 4, then 5, then 6 items. Banners are every 10. They never sit on the same clip or next to each other.</p>
-          <label className="text-[11px] text-zinc-400">Pic ad every N items
-            <input
-              type="number"
-              min="2"
-              max="24"
-              value={settings.picFeedEvery}
-              onChange={(e) => patchSettings({ picFeedEvery: e.target.value })}
-              className={`${field} mt-1`}
-            />
-          </label>
+          <p className="text-[11px] text-zinc-500 sm:col-span-2">Clip full ads pick a random gap of 4, 5, or 6 items. Banners are every 10. They never sit on the same clip or next to each other. Pic full ads pick a random gap of 6–10 photos.</p>
         </div>
       </div>
 

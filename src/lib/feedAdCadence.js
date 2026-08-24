@@ -1,8 +1,15 @@
-/** Clip in-feed ads every 4–6 items. Banners every 10. Never adjacent, never two ads in a row. */
+/** Clip in-feed ads every 4–6 items (random). Banners every 10. Pic ads every 6–10 (random). */
 
 export const CLIP_AD_GAPS = [4, 5, 6]
+export const PIC_AD_GAPS = [6, 7, 8, 9, 10]
 export const CLIP_BANNER_EVERY = 10
 export const EXOCLICK_FEED_ZONE = '6010926'
+
+function randomGap(gaps) {
+  const list = Array.isArray(gaps) ? gaps : []
+  if (!list.length) return 6
+  return list[Math.floor(Math.random() * list.length)]
+}
 
 export function mixClipFeedRows(list, { banners = true } = {}) {
   const items = Array.isArray(list) ? list : []
@@ -15,8 +22,7 @@ export function mixClipFeedRows(list, { banners = true } = {}) {
 
   const out = []
   let sinceAd = 0
-  let gapI = 0
-  let nextGap = CLIP_AD_GAPS[0]
+  let nextGap = randomGap(CLIP_AD_GAPS)
 
   items.forEach((item, i) => {
     out.push({
@@ -38,8 +44,30 @@ export function mixClipFeedRows(list, { banners = true } = {}) {
       key: `exo-clip-feed-${i}`,
     })
     sinceAd = 0
-    gapI = (gapI + 1) % CLIP_AD_GAPS.length
-    nextGap = CLIP_AD_GAPS[gapI]
+    nextGap = randomGap(CLIP_AD_GAPS)
+  })
+  return out
+}
+
+export function mixPicFeedRows(list) {
+  const items = Array.isArray(list) ? list : []
+  const out = []
+  let sinceAd = 0
+  let nextGap = randomGap(PIC_AD_GAPS)
+
+  items.forEach((item, i) => {
+    out.push({ kind: 'item', item, key: item?.id || `item-${i}` })
+    sinceAd += 1
+    if (i >= items.length - 1) return
+    if (sinceAd < nextGap) return
+
+    out.push({
+      kind: 'ad',
+      ad: { id: `exo-pic-feed-${i}`, provider: 'exoclick', zoneId: EXOCLICK_FEED_ZONE },
+      key: `exo-pic-feed-${i}`,
+    })
+    sinceAd = 0
+    nextGap = randomGap(PIC_AD_GAPS)
   })
   return out
 }
