@@ -5,7 +5,7 @@
 import { lsGet, lsSet } from './storage'
 import { safeHttpUrl } from './safeUrl'
 import { hashSecret, verifySecret, isHashedSecret } from './secrets'
-import { mixClipFeedRows, mixPicFeedRows, clipBannerAllowedOnMixed } from './feedAdCadence'
+import { mixClipFeedRows, mixPicFeedRows, mixVideoFeedRows, clipBannerAllowedOnMixed } from './feedAdCadence'
 
 const AD_APPS_KEY = 'clips_ad_applications'
 const ADVERTISERS_KEY = 'clips_advertisers'
@@ -17,6 +17,8 @@ const AD_SETTINGS_KEY = 'clips_ad_settings'
 
 export const AD_PLACEMENTS = [
   { id: 'video', label: 'Videos', hint: 'YouTube-style skippable preroll on watch' },
+  { id: 'video-feed', label: 'Videos in-feed', hint: 'Between video cards on home' },
+  { id: 'watch-banner', label: 'Watch banner', hint: 'Bar under the video player' },
   { id: 'clip-banner', label: 'Clips banner', hint: 'Bar at the bottom of a clip' },
   { id: 'clip-feed', label: 'Clips in-feed', hint: 'Between clips as you scroll' },
   { id: 'pic-banner', label: 'Pics banner', hint: 'Bar at the bottom of a photo' },
@@ -27,6 +29,8 @@ export const ALL_PLACEMENTS = AD_PLACEMENTS.map((p) => p.id)
 
 const DEFAULT_AD_SETTINGS = {
   videoPreroll: true,
+  videoInFeed: true,
+  watchBanner: true,
   clipBanner: true,
   clipInFeed: true,
   picBanner: true,
@@ -275,6 +279,8 @@ export function campaignPlacements(c) {
 
 function settingAllows(placement, settings = getAdSettings()) {
   if (placement === 'video') return settings.videoPreroll !== false
+  if (placement === 'video-feed') return settings.videoInFeed !== false
+  if (placement === 'watch-banner') return settings.watchBanner !== false
   if (placement === 'clip-banner') return settings.clipBanner !== false
   if (placement === 'clip-feed') return settings.clipInFeed !== false
   if (placement === 'pic-banner') return settings.picBanner !== false
@@ -332,14 +338,22 @@ export function mixFeedAds(items, placement) {
   if (placement === 'pic-feed') {
     return mixPicFeedRows(list)
   }
+  if (placement === 'video-feed') {
+    return mixVideoFeedRows(list)
+  }
   return mapped
 }
 
-/** Banner under a clip every 10 clips, never on or next to a full in-feed ad. */
-export function clipBannerAllowed(mixed, index) {
+/** True when the ExoClick display slot under the player should render. */
+export function watchBannerAllowed() {
+  return adsAreRunning() && settingAllows('watch-banner')
+}
+
+/** Banner under a clip every 10 clips scrolled, never on or next to a full in-feed ad. */
+export function clipBannerAllowed(mixed, index, sinceBanner = 0) {
   if (!adsAreRunning()) return false
   if (!settingAllows('clip-banner')) return false
-  return clipBannerAllowedOnMixed(mixed, index)
+  return clipBannerAllowedOnMixed(mixed, index, sinceBanner)
 }
 
 export function recordAdImpression(adId) {

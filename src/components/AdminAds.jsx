@@ -58,6 +58,8 @@ export default function AdminAds() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-2">
           {[
             ['videoPreroll', 'Videos', 'ExoClick VAST preroll + mid-roll'],
+            ['videoInFeed', 'Videos in-feed', 'Between video cards on home'],
+            ['watchBanner', 'Watch banner', 'Under the video player'],
             ['clipBanner', 'Clips banner', 'Bottom of clip'],
             ['clipInFeed', 'Clips in-feed', 'Between clips'],
             ['picBanner', 'Pics banner', 'Bottom of photo'],

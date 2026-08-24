@@ -65,7 +65,9 @@ export function InFeedAd({ ad, variant = 'clip' }) {
         ? 'relative col-span-3 sm:col-span-4 md:col-span-5 lg:col-span-6 w-full overflow-hidden bg-[#1a1a1a] aspect-[3/1] sm:aspect-[4/1] md:aspect-[5/1] lg:aspect-[6/1]'
         : variant === 'pic'
           ? 'relative w-full aspect-square overflow-hidden bg-[#1a1a1a]'
-          : 'relative block w-full aspect-[9/16] overflow-hidden rounded-xl bg-[#1a1a1a]'
+          : variant === 'video'
+            ? 'relative block w-full aspect-video overflow-hidden rounded-xl bg-[#1a1a1a]'
+            : 'relative block w-full aspect-[9/16] overflow-hidden rounded-xl bg-[#1a1a1a]'
     return (
       <div className={frame}>
         <ExoClickDisplay zoneId={ad.zoneId} />
@@ -87,6 +89,29 @@ function CampaignInFeedAd({ ad, variant = 'clip' }) {
     e?.stopPropagation?.()
     recordAdClick(ad.id)
     if (href) openSafeUrl(href)
+  }
+
+  if (variant === 'video') {
+    return (
+      <button
+        type="button"
+        onClick={open}
+        className="relative block w-full aspect-video overflow-hidden rounded-xl bg-[#1a1a1a] text-left"
+      >
+        {img ? (
+          <img src={img} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-[#2a2a2a] to-[#111]" />
+        )}
+        <span className="absolute top-2 left-2 rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-black/70 text-white">Ad</span>
+        <span className="absolute inset-x-0 bottom-0 p-2.5 bg-gradient-to-t from-black/85 to-transparent">
+          <span className="block text-[13px] font-semibold text-white line-clamp-2">{ad.headline || 'Sponsored'}</span>
+          <span className="mt-1 inline-flex items-center gap-1 text-[11px] text-white/80">
+            {ad.ctaText || 'Open'} <ArrowUpRight className="h-3 w-3" />
+          </span>
+        </span>
+      </button>
+    )
   }
 
   if (variant === 'pic' || variant === 'pic-row') {
