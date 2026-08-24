@@ -74,7 +74,7 @@ export async function approveAdApplication(appId) {
     targetUrl: safeHttpUrl(app.website) || '',
     durationSec: 15,
     skipAfterSec: 5,
-    status: 'active',
+    status: 'draft',
     budget: app.monthlyBudget,
     impressions: 0,
     clicks: 0,
@@ -181,6 +181,7 @@ export function saveAdvertiserCampaign(campaign) {
       impressions: 0,
       clicks: 0,
       skips: 0,
+      status: campaign.status || 'draft',
       createdAt: new Date().toISOString(),
       ...safe,
     })
@@ -189,10 +190,40 @@ export function saveAdvertiserCampaign(campaign) {
   return all
 }
 
-/** Only real active campaigns — never invent sample ads that cover the player. */
+const ADS_RUNNING_KEY = 'clips_ads_running'
+
+export function adsAreRunning() {
+  return lsGet(ADS_RUNNING_KEY, false) === true
+}
+
+export function setAdsRunning(on) {
+  lsSet(ADS_RUNNING_KEY, !!on)
+  return adsAreRunning()
+}
+
+export function listAllCampaigns() {
+  return lsGet(AD_CAMPAIGNS_KEY, []) || []
+}
+
+export function campaignInWindow(c, now = Date.now()) {
+  if (!c) return false
+  if (c.startsAt) {
+    const t = new Date(c.startsAt).getTime()
+    if (t && t > now) return false
+  }
+  if (c.endsAt) {
+    const t = new Date(c.endsAt).getTime()
+    if (t && t < now) return false
+  }
+  return true
+}
+
+/** Only real active campaigns, and only when admin has turned ads on. */
 export function getActiveAdForVideo(_contentId) {
+  if (!adsAreRunning()) return null
   const custom = (lsGet(AD_CAMPAIGNS_KEY, []) || []).filter((c) => {
     if (c.status !== 'active') return false
+    if (!campaignInWindow(c)) return false
     if (c.targetUrl && !safeHttpUrl(c.targetUrl)) return false
     return true
   })

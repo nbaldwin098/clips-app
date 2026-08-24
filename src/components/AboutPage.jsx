@@ -41,13 +41,22 @@ export default function AboutPage() {
           buyer back.
         </p>
         <p>
-          Payouts are not live. Wallet will not invent a balance or let anyone withdraw until Stripe
-          Connect is connected. When that ships, the creator keeps the list price and the buyer pays
-          the processing fee on top — not before.
+          Payouts are not live as a bank transfer. Admin sets dollars per 1,000 views. The owner marks
+          money sent after paying by hand. Wallet shows earned, pending, and paid. There is no
+          automatic withdraw.
         </p>
         <p>
           Discovery ranks by real watch signals — completion, rewatches, shares, skips — not follower
-          count.
+          count. Recommended keeps that order until you refresh the page.
+        </p>
+      </section>
+
+      <section className="rounded-2xl border border-[#26262c] bg-[#18181b] p-5 space-y-3 text-sm text-[#adadb8]">
+        <h2 className="text-sm font-semibold text-white">If you are recruiting creators</h2>
+        <p>
+          Send them to Create. The page lists what is live and what is not: no ad RPM, no bank payouts,
+          live is a lobby, captions are pasted by hand. That is intentional so a creator is not sold a
+          fake studio.
         </p>
       </section>
 

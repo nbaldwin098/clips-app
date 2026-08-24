@@ -68,16 +68,16 @@ export default function HelpPage() {
       a: 'The SQL editor is not on calabi.us. Tap Open SQL Editor on this Help page (supabase.com). Then Copy SQL for 0009 here, paste in that box, tap Run.',
     },
     {
-      q: 'How does discovery work?',
-      a: 'Recommended ranks like classic TikTok For You: watch completion and rewatches first, then shares, saves, comments, likes. Early skips bury a post. Follower count does not help. New posts get a short testing boost so a first upload can appear. Clips has Recommended and Following — no Shorts label.',
+      q: 'Does Recommended keep changing?',
+      a: 'No. It is ranked once when the page loads from watch completion, rewatches, shares, saves, comments, likes, and skips — not follower count. It does not auto-scroll and it does not swap videos while you sit there. Hard-refresh when you want a new mix.',
     },
     {
       q: 'What is a zero-storage import?',
       a: 'Paste a public short URL. We store only metadata and a reference — not the binary file.',
     },
     {
-      q: 'How do subscriptions work?',
-      a: 'Creators set a list price on Channel. Checkout shows that price. A Stripe Payment Link is what charges the card. Premium is marked only after Stripe sends you back. Payouts are not live — Wallet will not invent a balance.',
+      q: 'How do creator payouts work?',
+      a: 'Admin sets USD per 1,000 views. Wallet shows earned, pending, and paid. Nicholas marks a payout sent after paying you by hand. Ads stay off until Admin turns them on. There is no automatic bank withdraw.',
     },
     {
       q: 'How do I report copyright infringement?',

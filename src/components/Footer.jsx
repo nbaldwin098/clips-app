@@ -21,11 +21,13 @@ export default function Footer({ onNavigate }) {
             <BrandMark size={28} />
             </div>
             <p className="text-xs text-zinc-500 max-w-xs leading-relaxed">
-              Short video, live, and creator tools. Bootstrapped MVP.
+              Video, clips, and pics. Follow the creator. Pay only after Stripe.
             </p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-10 gap-y-2">
             {link('About', 'about')}
+            {link('Create', 'creator-apply')}
+            {link('Advertise', 'advertise')}
             {link('Help', 'help')}
             {link('Terms of Service', 'legal-tos')}
             {link('Privacy Policy', 'legal-privacy')}

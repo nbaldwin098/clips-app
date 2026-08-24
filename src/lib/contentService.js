@@ -322,6 +322,36 @@ export function getFollowingFeed(userId, { shortsOnly = false } = {}) {
   return shortsOnly ? feed.filter((i) => i.type === 'short') : feed
 }
 
+/** Rank once per tab load. Bots, likes, and cloud sync must not reshuffle Recommended. */
+const frozenFeeds = {
+  home: new Map(),
+  shorts: new Map(),
+  following: new Map(),
+  followingShorts: new Map(),
+}
+
+function freezeFeed(map, key, build) {
+  const prev = map.get(key)
+  if (prev?.length) return prev
+  const next = build()
+  if (next?.length) map.set(key, next)
+  return next
+}
+
+export function getStableHomeFeed(userId = null) {
+  return freezeFeed(frozenFeeds.home, userId || 'anon', () => getHomeFeed(userId))
+}
+
+export function getStableShortsFeed(userId = null) {
+  return freezeFeed(frozenFeeds.shorts, userId || 'anon', () => getShortsFeed(userId))
+}
+
+export function getStableFollowingFeed(userId, { shortsOnly = false } = {}) {
+  if (!userId) return []
+  const map = shortsOnly ? frozenFeeds.followingShorts : frozenFeeds.following
+  return freezeFeed(map, userId, () => getFollowingFeed(userId, { shortsOnly }))
+}
+
 export function listCatalogTags(limit = 24) {
   const counts = {}
   for (const i of getImports().map(normalizeItem)) {

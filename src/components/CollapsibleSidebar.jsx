@@ -82,8 +82,6 @@ export default function CollapsibleSidebar({
     return () => clearInterval(interval)
   }, [refreshLiveBoard, currentView])
 
-  const isApprovedCreator = user?.creatorStatus === 'approved'
-
   const recommendedCreators = listPopularCreators(5)
 
   const go = (id) => {
@@ -184,11 +182,14 @@ export default function CollapsibleSidebar({
 
         <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
           {!collapsed && <p className="px-2.5 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Creators</p>}
-          {isApprovedCreator && (
+          {isAuthenticated && (
             <>
-              <NavBtn collapsed={collapsed} active={currentView === 'dashboard'} onClick={() => go('dashboard')} icon={LayoutDashboard} label="Studio" />
-              <NavBtn collapsed={collapsed} active={currentView === 'wallet'} onClick={() => go('wallet')} icon={Wallet} label="Wallet" />
+              <NavBtn collapsed={collapsed} active={currentView === 'dashboard'} onClick={() => go('dashboard')} icon={LayoutDashboard} label="Creator Dashboard" />
               <NavBtn collapsed={collapsed} active={currentView === 'analytics'} onClick={() => go('analytics')} icon={BarChart3} label="Analytics" />
+              <NavBtn collapsed={collapsed} active={currentView === 'wallet'} onClick={() => go('wallet')} icon={Wallet} label="Wallet" />
+              <NavBtn collapsed={collapsed} active={currentView === 'vods'} onClick={() => go('vods')} icon={Clapperboard} label="VODs" />
+              <NavBtn collapsed={collapsed} active={currentView === 'channel'} onClick={() => go('channel')} icon={Users} label="Channel" />
+              <NavBtn collapsed={collapsed} active={currentView === 'settings'} onClick={() => go('settings')} icon={ShieldCheck} label="Creator settings" />
             </>
           )}
           <NavBtn collapsed={collapsed} active={currentView === 'creators'} onClick={() => go('creators')} icon={Users} label="All creators" />
@@ -245,7 +246,7 @@ export default function CollapsibleSidebar({
                 <NavBtn collapsed={collapsed} active={currentView === 'legal-privacy'} onClick={() => go('legal-privacy')} icon={Shield} label="Privacy Policy" />
                 <NavBtn collapsed={collapsed} active={currentView === 'legal-creator'} onClick={() => go('legal-creator')} icon={Scale} label="Creator Agreement" />
                 <NavBtn collapsed={collapsed} active={currentView === 'legal-community'} onClick={() => go('legal-community')} icon={Users} label="Community Guidelines" />
-                {user?.isPlatformAdmin && (
+                {(user?.isPlatformAdmin || user?.id === 'owner-cs1') && (
                   <NavBtn collapsed={collapsed} active={currentView === 'admin'} onClick={() => go('admin')} icon={ShieldCheck} label="Admin" />
                 )}
               </div>

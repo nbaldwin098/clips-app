@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useState, useRef } from 'react'
 import { ChevronLeft, Clapperboard, Heart, MessageCircle, Search, Share2, Volume2, VolumeX, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { getShortsFeed, getFollowingFeed } from '../lib/contentService'
+import { getStableShortsFeed, getStableFollowingFeed } from '../lib/contentService'
 import { getMediaBlobUrl } from '../lib/videoStorage'
 import { parseEmbedUrl } from '../lib/videoEmbed'
 import { safeIframeSrc, safeMediaUrl } from '../lib/safeUrl'
@@ -9,7 +9,6 @@ import { recordView, toggleVote, getVotes, getUserVote, isSubscribed, toggleSubs
 import { listComments } from '../lib/youtubeParity'
 import { recordInteraction } from '../lib/algorithmEngine'
 import { copyShareUrl } from '../lib/routes'
-import { useContentSyncTick } from '../lib/useContentSync'
 import CommentsPanel from './CommentsPanel'
 import ShortsStage, { ShortsCard } from './ShortsStage'
 import ShortsGrid from './ShortsGrid'
@@ -340,10 +339,9 @@ export default function ShortsFeed({
   onOpenAuth, onOpenProfile, onOpenSound, onStitch, onNavigate, focusId,
 }) {
   const { user } = useAuth()
-  const syncTick = useContentSyncTick()
   const [tab, setTab] = useState('recommended')
-  const recommended = useMemo(() => getShortsFeed(user?.id || null), [user?.id, syncTick])
-  const following = useMemo(() => getFollowingFeed(user?.id, { shortsOnly: true }), [user?.id, syncTick])
+  const recommended = useMemo(() => getStableShortsFeed(user?.id || null), [user?.id])
+  const following = useMemo(() => getStableFollowingFeed(user?.id, { shortsOnly: true }), [user?.id])
   const items = tab === 'following' ? following : recommended
   const [activeIdx, setActiveIdx] = useState(0)
   const [muted, setMuted] = useState(true)

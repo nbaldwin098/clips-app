@@ -13,7 +13,6 @@ import { getPicsFeed } from './picsService'
 import { ensureUpvote, recordView, addWatchSeconds, getUserVote } from './engagement'
 import { recordInteraction, startSession } from './algorithmEngine'
 import { recordWatchProgress } from './watchProgress'
-import { notifyContentChanged } from './contentSync'
 
 const VIEWED_KEY = 'named_activity_viewed'
 const SESSION_KEY = 'named_activity_sessions'
@@ -184,7 +183,6 @@ function stepNamedActivity() {
   }
 
   ticks += 1
-  if (ticks % 6 === 0) notifyContentChanged()
 }
 
 export { stepNamedActivity }

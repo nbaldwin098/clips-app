@@ -2,12 +2,12 @@ import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { getApplicationForUser, submitCreatorApplication } from '../lib/moderation'
 import { notifyApplicationSubmitted } from '../lib/notifications'
-import { ORG, applicationsAreOpen, applicationsWindowLabel } from '../lib/orgConfig'
+import { ORG, applicationsAreOpen, applicationsWindowLabel, CONTENT_RULES_SHORT } from '../lib/orgConfig'
 
 const inputCls =
   'mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#000000] px-3 text-sm text-zinc-100 placeholder:text-zinc-600'
 
-export default function CreatorApplyPage({ onOpenAuth }) {
+export default function CreatorApplyPage({ onOpenAuth, onNavigate }) {
   const { user, isAuthenticated, updateProfile } = useAuth()
   const existing = user ? getApplicationForUser(user.id) : null
   const [name, setName] = useState(user?.displayName || '')
@@ -77,9 +77,49 @@ export default function CreatorApplyPage({ onOpenAuth }) {
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-md mx-auto">
-      <h1 className="text-lg font-semibold text-white">Apply to create</h1>
-      <p className="text-xs text-zinc-500 mt-1 mb-3">Short form so we can review and reach you.</p>
+    <div className="p-4 md:p-6 max-w-2xl mx-auto">
+      <h1 className="text-lg font-semibold text-white">Create on Clips</h1>
+      <p className="text-sm text-zinc-400 mt-2 leading-relaxed">
+        We recruit people who will post work they own. Viewers follow you, not a fake catalog. Share a link to a video, clip, pic, or your profile. Membership is a real Stripe charge when a Payment Link is set. That is the pitch — nothing else is invented to close the deal.
+      </p>
+
+      <div className="mt-5 grid sm:grid-cols-2 gap-3">
+        <div className="rounded-xl border border-zinc-800 bg-[#121218] p-4">
+          <p className="text-sm font-semibold text-white">What is live</p>
+          <ul className="mt-2 text-xs text-zinc-400 space-y-1.5 list-disc pl-4">
+            <li>Upload video, clip, or pic; import a public link</li>
+            <li>Drafts, schedule, chapters, pasted captions, stitch</li>
+            <li>Recommended ranks by watch, not follower count</li>
+            <li>Free follow; optional membership list price</li>
+            <li>DMCA inbox: {ORG.copyrightEmail}</li>
+          </ul>
+        </div>
+        <div className="rounded-xl border border-zinc-800 bg-[#121218] p-4">
+          <p className="text-sm font-semibold text-white">What is not live</p>
+          <ul className="mt-2 text-xs text-zinc-400 space-y-1.5 list-disc pl-4">
+            <li>Ad RPM / a shared ad pool</li>
+            <li>Bank payouts (Stripe Connect is not connected)</li>
+            <li>Live video ingest — Live is a lobby</li>
+            <li>Auto captions or Content ID</li>
+            <li>Guaranteed views or a sold audience</li>
+          </ul>
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-xl border border-zinc-800 bg-[#121218] p-4">
+        <p className="text-sm font-semibold text-white">Rules before you apply</p>
+        <ul className="mt-2 text-xs text-zinc-400 space-y-1.5 list-disc pl-4">
+          {CONTENT_RULES_SHORT.map((r) => <li key={r}>{r}</li>)}
+        </ul>
+        <div className="mt-3 flex flex-wrap gap-3 text-xs">
+          <button type="button" className="text-white underline" onClick={() => onNavigate?.('legal-creator')}>Creator agreement</button>
+          <button type="button" className="text-white underline" onClick={() => onNavigate?.('legal-community')}>Community guidelines</button>
+          <button type="button" className="text-white underline" onClick={() => onNavigate?.('content-rules')}>Content rules</button>
+        </div>
+      </div>
+
+      <h2 className="text-sm font-semibold text-white mt-8">Application</h2>
+      <p className="text-xs text-zinc-500 mt-1 mb-3">Short form so we can review and reach you. Approval is not automatic.</p>
 
       <div className={`mb-4 rounded-xl border px-4 py-3 text-xs ${
         open ? 'border-emerald-800/50 bg-emerald-950/30 text-emerald-200' : 'border-zinc-800 bg-[#121218] text-zinc-400'
