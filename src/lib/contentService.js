@@ -9,7 +9,7 @@ import { getSubscriptionsForUser } from './engagement'
 import { getPicsFeed } from './picsService'
 import { mergeTags, isReleased } from './mediaMeta'
 import { setChapters, setCaptions, deleteScheduled } from './youtubeParity'
-import { isFeedable, isReferenceItem } from './catalogHealth'
+import { isFeedable, isReferenceItem, isRetiredCatalogItem } from './catalogHealth'
 import { isAccountHidden } from './trustSafety'
 import { listIndexedUsers } from './moderation'
 import { OFFICIAL_CREATORS } from '../data/publicMediaSeed'
@@ -262,11 +262,30 @@ export function resolvePublicCreator(handle, userId = null) {
     null
   if (official) return official
   const users = listIndexedUsers()
-  return (
+  const indexed =
     users.find((u) => String(u.handle || '').toLowerCase() === h) ||
     users.find((u) => u.id === userId) ||
-    (userId ? { id: userId, handle: h, displayName: h || 'Creator' } : null)
-  )
+    null
+  let fromCatalog = null
+  try {
+    fromCatalog = (getImports() || []).find((i) => {
+      if (userId && (i.creatorId === userId || i.userId === userId)) return true
+      if (h && String(i.handle || i.creatorHandle || '').toLowerCase().replace(/^@/, '') === h) return true
+      return false
+    }) || null
+  } catch {
+    fromCatalog = null
+  }
+  const id = indexed?.id || fromCatalog?.creatorId || fromCatalog?.userId || userId || null
+  if (!id && !h) return null
+  return {
+    id,
+    handle: indexed?.handle || h || fromCatalog?.handle || '',
+    displayName: indexed?.displayName || fromCatalog?.displayName || fromCatalog?.creatorName || h || 'Creator',
+    avatarUrl: indexed?.avatarUrl || fromCatalog?.avatarUrl || '',
+    bannerUrl: indexed?.bannerUrl || '',
+    bio: indexed?.bio || '',
+  }
 }
 
 export function listSidebarCreators(limit = 8) {
@@ -439,8 +458,10 @@ export function listCatalogTags(limit = 24) {
 }
 
 export function getById(id) {
+  if (!id) return null
   const fromImport = getImports().find((i) => i.id === id)
-  if (!fromImport || isReferenceItem(fromImport) || !isFeedable(fromImport)) return null
+  if (!fromImport || isReferenceItem(fromImport) || isRetiredCatalogItem(fromImport)) return null
+  if (!isReleased(fromImport)) return null
   return normalizeItem(withViewCounts([fromImport])[0])
 }
 

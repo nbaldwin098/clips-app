@@ -4,7 +4,8 @@ import { useAuth } from '../context/AuthContext'
 import { getMembershipPrice, isPremiumSub } from '../lib/engagement'
 import { getStripePaymentLink } from '../lib/stripeConfig'
 import { startPremiumCheckout } from '../lib/checkout'
-import { openSafeUrl } from '../lib/safeUrl'
+import { stashPendingStripe } from '../lib/tips'
+import { redirectSafeUrl } from '../lib/safeUrl'
 
 export default function CheckoutModal({ open, onClose, creatorId, creatorHandle }) {
   const { user, isAuthenticated } = useAuth()
@@ -23,13 +24,14 @@ export default function CheckoutModal({ open, onClose, creatorId, creatorHandle 
       return
     }
     setBusy(true)
+    stashPendingStripe({ kind: 'premium', donorId: user.id, handle: user.handle, creatorId: target })
     const result = await startPremiumCheckout({
       already,
       email: user?.email || '',
       reference: target,
     })
     setStatus(result.message)
-    if (result.url) openSafeUrl(result.url)
+    if (result.url) redirectSafeUrl(result.url)
     setBusy(false)
   }
 

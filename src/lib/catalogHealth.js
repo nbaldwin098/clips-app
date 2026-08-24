@@ -42,7 +42,7 @@ export function hasStableImage(item) {
 
 export function hasPlayableVideo(item) {
   if ([item?.mediaUrl, item?.sourceUrl].some(isKnownDeadUrl)) return false
-  return [item?.mediaUrl, item?.sourceUrl].some((u) => isHttpUrl(u))
+  return [item?.mediaUrl, item?.sourceUrl].some((u) => isHttpUrl(u) || isBlobUrl(u))
 }
 
 export function isRetiredCatalogItem(item) {

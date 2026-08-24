@@ -13,7 +13,7 @@ import { recordInteraction } from '../lib/algorithmEngine'
 import { getActiveAdForVideo, recordAdImpression, recordAdSkip } from '../lib/adEngine'
 import { resolvePlayback, PLAYBACK_SPEEDS, formatClock, isHttp } from '../lib/playback'
 import { parseEmbedUrl } from '../lib/videoEmbed'
-import { openSafeUrl, safeIframeSrc, safeMediaUrl } from '../lib/safeUrl'
+import { redirectSafeUrl, safeIframeSrc, safeMediaUrl } from '../lib/safeUrl'
 import { copyShareUrl } from '../lib/routes'
 import { useContentSyncTick } from '../lib/useContentSync'
 import { toggleSaved, getSaved } from '../lib/storage'
@@ -231,7 +231,7 @@ export default function WatchPage({
   const showingCampaignAd = Boolean(activeAd && !adDismissed && !vast.showingVast)
   const showingAd = vast.showingVast || showingCampaignAd
   showingAdRef.current = showingAd
-  const locked = !canAccessPaidPost(user, item)
+  const locked = useMemo(() => !canAccessPaidPost(user, item), [user, item, syncTick])
 
   const skipAd = useCallback(() => {
     if (activeAd) recordAdSkip(activeAd.id)
@@ -414,7 +414,7 @@ export default function WatchPage({
       email: user?.email || '',
       reference: item.creatorId || item.id,
     })
-    if (result.url) openSafeUrl(result.url)
+    if (result.url) redirectSafeUrl(result.url)
     setPayBusy(false)
   }
 
@@ -430,7 +430,7 @@ export default function WatchPage({
       handle: user.handle,
     })
     setTipBusy('')
-    if (result.url) openSafeUrl(result.url)
+    if (result.url) redirectSafeUrl(result.url)
   }
 
   const togglePip = async () => {
@@ -532,7 +532,7 @@ export default function WatchPage({
               <div className="absolute inset-0 z-40 bg-black/85 flex flex-col items-center justify-center p-6 text-center gap-3">
                 <p className="text-lg font-semibold text-white">Paid post</p>
                 <p className="text-sm text-zinc-400 max-w-sm">
-                  Subscribe is free. This post is ${Number(item.priceUsd).toFixed(2)} — the price the creator set.
+                  Subscribe is free. This post is listed at ${Number(item.priceUsd).toFixed(2)}. Stripe Checkout uses the site payment link, then this post unlocks when Stripe sends you back here.
                 </p>
                 <button
                   type="button"

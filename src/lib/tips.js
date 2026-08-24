@@ -134,5 +134,5 @@ export function claimStripeReturn(user, params = {}, search = '') {
       return { ok: true, kind: 'post_purchase' }
     }
   } catch {}
-  return { ok: true, kind: 'premium', creatorId: '' }
+  return { ok: false, kind: '' }
 }

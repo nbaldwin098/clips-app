@@ -14,7 +14,7 @@ import { getLiveChat } from '../lib/engagement'
 import { trySendLiveChat, removeLiveChatMessage } from '../lib/liveChat'
 import { isChannelMod, timeoutChatUser, banChatUser } from '../lib/channelStaff'
 import { startTipCheckout, TIP_AMOUNTS } from '../lib/tips'
-import { openSafeUrl } from '../lib/safeUrl'
+import { redirectSafeUrl } from '../lib/safeUrl'
 import { getStripePaymentLink } from '../lib/stripeConfig'
 
 // Small set of neutral text emotes — a decorative input helper only, not user/content data.
@@ -115,7 +115,7 @@ export default function LiveChatPanel({
     })
     setTipBusy('')
     setChatError(result.message || '')
-    if (result.url) openSafeUrl(result.url)
+    if (result.url) redirectSafeUrl(result.url)
   }
 
   const canMod = isAuthenticated && streamUserId && isChannelMod(streamUserId, user)

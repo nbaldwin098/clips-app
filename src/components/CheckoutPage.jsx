@@ -4,7 +4,7 @@ import { getMembershipPrice, isPremiumSub } from '../lib/engagement'
 import { isStripeConfigured, getStripePaymentLink, membershipReturnPaid } from '../lib/stripeConfig'
 import { startPremiumCheckout } from '../lib/checkout'
 import { stashPendingStripe } from '../lib/tips'
-import { openSafeUrl } from '../lib/safeUrl'
+import { redirectSafeUrl } from '../lib/safeUrl'
 import PageHeader from './PageHeader'
 
 export default function CheckoutPage({ onNavigate, creatorId, returnParams = {} }) {
@@ -35,7 +35,7 @@ export default function CheckoutPage({ onNavigate, creatorId, returnParams = {} 
       reference: target,
     })
     setStatus(result.message)
-    if (result.url) openSafeUrl(result.url)
+    if (result.url) redirectSafeUrl(result.url)
   }
 
   return (
