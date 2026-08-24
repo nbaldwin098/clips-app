@@ -196,7 +196,7 @@ export default function ContentCard({ item, onOpen, variant }) {
             onClick={(e) => { e.stopPropagation(); window.__clipsOpenProfile?.(item.handle, item.creatorId || item.userId) }}
             className="shrink-0 mt-0.5"
           >
-            <ChannelAvatar src={item.avatarUrl} name={name} size={36} official={official} />
+            <ChannelAvatar src={item.avatarUrl} name={name} size={36} />
           </button>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-zinc-100 line-clamp-2 leading-snug cursor-pointer" onClick={open}>{item.title || 'Untitled'}</p>

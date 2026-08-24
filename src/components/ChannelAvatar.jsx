@@ -1,11 +1,9 @@
-import VerifiedBadge from './VerifiedBadge'
 import { cn } from '../lib/utils'
 
 export default function ChannelAvatar({
   src,
   name = '?',
   size = 36,
-  official = false,
   className,
 }) {
   const px = typeof size === 'number' ? size : 36
@@ -19,9 +17,6 @@ export default function ChannelAvatar({
           <span className="grid h-full w-full place-items-center text-[11px] font-bold">{letter}</span>
         )}
       </span>
-      {official ? (
-        <VerifiedBadge className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 ring-2 ring-black" />
-      ) : null}
     </span>
   )
 }

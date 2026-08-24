@@ -8,7 +8,7 @@ import { ensureOwnProfile, privilegesFromProfile } from '../lib/profiles'
 import { hashSecret, verifySecret } from '../lib/secrets'
 import { persistableMediaUrl, restoreProfilePictures, persistProfilePicture } from '../lib/profileMedia'
 import { findOfficialLogin } from '../data/publicMediaSeed'
-import { findOwnerLogin, isLocalOwnerLogin, OWNER_LOGIN } from '../data/ownerLogin'
+import { findOwnerLogin, isLocalOwnerLogin, isOwnerAccount, OWNER_LOGIN } from '../data/ownerLogin'
 import { findNamedAccountLogin, verifyNamedAccountPassword } from '../data/namedAccountsSeed'
 import { sanitizeAuthError } from '../lib/authBrand'
 
@@ -22,13 +22,14 @@ const PRIVILEGE_KEYS = new Set(['isPlatformAdmin', 'isCreator', 'creatorStatus',
 function persistableUser(u) {
   if (!u || typeof u !== 'object') return null
   const org = String(u.id || '').startsWith('org-')
-  const owner = String(u.id || '') === OWNER_LOGIN.id
+  const localOwner = String(u.id || '') === OWNER_LOGIN.id
+  const owner = isOwnerAccount(u)
   return {
     id: String(u.id || '').slice(0, 80),
     email: String(u.email || '').slice(0, 200),
     displayName: String(u.displayName || 'Viewer').slice(0, 80),
     handle: normalizeHandle(u.handle) || 'viewer',
-    provider: owner ? 'local' : (u.provider === 'supabase' ? 'supabase' : 'local'),
+    provider: localOwner ? 'local' : (u.provider === 'supabase' ? 'supabase' : 'local'),
     avatarUrl: persistableMediaUrl(u.avatarUrl) || '',
     phone: u.phone || '',
     bannerUrl: persistableMediaUrl(u.bannerUrl) || '',
@@ -45,7 +46,7 @@ function sanitizeUser(u) {
   const persisted = persistableUser(u)
   if (!persisted?.id) return null
   const org = String(persisted.id).startsWith('org-')
-  const owner = persisted.id === OWNER_LOGIN.id
+  const owner = isOwnerAccount(persisted)
   return {
     ...DEFAULT_USER,
     ...persisted,

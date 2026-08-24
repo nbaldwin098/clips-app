@@ -206,7 +206,7 @@ export default function CollapsibleSidebar({
                 collapsed ? 'justify-center py-1.5' : 'gap-2.5 px-2.5 py-1.5'
               )}
             >
-              <ChannelAvatar src={c.avatarUrl} name={c.displayName} size={collapsed ? 32 : 28} official={!collapsed && isVerifiedChannel(c.id, c.handle)} />
+              <ChannelAvatar src={c.avatarUrl} name={c.displayName} size={collapsed ? 32 : 28} />
               {!collapsed && (
                 <span className="min-w-0">
                   <span className="flex items-center gap-1 text-[12px] text-zinc-200 truncate">

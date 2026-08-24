@@ -18,6 +18,7 @@ import {
   ShieldCheck,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { isPlatformOwner } from '../lib/moderation'
 import { cn } from '../lib/utils'
 import BrandMark from './BrandMark'
 import ChannelAvatar from './ChannelAvatar'
@@ -239,7 +240,7 @@ export default function StreamingNavbar({
                     >
                       <Settings className="h-4 w-4 text-zinc-400" /> Settings
                     </button>
-                    {(user?.isPlatformAdmin || user?.id === 'owner-cs1') && (
+                    {isPlatformOwner(user) && (
                       <button
                         type="button"
                         onClick={() => handleNav('admin')}

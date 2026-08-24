@@ -564,7 +564,6 @@ export default function WatchPage({
                     src={item.avatarUrl}
                     name={creatorDisplayName(item)}
                     size={40}
-                    official={isVerifiedChannel(item.creatorId || item.userId, item.handle)}
                   />
                 </button>
                 <div className="min-w-0">
