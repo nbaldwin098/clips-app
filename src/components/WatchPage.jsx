@@ -25,13 +25,11 @@ import PlaylistPicker from './PlaylistPicker'
 import ReportModal from './ReportModal'
 import { downloadPostedMedia } from '../lib/mediaDownload'
 import PostedStamp from './PostedStamp'
-import RelatedRow from './RelatedRow'
-import ContentCard from './ContentCard'
 import ChannelAvatar from './ChannelAvatar'
 import VerifiedBadge from './VerifiedBadge'
 import SubscribeButton from './SubscribeButton'
 import { VideoPreroll } from './AdUnits'
-import { creatorDisplayName, isOfficialCreator, likesLabel, viewsLabel } from '../lib/uiFormat'
+import { creatorDisplayName, isOfficialCreator, likesLabel, viewsLabel, formatDuration } from '../lib/uiFormat'
 import { isVerifiedChannel } from '../lib/verification'
 import { startPremiumCheckout } from '../lib/checkout'
 import { getStripePaymentLink } from '../lib/stripeConfig'
@@ -49,6 +47,49 @@ function Pill({ children, onClick, active = false, title, disabled }) {
     >
       {children}
     </button>
+  )
+}
+
+function NextStrip({ title, items, onOpen }) {
+  if (!items?.length) return null
+  return (
+    <section className="mt-10">
+      <div className="flex items-baseline justify-between gap-3 mb-3">
+        <h2 className="text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-500">{title}</h2>
+      </div>
+      <div className="-mx-4 md:-mx-6 px-4 md:px-6 flex gap-3 overflow-x-auto pb-2">
+        {items.map((rel) => {
+          const vertical = rel.type === 'short' || rel.type === 'pic'
+          return (
+            <button
+              key={rel.id}
+              type="button"
+              onClick={() => onOpen?.(rel)}
+              className="w-40 sm:w-44 shrink-0 text-left group"
+            >
+              <div className={`relative overflow-hidden bg-[#141418] ${vertical ? 'aspect-[3/4]' : 'aspect-[16/10]'}`}>
+                {rel.thumbUrl ? (
+                  <img
+                    src={rel.thumbUrl}
+                    alt=""
+                    className="absolute inset-0 h-full w-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                    loading="lazy"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : null}
+                {rel.durationSec > 0 ? (
+                  <span className="absolute bottom-1.5 right-1.5 text-[10px] font-medium text-white/90">
+                    {formatDuration(rel.durationSec)}
+                  </span>
+                ) : null}
+              </div>
+              <p className="mt-2 text-[13px] text-zinc-100 leading-snug line-clamp-2">{rel.title || 'Untitled'}</p>
+              <p className="mt-0.5 text-[11px] text-zinc-500 truncate">{creatorDisplayName(rel)}</p>
+            </button>
+          )
+        })}
+      </div>
+    </section>
   )
 }
 
@@ -442,12 +483,17 @@ export default function WatchPage({
   const endPicks = [queue.next, ...related].filter((x, i, a) => x && a.findIndex((y) => y?.id === x.id) === i).slice(0, 3)
 
   return (
-    <div className={`px-4 md:px-6 py-4 mx-auto pb-24 ${theater ? 'max-w-[1600px]' : 'max-w-[1400px]'}`}>
-      <div className={`grid gap-6 ${theater || isVertical ? 'lg:grid-cols-1' : 'lg:grid-cols-[minmax(0,1fr)_402px]'}`}>
-        <div>
-          <div
-            className={`relative w-full overflow-hidden rounded-xl ${isVertical ? 'aspect-[9/16] max-h-[78vh] mx-auto' : 'aspect-video'} ${ambient ? 'bg-zinc-950' : 'bg-black'}`}
-          >
+    <div className="pb-24">
+      <div className="bg-[#050506] border-b border-white/[0.06]">
+        <div
+          className={`relative w-full overflow-hidden mx-auto ${
+            isVertical
+              ? 'aspect-[9/16] max-h-[78vh] max-w-md'
+              : theater
+                ? 'aspect-video max-h-[88vh]'
+                : 'aspect-video max-h-[72vh]'
+          } ${ambient ? 'bg-zinc-950' : 'bg-black'}`}
+        >
             {locked && (
               <div className="absolute inset-0 z-40 bg-black/85 flex flex-col items-center justify-center p-6 text-center gap-3">
                 <p className="text-lg font-semibold text-white">Paid post</p>
@@ -534,9 +580,10 @@ export default function WatchPage({
               </div>
             )}
           </div>
+      </div>
 
           {chapters.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1.5">
+            <div className="max-w-3xl mx-auto px-4 md:px-6 mt-3 flex flex-wrap gap-1.5">
               {chapters.map((ch) => (
                 <button
                   key={`${ch.t}-${ch.title}`}
@@ -550,8 +597,8 @@ export default function WatchPage({
             </div>
           )}
 
-          <div className="mt-4 space-y-4">
-            <h1 className="text-xl font-semibold text-white leading-snug">{item.title || 'Untitled'}</h1>
+          <div className="max-w-3xl mx-auto px-4 md:px-6 mt-6 space-y-5">
+            <h1 className="text-[1.65rem] font-semibold text-white leading-tight tracking-tight">{item.title || 'Untitled'}</h1>
 
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-center gap-3 min-w-0">
@@ -695,7 +742,7 @@ export default function WatchPage({
             ) : null}
 
             {(desc || (item.tags || []).length > 0) ? (
-              <div className="rounded-xl bg-[#272727] px-4 py-3 space-y-2">
+              <div className="border-y border-white/10 py-4 space-y-2">
                 <p className="text-xs font-medium text-zinc-200">
                   {viewsLabel(views)}
                   {(item.createdAt || item.publishedAt) ? <> · <PostedStamp item={item} /></> : null}
@@ -733,45 +780,16 @@ export default function WatchPage({
                 ) : null}
               </div>
             ) : null}
+          </div>
 
+          <div className="max-w-6xl mx-auto px-4 md:px-6">
+            <NextStrip title="Also on" items={related} onOpen={onPlayItem} />
+            <NextStrip title="From this creator" items={moreFrom} onOpen={onPlayItem} />
+          </div>
+
+          <div className="max-w-3xl mx-auto px-4 md:px-6 mt-10">
             <CommentsPanel contentId={item.id} creatorId={item.creatorId || item.userId} />
           </div>
-        </div>
-
-        {!theater && (
-          <aside className="space-y-4">
-            <div className="space-y-3">
-              <h2 className="text-sm font-semibold text-zinc-200">Up next</h2>
-              {related.length === 0 ? (
-                <p className="text-xs text-zinc-500">Nothing else in the catalog yet.</p>
-              ) : (
-                related.map((rel) => (
-                  <RelatedRow key={rel.id} item={rel} onOpen={onPlayItem} />
-                ))
-              )}
-            </div>
-            {moreFrom.length > 0 && (
-              <div className="space-y-3">
-                <h2 className="text-sm font-semibold text-zinc-200">More from this creator</h2>
-                {moreFrom.map((rel) => (
-                  <RelatedRow key={rel.id} item={rel} onOpen={onPlayItem} />
-                ))}
-              </div>
-            )}
-          </aside>
-        )}
-      </div>
-
-      {theater && moreFrom.length > 0 && (
-        <div className="mt-8">
-          <h2 className="text-sm font-semibold text-zinc-200 mb-3">More from this creator</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {moreFrom.map((rel) => (
-              <ContentCard key={rel.id} item={rel} onOpen={onPlayItem} variant="video" />
-            ))}
-          </div>
-        </div>
-      )}
 
       <PlaylistPicker open={playlistOpen} onClose={() => setPlaylistOpen(false)} contentId={item.id} onOpenAuth={onOpenAuth} />
       <ReportModal open={reportOpen} onClose={() => setReportOpen(false)} target={{ id: item.id, contentId: item.id, userId: item.creatorId || item.userId, handle: item.handle }} />

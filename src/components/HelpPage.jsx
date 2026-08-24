@@ -8,11 +8,11 @@ export default function HelpPage() {
     },
     {
       q: 'How do I upload or go live?',
-      a: 'Tap Create in the top bar. Choose Video or Clip to upload a file. Live opens a lobby until ingest is connected — it does not start a video stream by itself.',
+      a: 'Open the left menu (hamburger) and tap Create, under Live. Upload a video, clip, or pic, or go live from there. Live opens a lobby until ingest is connected — it does not start a video stream by itself.',
     },
     {
       q: 'Where is Studio, Wallet, and analytics?',
-      a: 'Open your profile picture in the top right. Creator Dashboard, analytics, wallet, VODs, and settings are in that menu — not in the left bar.',
+      a: 'Open your profile picture in the top right. Creator Dashboard, analytics, wallet, VODs, and settings are in that menu. Create (upload and go live) is in the left menu, under Live.',
     },
     {
       q: 'Can I watch without an account?',

@@ -1,17 +1,13 @@
 import { useState, useRef, useEffect } from 'react'
 import {
   Search,
-  Bell,
   Menu,
-  Plus,
   Settings,
   LogOut,
   Tv,
   SlidersHorizontal,
-  Film,
   Clapperboard,
   CircleUserRound,
-  Radio,
   BarChart3,
   Wallet,
   BadgeCheck,
@@ -22,45 +18,30 @@ import { isPlatformOwner } from '../lib/moderation'
 import { cn } from '../lib/utils'
 import BrandMark from './BrandMark'
 import ChannelAvatar from './ChannelAvatar'
-import { subscribeNotifications, unreadCount } from '../lib/notifications'
+import NotificationsMenu from './NotificationsMenu'
 
 export default function StreamingNavbar({
   onNavigate,
   onOpenAuth,
-  onCreate,
   onToggleSidebar,
+  sidebarOpen,
   searchQuery,
   onSearchChange,
+  onOpenWatch,
 }) {
   const { user, isAuthenticated, logout } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
-  const [createOpen, setCreateOpen] = useState(false)
-  const [unread, setUnread] = useState(0)
   const menuRef = useRef(null)
-  const createRef = useRef(null)
 
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
         setMenuOpen(false)
       }
-      if (createRef.current && !createRef.current.contains(e.target)) {
-        setCreateOpen(false)
-      }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
-
-  useEffect(() => {
-    if (!user?.id) {
-      setUnread(0)
-      return undefined
-    }
-    const refresh = () => setUnread(unreadCount(user.id))
-    refresh()
-    return subscribeNotifications(refresh)
-  }, [user?.id])
 
   const handleNav = (v) => {
     setMenuOpen(false)
@@ -69,22 +50,23 @@ export default function StreamingNavbar({
 
   return (
     <header className="sticky top-0 z-50 h-14 w-full border-b border-[#272727] bg-[#0f0f0f]">
-      <div className="flex h-full w-full items-center px-2 sm:px-4 gap-2">
-        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+      <div className="flex h-full w-full items-center pr-2 sm:pr-4">
+        <div className="flex items-center shrink-0">
           <button
             type="button"
             onClick={onToggleSidebar}
-            className="flex h-10 w-10 items-center justify-center rounded-full text-zinc-200 hover:bg-white/10 transition-colors"
-            aria-label="Toggle sidebar"
-            title="Toggle sidebar"
+            className="flex h-14 w-14 items-center justify-center text-zinc-200 hover:bg-white/10 transition-colors"
+            aria-label={sidebarOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={!!sidebarOpen}
+            title={sidebarOpen ? 'Close menu' : 'Open menu'}
           >
-            <Menu className="h-5 w-5" />
+            <Menu className={cn('h-5 w-5 transition-transform duration-200 ease-out', sidebarOpen && 'rotate-90')} />
           </button>
 
           <button
             type="button"
             onClick={() => handleNav('home')}
-            className="flex items-center text-left focus:outline-none"
+            className="flex items-center text-left focus:outline-none pl-0.5"
           >
             <BrandMark size={32} withWord />
           </button>
@@ -114,66 +96,13 @@ export default function StreamingNavbar({
         </form>
 
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          <div className="relative" ref={createRef}>
-            <button
-              type="button"
-              onClick={() => {
-                setMenuOpen(false)
-                setCreateOpen((o) => !o)
-              }}
-              className="inline-flex h-9 items-center gap-1.5 rounded-full bg-[#272727] px-3 text-sm font-medium text-white hover:bg-[#3f3f3f]"
-              title="Upload a video, clip, or go live"
-              aria-label="Create"
-              aria-expanded={createOpen}
-            >
-              <Plus className="h-5 w-5" />
-              <span className="hidden md:inline">Create</span>
-            </button>
-            {createOpen && (
-              <div className="absolute right-0 mt-2 w-52 rounded-xl border border-[#2d2d38] bg-[#14141b] shadow-2xl py-1 z-50">
-                <p className="px-3.5 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
-                  Create
-                </p>
-                {[
-                  { id: 'video', label: 'Video', hint: 'Upload a longer video', Icon: Film },
-                  { id: 'clip', label: 'Clip', hint: 'Upload a short', Icon: Clapperboard },
-                  { id: 'live', label: 'Go live', hint: 'Start a broadcast', Icon: Radio },
-                ].map(({ id, label, hint, Icon }) => (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => {
-                      setCreateOpen(false)
-                      onCreate?.(id)
-                    }}
-                    className="w-full flex items-start gap-2.5 px-3.5 py-2 text-left hover:bg-[#1f1f2a]"
-                  >
-                    <Icon className="h-4 w-4 text-white mt-0.5 shrink-0" />
-                    <span>
-                      <span className="block text-xs font-semibold text-white">{label}</span>
-                      <span className="block text-[11px] text-zinc-500">{hint}</span>
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
           {isAuthenticated ? (
             <>
-              <button
-                type="button"
-                onClick={() => handleNav('notifications')}
-                className="relative h-10 w-10 flex items-center justify-center rounded-full text-zinc-200 hover:bg-white/10 transition-colors"
-                title="Notifications"
-              >
-                <Bell className="h-5 w-5" />
-                {unread > 0 && (
-                  <span className="absolute top-1.5 right-1.5 min-w-4 h-4 px-1 rounded-full bg-[#eb0400] text-white text-[10px] font-bold leading-4">
-                    {unread > 9 ? '9+' : unread}
-                  </span>
-                )}
-              </button>
+              <NotificationsMenu
+                onNavigate={handleNav}
+                onOpenWatch={onOpenWatch}
+                onOpenAuth={onOpenAuth}
+              />
 
               <div className="relative" ref={menuRef}>
                 <button

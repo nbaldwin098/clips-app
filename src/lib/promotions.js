@@ -16,7 +16,7 @@ export const PROMO_PRESETS = [
     id: 'launch',
     name: 'Launch week',
     headline: 'Clips is live',
-    body: 'Watch videos, clips, and pics. Upload from the + button.',
+    body: 'Watch videos, clips, and pics. Upload from Create in the menu.',
     ctaLabel: 'Open Recommended',
     destView: 'home',
     destId: '',
