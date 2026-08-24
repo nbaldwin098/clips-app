@@ -4,6 +4,7 @@ import SecuritySettings from './SecuritySettings'
 import ChannelSettings from './ChannelSettings'
 import StreamSettings from './StreamSettings'
 import ChatSettings from './ChatSettings'
+import CommentSettings from './CommentSettings'
 import MonetizationSettings from './MonetizationSettings'
 import NotificationsSettings from './NotificationsSettings'
 import RolesSettings from './RolesSettings'
@@ -17,6 +18,7 @@ const PAGES = {
   channel: ChannelSettings,
   stream: StreamSettings,
   chat: ChatSettings,
+  comments: CommentSettings,
   monetization: MonetizationSettings,
   notifications: NotificationsSettings,
   roles: RolesSettings,

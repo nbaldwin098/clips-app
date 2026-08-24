@@ -32,6 +32,7 @@ import { VideoPreroll } from './AdUnits'
 import { creatorDisplayName, isOfficialCreator, likesLabel, viewsLabel, formatDuration } from '../lib/uiFormat'
 import { isVerifiedChannel } from '../lib/verification'
 import { startPremiumCheckout } from '../lib/checkout'
+import { stashPendingStripe, startTipCheckout, TIP_AMOUNTS } from '../lib/tips'
 import { getStripePaymentLink } from '../lib/stripeConfig'
 
 function Pill({ children, onClick, active = false, title, disabled }) {
@@ -143,6 +144,7 @@ export default function WatchPage({
   const [myVote, setMyVote] = useState(() => getUserVote(user?.id, itemId))
   const [isSaved, setIsSaved] = useState(() => (getSaved() || []).includes(itemId))
   const [payBusy, setPayBusy] = useState(false)
+  const [tipBusy, setTipBusy] = useState('')
   const countRef = useRef(null)
   const appliedStart = useRef(false)
   const showingAdRef = useRef(false)
@@ -389,6 +391,13 @@ export default function WatchPage({
     if (!isAuthenticated) { onOpenAuth?.(); return }
     if (!item?.id || !user?.id) return
     try { sessionStorage.setItem('clips_pending_purchase', item.id) } catch {}
+    stashPendingStripe({
+      kind: 'post_purchase',
+      donorId: user.id,
+      handle: user.handle,
+      creatorId: item.creatorId || item.userId,
+      contentId: item.id,
+    })
     setPayBusy(true)
     const result = await startPremiumCheckout({
       already: false,
@@ -397,6 +406,21 @@ export default function WatchPage({
     })
     if (result.url) openSafeUrl(result.url)
     setPayBusy(false)
+  }
+
+  const donatePost = async (amount) => {
+    if (!isAuthenticated) { onOpenAuth?.(); return }
+    setTipBusy(String(amount))
+    const result = await startTipCheckout({
+      user,
+      kind: 'post_tip',
+      creatorId: item.creatorId || item.userId,
+      contentId: item.id,
+      amount,
+      handle: user.handle,
+    })
+    setTipBusy('')
+    if (result.url) openSafeUrl(result.url)
   }
 
   const togglePip = async () => {
@@ -628,6 +652,21 @@ export default function WatchPage({
                   </p>
                 </div>
                 <SubscribeButton creatorId={item.creatorId || item.userId} handle={item.handle} onOpenAuth={onOpenAuth} className="ml-2" />
+                {getStripePaymentLink() ? (
+                  <div className="ml-2 flex items-center gap-1">
+                    {TIP_AMOUNTS.map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        disabled={!!tipBusy}
+                        onClick={() => donatePost(n)}
+                        className="h-8 px-2 rounded-full bg-white/10 text-[11px] font-semibold text-white"
+                      >
+                        {tipBusy === String(n) ? '…' : `$${n}`}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
               </div>
 
               <div className="flex items-center gap-2 overflow-x-auto pb-0.5 lg:justify-end">

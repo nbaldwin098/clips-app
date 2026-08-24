@@ -11,6 +11,14 @@ export default function HelpPage() {
       a: 'Open the left menu (hamburger) and tap Create, under Live. Upload a video, clip, or pic, or go live from there. Live opens a lobby until ingest is connected — it does not start a video stream by itself.',
     },
     {
+      q: 'Can I donate on live or on a video?',
+      a: 'Yes if this deploy has a Stripe Payment Link. Pick $2, $5, $10, or $25. Nothing is marked until Stripe sends you back. Live donations appear in that chat. Post donations can show on your comments unless you turn that off in Settings → Comments.',
+    },
+    {
+      q: 'How do I stream from a PC, Xbox, or PS5?',
+      a: 'Xbox and PS5 cannot send a picture here. They only talk to their own apps, or you run HDMI into a capture card on a PC and use OBS later. On a PC, Live → Share this screen is a preview on that browser only. Other viewers still see the lobby until ingest is connected. Mods, bots, and !rules live under Settings → Roles.',
+    },
+    {
       q: 'Where is Studio, Wallet, and analytics?',
       a: 'Open your profile picture in the top right. Creator Dashboard, analytics, wallet, VODs, and settings are in that menu. Create (upload and go live) is in the left menu, under Live.',
     },

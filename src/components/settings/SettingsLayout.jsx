@@ -1,7 +1,7 @@
 import { cn } from '../../lib/utils'
 import {
-  User, Shield, Bell, Radio, MessageSquare, Wallet,
-  BarChart3, Palette, Users, FileText, Scale
+  User, Shield, Bell, Radio, MessageSquare, MessageCircle, Wallet,
+  BarChart3, Palette, Users, FileText, Scale,
 } from 'lucide-react'
 
 const SECTIONS = [
@@ -10,6 +10,7 @@ const SECTIONS = [
   { id: 'channel', label: 'Channel & Branding', icon: Palette },
   { id: 'stream', label: 'Stream & Ingest', icon: Radio },
   { id: 'chat', label: 'Chat & Moderation', icon: MessageSquare },
+  { id: 'comments', label: 'Comments', icon: MessageCircle },
   { id: 'monetization', label: 'Monetization', icon: Wallet },
   { id: 'notifications', label: 'Notifications', icon: Bell },
   { id: 'roles', label: 'Roles & Permissions', icon: Users },

@@ -65,6 +65,9 @@ import { getById, flushScheduledPublishes, resolvePublicCreator } from './lib/co
 import { parseRoute, pushHash } from './lib/routes'
 import { syncPromotionsFromCloud } from './lib/promotions'
 import PromoBanner from './components/PromoBanner'
+import { claimStripeReturn } from './lib/tips'
+import { membershipReturnPaid } from './lib/stripeConfig'
+import { addPremiumSub } from './lib/engagement'
 
 const KNOWN_VIEWS = new Set([
   'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
@@ -106,6 +109,15 @@ function AppShell() {
 
   useEffect(() => installRuntimeGuards(), [])
   useEffect(() => startNamedAccountActivity(), [])
+
+  useEffect(() => {
+    if (!user?.id || typeof window === 'undefined') return
+    if (!membershipReturnPaid(routeParams, window.location.search)) return
+    const claimed = claimStripeReturn(user, routeParams, window.location.search)
+    if (claimed.kind === 'premium') {
+      addPremiumSub(user.id, claimed.creatorId || checkoutTarget.id || user.id)
+    }
+  }, [user?.id, routeParams, checkoutTarget.id])
 
   useEffect(() => {
     syncContentFromCloud(user)
