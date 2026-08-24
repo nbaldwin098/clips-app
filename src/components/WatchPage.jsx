@@ -18,11 +18,12 @@ import { copyShareUrl } from '../lib/routes'
 import { useContentSyncTick } from '../lib/useContentSync'
 import { toggleSaved, getSaved } from '../lib/storage'
 import { getWatchPrefs, setWatchPrefs, getChapters, getCaptions } from '../lib/youtubeParity'
-import { formatPostedAt, parseCaptionCues, cueAtTime } from '../lib/mediaMeta'
+import { parseCaptionCues, cueAtTime } from '../lib/mediaMeta'
 import { notifyContentChanged } from '../lib/contentSync'
 import CommentsPanel from './CommentsPanel'
 import PlaylistPicker from './PlaylistPicker'
 import ReportModal from './ReportModal'
+import PostedStamp from './PostedStamp'
 import ContentCard from './ContentCard'
 
 function Pill({ children, onClick, active = false, title, disabled }) {
@@ -547,7 +548,7 @@ export default function WatchPage({
                   </button>
                   <p className="text-xs text-zinc-400 mt-0.5">
                     {views} views
-                    {item.createdAt ? ` · ${formatPostedAt(item.createdAt)}` : ''}
+                    {(item.createdAt || item.publishedAt) ? <> · <PostedStamp item={item} /></> : null}
                     {item.durationSec ? ` · ${formatClock(item.durationSec)}` : ''}
                   </p>
                 </div>

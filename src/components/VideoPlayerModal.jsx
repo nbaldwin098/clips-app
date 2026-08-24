@@ -8,6 +8,7 @@ import { recordInteraction } from '../lib/algorithmEngine'
 import { getActiveAdForVideo, recordAdImpression, recordAdClick, recordAdSkip } from '../lib/adEngine'
 import { useAuth } from '../context/AuthContext'
 import { openSafeUrl, safeIframeSrc, safeMediaUrl } from '../lib/safeUrl'
+import PostedStamp from './PostedStamp'
 
 function isHttp(url) {
   return typeof url === 'string' && (url.startsWith('https://') || url.startsWith('http://'))
@@ -299,6 +300,12 @@ export default function VideoPlayerModal({ item, onClose }) {
             <span className="font-semibold text-zinc-200">@{item.handle || item.creatorName || 'creator'}</span>
             <span>·</span>
             <span>{views} views</span>
+            {item.createdAt || item.publishedAt ? (
+              <>
+                <span>·</span>
+                <PostedStamp item={item} />
+              </>
+            ) : null}
             {item.durationSec ? (
               <>
                 <span>·</span>

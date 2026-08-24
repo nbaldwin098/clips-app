@@ -1,6 +1,6 @@
 /** Live-project smoke checks — no mock catalog, no invented checkout grant. */
 import { readFileSync } from 'node:fs'
-import { extractHashtags, mergeTags, parseClock, parseCaptionCues, isReleased, filterExploreItems } from '../src/lib/mediaMeta.js'
+import { extractHashtags, mergeTags, parseClock, parseCaptionCues, isReleased, filterExploreItems, formatPostedAt, olderIso } from '../src/lib/mediaMeta.js'
 import { parseRoute, buildHash } from '../src/lib/routes.js'
 import { sanitizeAuthError, normalizePhone } from '../src/lib/authBrand.js'
 
@@ -21,6 +21,12 @@ assert(normalizePhone('5551234567') === '+15551234567', 'us phone to e164')
 assert(extractHashtags('hello #Music and #gaming').join(',') === 'music,gaming', 'hashtags')
 assert(mergeTags('music, extra', 'more #music #live').includes('live'), 'merge tags')
 assert(parseClock('1:02') === 62, 'parse clock')
+const now = Date.parse('2026-08-24T12:00:00.000Z')
+assert(formatPostedAt(now, now) === 'just now', 'brand new post is just now')
+assert(formatPostedAt(now - 3600_000, now) === '1h ago', 'hour-old post keeps time')
+assert(formatPostedAt('1969-07-24T16:00:00.000Z', now).endsWith('y ago'), 'old films show years ago')
+assert(formatPostedAt('', now) === '', 'missing date is blank not just now')
+assert(olderIso('1969-07-24T16:00:00.000Z', new Date(now).toISOString()) === '1969-07-24T16:00:00.000Z', 'cloud now does not erase real date')
 assert(parseCaptionCues('00:00.000 --> 00:02.000\nHi').length === 1, 'vtt cues')
 assert(isReleased({ status: 'draft' }) === false, 'draft hidden')
 assert(isReleased({ status: 'published' }) === true, 'published visible')
@@ -167,8 +173,17 @@ const channelSrc = readFileSync(new URL('../src/components/ChannelPage.jsx', imp
 assert(channelSrc.includes('Save') && channelSrc.includes('Cancel'), 'channel has save and cancel')
 assert(channelSrc.includes('Change profile picture'), 'avatar camera is on the photo')
 
+const cardSrc = readFileSync(new URL('../src/components/ContentCard.jsx', import.meta.url), 'utf8')
+assert(cardSrc.includes('PostedStamp'), 'home cards show real post time')
+const navSrc = readFileSync(new URL('../src/components/StreamingNavbar.jsx', import.meta.url), 'utf8')
+assert(navSrc.includes('SiteClock'), 'header shows the local clock')
+const stampSrc = readFileSync(new URL('../src/components/PostedStamp.jsx', import.meta.url), 'utf8')
+assert(stampSrc.includes('formatPostedAt'), 'posted stamp ages over time')
+
 const kidsSrc = readFileSync(new URL('../src/data/publicMediaSeed.js', import.meta.url), 'utf8')
 assert(kidsSrc.includes("handle: 'nasa'"), 'nasa creator channel')
+assert(kidsSrc.includes('official-pd-v4'), 'catalog generation refreshes timestamps')
+assert(kidsSrc.includes('1969-07-24'), 'apollo film keeps its 1969 date')
 assert(kidsSrc.includes("handle: 'noaa'"), 'noaa creator channel')
 assert(kidsSrc.includes("handle: 'esa'"), 'esa creator channel')
 assert(kidsSrc.includes("handle: 'nasaconnect'"), 'nasa connect kids channel')

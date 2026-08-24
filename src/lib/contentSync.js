@@ -83,6 +83,7 @@ function fromRow(row) {
     engagement: row.engagement || {},
     views: row.views || 0,
     createdAt: row.created_at,
+    publishedAt: row.published_at || row.created_at,
   }
 }
 
