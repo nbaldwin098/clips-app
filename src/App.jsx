@@ -26,6 +26,7 @@ import AuthRequired from './components/AuthRequired'
 import ImportShortModal from './components/ImportShortModal'
 import AuthModal from './components/AuthModal'
 import PasswordRecoveryGate from './components/PasswordRecoveryGate'
+import MfaGate from './components/MfaGate'
 import UploadModal from './components/UploadModal'
 import PicsPage from './components/PicsPage'
 import CheckoutPage from './components/CheckoutPage'
@@ -48,6 +49,7 @@ import StudioToolsPage from './components/StudioToolsPage'
 import StreamSettingsPage from './components/StreamSettingsPage'
 import ContentRulesPage from './components/ContentRulesPage'
 import WatchPage from './components/WatchPage'
+import MessagesPage from './components/MessagesPage'
 import CreatePage from './components/CreatePage'
 import SoundPage from './components/SoundPage'
 import TagPage from './components/TagPage'
@@ -59,6 +61,7 @@ import { startSession } from './lib/algorithmEngine'
 import { lsGet, lsSet } from './lib/storage'
 import { syncContentFromCloud, notifyContentChanged } from './lib/contentSync'
 import { setGraphActor, syncGraphFromCloud, syncPublicEngagementFromCloud } from './lib/graphSync'
+import { publishMyPublicKey } from './lib/directMessages'
 import { installRuntimeGuards } from './lib/selfHeal'
 import { pushLibraryCatalogToCloud } from './data/publicMediaSeed'
 import { isAdminSession } from './lib/moderation'
@@ -77,7 +80,7 @@ const KNOWN_VIEWS = new Set([
   'analytics', 'channel', 'profile', 'content-rules', 'vods',
   'subscriptions', 'playlists', 'community', 'studio-tools', 'stream-settings',
   'legal-tos', 'legal-privacy', 'legal-creator', 'legal-community',
-  'watch', 'sound', 'tag', 'create',
+  'watch', 'sound', 'tag', 'create', 'messages',
 ])
 
 function AppShell() {
@@ -105,7 +108,10 @@ function AppShell() {
   useEffect(() => {
     if (isAuthenticated && user?.id) startSession(user.id)
     setGraphActor(user?.provider === 'supabase' ? user : null)
-    if (user?.provider === 'supabase') syncGraphFromCloud().catch(() => {})
+    if (user?.provider === 'supabase') {
+      syncGraphFromCloud().catch(() => {})
+      publishMyPublicKey(user).catch(() => {})
+    }
   }, [isAuthenticated, user?.id, user?.provider])
 
   useEffect(() => installRuntimeGuards(), [])
@@ -364,6 +370,8 @@ function AppShell() {
       return <AuthRequired title="Studio" description="Sign in." onOpenAuth={openAuth} />
     if (view === 'vods' && !isAuthenticated)
       return <AuthRequired title="VODs" description="Sign in." onOpenAuth={openAuth} />
+    if (view === 'messages' && !isAuthenticated)
+      return <AuthRequired title="Messages" description="Sign in to send and receive encrypted messages." onOpenAuth={openAuth} />
     if (view === 'admin' && !isAdminSession(user))
       return <AdminPortal onNavigate={navigate} />
 
@@ -448,6 +456,7 @@ function AppShell() {
       case 'help': return <HelpPage />
       case 'about': return <AboutPage />
       case 'notifications': return <NotificationsPage onNavigate={navigate} onOpenWatch={openWatch} />
+      case 'messages': return <MessagesPage peerParam={routeId} />
       case 'create': return <CreatePage onCreate={openCreate} onOpenAuth={openAuth} onNavigate={navigate} />
       case 'legal-tos': return <TermsOfService />
       case 'legal-privacy': return <PrivacyPolicy />

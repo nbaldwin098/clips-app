@@ -18,6 +18,7 @@ import { isPlatformOwner } from '../lib/moderation'
 import BrandMark from './BrandMark'
 import ChannelAvatar from './ChannelAvatar'
 import NotificationsMenu from './NotificationsMenu'
+import MessagesButton from './MessagesButton'
 
 export default function StreamingNavbar({
   onNavigate,
@@ -108,6 +109,7 @@ export default function StreamingNavbar({
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {isAuthenticated ? (
             <>
+              <MessagesButton onNavigate={handleNav} />
               <NotificationsMenu
                 onNavigate={handleNav}
                 onOpenWatch={onOpenWatch}

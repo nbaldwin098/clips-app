@@ -214,6 +214,7 @@ assert(settingsHub.includes('SecuritySettings'), 'settings hub includes real 2FA
 const appSrc = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8')
 assert(appSrc.includes('SettingsHub'), 'settings layout is mounted')
 assert(appSrc.includes('PasswordRecoveryGate'), 'reset-email landing exists')
+assert(appSrc.includes("import MfaGate from './components/MfaGate'"), 'MfaGate is imported, so a 2FA login prompt does not crash the app')
 assert(!appSrc.includes("from './components/SettingsPage'"), 'old fake-2fa settings page is gone')
 const moneySrc = readFileSync(new URL('../src/components/settings/MonetizationSettings.jsx', import.meta.url), 'utf8')
 assert(!moneySrc.includes('100% of the listed price'), 'settings does not promise 100% payouts')
@@ -685,6 +686,30 @@ assert(panelSrc.includes('const [chatSettingsOpen, setChatSettingsOpen] = useSta
   }
   assert(!!live?.mediaUrl, 'live exoClick vast returns a playable file')
 }
+
+const dmSql = readFileSync(new URL('../supabase/migrations/0011_direct_messages.sql', import.meta.url), 'utf8')
+assert(/create table if not exists public\.direct_messages/.test(dmSql), 'direct_messages table exists')
+assert(!/\b(body|plaintext|message_text)\s+text\b/i.test(dmSql), 'direct_messages sql never has a plaintext column')
+assert(/ciphertext text not null/.test(dmSql) && /iv text not null/.test(dmSql), 'direct_messages only stores ciphertext plus an iv')
+assert(/alter table public\.direct_messages enable row level security/.test(dmSql), 'direct_messages has row level security on')
+assert(/auth\.uid\(\) = sender_id or auth\.uid\(\) = recipient_id/.test(dmSql), 'only the two people in a conversation can read it')
+assert(/alter publication supabase_realtime add table public\.direct_messages/.test(dmSql), 'direct_messages is on the realtime publication for fast delivery')
+assert(dmSql.includes('add column if not exists public_key'), 'profiles gets a public_key column for key exchange')
+
+const dmCryptoSrc = readFileSync(new URL('../src/lib/dmCrypto.js', import.meta.url), 'utf8')
+assert(dmCryptoSrc.includes("name: 'ECDH'") && dmCryptoSrc.includes("name: 'AES-GCM'"), 'messages use ECDH key agreement plus AES-GCM, not a home-rolled cipher')
+assert(!/fetch\(|supabase|getSupabase/.test(dmCryptoSrc), 'the crypto module never talks to the network — private keys cannot leave this file')
+
+const dmLibSrc = readFileSync(new URL('../src/lib/directMessages.js', import.meta.url), 'utf8')
+assert(dmLibSrc.includes('user?.provider === \'supabase\''), 'messages require a real synced account, same gate as the rest of the social graph')
+assert(dmLibSrc.includes('public_key: pair.publicKeyBase64'), 'only the public key, never the private key, is ever written to the server')
+assert(/if \(!peer\.publicKey\)/.test(dmLibSrc), 'sending is blocked until the recipient has published a key — no silent plaintext fallback')
+assert(/range\(TRIM_KEEP, TRIM_KEEP\)/.test(dmLibSrc), 'old messages get trimmed per conversation to keep storage low')
+assert(dmLibSrc.includes('subscribeToConversation') && dmLibSrc.includes('postgres_changes'), 'messages push over realtime instead of only polling')
+
+const messagesPageSrc = readFileSync(new URL('../src/components/MessagesPage.jsx', import.meta.url), 'utf8')
+assert(messagesPageSrc.includes('dmAvailableFor(user)') && messagesPageSrc.includes('local demo logins'), 'local/demo accounts get an honest explanation instead of a broken inbox')
+assert(messagesPageSrc.includes("Can't decrypt on this device"), 'a message this device cannot decrypt shows as such instead of crashing or showing garbage')
 
 if (failed) {
   console.error(`${failed} failed`)

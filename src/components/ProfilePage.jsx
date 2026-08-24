@@ -16,7 +16,7 @@ import { subscribersLabel, isOfficialCreator } from '../lib/uiFormat'
 import { isVerifiedChannel } from '../lib/verification'
 
 export default function ProfilePage({ onNavigate, profileHandle, profileUserId, onPlayItem, onOpenPic, onOpenAuth, onOpenCheckout }) {
-  const { user } = useAuth()
+  const { user, isAuthenticated } = useAuth()
   const handle = String(profileHandle || '').toLowerCase().replace(/^@/, '')
   const found = resolvePublicCreator(handle, profileUserId)
   const isSelf = Boolean(
@@ -94,6 +94,16 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
           ) : (
             <>
               <SubscribeButton creatorId={resolvedId} handle={handle || found?.handle} onOpenAuth={onOpenAuth} />
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isAuthenticated) { onOpenAuth?.(); return }
+                  onNavigate?.('messages', resolvedId || handle || found?.handle)
+                }}
+                className="h-9 px-4 rounded-full border border-zinc-700 text-xs font-semibold text-zinc-200 hover:bg-white/10"
+              >
+                Message
+              </button>
               {onOpenCheckout && resolvedId ? (
                 <button type="button" onClick={() => onOpenCheckout(resolvedId, handle || found?.handle)} className="h-9 px-4 rounded-full bg-white text-black text-xs font-semibold">
                   Premium

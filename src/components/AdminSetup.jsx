@@ -57,6 +57,9 @@ export default function AdminSetup() {
         <p className="text-xs text-zinc-500">
           0010 turns off the named-account like/watch job. The 467 people accounts still exist for sign-in. Run 0010 in the SQL editor if 0009 already scheduled that job.
         </p>
+        <p className="text-xs text-zinc-500">
+          0011 adds Direct Messages. Only real email/phone accounts (not the demo owner/named logins) can message each other — the browser encrypts every message before it leaves the device, so this table never holds plaintext. Also flip Realtime on for the `direct_messages` table in Database → Replication if the migration's publication step did not take.
+        </p>
         {SETUP_SCRIPTS.map((script) => (
           <CopyBlock key={script.id} title={`${script.title} (${script.id})`} text={script.sql} />
         ))}
