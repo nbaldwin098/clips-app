@@ -8,8 +8,14 @@ export function isHttpUrl(url) {
 }
 
 /** Never put data: URLs in localStorage — they blow the quota and look like a failed save. */
+export function isSiteProfileAsset(url) {
+  return String(url || '') === '/media/black.png'
+}
+
 export function persistableMediaUrl(url) {
-  return isHttpUrl(url) ? String(url) : ''
+  const u = String(url || '')
+  if (isHttpUrl(u) || isSiteProfileAsset(u)) return u
+  return ''
 }
 
 export function avatarStoreId(userId) {
@@ -82,11 +88,11 @@ export async function persistProfilePicture(user, { avatarDraft, bannerDraft }) 
 export async function restoreProfilePictures(userId, current = {}) {
   const out = { ...current }
   if (!userId) return out
-  if (!isHttpUrl(out.avatarUrl)) {
+  if (!isHttpUrl(out.avatarUrl) && !isSiteProfileAsset(out.avatarUrl)) {
     const local = await getMediaBlobUrl(avatarStoreId(userId))
     if (local) out.avatarUrl = local
   }
-  if (!isHttpUrl(out.bannerUrl)) {
+  if (!isHttpUrl(out.bannerUrl) && !isSiteProfileAsset(out.bannerUrl)) {
     const local = await getMediaBlobUrl(bannerStoreId(userId))
     if (local) out.bannerUrl = local
   }
