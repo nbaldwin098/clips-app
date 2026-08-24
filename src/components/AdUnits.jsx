@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowUpRight, SkipForward } from 'lucide-react'
 import { getActiveAd, getVideoAdDurationSec, getVideoSkipAfterSec, recordAdClick, recordAdImpression } from '../lib/adEngine'
 import { openSafeUrl, safeHttpUrl } from '../lib/safeUrl'
+import ExoClickDisplay from './ExoClickDisplay'
 
 export function PlacementBanner({ placement, itemId }) {
   const ad = useMemo(() => getActiveAd(placement), [placement, itemId])
@@ -58,6 +59,18 @@ export default function AdBanner({ ad }) {
 }
 
 export function InFeedAd({ ad, variant = 'clip' }) {
+  if (ad?.provider === 'exoclick') {
+    const frame = variant === 'pic' ? 'relative w-full aspect-square overflow-hidden bg-[#1a1a1a]' : 'relative block w-full aspect-[9/16] overflow-hidden rounded-xl bg-[#1a1a1a]'
+    return (
+      <div className={frame}>
+        <ExoClickDisplay zoneId={ad.zoneId} />
+      </div>
+    )
+  }
+  return <CampaignInFeedAd ad={ad} variant={variant} />
+}
+
+function CampaignInFeedAd({ ad, variant = 'clip' }) {
   useEffect(() => {
     if (ad?.id) recordAdImpression(ad.id)
   }, [ad?.id])

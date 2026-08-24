@@ -10,6 +10,7 @@ import ShortsStage, { ShortsCard } from './ShortsStage'
 import { downloadPostedMedia } from '../lib/mediaDownload'
 import { mixFeedAds } from '../lib/adEngine'
 import { InFeedAd, PlacementBanner } from './AdUnits'
+import ExoClickDisplay from './ExoClickDisplay'
 
 function PicImage({ pic, className, alt = '', full = false, fill = false, onUnplayable }) {
   const immediate = pickImmediatePhotoSrc(pic, { full })
@@ -134,14 +135,14 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
   const [error, setError] = useState('')
   const [viewerIndex, setViewerIndex] = useState(() => {
     if (!initialPicId) return null
-    const list = getPicsFeed()
-    const idx = list.findIndex((p) => p.id === initialPicId)
+    const mixed0 = mixFeedAds(getPicsFeed(), 'pic-feed')
+    const idx = mixed0.findIndex((r) => r.item?.id === initialPicId)
     return idx >= 0 ? idx : null
   })
   const [openedAt, setOpenedAt] = useState(() => {
     if (!initialPicId) return 0
-    const list = getPicsFeed()
-    const idx = list.findIndex((p) => p.id === initialPicId)
+    const mixed0 = mixFeedAds(getPicsFeed(), 'pic-feed')
+    const idx = mixed0.findIndex((r) => r.item?.id === initialPicId)
     return idx >= 0 ? idx : 0
   })
 
@@ -167,12 +168,12 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
 
   useEffect(() => {
     if (!initialPicId || skipAutoOpen.current) return
-    const idx = items.findIndex((p) => p.id === initialPicId)
+    const idx = mixed.findIndex((r) => r.item?.id === initialPicId)
     if (idx >= 0) {
       setOpenedAt(idx)
       setViewerIndex(idx)
     }
-  }, [initialPicId, items])
+  }, [initialPicId, mixed])
 
   const closeViewer = () => {
     skipAutoOpen.current = true
@@ -180,10 +181,10 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
     replaceHash('pics')
   }
 
-  const openAt = (index) => {
-    setOpenedAt(index)
-    setViewerIndex(index)
-    const pic = items[index]
+  const openAt = (mixedIndex) => {
+    setOpenedAt(mixedIndex)
+    setViewerIndex(mixedIndex)
+    const pic = mixed[mixedIndex]?.item
     if (pic && typeof window !== 'undefined') {
       replaceHash('pic', pic.id)
     }
@@ -224,11 +225,11 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
       <div className="h-full min-h-0 flex flex-col bg-[#000000]">
         <ShortsStage
           key={`pic-reel-${openedAt}`}
-          count={items.length}
+          count={mixed.length}
           activeIndex={viewerIndex}
           onActiveIndex={(i) => {
             setViewerIndex(i)
-            const pic = items[i]
+            const pic = mixed[i]?.item
             if (pic && typeof window !== 'undefined') {
               replaceHash('pic', pic.id)
             }
@@ -239,12 +240,23 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
               <button type="button" onClick={closeViewer} className="h-9 px-3 rounded-full bg-white/10 text-white text-xs inline-flex items-center gap-1.5">
                 <X className="h-4 w-4" /> Back to pics
               </button>
-              <p className="text-[11px] text-white/50">{viewerIndex + 1}/{items.length}</p>
+              <p className="text-[11px] text-white/50">{viewerIndex + 1}/{mixed.length}</p>
             </div>
           )}
-          renderSlide={(index) => (
-            items[index] ? <PicSlide pic={items[index]} onOpenProfile={onOpenProfile} /> : null
-          )}
+          renderSlide={(index) => {
+            const row = mixed[index]
+            if (row?.kind === 'ad') {
+              return (
+                <div className="h-full w-full max-w-md mx-auto bg-black flex flex-col">
+                  <p className="shrink-0 px-3 py-2 text-[11px] text-white/70">Sponsored · swipe for the next pic</p>
+                  <div className="flex-1 min-h-0">
+                    <ExoClickDisplay zoneId={row.ad?.zoneId} />
+                  </div>
+                </div>
+              )
+            }
+            return row?.item ? <PicSlide pic={row.item} onOpenProfile={onOpenProfile} /> : null
+          }}
         />
       </div>
     )
@@ -274,12 +286,11 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
               return <InFeedAd key={row.key} ad={row.ad} variant="pic" />
             }
             const pic = row.item
-            const index = items.findIndex((p) => p.id === pic.id)
             return (
               <button
                 key={row.key || pic.id}
                 type="button"
-                onClick={() => openAt(index)}
+                onClick={() => openAt(mixed.findIndex((r) => r.item?.id === pic.id))}
                 className="relative block w-full aspect-square overflow-hidden bg-zinc-800 group focus:outline-none"
               >
                 <PicImage key={pic.id} pic={pic} fill onUnplayable={dropBroken} />

@@ -6,7 +6,8 @@ import { extractHashtags, mergeTags, parseClock, parseCaptionCues, isReleased, f
 import { parseRoute, buildHash } from '../src/lib/routes.js'
 import { sanitizeAuthError, normalizePhone } from '../src/lib/authBrand.js'
 import { findOwnerLogin, isLocalOwnerLogin, isOwnerAccount, OWNER_LOGIN } from '../src/data/ownerLogin.js'
-import { parseVastXml, parseVastClock, youtubeMidrollBreaks, EXOCLICK_VAST_URL, YT_MIDROLL_MIN_SEC } from '../src/lib/vastAds.js'
+import { parseVastXml, parseVastClock, youtubeMidrollBreaks, EXOCLICK_VAST_URL, EXOCLICK_LIVE_CREATOR_VAST_URL, YT_MIDROLL_MIN_SEC } from '../src/lib/vastAds.js'
+import { mixClipFeedRows, clipBannerAllowedOnMixed, CLIP_BANNER_EVERY } from '../src/lib/feedAdCadence.js'
 import { featuredWindowStart, nextFeaturedRefreshAt, lastHourRange, interleaveHourlyHits, HOURLY_PATTERN, HOURLY_VIDEO_COUNT, HOURLY_CLIP_COUNT, HOURLY_PIC_COUNT } from '../src/lib/hourWindow.js'
 
 let failed = 0
@@ -50,12 +51,29 @@ assert(parseVastClock('00:00:05.0') === 5, 'vast skipoffset clock')
 assert(youtubeMidrollBreaks(YT_MIDROLL_MIN_SEC - 1).length === 0, 'no mid-roll under 8 minutes')
 assert(youtubeMidrollBreaks(8 * 60).length === 1, '8 minute video gets one mid-roll')
 assert(EXOCLICK_VAST_URL.includes('idz=6010924'), 'exoClick zone is wired')
+assert(EXOCLICK_LIVE_CREATOR_VAST_URL.includes('idz=6010934'), 'creator live vast zone is wired')
 {
   const sample = '<?xml version="1.0"?><VAST version="3.0"><Ad><InLine><Impression><![CDATA[https://s.magsrv.com/i]]></Impression><Creatives><Creative><Linear skipoffset="00:00:05.0"><Duration>00:00:17.500</Duration><MediaFiles><MediaFile delivery="progressive" type="video/mp4"><![CDATA[https://cdn.example.com/ad.mp4]]></MediaFile></MediaFiles><VideoClicks><ClickThrough><![CDATA[https://s.magsrv.com/click]]></ClickThrough></VideoClicks></Linear></Creative></Creatives></InLine></Ad></VAST>'
   const parsed = parseVastXml(sample)
   assert(parsed?.mediaUrl?.includes('ad.mp4') && parsed.skipAfterSec === 5, 'vast parser reads mp4 and skip')
 }
 assert(!parseVastXml('<VAST version="3.0"></VAST>'), 'empty vast is not a fake ad')
+{
+  const fake = Array.from({ length: 40 }, (_, i) => ({ id: `c${i}` }))
+  const mixed = mixClipFeedRows(fake, { banners: true })
+  const kinds = mixed.map((r) => r.kind)
+  assert(!kinds.join(',').includes('ad,ad'), 'clip full ads are never twice in a row')
+  const bannerIdx = mixed.findIndex((_, i) => clipBannerAllowedOnMixed(mixed, i))
+  assert(bannerIdx >= 0 && mixed[bannerIdx].kind === 'item', 'every 10th clip can show a banner')
+  assert(mixed[bannerIdx - 1]?.kind !== 'ad' && mixed[bannerIdx + 1]?.kind !== 'ad', 'clip banner is not next to a full ad')
+  const itemCountAtBanner = mixed.slice(0, bannerIdx + 1).filter((r) => r.kind === 'item').length
+  assert(itemCountAtBanner === CLIP_BANNER_EVERY, 'first banner is on clip 10')
+  for (let i = 0; i < mixed.length; i += 1) {
+    if (mixed[i].kind !== 'ad') continue
+    assert(mixed[i - 1]?.kind === 'item' && mixed[i + 1]?.kind !== 'ad', 'full ads sit between clips')
+    assert(!clipBannerAllowedOnMixed(mixed, i - 1) && !clipBannerAllowedOnMixed(mixed, i + 1), 'full ads are not next to a banner')
+  }
+}
 assert(existsSync(new URL('../public/_redirects', import.meta.url)), 'static host rewrites unknown paths to the app')
 
 function isPromoLive(promo, now = Date.now()) {
@@ -200,6 +218,12 @@ const adEng = readFileSync(new URL('../src/lib/adEngine.js', import.meta.url), '
 assert(adEng.includes('clips_ads_running'), 'ads have a global on/off switch')
 assert(adEng.includes('if (!adsAreRunning()) return null'), 'preroll stays off until admin enables ads')
 assert(adEng.includes('mixFeedAds'), 'clip and pic feeds can insert ads between items')
+assert(adEng.includes("provider: 'exoclick'"), 'clip and pic feeds use the ExoClick display zone')
+assert(adEng.includes('mixClipFeedRows'), 'clip ads use the 4-6 cadence')
+const cadenceSrc = readFileSync(new URL('../src/lib/feedAdCadence.js', import.meta.url), 'utf8')
+assert(cadenceSrc.includes('CLIP_AD_GAPS = [4, 5, 6]'), 'clip ads sit every 4-6 items')
+assert(cadenceSrc.includes('CLIP_BANNER_EVERY = 10'), 'clip banners sit every 10 clips')
+assert(shortsFeedSrc.includes('mixFeedAds'), 'clip player inserts ads between clips')
 assert(adEng.includes('clip-banner') && adEng.includes('pic-feed'), 'clip and pic placements exist')
 const paySrc = readFileSync(new URL('../src/lib/payouts.js', import.meta.url), 'utf8')
 assert(!paySrc.includes('rpmPerThousand'), 'payouts are not a per-1000-views rate')
@@ -225,10 +249,14 @@ assert(adminAdsSrc.includes('Where ads show'), 'admin can toggle each placement'
 assert(adminAdsSrc.includes('clipBanner') && adminAdsSrc.includes('picInFeed'), 'admin has clip and pic placement switches')
 const shortsGridSrc = readFileSync(new URL('../src/components/ShortsGrid.jsx', import.meta.url), 'utf8')
 assert(shortsGridSrc.includes('mixFeedAds'), 'clip grid inserts in-feed ads')
-assert(shortsFeedSrc.includes('PlacementBanner'), 'clip player has a bottom banner')
+assert(shortsFeedSrc.includes('clipBannerAllowed'), 'clip player has banners under the description')
+assert(shortsFeedSrc.includes('EXOCLICK_BANNER_ZONE'), 'clip banners use the ExoClick banner zone')
+const exoSrc = readFileSync(new URL('../src/components/ExoClickDisplay.jsx', import.meta.url), 'utf8')
+assert(exoSrc.includes('6010930') && exoSrc.includes('eas6a97888e2'), 'clip banner zone id is 6010930')
 const picsSrc = readFileSync(new URL('../src/components/PicsPage.jsx', import.meta.url), 'utf8')
 assert(picsSrc.includes('mixFeedAds'), 'pic mosaic inserts in-feed ads')
 assert(picsSrc.includes('pic-banner'), 'pic viewer has a bottom banner')
+assert(picsSrc.includes('ExoClickDisplay'), 'pic viewer inserts full ads between photos')
 const watchAds = readFileSync(new URL('../src/components/WatchPage.jsx', import.meta.url), 'utf8')
 assert(watchAds.includes('VideoInStreamAd'), 'watch plays VAST in-stream ads on videos')
 assert(watchAds.includes('useVideoVastAds'), 'watch loads ExoClick VAST for videos')
@@ -272,6 +300,12 @@ assert(authOwner.includes('isLocalOwnerLogin'), 'gmail password can use cloud au
 const streamSet2 = readFileSync(new URL('../src/components/settings/StreamSettings.jsx', import.meta.url), 'utf8')
 assert(streamSet2.includes('ensureStreamKey'), 'stream settings expose a key')
 assert(streamSet2.includes('Enable VOD channel'), 'stream settings have VOD channel')
+assert(streamSet2.includes('Run ad now'), 'stream settings can run a live ad')
+assert(streamSet2.includes('!ad'), 'stream settings list slash ad commands')
+assert(liveSrc.includes('useLiveStreamAds'), 'live stage plays VAST over the stream')
+const liveAdsSrc = readFileSync(new URL('../src/lib/liveAds.js', import.meta.url), 'utf8')
+assert(liveAdsSrc.includes('LIVE_VIEWER_AD_DELAY_SEC = 30'), 'live viewers get an ad after 30 seconds')
+assert(liveAdsSrc.includes('6010934'), 'creator live ads use zone 6010934')
 assert(algoSrc.includes('bumpCatalogEngagement'), 'watch signals write back onto posts')
 assert(!algoSrc.includes('valorant'), 'search does not invent trending queries')
 
@@ -506,6 +540,7 @@ assert(appSrc.includes('claimStripeReturn'), 'app applies Stripe returns in one 
 const chatLib = readFileSync(new URL('../src/lib/liveChat.js', import.meta.url), 'utf8')
 assert(chatLib.includes('trySendLiveChat'), 'live chat enforces slow mode and bans')
 assert(chatLib.includes('!rules'), 'chat bots reply to !rules')
+assert(chatLib.includes('parseAdSlash'), 'live chat handles !ad')
 const rolesSrc = readFileSync(new URL('../src/components/settings/RolesSettings.jsx', import.meta.url), 'utf8')
 assert(rolesSrc.includes('addRole'), 'streamers can assign mods')
 assert(rolesSrc.includes('addBotCommand'), 'streamers can add bot commands')

@@ -3,6 +3,15 @@ import { useAuth } from '../../context/AuthContext'
 import { getStreamSettings, setStreamSettings } from '../../lib/streamSettings'
 import { ensureStreamKey, rotateStreamKey } from '../../lib/streamKeys'
 import { getVodChannel, setVodChannel } from '../../lib/vods'
+import {
+  cueLiveAd,
+  getLiveAdState,
+  scheduleLiveAd,
+  setLiveAdInterval,
+  cancelLiveAdSchedule,
+  LIVE_VIEWER_AD_DELAY_SEC,
+  EXOCLICK_LIVE_CREATOR_VAST_URL,
+} from '../../lib/liveAds'
 
 export default function StreamSettings() {
   const { user } = useAuth()
@@ -18,6 +27,13 @@ export default function StreamSettings() {
   const [vis, setVis] = useState(vod.visibility || 'private')
   const [saved, setSaved] = useState(false)
   const [copied, setCopied] = useState(false)
+  const liveAds = getLiveAdState(user?.id)
+  const [adEveryMin, setAdEveryMin] = useState(() => Math.round((liveAds.intervalSec || 0) / 60) || 0)
+  const [adInMin, setAdInMin] = useState('10')
+  const [adNote, setAdNote] = useState('')
+  const [, bumpAds] = useState(0)
+  const refreshAds = () => bumpAds((n) => n + 1)
+  const adState = getLiveAdState(user?.id)
 
   useEffect(() => {
     if (!user?.id) return
@@ -109,6 +125,100 @@ export default function StreamSettings() {
           <option value="private">Keep private</option>
           <option value="public">Public on VOD channel</option>
         </select>
+      </section>
+
+      <section className="rounded-xl border border-zinc-800 bg-[#121218] p-4 space-y-3">
+        <p className="text-sm font-semibold text-white">Live ads</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">
+          Viewers get the same video ad tag {LIVE_VIEWER_AD_DELAY_SEC} seconds after they open your stream. You can also run a mid-stream ad with {EXOCLICK_LIVE_CREATOR_VAST_URL}. Empty tags do not invent a fake overlay. Ingest is still not connected, so the ad plays over the live stage on this site.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="h-9 px-3 rounded-lg bg-white text-black text-xs font-semibold"
+            onClick={() => {
+              if (!user?.id) return
+              cueLiveAd(user.id, 'live-creator')
+              setAdNote('Ad queued. Open Live and watch the stage.')
+              refreshAds()
+            }}
+          >
+            Run ad now
+          </button>
+        </div>
+        <div className="flex flex-wrap items-end gap-2">
+          <label className="text-xs text-zinc-400">
+            Play one in
+            <input
+              value={adInMin}
+              onChange={(e) => setAdInMin(e.target.value)}
+              className="mt-1 w-20 h-10 rounded-lg border border-zinc-800 bg-black px-3 text-sm text-white"
+            />
+          </label>
+          <span className="text-xs text-zinc-500 pb-3">minutes</span>
+          <button
+            type="button"
+            className="h-10 px-3 rounded-lg border border-zinc-700 text-white text-xs"
+            onClick={() => {
+              if (!user?.id) return
+              const mins = Math.max(1, Number(adInMin) || 0)
+              const res = scheduleLiveAd(user.id, Date.now() + mins * 60 * 1000)
+              setAdNote(res.ok ? `Scheduled in ${mins}m.` : (res.error || 'Could not schedule.'))
+              refreshAds()
+            }}
+          >
+            Schedule
+          </button>
+        </div>
+        <div className="flex flex-wrap items-end gap-2">
+          <label className="text-xs text-zinc-400">
+            Repeat every
+            <input
+              type="number"
+              min="0"
+              max="180"
+              value={adEveryMin}
+              onChange={(e) => setAdEveryMin(e.target.value)}
+              className="mt-1 w-20 h-10 rounded-lg border border-zinc-800 bg-black px-3 text-sm text-white"
+            />
+          </label>
+          <span className="text-xs text-zinc-500 pb-3">minutes (0 is off)</span>
+          <button
+            type="button"
+            className="h-10 px-3 rounded-lg border border-zinc-700 text-white text-xs"
+            onClick={() => {
+              if (!user?.id) return
+              const mins = Math.max(0, Number(adEveryMin) || 0)
+              setLiveAdInterval(user.id, mins ? Math.max(2, mins) * 60 : 0)
+              setAdNote(mins ? `Repeating every ${Math.max(2, mins)}m.` : 'Repeat is off.')
+              refreshAds()
+            }}
+          >
+            Save repeat
+          </button>
+        </div>
+        {(adState.schedules || []).length ? (
+          <ul className="text-xs text-zinc-400 space-y-1">
+            {adState.schedules.map((s) => (
+              <li key={s.id} className="flex items-center justify-between gap-2">
+                <span>At {new Date(s.at).toLocaleTimeString()}</span>
+                <button
+                  type="button"
+                  className="text-white underline"
+                  onClick={() => { cancelLiveAdSchedule(user.id, s.id); refreshAds() }}
+                >
+                  Cancel
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-[11px] text-zinc-600">No one-off times queued.</p>
+        )}
+        <p className="text-[11px] text-zinc-500 leading-relaxed">
+          Chat (creator or mod): <code className="text-zinc-300">!ad</code> now, <code className="text-zinc-300">!ad 5m</code> schedule, <code className="text-zinc-300">!ad every 15m</code> repeat, <code className="text-zinc-300">!ad off</code>, <code className="text-zinc-300">!ads</code> status.
+        </p>
+        {adNote ? <p className="text-[11px] text-white">{adNote}</p> : null}
       </section>
 
       <section className="space-y-4">

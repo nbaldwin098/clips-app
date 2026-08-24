@@ -8,6 +8,11 @@ const vastProxy = {
     changeOrigin: true,
     rewrite: () => '/v1/vast.php?idz=6010924',
   },
+  '/__vast/exo-live': {
+    target: 'https://s.magsrv.com',
+    changeOrigin: true,
+    rewrite: () => '/v1/vast.php?idz=6010934',
+  },
 }
 
 export default defineConfig({

@@ -5,6 +5,7 @@
 import { lsGet, lsSet } from './storage'
 import { safeHttpUrl } from './safeUrl'
 import { hashSecret, verifySecret, isHashedSecret } from './secrets'
+import { mixClipFeedRows, clipBannerAllowedOnMixed } from './feedAdCadence'
 
 const AD_APPS_KEY = 'clips_ad_applications'
 const ADVERTISERS_KEY = 'clips_advertisers'
@@ -30,8 +31,8 @@ const DEFAULT_AD_SETTINGS = {
   clipInFeed: true,
   picBanner: true,
   picInFeed: true,
-  clipFeedEvery: 6,
-  picFeedEvery: 6,
+  clipFeedEvery: 5,
+  picFeedEvery: 4,
   videoSkipAfterSec: 5,
 }
 
@@ -328,23 +329,41 @@ export function getVideoAdDurationSec(ad) {
 export function mixFeedAds(items, placement) {
   const list = Array.isArray(items) ? items : []
   const mapped = list.map((item) => ({ kind: 'item', item, key: item?.id }))
-  if (!adsAreRunning()) return mapped
   const settings = getAdSettings()
-  const every = placement === 'pic-feed' ? settings.picFeedEvery : settings.clipFeedEvery
   if (!settingAllows(placement, settings)) return mapped
-  const ads = listActiveAds(placement)
-  if (!ads.length) return mapped
+  if (placement === 'clip-feed') {
+    return mixClipFeedRows(list, { banners: settingAllows('clip-banner', settings) })
+  }
+  const every = settings.picFeedEvery
+  const exoFeed = placement === 'pic-feed'
+  const campaigns = adsAreRunning() ? listActiveAds(placement) : []
+  if (!exoFeed && !campaigns.length) return mapped
   const out = []
   let adIdx = 0
   list.forEach((item, i) => {
     out.push({ kind: 'item', item, key: item?.id || `item-${i}` })
     if ((i + 1) % every === 0 && i < list.length - 1) {
-      const ad = ads[adIdx % ads.length]
-      out.push({ kind: 'ad', ad, key: `ad-${placement}-${i}-${ad.id}` })
-      adIdx += 1
+      if (exoFeed) {
+        out.push({
+          kind: 'ad',
+          ad: { id: `exo-${placement}-${i}`, provider: 'exoclick', zoneId: '6010926' },
+          key: `exo-${placement}-${i}`,
+        })
+      } else {
+        const ad = campaigns[adIdx % campaigns.length]
+        if (!ad) return
+        out.push({ kind: 'ad', ad, key: `ad-${placement}-${i}-${ad.id}` })
+        adIdx += 1
+      }
     }
   })
   return out
+}
+
+/** Banner under a clip every 10 clips, never on or next to a full in-feed ad. */
+export function clipBannerAllowed(mixed, index) {
+  if (!settingAllows('clip-banner')) return false
+  return clipBannerAllowedOnMixed(mixed, index)
 }
 
 export function recordAdImpression(adId) {

@@ -12,7 +12,8 @@ import { copyShareUrl } from '../lib/routes'
 import CommentsPanel from './CommentsPanel'
 import ShortsStage, { ShortsCard } from './ShortsStage'
 import ShortsGrid from './ShortsGrid'
-import { PlacementBanner } from './AdUnits'
+import ExoClickDisplay, { clipBannerAllowed, EXOCLICK_BANNER_ZONE, EXOCLICK_BANNER_CLASS } from './ExoClickDisplay'
+import { mixFeedAds } from '../lib/adEngine'
 
 function resolvePlayUrl(item) {
   return item?.mediaUrl || item?.sourceUrl || ''
@@ -35,6 +36,7 @@ function RailBtn({ onClick, label, children, active = false, circled = true }) {
 
 function ClipSlide({
   item, active, muted, onToggleMute, user, onOpenAuth, onOpenProfile, onOpenSound, onStitch, onBack, onSearch,
+  showBanner = false,
 }) {
   const vidRef = useRef(null)
   const [src, setSrc] = useState(() => resolvePlayUrl(item))
@@ -301,6 +303,9 @@ function ClipSlide({
             </button>
           </div>
           <p className="text-sm text-white mt-2 line-clamp-2 drop-shadow pr-16 md:pr-4">{item.title || 'Untitled'}</p>
+          {item.description && String(item.description).trim() !== String(item.title || '').trim() ? (
+            <p className="text-[12px] text-white/80 mt-1 line-clamp-2 drop-shadow pr-16 md:pr-4">{item.description}</p>
+          ) : null}
           {item.soundTitle ? (
             <button
               type="button"
@@ -311,8 +316,12 @@ function ClipSlide({
               <span className="truncate">{item.soundTitle}</span>
             </button>
           ) : null}
+          {showBanner ? (
+            <div className="mt-2 mr-16 md:mr-4 min-h-[90px] rounded-lg overflow-hidden bg-black/40" onClick={(e) => e.stopPropagation()}>
+              <ExoClickDisplay zoneId={EXOCLICK_BANNER_ZONE} insClass={EXOCLICK_BANNER_CLASS} className="min-h-[90px] h-[90px]" />
+            </div>
+          ) : null}
         </div>
-        <PlacementBanner placement="clip-banner" itemId={item.id} />
         <div className="h-0.5 bg-white/20">
           <div className="h-full bg-white" style={{ width: `${Math.round((progress || 0) * 100)}%` }} />
         </div>
@@ -347,16 +356,17 @@ export default function ShortsFeed({
   const recommended = useMemo(() => getStableShortsFeed(user?.id || null), [user?.id])
   const following = useMemo(() => getStableFollowingFeed(user?.id, { shortsOnly: true }), [user?.id])
   const items = tab === 'following' ? following : recommended
+  const mixed = useMemo(() => mixFeedAds(items, 'clip-feed'), [items])
   const [activeIdx, setActiveIdx] = useState(0)
   const [muted, setMuted] = useState(true)
   const shownAt = useRef(Date.now())
   const prevIdx = useRef(0)
   const inPlayer = Boolean(focusId)
   const startIdx = useMemo(() => {
-    if (!focusId || !items.length) return 0
-    const idx = items.findIndex((i) => i.id === focusId)
+    if (!focusId || !mixed.length) return 0
+    const idx = mixed.findIndex((row) => row.item?.id === focusId)
     return idx >= 0 ? idx : 0
-  }, [focusId, items])
+  }, [focusId, mixed])
 
   useEffect(() => { setActiveIdx(startIdx) }, [startIdx])
 
@@ -380,10 +390,10 @@ export default function ShortsFeed({
   return (
     <ShortsStage
       key={`clips-player-${tab}`}
-      count={items.length}
+      count={mixed.length}
       activeIndex={activeIdx}
       onActiveIndex={(i) => {
-        const prev = items[prevIdx.current]
+        const prev = mixed[prevIdx.current]?.item
         const waited = Date.now() - shownAt.current
         if (prev && user?.id && i !== prevIdx.current) {
           recordInteraction(user.id, {
@@ -402,10 +412,21 @@ export default function ShortsFeed({
       empty={(
         <div className="h-full flex items-center justify-center text-sm text-zinc-400">No clips</div>
       )}
-      renderSlide={(index, active) => (
-        items[index] ? (
+      renderSlide={(index, active) => {
+        const row = mixed[index]
+        if (row?.kind === 'ad') {
+          return (
+            <div className="h-full w-full max-w-md mx-auto bg-black flex flex-col">
+              <p className="shrink-0 px-3 py-2 text-[11px] text-white/70">Sponsored · swipe for the next clip</p>
+              <div className="flex-1 min-h-0">
+                <ExoClickDisplay zoneId={row.ad?.zoneId} />
+              </div>
+            </div>
+          )
+        }
+        return row?.item ? (
           <ClipSlide
-            item={items[index]}
+            item={row.item}
             active={active}
             muted={muted}
             onToggleMute={() => setMuted((m) => !m)}
@@ -416,9 +437,10 @@ export default function ShortsFeed({
             onStitch={onStitch}
             onBack={backToGrid}
             onSearch={() => onNavigate?.('explore')}
+            showBanner={clipBannerAllowed(mixed, index)}
           />
         ) : null
-      )}
+      }}
     />
   )
 }
