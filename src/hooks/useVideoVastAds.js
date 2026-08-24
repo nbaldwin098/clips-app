@@ -67,7 +67,7 @@ export function useVideoVastAds(item) {
     creative,
     slot,
     awaitingPreroll,
-    showingVast: Boolean(creative) || awaitingPreroll,
+    showingVast: Boolean(creative),
     finishAd,
     onContentTime,
   }
