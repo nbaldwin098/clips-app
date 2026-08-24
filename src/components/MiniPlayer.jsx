@@ -21,7 +21,7 @@ export default function MiniPlayer({ item, onExpand, onClose }) {
   if (!item) return null
 
   return (
-    <div className="fixed bottom-3 right-3 z-[100] w-[280px] max-w-[46vw] rounded-xl border border-zinc-700 bg-[#121218] shadow-2xl overflow-hidden">
+    <div className="fixed top-[3.75rem] right-3 z-[100] w-[280px] max-w-[46vw] rounded-xl border border-zinc-700 bg-[#121218] shadow-2xl overflow-hidden">
       <div className="relative aspect-video bg-black">
         {mode === 'iframe' && safeIframeSrc(playSrc) ? (
           <iframe src={safeIframeSrc(playSrc)} title={item.title || 'Video'} className="absolute inset-0 w-full h-full border-0" allow="autoplay; encrypted-media" sandbox="allow-scripts allow-same-origin allow-presentation" />

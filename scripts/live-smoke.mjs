@@ -464,6 +464,9 @@ assert(carouselSrc.includes('ChevronLeft') && carouselSrc.includes('ChevronRight
 assert(carouselSrc.includes('New lineup at'), 'hourly stage says when it changes')
 const engagementHits = readFileSync(new URL('../src/lib/engagement.js', import.meta.url), 'utf8')
 assert(engagementHits.includes('recordHourView'), 'views in the last hour are counted for the stage')
+const miniSrc = readFileSync(new URL('../src/components/MiniPlayer.jsx', import.meta.url), 'utf8')
+assert(miniSrc.includes('top-[3.75rem]') && miniSrc.includes('right-3'), 'docked watch player sits top right')
+assert(!miniSrc.includes('bottom-3 right-3'), 'docked watch player is not bottom right')
 
 if (failed) {
   console.error(`${failed} failed`)
