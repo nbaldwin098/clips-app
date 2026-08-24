@@ -117,7 +117,7 @@ export function normalizeItem(raw) {
     userId: raw.userId || raw.creatorId,
     handle: raw.handle || raw.creatorHandle,
     engagement: raw.engagement || { completionRate: 0, loops: 0, shares: 0, comments: 0, saves: 0, earlySkips: 0, likes: 0 },
-    createdAt: raw.createdAt || new Date().toISOString(),
+    createdAt: raw.createdAt || raw.publishedAt || raw.importedAt || '',
     crossPost: raw.crossPost || null,
     hosted: !!raw.hosted,
     soundId: raw.soundId || raw.engagement?.soundId || null,

@@ -25,26 +25,57 @@ export function mergeTags(manual, description) {
   return [...new Set([...fromManual, ...extractHashtags(description)])].slice(0, 12)
 }
 
-export function isRecentShort(item, hours = 72) {
-  const t = new Date(item?.publishedAt || item?.createdAt || 0).getTime()
-  if (!t) return false
-  return Date.now() - t < hours * 3600 * 1000
+export function parsePostedTime(iso) {
+  const t = new Date(iso || 0).getTime()
+  return Number.isFinite(t) && t !== 0 ? t : 0
 }
 
-export function formatPostedAt(iso) {
+export function olderIso(a, b) {
+  const ta = parsePostedTime(a)
+  const tb = parsePostedTime(b)
+  if (!ta) return b || a || ''
+  if (!tb) return a
+  return ta <= tb ? a : b
+}
+
+export function postedAtOf(item) {
+  if (!item || typeof item !== 'object') return ''
+  return item.publishedAt || item.createdAt || item.importedAt || ''
+}
+
+export function formatPostedExact(iso) {
+  const t = parsePostedTime(iso)
+  if (!t) return ''
+  return new Date(t).toLocaleString(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  })
+}
+
+export function formatPostedAt(iso, now = Date.now()) {
   if (!iso) return ''
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return ''
-  const diff = Date.now() - d.getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'just now'
+  const t = parsePostedTime(iso)
+  if (!t) return ''
+  const diff = now - t
+  if (diff < 15_000) return 'just now'
+  const mins = Math.floor(diff / 60_000)
+  if (diff < 60_000) return `${Math.max(1, Math.floor(diff / 1000))}s ago`
   if (mins < 60) return `${mins}m ago`
   const hrs = Math.floor(mins / 60)
   if (hrs < 24) return `${hrs}h ago`
   const days = Math.floor(hrs / 24)
   if (days < 7) return `${days}d ago`
-  if (days < 30) return `${Math.floor(days / 7)}w ago`
-  return d.toLocaleDateString()
+  if (days < 31) return `${Math.floor(days / 7)}w ago`
+  const months = Math.floor(days / 30)
+  if (months < 18) return `${months}mo ago`
+  const years = Math.floor(days / 365)
+  return `${years}y ago`
+}
+
+export function isRecentShort(item, hours = 72) {
+  const t = new Date(item?.publishedAt || item?.createdAt || 0).getTime()
+  if (!t) return false
+  return Date.now() - t < hours * 3600 * 1000
 }
 
 export function parseClock(input) {

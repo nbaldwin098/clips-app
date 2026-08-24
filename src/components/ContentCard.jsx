@@ -7,10 +7,10 @@ import { toggleSaved, getSaved } from '../lib/storage'
 import { notifyContentChanged } from '../lib/contentSync'
 import { getWatchProgress } from '../lib/watchProgress'
 import { copyShareUrl } from '../lib/routes'
-import { formatPostedAt } from '../lib/mediaMeta'
 import { hideBrokenMedia } from '../lib/catalogHealth'
 import { openSafeUrl } from '../lib/safeUrl'
 import ReportModal from './ReportModal'
+import PostedStamp from './PostedStamp'
 
 /** video = YouTube row card; short = Shorts-style vertical */
 export default function ContentCard({ item, onOpen, variant }) {
@@ -173,7 +173,7 @@ export default function ContentCard({ item, onOpen, variant }) {
               </button>
               {subs > 0 ? ` · ${subs} followers` : ''}
             </p>
-            <p className="text-xs text-zinc-500">{views} views{item.createdAt ? ` · ${formatPostedAt(item.createdAt)}` : ''}</p>
+            <p className="text-xs text-zinc-500">{views} views{item.createdAt || item.publishedAt ? <> · <PostedStamp item={item} /></> : ''}</p>
             {item.soundTitle ? (
               <button type="button" onClick={(e) => { e.stopPropagation(); window.__clipsOpenSound?.(item.soundId || item.soundTitle) }} className="text-xs text-zinc-500 mt-1 inline-flex items-center gap-1 hover:text-white">
                 <Music className="h-3 w-3" />{item.soundTitle}
@@ -213,7 +213,7 @@ export default function ContentCard({ item, onOpen, variant }) {
           <p className="text-xs font-semibold text-zinc-100 line-clamp-2 leading-snug cursor-pointer" onClick={open}>{item.title || 'Untitled'}</p>
           <p className="text-[11px] text-zinc-500 mt-0.5">
             <button type="button" onClick={(e) => { e.stopPropagation(); window.__clipsOpenProfile?.(item.handle, item.creatorId || item.userId) }} className="hover:text-white">{handle}</button>
-            {' · '}{views} views{item.createdAt ? ` · ${formatPostedAt(item.createdAt)}` : ''}
+            {' · '}{views} views{item.createdAt || item.publishedAt ? <> · <PostedStamp item={item} /></> : ''}
           </p>
         </div>
         {menu}

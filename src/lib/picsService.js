@@ -60,7 +60,7 @@ export function getPicsFeed() {
       displayName: raw.displayName || raw.handle,
       avatarUrl: raw.avatarUrl || null,
       creatorId: raw.creatorId || raw.userId,
-      createdAt: raw.createdAt || new Date().toISOString(),
+      createdAt: raw.createdAt || raw.publishedAt || '',
       hosted: !!raw.hosted,
     }))
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))

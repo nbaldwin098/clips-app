@@ -134,7 +134,7 @@ export default function HelpPage() {
       <section className="mb-8 space-y-3">
         <h2 className="text-sm font-semibold text-white">Copy these scripts</h2>
         <p className="text-xs text-zinc-500">
-          0009 is the one that makes the 467 people keep watching and liking. 0007 and 0008 only delete broken pics/clips.
+          0009 is the one that makes the 467 people keep watching and liking — each person picks random videos, clips, pics, or live. If you already ran 0009 once, copy and run it again so the random job replaces the old one.
         </p>
         {SETUP_SCRIPTS.map((script) => (
           <CopyScript key={script.id} script={script} />
