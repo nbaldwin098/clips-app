@@ -11,6 +11,29 @@ const ADVERTISERS_KEY = 'clips_advertisers'
 const AD_CAMPAIGNS_KEY = 'clips_ad_campaigns'
 const AD_SESSION_KEY = 'clips_advertiser_session'
 const AD_METRICS_KEY = 'clips_ad_metrics'
+const ADS_RUNNING_KEY = 'clips_ads_running'
+const AD_SETTINGS_KEY = 'clips_ad_settings'
+
+export const AD_PLACEMENTS = [
+  { id: 'video', label: 'Videos', hint: 'YouTube-style skippable preroll on watch' },
+  { id: 'clip-banner', label: 'Clips banner', hint: 'Bar at the bottom of a clip' },
+  { id: 'clip-feed', label: 'Clips in-feed', hint: 'Between clips as you scroll' },
+  { id: 'pic-banner', label: 'Pics banner', hint: 'Bar at the bottom of a photo' },
+  { id: 'pic-feed', label: 'Pics in-feed', hint: 'Between photos as you scroll' },
+]
+
+export const ALL_PLACEMENTS = AD_PLACEMENTS.map((p) => p.id)
+
+const DEFAULT_AD_SETTINGS = {
+  videoPreroll: true,
+  clipBanner: true,
+  clipInFeed: true,
+  picBanner: true,
+  picInFeed: true,
+  clipFeedEvery: 6,
+  picFeedEvery: 6,
+  videoSkipAfterSec: 5,
+}
 
 export function listAdApplications() {
   return lsGet(AD_APPS_KEY, []) || []
@@ -70,10 +93,13 @@ export async function approveAdApplication(appId) {
     advertiserId,
     businessName: app.businessName,
     headline: `Discover ${app.businessName}`,
+    body: '',
     ctaText: 'Learn More',
     targetUrl: safeHttpUrl(app.website) || '',
+    imageUrl: '',
     durationSec: 15,
     skipAfterSec: 5,
+    placements: [...ALL_PLACEMENTS],
     status: 'draft',
     budget: app.monthlyBudget,
     impressions: 0,
@@ -168,9 +194,16 @@ export function getAdvertiserCampaigns(advertiserId) {
 
 export function saveAdvertiserCampaign(campaign) {
   const all = lsGet(AD_CAMPAIGNS_KEY, []) || []
-  const safe = { ...campaign, targetUrl: safeHttpUrl(campaign.targetUrl) || '' }
+  const safe = {
+    ...campaign,
+    targetUrl: safeHttpUrl(campaign.targetUrl) || '',
+    imageUrl: safeHttpUrl(campaign.imageUrl) || '',
+  }
   if (campaign.targetUrl && !safe.targetUrl) {
     throw new Error('Ad link must be a valid https URL.')
+  }
+  if (campaign.imageUrl && !safe.imageUrl) {
+    throw new Error('Ad image must be a valid https URL.')
   }
   const idx = all.findIndex((c) => c.id === campaign.id)
   if (idx >= 0) {
@@ -182,6 +215,8 @@ export function saveAdvertiserCampaign(campaign) {
       clicks: 0,
       skips: 0,
       status: campaign.status || 'draft',
+      placements: campaign.placements?.length ? campaign.placements : [...ALL_PLACEMENTS],
+      skipAfterSec: Number(campaign.skipAfterSec) || 5,
       createdAt: new Date().toISOString(),
       ...safe,
     })
@@ -190,8 +225,6 @@ export function saveAdvertiserCampaign(campaign) {
   return all
 }
 
-const ADS_RUNNING_KEY = 'clips_ads_running'
-
 export function adsAreRunning() {
   return lsGet(ADS_RUNNING_KEY, false) === true
 }
@@ -199,6 +232,26 @@ export function adsAreRunning() {
 export function setAdsRunning(on) {
   lsSet(ADS_RUNNING_KEY, !!on)
   return adsAreRunning()
+}
+
+export function getAdSettings() {
+  const stored = lsGet(AD_SETTINGS_KEY, {}) || {}
+  const clipEvery = Math.max(2, Math.min(24, Number(stored.clipFeedEvery) || DEFAULT_AD_SETTINGS.clipFeedEvery))
+  const picEvery = Math.max(2, Math.min(24, Number(stored.picFeedEvery) || DEFAULT_AD_SETTINGS.picFeedEvery))
+  const skip = Math.max(3, Math.min(30, Number(stored.videoSkipAfterSec) || DEFAULT_AD_SETTINGS.videoSkipAfterSec))
+  return {
+    ...DEFAULT_AD_SETTINGS,
+    ...stored,
+    clipFeedEvery: clipEvery,
+    picFeedEvery: picEvery,
+    videoSkipAfterSec: skip,
+  }
+}
+
+export function setAdSettings(partial) {
+  const next = { ...getAdSettings(), ...(partial || {}) }
+  lsSet(AD_SETTINGS_KEY, next)
+  return next
 }
 
 export function listAllCampaigns() {
@@ -218,18 +271,80 @@ export function campaignInWindow(c, now = Date.now()) {
   return true
 }
 
-/** Only real active campaigns, and only when admin has turned ads on. */
-export function getActiveAdForVideo(_contentId) {
-  if (!adsAreRunning()) return null
-  const custom = (lsGet(AD_CAMPAIGNS_KEY, []) || []).filter((c) => {
+export function campaignPlacements(c) {
+  if (Array.isArray(c?.placements) && c.placements.length) {
+    return c.placements.filter((id) => ALL_PLACEMENTS.includes(id))
+  }
+  return [...ALL_PLACEMENTS]
+}
+
+function settingAllows(placement, settings = getAdSettings()) {
+  if (placement === 'video') return settings.videoPreroll !== false
+  if (placement === 'clip-banner') return settings.clipBanner !== false
+  if (placement === 'clip-feed') return settings.clipInFeed !== false
+  if (placement === 'pic-banner') return settings.picBanner !== false
+  if (placement === 'pic-feed') return settings.picInFeed !== false
+  return false
+}
+
+export function listActiveAds(placement) {
+  if (!adsAreRunning()) return []
+  if (!settingAllows(placement)) return []
+  return (lsGet(AD_CAMPAIGNS_KEY, []) || []).filter((c) => {
     if (c.status !== 'active') return false
     if (!campaignInWindow(c)) return false
     if (c.targetUrl && !safeHttpUrl(c.targetUrl)) return false
-    return true
+    return campaignPlacements(c).includes(placement)
   })
+}
+
+export function getActiveAd(placement) {
+  if (!adsAreRunning()) return null
+  const custom = listActiveAds(placement)
   if (custom.length === 0) return null
-  const idx = Math.floor(Math.random() * custom.length)
-  return custom[idx]
+  return custom[Math.floor(Math.random() * custom.length)]
+}
+
+/** Only real active campaigns, and only when admin has turned ads on. */
+export function getActiveAdForVideo(_contentId) {
+  if (!adsAreRunning()) return null
+  return getActiveAd('video')
+}
+
+export function getVideoSkipAfterSec(ad) {
+  const settings = getAdSettings()
+  const n = Number(ad?.skipAfterSec)
+  if (Number.isFinite(n) && n > 0) return Math.max(3, Math.min(30, n))
+  return settings.videoSkipAfterSec
+}
+
+export function getVideoAdDurationSec(ad) {
+  const skip = getVideoSkipAfterSec(ad)
+  const d = Number(ad?.durationSec)
+  if (Number.isFinite(d) && d > 0) return Math.max(skip, Math.min(60, d))
+  return Math.max(skip, 15)
+}
+
+export function mixFeedAds(items, placement) {
+  const list = Array.isArray(items) ? items : []
+  const mapped = list.map((item) => ({ kind: 'item', item, key: item?.id }))
+  if (!adsAreRunning()) return mapped
+  const settings = getAdSettings()
+  const every = placement === 'pic-feed' ? settings.picFeedEvery : settings.clipFeedEvery
+  if (!settingAllows(placement, settings)) return mapped
+  const ads = listActiveAds(placement)
+  if (!ads.length) return mapped
+  const out = []
+  let adIdx = 0
+  list.forEach((item, i) => {
+    out.push({ kind: 'item', item, key: item?.id || `item-${i}` })
+    if ((i + 1) % every === 0 && i < list.length - 1) {
+      const ad = ads[adIdx % ads.length]
+      out.push({ kind: 'ad', ad, key: `ad-${placement}-${i}-${ad.id}` })
+      adIdx += 1
+    }
+  })
+  return out
 }
 
 export function recordAdImpression(adId) {

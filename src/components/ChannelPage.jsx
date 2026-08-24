@@ -7,6 +7,8 @@ import {
 } from '../lib/engagement'
 import { Camera } from 'lucide-react'
 import { copyShareUrl } from '../lib/routes'
+import VerifiedBadge from './VerifiedBadge'
+import { isVerifiedChannel } from '../lib/verification'
 
 function readImage(file, maxW, cb) {
   if (!file || !file.type.startsWith('image/')) return
@@ -148,7 +150,10 @@ export default function ChannelPage({ onNavigate }) {
           readImage(f, 512, setAvatarDraft)
         }} />
         <div className="flex-1 pb-1 min-w-0">
-          <h2 className="text-xl font-semibold text-zinc-100 truncate">{displayName || user?.displayName}</h2>
+          <h2 className="text-xl font-semibold text-zinc-100 truncate inline-flex items-center gap-2">
+            {displayName || user?.displayName}
+            {isVerifiedChannel(user?.id, handle || user?.handle) ? <VerifiedBadge /> : null}
+          </h2>
           <p className="text-sm text-zinc-500">@{handle || user?.handle}</p>
           <p className="text-xs text-zinc-500 mt-1">
             {getSubscriberCount(user?.id)} subscribers

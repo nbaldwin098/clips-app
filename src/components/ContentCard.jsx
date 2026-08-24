@@ -18,9 +18,9 @@ import {
   creatorDisplayName,
   subscribersLabel,
   formatDuration,
-  isOfficialCreator,
   viewsLabel,
 } from '../lib/uiFormat'
+import { isVerifiedChannel } from '../lib/verification'
 
 /** video = YouTube row card; short = Shorts-style vertical */
 export default function ContentCard({ item, onOpen, variant }) {
@@ -115,7 +115,7 @@ export default function ContentCard({ item, onOpen, variant }) {
   const thumb = item.thumbUrl || item.mediaUrl
   const subs = item.creatorId ? getSubscriberCount(item.creatorId) : 0
   const name = creatorDisplayName(item)
-  const official = isOfficialCreator(item.creatorId || item.userId, item.handle)
+  const official = isVerifiedChannel(item.creatorId || item.userId, item.handle)
   const handle = item.handle ? `@${String(item.handle).replace(/^@/, '')}` : ''
   const followLine = subscribersLabel(subs)
 

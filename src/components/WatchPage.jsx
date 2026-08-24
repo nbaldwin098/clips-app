@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Share2, ListPlus, Music, Clock, ExternalLink, AlertCircle,
-  Loader2, SkipForward, SkipBack, ArrowUpRight, ThumbsUp, ThumbsDown,
+  Loader2, SkipForward, SkipBack, ThumbsUp, ThumbsDown,
   Bookmark, PictureInPicture2, Subtitles, Maximize2, Clapperboard,
   MoreHorizontal, Flag, Download,
 } from 'lucide-react'
@@ -10,7 +10,7 @@ import { getById, getRelated, getMoreFromCreator, getWatchQueue } from '../lib/c
 import { recordView, toggleVote, getVotes, getUserVote, canAccessPaidPost } from '../lib/engagement'
 import { getWatchProgress, recordWatchProgress } from '../lib/watchProgress'
 import { recordInteraction } from '../lib/algorithmEngine'
-import { getActiveAdForVideo, recordAdImpression, recordAdClick, recordAdSkip } from '../lib/adEngine'
+import { getActiveAdForVideo, recordAdImpression, recordAdSkip } from '../lib/adEngine'
 import { resolvePlayback, PLAYBACK_SPEEDS, formatClock, isHttp } from '../lib/playback'
 import { parseEmbedUrl } from '../lib/videoEmbed'
 import { openSafeUrl, safeIframeSrc, safeMediaUrl } from '../lib/safeUrl'
@@ -30,7 +30,9 @@ import ContentCard from './ContentCard'
 import ChannelAvatar from './ChannelAvatar'
 import VerifiedBadge from './VerifiedBadge'
 import SubscribeButton from './SubscribeButton'
+import { VideoPreroll } from './AdUnits'
 import { creatorDisplayName, isOfficialCreator, likesLabel, viewsLabel } from '../lib/uiFormat'
+import { isVerifiedChannel } from '../lib/verification'
 import { startPremiumCheckout } from '../lib/checkout'
 import { getStripePaymentLink } from '../lib/stripeConfig'
 
@@ -88,8 +90,6 @@ export default function WatchPage({
   const [reportOpen, setReportOpen] = useState(false)
   const moreRef = useRef(null)
   const [activeAd, setActiveAd] = useState(null)
-  const [adSecondsLeft, setAdSecondsLeft] = useState(5)
-  const [canSkipAd, setCanSkipAd] = useState(false)
   const [adDismissed, setAdDismissed] = useState(false)
   const [autoplay, setAutoplay] = useState(prefs.autoplay !== false)
   const [theater, setTheater] = useState(!!prefs.theater)
@@ -102,9 +102,9 @@ export default function WatchPage({
   const [myVote, setMyVote] = useState(() => getUserVote(user?.id, itemId))
   const [isSaved, setIsSaved] = useState(() => (getSaved() || []).includes(itemId))
   const [payBusy, setPayBusy] = useState(false)
-  const adTimerRef = useRef(null)
   const countRef = useRef(null)
   const appliedStart = useRef(false)
+  const showingAdRef = useRef(false)
 
   const [descOpen, setDescOpen] = useState(false)
   const chapters = useMemo(() => {
@@ -164,24 +164,12 @@ export default function WatchPage({
     if (ad) {
       setActiveAd(ad)
       recordAdImpression(ad.id)
-      setAdSecondsLeft(5)
-      setCanSkipAd(false)
-      let count = 5
-      adTimerRef.current = setInterval(() => {
-        count -= 1
-        setAdSecondsLeft(count)
-        if (count <= 0) {
-          setCanSkipAd(true)
-          clearInterval(adTimerRef.current)
-        }
-      }, 1000)
     } else {
       setActiveAd(null)
     }
 
     return () => {
       cancelled = true
-      if (adTimerRef.current) clearInterval(adTimerRef.current)
     }
   }, [item?.id, item?.mediaUrl, item?.sourceUrl])
 
@@ -190,6 +178,29 @@ export default function WatchPage({
     if (el) el.playbackRate = speed
     setWatchPrefs({ defaultSpeed: speed })
   }, [speed, playSrc])
+
+  const showingAd = Boolean(activeAd && !adDismissed)
+  showingAdRef.current = showingAd
+  const locked = !canAccessPaidPost(user, item)
+
+  const skipAd = useCallback(() => {
+    if (activeAd) recordAdSkip(activeAd.id)
+    setAdDismissed(true)
+  }, [activeAd])
+
+  useEffect(() => {
+    const el = videoRef.current
+    if (!el) return
+    if (showingAd) {
+      el.pause()
+      return
+    }
+    if (locked || phase !== 'ready' || mode !== 'video') return
+    el.play?.().catch(() => {
+      el.muted = true
+      el.play?.().catch(() => {})
+    })
+  }, [showingAd, locked, phase, mode, playSrc])
 
   const seekTo = (sec) => {
     const el = videoRef.current
@@ -209,6 +220,10 @@ export default function WatchPage({
       if (pos > 2 && pos < (el.duration || 0) - 2) {
         try { el.currentTime = pos } catch {}
       }
+    }
+    if (showingAdRef.current) {
+      el.pause()
+      return
     }
     el.play?.().catch(() => {
       el.muted = true
@@ -378,6 +393,7 @@ export default function WatchPage({
       if (!el) return
       if (e.key === 'k' || e.key === ' ') {
         e.preventDefault()
+        if (showingAdRef.current) return
         if (el.paused) el.play?.().catch(() => {})
         else el.pause()
       } else if (e.key === 'j' || e.key === 'ArrowLeft') {
@@ -420,7 +436,6 @@ export default function WatchPage({
   }
 
   const isVertical = item.type === 'short'
-  const locked = !canAccessPaidPost(user, item)
   const openUrl = (isHttp(item.mediaUrl) && item.mediaUrl) || (isHttp(item.sourceUrl) && item.sourceUrl)
   const desc = (item.description || '').trim()
   const thumb = item.thumbUrl || ''
@@ -452,35 +467,16 @@ export default function WatchPage({
             {ambient && thumb ? (
               <img src={thumb} alt="" className="absolute inset-0 w-full h-full object-cover blur-3xl opacity-40 scale-110" />
             ) : null}
-            {activeAd && !adDismissed && (
-              <div className="absolute inset-0 z-30 bg-black/80 flex flex-col justify-between p-4">
-                <div className="flex items-center justify-between">
-                  <span className="px-2 py-0.5 rounded bg-amber-500 text-black text-[10px] font-extrabold uppercase">Ad</span>
-                  {canSkipAd ? (
-                    <button type="button" onClick={() => { if (activeAd) recordAdSkip(activeAd.id); setAdDismissed(true) }} className="inline-flex items-center gap-1.5 h-8 px-4 rounded-xl bg-white text-black text-xs font-bold">
-                      Skip Ad <SkipForward className="h-3.5 w-3.5" />
-                    </button>
-                  ) : (
-                    <div className="px-3 py-1 rounded-xl bg-black/80 border border-zinc-700 text-zinc-300 text-xs">
-                      Skip in <span className="font-bold text-white">{adSecondsLeft}s</span>
-                    </div>
-                  )}
-                </div>
-                <div className="max-w-md space-y-2 bg-[#12121a]/95 p-4 rounded-2xl border border-zinc-800">
-                  <p className="text-base font-bold text-white">{activeAd.headline}</p>
-                  <button type="button" onClick={() => { if (activeAd) { recordAdClick(activeAd.id); if (activeAd.targetUrl) openSafeUrl(activeAd.targetUrl) } }} className="inline-flex items-center gap-1.5 h-8 px-4 rounded-lg bg-white text-black text-xs font-bold">
-                    {activeAd.ctaText || 'Learn More'} <ArrowUpRight className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
-            )}
+            {showingAd ? (
+              <VideoPreroll ad={activeAd} onSkip={skipAd} onComplete={() => setAdDismissed(true)} />
+            ) : null}
             {phase === 'loading' && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-zinc-400">
                 <Loader2 className="h-8 w-8 animate-spin" />
                 <p className="text-xs">Loading…</p>
               </div>
             )}
-            {phase === 'ready' && mode === 'iframe' && safeIframeSrc(playSrc) && (
+            {phase === 'ready' && mode === 'iframe' && !showingAd && safeIframeSrc(playSrc) && (
               <iframe src={safeIframeSrc(playSrc)} title={item.title || 'Video'} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen sandbox="allow-scripts allow-same-origin allow-presentation" referrerPolicy="strict-origin-when-cross-origin" className="absolute inset-0 w-full h-full border-0" />
             )}
             {phase === 'ready' && mode === 'video' && safeMediaUrl(playSrc) && (
@@ -489,7 +485,7 @@ export default function WatchPage({
                 key={playSrc}
                 src={safeMediaUrl(playSrc)}
                 controls
-                autoPlay={!locked}
+                autoPlay={!locked && !showingAd}
                 playsInline
                 preload="auto"
                 onLoadedMetadata={onLoadedMetadata}
@@ -568,7 +564,7 @@ export default function WatchPage({
                     src={item.avatarUrl}
                     name={creatorDisplayName(item)}
                     size={40}
-                    official={isOfficialCreator(item.creatorId, item.handle)}
+                    official={isVerifiedChannel(item.creatorId || item.userId, item.handle)}
                   />
                 </button>
                 <div className="min-w-0">
@@ -578,7 +574,7 @@ export default function WatchPage({
                     className="flex items-center gap-1.5 text-[15px] font-semibold text-white hover:text-zinc-200 min-w-0"
                   >
                     <span className="truncate">{creatorDisplayName(item)}</span>
-                    {isOfficialCreator(item.creatorId, item.handle) ? <VerifiedBadge /> : null}
+                    {isVerifiedChannel(item.creatorId || item.userId, item.handle) ? <VerifiedBadge title={isOfficialCreator(item.creatorId || item.userId, item.handle) ? 'Official channel' : 'Verified'} /> : null}
                   </button>
                   <p className="text-xs text-[#aaa] mt-0.5">
                     {viewsLabel(views)}

@@ -106,6 +106,9 @@ export default function Sidebar({ currentView, onNavigate, open, onClose }) {
           <div className="ml-2 space-y-0.5 border-l border-zinc-800 pl-2">
             <NavBtn active={currentView === 'stats'} onClick={() => go('stats')} icon={Activity} label="Stats" />
             <NavBtn active={currentView === 'support'} onClick={() => go('support')} icon={LifeBuoy} label="Support" />
+            {isAuthenticated && (
+              <NavBtn active={currentView === 'verify'} onClick={() => go('verify')} icon={ShieldCheck} label="Get verified" />
+            )}
             {isAuthenticated && user?.creatorStatus !== 'approved' && (
               <NavBtn active={currentView === 'creator-apply'} onClick={() => go('creator-apply')} icon={ShieldCheck} label="Apply to create" />
             )}

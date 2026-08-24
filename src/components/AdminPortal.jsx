@@ -3,10 +3,8 @@ import {
   isAdminSession, adminLogin, adminLogout, listApplications, setApplicationStatus,
   listTickets, updateTicket, listIndexedUsers, listImports, listUserClips,
 } from '../lib/moderation'
-import {
-  listAdApplications, approveAdApplication, rejectAdApplication,
-  adsAreRunning, setAdsRunning, listAllCampaigns, saveAdvertiserCampaign,
-} from '../lib/adEngine'
+import { listIdVerifications, setIdVerificationStatus } from '../lib/verification'
+import { adsAreRunning } from '../lib/adEngine'
 import {
   getPayoutSettings, setPayoutSettings, setCreatorRpm, listCreatorBalances,
   recordManualPayout, listPayoutLedger, getPayoutContact,
@@ -15,6 +13,7 @@ import { lsGet, lsSet } from '../lib/storage'
 import { useAuth } from '../context/AuthContext'
 import { ORG, OPS_CHECKLIST, applicationsAreOpen, applicationsWindowLabel } from '../lib/orgConfig'
 import AdminPromos from './AdminPromos'
+import AdminAds from './AdminAds'
 
 const TABS = [
   ['ops', 'Overview'],
@@ -22,6 +21,7 @@ const TABS = [
   ['ads', 'Ads'],
   ['promos', 'Promos'],
   ['applications', 'Creators'],
+  ['id-checks', 'ID checks'],
   ['tickets', 'Support'],
   ['users', 'Users'],
   ['content', 'Content'],
@@ -75,14 +75,12 @@ export default function AdminPortal() {
 
   const apps = listApplications()
   const pendingApps = apps.filter((a) => a.status === 'pending')
-  const adApps = listAdApplications()
   const tickets = listTickets()
   const openTickets = tickets.filter((t) => t.status === 'open')
   const users = listIndexedUsers()
   const imports = listImports()
   const clips = listUserClips()
   const live = lsGet('live_board', [])
-  const campaigns = listAllCampaigns()
   const balances = listCreatorBalances()
   const ledger = listPayoutLedger()
   const adsOn = adsAreRunning()
@@ -118,7 +116,7 @@ export default function AdminPortal() {
         <div>
           <h1 className="text-lg font-semibold text-white">Admin</h1>
           <p className="text-[11px] text-zinc-500 mt-0.5">
-            Ads {adsOn ? 'ON' : 'off'} · ${getPayoutSettings().rpmPerThousand}/1k views · pending creators {pendingApps.length} · tickets {openTickets.length}
+            Ads {adsOn ? 'ON' : 'off'} · ${getPayoutSettings().rpmPerThousand}/1k views · pending creators {pendingApps.length} · ID checks {listIdVerifications().filter((r) => r.status === 'pending').length} · tickets {openTickets.length}
           </p>
         </div>
         <button type="button" onClick={() => { adminLogout(); setUnlocked(false) }} className="text-xs text-zinc-500">Sign out admin</button>
@@ -239,84 +237,7 @@ export default function AdminPortal() {
         </div>
       )}
 
-      {tab === 'ads' && (
-        <div className="space-y-4">
-          <div className="rounded-xl border border-zinc-800 bg-[#121218] p-4 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-medium text-white">Site ads</p>
-              <p className="text-xs text-zinc-500">Off means watch and clips never show preroll, even if a campaign is scheduled.</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => { setAdsRunning(!adsOn); refresh() }}
-              className={`h-10 px-4 rounded-lg text-xs font-semibold ${adsOn ? 'bg-white text-black' : 'border border-zinc-700 text-zinc-300'}`}
-            >
-              {adsOn ? 'Ads are ON' : 'Ads are off'}
-            </button>
-          </div>
-          <p className="text-sm text-white">Applications</p>
-          {adApps.length === 0 ? (
-            <p className="text-xs text-zinc-500">No advertisement applications yet.</p>
-          ) : (
-            adApps.map((a) => (
-              <div key={a.id} className="rounded-xl border border-zinc-800 bg-[#121218] p-4 text-sm space-y-2">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <span className="font-bold text-white">{a.businessName}</span>
-                    <span className="ml-2 text-xs text-zinc-400">{a.contactName} ({a.email})</span>
-                  </div>
-                  <Pill on={a.status === 'approved'}>{a.status}</Pill>
-                </div>
-                <p className="text-xs text-zinc-400">{a.website} · {a.monthlyBudget} · {a.targetAudience}</p>
-                {a.campaignGoals ? <p className="text-xs text-zinc-300">"{a.campaignGoals}"</p> : null}
-                {a.status === 'approved' && a.account && (
-                  <div className="p-3 rounded-lg bg-black border border-zinc-800 text-xs text-zinc-300 space-y-1">
-                    <p className="font-semibold text-white">Portal login (show this once)</p>
-                    <p>Username <code className="text-white">{a.account.username}</code></p>
-                    <p>Password <code className="text-white">{a.account.password}</code></p>
-                  </div>
-                )}
-                {a.status === 'pending' && (
-                  <div className="flex gap-2 pt-1">
-                    <button type="button" onClick={async () => { await approveAdApplication(a.id); refresh() }} className="h-8 px-4 rounded-lg bg-white text-black text-xs font-bold">Approve</button>
-                    <button type="button" onClick={() => { rejectAdApplication(a.id); refresh() }} className="h-8 px-3 rounded-lg bg-red-600 text-white text-xs">Reject</button>
-                  </div>
-                )}
-              </div>
-            ))
-          )}
-          <p className="text-sm text-white pt-2">Campaigns</p>
-          {campaigns.length === 0 ? <p className="text-xs text-zinc-500">No campaigns. Approve a brand, then schedule here.</p> : campaigns.map((c) => (
-            <div key={c.id} className="rounded-xl border border-zinc-800 bg-[#121218] p-4 text-xs space-y-2">
-              <div className="flex justify-between gap-2">
-                <p className="text-sm text-white">{c.headline} · {c.businessName}</p>
-                <Pill on={c.status === 'active'}>{c.status}</Pill>
-              </div>
-              <p className="text-zinc-500">{c.impressions || 0} impressions · {c.clicks || 0} clicks</p>
-              <div className="grid sm:grid-cols-4 gap-2">
-                <select
-                  value={c.status}
-                  onChange={(e) => { saveAdvertiserCampaign({ ...c, status: e.target.value }); refresh() }}
-                  className="h-9 rounded-lg border border-zinc-800 bg-black px-2 text-white"
-                >
-                  <option value="draft">draft</option>
-                  <option value="scheduled">scheduled</option>
-                  <option value="active">active</option>
-                  <option value="paused">paused</option>
-                  <option value="ended">ended</option>
-                </select>
-                <label className="text-zinc-500">Start
-                  <input type="datetime-local" defaultValue={c.startsAt ? c.startsAt.slice(0, 16) : ''} onBlur={(e) => { saveAdvertiserCampaign({ ...c, startsAt: e.target.value ? new Date(e.target.value).toISOString() : '' }); refresh() }} className="mt-1 block w-full h-9 rounded-lg border border-zinc-800 bg-black px-2 text-white" />
-                </label>
-                <label className="text-zinc-500">End
-                  <input type="datetime-local" defaultValue={c.endsAt ? c.endsAt.slice(0, 16) : ''} onBlur={(e) => { saveAdvertiserCampaign({ ...c, endsAt: e.target.value ? new Date(e.target.value).toISOString() : '' }); refresh() }} className="mt-1 block w-full h-9 rounded-lg border border-zinc-800 bg-black px-2 text-white" />
-                </label>
-                <input defaultValue={c.targetUrl || ''} placeholder="https link" onBlur={(e) => { try { saveAdvertiserCampaign({ ...c, targetUrl: e.target.value }); refresh() } catch {} }} className="h-9 self-end rounded-lg border border-zinc-800 bg-black px-2 text-white" />
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {tab === 'ads' && <AdminAds />}
 
       {tab === 'promos' && <AdminPromos />}
 
@@ -337,6 +258,33 @@ export default function AdminPortal() {
         ))
       )}
 
+      {tab === 'id-checks' && (
+        listIdVerifications().length === 0 ? <p className="text-xs text-zinc-500">No ID submissions yet.</p> :
+        listIdVerifications().map((row) => (
+          <div key={row.id} className="rounded-xl border border-zinc-800 bg-[#121218] p-4 text-sm mb-3">
+            <p className="text-zinc-100">{row.displayName} @{row.handle} · {row.status}</p>
+            <p className="text-[11px] text-zinc-500 mt-0.5">Creator status is separate. Accepting this only adds a checkmark.</p>
+            <div className="mt-3 grid sm:grid-cols-2 gap-3">
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-zinc-500 mb-1">Front</p>
+                {row.frontThumb ? <img src={row.frontThumb} alt="" className="w-full max-h-56 object-contain rounded-lg bg-black" /> : <p className="text-xs text-zinc-600">No photo</p>}
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-zinc-500 mb-1">Back</p>
+                {row.backThumb ? <img src={row.backThumb} alt="" className="w-full max-h-56 object-contain rounded-lg bg-black" /> : <p className="text-xs text-zinc-600">No photo</p>}
+              </div>
+            </div>
+            {row.note ? <p className="text-xs text-zinc-400 mt-2">{row.note}</p> : null}
+            {row.status === 'pending' && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                <button type="button" onClick={() => { setIdVerificationStatus(row.id, 'approved'); refresh() }} className="h-8 px-3 rounded-lg bg-white text-black text-xs font-semibold">Accept</button>
+                <button type="button" onClick={() => { setIdVerificationStatus(row.id, 'denied'); refresh() }} className="h-8 px-3 rounded-lg bg-red-600 text-white text-xs font-semibold">Deny</button>
+              </div>
+            )}
+          </div>
+        ))
+      )}
+
       {tab === 'tickets' && (
         tickets.length === 0 ? <p className="text-xs text-zinc-500">No tickets.</p> :
         tickets.map((t) => (
@@ -351,7 +299,10 @@ export default function AdminPortal() {
         ))
       )}
       {tab === 'users' && users.map((u) => (
-        <div key={u.id} className="text-xs border-b border-zinc-800 py-2 text-zinc-400">{u.displayName} · {u.email} · @{u.handle} · {u.creatorStatus}</div>
+        <div key={u.id} className="text-xs border-b border-zinc-800 py-2 text-zinc-400">
+          {u.displayName} · {u.email} · @{u.handle} · creator {u.creatorStatus}
+          {listIdVerifications().some((r) => r.userId === u.id && r.status === 'approved') ? ' · checkmark' : ''}
+        </div>
       ))}
       {tab === 'content' && (<>{imports.map((i) => <div key={i.id} className="text-xs text-zinc-500 py-1">{i.title || i.url}</div>)}{clips.map((c) => <div key={c.id} className="text-xs text-zinc-500 py-1">{c.title}</div>)}</>)}
       {tab === 'live' && (live.length === 0 ? <p className="text-xs text-zinc-500">No live board entries.</p> : live.map((l) => <div key={l.userId + l.startedAt} className="text-xs py-1">{l.isLive ? 'LIVE' : 'ended'} · {l.title} · @{l.handle}</div>))}

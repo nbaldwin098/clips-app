@@ -16,6 +16,7 @@ export const NOTIF_TYPES = {
   upload: 'upload',
   premium: 'premium',
   application: 'application',
+  verification: 'verification',
   report: 'report',
   ticket: 'ticket',
   held_comment: 'held_comment',
@@ -31,12 +32,13 @@ const TYPE_PREF = {
   upload: 'uploads',
   premium: 'premium',
   application: 'application',
+  verification: 'application',
   report: 'reports',
   ticket: 'reports',
   held_comment: 'comments',
 }
 
-const ALWAYS_DELIVER = new Set(['application'])
+const ALWAYS_DELIVER = new Set(['application', 'verification'])
 
 export const DEFAULT_NOTIF_PREFS = {
   all: true,
@@ -373,6 +375,35 @@ export function notifyApplicationSubmitted(userId, handle) {
     title: `@${handle || 'someone'} applied to create`,
     actorId: userId,
     view: 'admin',
+  })
+}
+
+export function notifyIdVerificationSubmitted(userId, handle) {
+  createNotification({
+    userId,
+    type: NOTIF_TYPES.verification,
+    title: 'We received your ID for a checkmark',
+    body: 'Front and back are in review. This is not a creator application.',
+    view: 'verify',
+  })
+  notifyMany(findAdminIds(), {
+    type: NOTIF_TYPES.verification,
+    title: `@${handle || 'someone'} submitted an ID for a checkmark`,
+    actorId: userId,
+    view: 'admin',
+  })
+}
+
+export function notifyIdVerificationStatus(userId, status, note = '') {
+  const approved = status === 'approved'
+  createNotification({
+    userId,
+    type: NOTIF_TYPES.verification,
+    title: approved ? 'Your checkmark was accepted' : 'Your checkmark was denied',
+    body: approved
+      ? 'The checkmark is on your channel. Creator status is separate.'
+      : (note || 'You can upload new ID photos and try again.'),
+    view: 'verify',
   })
 }
 

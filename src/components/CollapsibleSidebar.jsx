@@ -26,6 +26,7 @@ import {
   Bell,
   Activity,
   Megaphone,
+  BadgeCheck,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { lsGet } from '../lib/storage'
@@ -35,6 +36,7 @@ import ChannelAvatar from './ChannelAvatar'
 import VerifiedBadge from './VerifiedBadge'
 import { cn } from '../lib/utils'
 import { isOfficialCreator } from '../lib/uiFormat'
+import { isVerifiedChannel } from '../lib/verification'
 
 const itemCls = (active) =>
   cn(
@@ -219,12 +221,12 @@ export default function CollapsibleSidebar({
                 collapsed ? 'justify-center py-1.5' : 'gap-2.5 px-2.5 py-1.5'
               )}
             >
-              <ChannelAvatar src={c.avatarUrl} name={c.displayName} size={collapsed ? 32 : 28} official={!collapsed && isOfficialCreator(c.id, c.handle)} />
+              <ChannelAvatar src={c.avatarUrl} name={c.displayName} size={collapsed ? 32 : 28} official={!collapsed && isVerifiedChannel(c.id, c.handle)} />
               {!collapsed && (
                 <span className="min-w-0">
                   <span className="flex items-center gap-1 text-[12px] text-zinc-200 truncate">
                     {c.displayName}
-                    {isOfficialCreator(c.id, c.handle) ? <VerifiedBadge /> : null}
+                    {isVerifiedChannel(c.id, c.handle) ? <VerifiedBadge title={isOfficialCreator(c.id, c.handle) ? 'Official channel' : 'Verified'} /> : null}
                   </span>
                   <span className="block text-[11px] text-[#aaa] truncate">@{c.handle}</span>
                 </span>
@@ -248,6 +250,9 @@ export default function CollapsibleSidebar({
             <div className={cn('space-y-0.5', collapsed ? '' : 'ml-2 border-l border-[#23232c] pl-2')}>
               <NavBtn collapsed={collapsed} active={currentView === 'stats'} onClick={() => go('stats')} icon={Activity} label="Stats" />
               <NavBtn collapsed={collapsed} active={currentView === 'support'} onClick={() => go('support')} icon={LifeBuoy} label="Support" />
+              {isAuthenticated && (
+                <NavBtn collapsed={collapsed} active={currentView === 'verify'} onClick={() => go('verify')} icon={BadgeCheck} label="Get verified" />
+              )}
               {isAuthenticated && user?.creatorStatus !== 'approved' && (
                 <NavBtn collapsed={collapsed} active={currentView === 'creator-apply'} onClick={() => go('creator-apply')} icon={ShieldCheck} label="Apply to create" />
               )}

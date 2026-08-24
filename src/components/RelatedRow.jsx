@@ -1,5 +1,6 @@
 import PostedStamp from './PostedStamp'
-import { creatorDisplayName, formatDuration, isOfficialCreator, viewsLabel } from '../lib/uiFormat'
+import { creatorDisplayName, formatDuration, viewsLabel } from '../lib/uiFormat'
+import { isVerifiedChannel } from '../lib/verification'
 import { getViews } from '../lib/engagement'
 import VerifiedBadge from './VerifiedBadge'
 
@@ -8,7 +9,7 @@ export default function RelatedRow({ item, onOpen }) {
   const thumb = item.thumbUrl || item.mediaUrl
   const views = getViews(item.id)
   const name = creatorDisplayName(item)
-  const official = isOfficialCreator(item.creatorId || item.userId, item.handle)
+  const official = isVerifiedChannel(item.creatorId || item.userId, item.handle)
   const vertical = item.type === 'short' || item.type === 'pic'
 
   return (

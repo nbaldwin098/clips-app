@@ -13,6 +13,9 @@ import {
   changeAdvertiserPassword,
   getAdvertiserCampaigns,
   saveAdvertiserCampaign,
+  AD_PLACEMENTS,
+  ALL_PLACEMENTS,
+  campaignPlacements,
 } from '../lib/adEngine'
 import PageHeader from './PageHeader'
 
@@ -35,9 +38,13 @@ export default function AdvertiserPortal({ onNavigate }) {
   const [campaigns, setCampaigns] = useState([])
   const [createOpen, setCreateOpen] = useState(false)
   const [headline, setHeadline] = useState('')
+  const [body, setBody] = useState('')
   const [ctaText, setCtaText] = useState('Learn More')
   const [targetUrl, setTargetUrl] = useState('')
+  const [imageUrl, setImageUrl] = useState('')
   const [durationSec, setDurationSec] = useState(15)
+  const [skipAfterSec, setSkipAfterSec] = useState(5)
+  const [placements, setPlacements] = useState(() => [...ALL_PLACEMENTS])
 
   useEffect(() => {
     if (session?.advertiserId) {
@@ -88,20 +95,30 @@ export default function AdvertiserPortal({ onNavigate }) {
       saveAdvertiserCampaign({
         advertiserId: session.advertiserId,
         businessName: session.businessName,
-        headline: headline.trim() || 'Sponsored Video Ad',
+        headline: headline.trim() || 'Sponsored',
+        body: body.trim(),
         ctaText: ctaText.trim() || 'Learn More',
         targetUrl: targetUrl.trim(),
+        imageUrl: imageUrl.trim(),
         durationSec: Number(durationSec) || 15,
-        skipAfterSec: 5,
+        skipAfterSec: Number(skipAfterSec) || 5,
+        placements: placements.length ? placements : [...ALL_PLACEMENTS],
         status: 'draft',
       })
       setCampaigns(getAdvertiserCampaigns(session.advertiserId))
       setCreateOpen(false)
       setHeadline('')
+      setBody('')
       setTargetUrl('')
+      setImageUrl('')
+      setPlacements([...ALL_PLACEMENTS])
     } catch (err) {
       setPwError(err?.message || 'Could not save campaign.')
     }
+  }
+
+  const togglePlace = (id) => {
+    setPlacements((cur) => (cur.includes(id) ? cur.filter((p) => p !== id) : [...cur, id]))
   }
 
   if (!session) {
@@ -241,8 +258,8 @@ export default function AdvertiserPortal({ onNavigate }) {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-base font-bold text-white">Your Video & Preroll Advertisements</h2>
-            <p className="text-xs text-zinc-500">Configured 5-second skippable video ads displayed across Clips.</p>
+            <h2 className="text-base font-bold text-white">Your campaigns</h2>
+            <p className="text-xs text-zinc-500">Skippable preroll on videos. Bottom banners and in-feed tiles on clips and pics.</p>
           </div>
           <button
             type="button"
@@ -255,20 +272,20 @@ export default function AdvertiserPortal({ onNavigate }) {
 
         {createOpen && (
           <form onSubmit={handleSaveCampaign} className="rounded-2xl border border-zinc-800 bg-[#15151e] p-5 space-y-4">
-            <h3 className="text-sm font-bold text-white">Create New Video Ad</h3>
+            <h3 className="text-sm font-bold text-white">Create campaign</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <label className="block text-xs font-semibold text-zinc-300">
-                Headline / Overlay Copy *
+                Headline *
                 <input
                   required
                   value={headline}
                   onChange={(e) => setHeadline(e.target.value)}
-                  placeholder="e.g. Try our premium creator studio tools"
+                  placeholder="e.g. Try our creator tools"
                   className={inputCls}
                 />
               </label>
               <label className="block text-xs font-semibold text-zinc-300">
-                Call To Action Text
+                Button text
                 <input
                   value={ctaText}
                   onChange={(e) => setCtaText(e.target.value)}
@@ -277,9 +294,18 @@ export default function AdvertiserPortal({ onNavigate }) {
                 />
               </label>
             </div>
+            <label className="block text-xs font-semibold text-zinc-300">
+              Short line under the headline
+              <input
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                placeholder="Optional supporting copy"
+                className={inputCls}
+              />
+            </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <label className="block text-xs font-semibold text-zinc-300">
-                Landing Page Destination URL *
+                Landing page URL *
                 <input
                   required
                   value={targetUrl}
@@ -289,17 +315,57 @@ export default function AdvertiserPortal({ onNavigate }) {
                 />
               </label>
               <label className="block text-xs font-semibold text-zinc-300">
-                Preroll Max Duration (Seconds)
+                Image URL (banners and in-feed)
+                <input
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="https://…/creative.jpg"
+                  className={inputCls}
+                />
+              </label>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <label className="block text-xs font-semibold text-zinc-300">
+                Preroll length
                 <select
                   value={durationSec}
                   onChange={(e) => setDurationSec(Number(e.target.value))}
                   className={inputCls}
                 >
-                  <option value={15}>15 seconds (Skip after 5s)</option>
-                  <option value={20}>20 seconds (Skip after 5s)</option>
-                  <option value={30}>30 seconds (Skip after 5s)</option>
+                  <option value={15}>15 seconds</option>
+                  <option value={20}>20 seconds</option>
+                  <option value={30}>30 seconds</option>
                 </select>
               </label>
+              <label className="block text-xs font-semibold text-zinc-300">
+                Skip after (seconds)
+                <input
+                  type="number"
+                  min="3"
+                  max="30"
+                  value={skipAfterSec}
+                  onChange={(e) => setSkipAfterSec(Number(e.target.value) || 5)}
+                  className={inputCls}
+                />
+              </label>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-zinc-300 mb-2">Where this ad can show</p>
+              <div className="flex flex-wrap gap-1.5">
+                {AD_PLACEMENTS.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    title={p.hint}
+                    onClick={() => togglePlace(p.id)}
+                    className={`h-8 px-2.5 rounded-lg text-[11px] font-medium ${
+                      placements.includes(p.id) ? 'bg-white text-black' : 'border border-zinc-800 text-zinc-400'
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <button
@@ -334,12 +400,16 @@ export default function AdvertiserPortal({ onNavigate }) {
                   <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
                     {c.status || 'Active'}
                   </span>
-                  <span className="text-xs text-zinc-500">Skip after 5s</span>
+                  <span className="text-xs text-zinc-500">Skip after {c.skipAfterSec || 5}s</span>
                 </div>
 
                 <div>
                   <h4 className="text-sm font-bold text-white">{c.headline}</h4>
+                  {c.body ? <p className="text-xs text-zinc-400 mt-1">{c.body}</p> : null}
                   <p className="text-xs text-zinc-400 mt-1 truncate">{c.targetUrl}</p>
+                  <p className="text-[11px] text-zinc-500 mt-1">
+                    {campaignPlacements(c).map((id) => AD_PLACEMENTS.find((p) => p.id === id)?.label || id).join(' · ')}
+                  </p>
                 </div>
 
                 {/* Performance Metrics */}

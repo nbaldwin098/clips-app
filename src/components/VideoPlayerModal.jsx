@@ -1,15 +1,16 @@
-import { useState, useEffect, useRef } from 'react'
-import { X, ExternalLink, Clock, SkipForward, ArrowUpRight, AlertCircle, Loader2, Music, Download } from 'lucide-react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { X, ExternalLink, Clock, AlertCircle, Loader2, Music, Download } from 'lucide-react'
 import { getMediaBlobUrl } from '../lib/videoStorage'
 import { parseEmbedUrl } from '../lib/videoEmbed'
 import { recordView, getViews } from '../lib/engagement'
 import { recordWatchProgress } from '../lib/watchProgress'
 import { recordInteraction } from '../lib/algorithmEngine'
-import { getActiveAdForVideo, recordAdImpression, recordAdClick, recordAdSkip } from '../lib/adEngine'
+import { getActiveAdForVideo, recordAdImpression, recordAdSkip } from '../lib/adEngine'
 import { useAuth } from '../context/AuthContext'
-import { openSafeUrl, safeIframeSrc, safeMediaUrl } from '../lib/safeUrl'
+import { safeIframeSrc, safeMediaUrl } from '../lib/safeUrl'
 import PostedStamp from './PostedStamp'
 import { downloadPostedMedia } from '../lib/mediaDownload'
+import { VideoPreroll } from './AdUnits'
 
 function isHttp(url) {
   return typeof url === 'string' && (url.startsWith('https://') || url.startsWith('http://'))
@@ -43,10 +44,8 @@ export default function VideoPlayerModal({ item, onClose }) {
   const [views, setViews] = useState(() => (item?.id ? getViews(item.id) : 0))
   const [showFullDesc, setShowFullDesc] = useState(false)
   const [activeAd, setActiveAd] = useState(null)
-  const [adSecondsLeft, setAdSecondsLeft] = useState(5)
-  const [canSkipAd, setCanSkipAd] = useState(false)
   const [adDismissed, setAdDismissed] = useState(false)
-  const adTimerRef = useRef(null)
+  const showingAdRef = useRef(false)
   const candidatesRef = useRef([])
   const attemptRef = useRef(0)
   const videoRef = useRef(null)
@@ -100,24 +99,12 @@ export default function VideoPlayerModal({ item, onClose }) {
     if (ad) {
       setActiveAd(ad)
       recordAdImpression(ad.id)
-      setAdSecondsLeft(5)
-      setCanSkipAd(false)
-      let count = 5
-      adTimerRef.current = setInterval(() => {
-        count -= 1
-        setAdSecondsLeft(count)
-        if (count <= 0) {
-          setCanSkipAd(true)
-          clearInterval(adTimerRef.current)
-        }
-      }, 1000)
     } else {
       setActiveAd(null)
     }
 
     return () => {
       cancelled = true
-      if (adTimerRef.current) clearInterval(adTimerRef.current)
     }
   }, [item?.id, item?.mediaUrl, item?.sourceUrl, item?.origin, item?.hosted])
 
@@ -147,31 +134,41 @@ export default function VideoPlayerModal({ item, onClose }) {
   }
 
   const onVideoCanPlay = () => {
-    // Ensure autoplay kicks in once buffer is ready
     const el = videoRef.current
-    if (el) {
-      el.play?.().catch(() => {
-        // muted autoplay fallback
-        el.muted = true
-        el.play?.().catch(() => {})
-      })
+    if (!el) return
+    if (showingAdRef.current) {
+      el.pause()
+      return
     }
+    el.play?.().catch(() => {
+      el.muted = true
+      el.play?.().catch(() => {})
+    })
   }
 
-  if (!item) return null
+  const showingAd = Boolean(activeAd && !adDismissed)
+  showingAdRef.current = showingAd
 
-  const handleSkipAd = () => {
+  const skipAd = useCallback(() => {
     if (activeAd) recordAdSkip(activeAd.id)
     setAdDismissed(true)
-    if (adTimerRef.current) clearInterval(adTimerRef.current)
-  }
+  }, [activeAd])
 
-  const handleAdClick = () => {
-    if (activeAd) {
-      recordAdClick(activeAd.id)
-      if (activeAd.targetUrl) openSafeUrl(activeAd.targetUrl)
+  useEffect(() => {
+    const el = videoRef.current
+    if (!el) return
+    if (showingAd) {
+      el.pause()
+      return
     }
-  }
+    if (phase !== 'ready' || mode !== 'video') return
+    el.play?.().catch(() => {
+      el.muted = true
+      el.play?.().catch(() => {})
+    })
+  }, [showingAd, phase, mode, playSrc])
+
+  if (!item) return null
 
   const handleTimeUpdate = (e) => {
     const video = e.target
@@ -219,28 +216,9 @@ export default function VideoPlayerModal({ item, onClose }) {
         </div>
 
         <div className={`relative w-full bg-black flex items-center justify-center ${isVertical ? 'aspect-[9/16] max-h-[72vh]' : 'aspect-video max-h-[65vh]'} overflow-hidden`}>
-          {activeAd && !adDismissed && (
-            <div className="absolute inset-0 z-30 bg-black/80 flex flex-col justify-between p-4 sm:p-6">
-              <div className="flex items-center justify-between">
-                <span className="px-2 py-0.5 rounded bg-amber-500 text-black text-[10px] font-extrabold uppercase">Ad</span>
-                {canSkipAd ? (
-                  <button type="button" onClick={handleSkipAd} className="inline-flex items-center gap-1.5 h-8 px-4 rounded-xl bg-white text-black text-xs font-bold">
-                    Skip Ad <SkipForward className="h-3.5 w-3.5" />
-                  </button>
-                ) : (
-                  <div className="px-3 py-1 rounded-xl bg-black/80 border border-zinc-700 text-zinc-300 text-xs">
-                    Skip in <span className="font-bold text-white">{adSecondsLeft}s</span>
-                  </div>
-                )}
-              </div>
-              <div className="max-w-md space-y-2 bg-[#12121a]/95 p-4 rounded-2xl border border-zinc-800">
-                <p className="text-base font-bold text-white">{activeAd.headline}</p>
-                <button type="button" onClick={handleAdClick} className="inline-flex items-center gap-1.5 h-8 px-4 rounded-lg bg-white text-black text-xs font-bold">
-                  {activeAd.ctaText || 'Learn More'} <ArrowUpRight className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            </div>
-          )}
+          {showingAd ? (
+            <VideoPreroll ad={activeAd} onSkip={skipAd} onComplete={() => setAdDismissed(true)} />
+          ) : null}
 
           {phase === 'loading' && (
             <div className="flex flex-col items-center gap-3 text-zinc-400">
@@ -249,7 +227,7 @@ export default function VideoPlayerModal({ item, onClose }) {
             </div>
           )}
 
-          {phase === 'ready' && mode === 'iframe' && safeIframeSrc(playSrc) && (
+          {phase === 'ready' && mode === 'iframe' && !showingAd && safeIframeSrc(playSrc) && (
             <iframe
               key={playSrc}
               src={safeIframeSrc(playSrc)}
@@ -268,7 +246,7 @@ export default function VideoPlayerModal({ item, onClose }) {
               key={playSrc}
               src={safeMediaUrl(playSrc)}
               controls
-              autoPlay
+              autoPlay={!showingAd}
               playsInline
               preload="auto"
               onCanPlay={onVideoCanPlay}
