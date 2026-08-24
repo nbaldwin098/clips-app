@@ -41,7 +41,7 @@ export default function AdminAds() {
         <div>
           <p className="text-sm font-medium text-white">Site ads</p>
           <p className="text-xs text-zinc-500 mt-0.5">
-            Videos use skippable preroll like YouTube. Clips and pics use a bottom banner, plus ads between items as people scroll.
+            Videos use the ExoClick VAST tag as a skippable preroll (skip after 5 seconds, like YouTube). Videos 8 minutes or longer also get mid-rolls. Clips and pics use a bottom banner, plus ads between items as people scroll. If the VAST tag has no fill, the video starts — we do not invent a fake ad.
           </p>
         </div>
         <button
@@ -57,7 +57,7 @@ export default function AdminAds() {
         <p className="text-sm font-medium text-white">Where ads show</p>
         <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-2">
           {[
-            ['videoPreroll', 'Videos', 'YouTube preroll'],
+            ['videoPreroll', 'Videos', 'ExoClick VAST preroll + mid-roll'],
             ['clipBanner', 'Clips banner', 'Bottom of clip'],
             ['clipInFeed', 'Clips in-feed', 'Between clips'],
             ['picBanner', 'Pics banner', 'Bottom of photo'],

@@ -29,6 +29,9 @@ import ChannelAvatar from './ChannelAvatar'
 import VerifiedBadge from './VerifiedBadge'
 import SubscribeButton from './SubscribeButton'
 import { VideoPreroll } from './AdUnits'
+import VideoInStreamAd from './VideoInStreamAd'
+import { useVideoVastAds } from '../hooks/useVideoVastAds'
+import { videoVastAdsEnabled } from '../lib/vastAds'
 import { creatorDisplayName, isOfficialCreator, likesLabel, viewsLabel, formatDuration } from '../lib/uiFormat'
 import { isVerifiedChannel } from '../lib/verification'
 import { startPremiumCheckout } from '../lib/checkout'
@@ -146,6 +149,7 @@ export default function WatchPage({
   const countRef = useRef(null)
   const appliedStart = useRef(false)
   const showingAdRef = useRef(false)
+  const vast = useVideoVastAds(item)
 
   const [descOpen, setDescOpen] = useState(false)
   const chapters = useMemo(() => {
@@ -201,12 +205,16 @@ export default function WatchPage({
       setPhase(res.playSrc ? 'ready' : 'failed')
     })
 
-    const ad = getActiveAdForVideo(item.id)
-    if (ad) {
-      setActiveAd(ad)
-      recordAdImpression(ad.id)
-    } else {
+    if (item.type === 'video' && videoVastAdsEnabled()) {
       setActiveAd(null)
+    } else {
+      const ad = getActiveAdForVideo(item.id)
+      if (ad) {
+        setActiveAd(ad)
+        recordAdImpression(ad.id)
+      } else {
+        setActiveAd(null)
+      }
     }
 
     return () => {
@@ -220,7 +228,8 @@ export default function WatchPage({
     setWatchPrefs({ defaultSpeed: speed })
   }, [speed, playSrc])
 
-  const showingAd = Boolean(activeAd && !adDismissed)
+  const showingCampaignAd = Boolean(activeAd && !adDismissed && !vast.showingVast)
+  const showingAd = vast.showingVast || showingCampaignAd
   showingAdRef.current = showingAd
   const locked = !canAccessPaidPost(user, item)
 
@@ -303,6 +312,9 @@ export default function WatchPage({
   const handleTimeUpdate = (e) => {
     const video = e.target
     if (!video?.duration || !item?.id) return
+    if (mode === 'video' && item.type === 'video') {
+      vast.onContentTime(video.currentTime, video.duration)
+    }
     const ratio = video.currentTime / video.duration
     if (user?.id) {
       recordWatchProgress(user.id, {
@@ -535,7 +547,11 @@ export default function WatchPage({
             {ambient && thumb ? (
               <img src={thumb} alt="" className="absolute inset-0 w-full h-full object-cover blur-3xl opacity-40 scale-110" />
             ) : null}
-            {showingAd ? (
+            {vast.creative ? (
+              <VideoInStreamAd creative={vast.creative} slot={vast.slot} onDone={vast.finishAd} />
+            ) : vast.awaitingPreroll ? (
+              <div className="absolute inset-0 z-30 bg-black" />
+            ) : showingCampaignAd ? (
               <VideoPreroll ad={activeAd} onSkip={skipAd} onComplete={() => setAdDismissed(true)} />
             ) : null}
             {phase === 'loading' && (
