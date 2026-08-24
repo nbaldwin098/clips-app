@@ -81,7 +81,7 @@ export default function RolesSettings() {
 
       <section className="pt-6 border-t border-zinc-800 space-y-3">
         <h2 className="text-sm font-semibold text-white">Channel rules</h2>
-        <p className="text-xs text-zinc-500">Viewers can type !rules in live chat. Mods can timeout, ban, and delete messages in chat.</p>
+        <p className="text-xs text-zinc-500">Viewers can type !rules in live chat. Creators and mods can type !ad to run a mid-stream ad. Mods can timeout, ban, and delete messages in chat.</p>
         <textarea
           value={staff.rules || ''}
           onChange={(e) => {

@@ -61,7 +61,7 @@ export default function CreatorDashboard({ onOpenImport, onOpenUpload, onNavigat
         {tile(BarChart3, 'Analytics', `${views} views`, () => onNavigate('analytics'))}
         {tile(Wallet, 'Wallet', approved ? `$${b.paid.toFixed(2)} paid` : 'Apply to earn', () => onNavigate('wallet'))}
         {tile(Settings, 'Channel', 'Profile & links', () => onNavigate('channel'))}
-        {tile(Key, 'Stream', 'Key & VOD channel', () => onNavigate('settings', 'stream'))}
+        {tile(Key, 'Stream', 'Key, VOD, live ads', () => onNavigate('settings', 'stream'))}
       </div>
       <div className="rounded-xl border border-zinc-800 bg-[#121218] p-4 mb-4">
         <p className="text-sm text-zinc-100 mb-3">Overview</p>

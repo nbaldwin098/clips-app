@@ -41,7 +41,7 @@ export default function AdminAds() {
         <div>
           <p className="text-sm font-medium text-white">Site ads</p>
           <p className="text-xs text-zinc-500 mt-0.5">
-            Videos use the ExoClick VAST tag as a skippable preroll (skip after 5 seconds, like YouTube). Videos 8 minutes or longer also get mid-rolls. Clips and pics get an ExoClick tile every 4 items, like ads between YouTube Shorts. If a tag has no fill, we do not invent a fake ad.
+            Videos use the ExoClick VAST tag as a skippable preroll (skip after 5 seconds, like YouTube). Videos 8 minutes or longer also get mid-rolls. Clip full ads sit every 4–6 clips, never twice in a row and never on a banner. Clip banners sit every 10 clips, never on a full ad. Live viewers get the video tag 30 seconds after they open a stream. Creators can run a separate live tag with !ad. If a tag has no fill, we do not invent a fake ad.
           </p>
         </div>
         <button
@@ -88,16 +88,7 @@ export default function AdminAds() {
               className={`${field} mt-1`}
             />
           </label>
-          <label className="text-[11px] text-zinc-400">Clip ad every N items
-            <input
-              type="number"
-              min="2"
-              max="24"
-              value={settings.clipFeedEvery}
-              onChange={(e) => patchSettings({ clipFeedEvery: e.target.value })}
-              className={`${field} mt-1`}
-            />
-          </label>
+          <p className="text-[11px] text-zinc-500 sm:col-span-2">Clip full ads cycle every 4, then 5, then 6 items. Banners are every 10. They never sit on the same clip or next to each other.</p>
           <label className="text-[11px] text-zinc-400">Pic ad every N items
             <input
               type="number"

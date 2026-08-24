@@ -5,6 +5,7 @@
 import { lsGet, lsSet } from './storage'
 import { safeHttpUrl } from './safeUrl'
 import { hashSecret, verifySecret, isHashedSecret } from './secrets'
+import { mixClipFeedRows, clipBannerAllowedOnMixed } from './feedAdCadence'
 
 const AD_APPS_KEY = 'clips_ad_applications'
 const ADVERTISERS_KEY = 'clips_advertisers'
@@ -30,9 +31,7 @@ const DEFAULT_AD_SETTINGS = {
   clipInFeed: true,
   picBanner: true,
   picInFeed: true,
-  // YouTube Shorts puts ads *between* videos (swipe past). There is no public fixed N;
-  // typical feeds show one about every 3–6 shorts. Match that with every 4.
-  clipFeedEvery: 4,
+  clipFeedEvery: 5,
   picFeedEvery: 4,
   videoSkipAfterSec: 5,
 }
@@ -332,8 +331,11 @@ export function mixFeedAds(items, placement) {
   const mapped = list.map((item) => ({ kind: 'item', item, key: item?.id }))
   const settings = getAdSettings()
   if (!settingAllows(placement, settings)) return mapped
-  const every = placement === 'pic-feed' ? settings.picFeedEvery : settings.clipFeedEvery
-  const exoFeed = placement === 'clip-feed' || placement === 'pic-feed'
+  if (placement === 'clip-feed') {
+    return mixClipFeedRows(list, { banners: settingAllows('clip-banner', settings) })
+  }
+  const every = settings.picFeedEvery
+  const exoFeed = placement === 'pic-feed'
   const campaigns = adsAreRunning() ? listActiveAds(placement) : []
   if (!exoFeed && !campaigns.length) return mapped
   const out = []
@@ -358,14 +360,10 @@ export function mixFeedAds(items, placement) {
   return out
 }
 
-/** Banner under a clip: about every 15 clips (in the 10–20 range), never on or next to a full in-feed ad. */
+/** Banner under a clip every 10 clips, never on or next to a full in-feed ad. */
 export function clipBannerAllowed(mixed, index) {
   if (!settingAllows('clip-banner')) return false
-  const row = mixed?.[index]
-  if (!row || row.kind === 'ad') return false
-  if (mixed[index - 1]?.kind === 'ad' || mixed[index + 1]?.kind === 'ad') return false
-  const n = mixed.slice(0, index + 1).filter((r) => r.kind === 'item').length
-  return n > 0 && n % 15 === 0
+  return clipBannerAllowedOnMixed(mixed, index)
 }
 
 export function recordAdImpression(adId) {

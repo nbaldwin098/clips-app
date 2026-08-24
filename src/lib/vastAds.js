@@ -1,10 +1,11 @@
 /**
- * ExoClick VAST in-stream ads for long-form videos only.
+ * ExoClick VAST in-stream ads for long-form videos and live stages.
  * Empty or failed tags do not invent a placeholder ad.
  */
 import { safeHttpUrl, safeMediaUrl } from './safeUrl.js'
 
 export const EXOCLICK_VAST_URL = 'https://s.magsrv.com/v1/vast.php?idz=6010924'
+export const EXOCLICK_LIVE_CREATOR_VAST_URL = 'https://s.magsrv.com/v1/vast.php?idz=6010934'
 export const YT_SKIP_AFTER_SEC = 5
 export const YT_MIDROLL_MIN_SEC = 8 * 60
 
@@ -18,11 +19,14 @@ export function videoVastAdsEnabled() {
   }
 }
 
-export function vastFetchUrl() {
-  if (typeof window === 'undefined') return EXOCLICK_VAST_URL
+export function vastFetchUrl(kind = 'video') {
+  const remote = kind === 'live-creator' ? EXOCLICK_LIVE_CREATOR_VAST_URL : EXOCLICK_VAST_URL
+  if (typeof window === 'undefined') return remote
   const host = window.location.hostname
-  if (host === 'localhost' || host === '127.0.0.1') return '/__vast/exo'
-  return EXOCLICK_VAST_URL
+  if (host === 'localhost' || host === '127.0.0.1') {
+    return kind === 'live-creator' ? '/__vast/exo-live' : '/__vast/exo'
+  }
+  return remote
 }
 
 export function parseVastClock(raw) {
@@ -124,12 +128,13 @@ export function fireVastPixel(url) {
   } catch { /* tracking is best-effort */ }
 }
 
-export async function loadExoClickVast({ depth = 0 } = {}) {
+export async function loadExoClickVast({ depth = 0, kind = 'video' } = {}) {
   if (depth > 3) return null
-  if (!videoVastAdsEnabled()) return null
+  if (kind === 'video' && !videoVastAdsEnabled()) return null
+  const fetchKind = kind === 'live-creator' ? 'live-creator' : 'video'
   let xml = ''
   try {
-    const res = await fetch(vastFetchUrl(), { credentials: 'omit' })
+    const res = await fetch(vastFetchUrl(fetchKind), { credentials: 'omit' })
     if (!res.ok) return null
     xml = await res.text()
   } catch {

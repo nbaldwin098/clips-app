@@ -12,6 +12,9 @@ import { watchingLabel } from '../lib/uiFormat'
 import { ensureStreamKey } from '../lib/streamKeys'
 import { archiveEndedLive } from '../lib/vods'
 import { canGoLive } from '../lib/trustSafety'
+import VideoInStreamAd from './VideoInStreamAd'
+import { useLiveStreamAds } from '../hooks/useLiveStreamAds'
+import { cueLiveAd } from '../lib/liveAds'
 
 function formatElapsed(startedAt) {
   if (!startedAt) return ''
@@ -159,6 +162,8 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
   }
 
   const subCount = focusedStream?.userId ? getSubscriberCount(focusedStream.userId) : 0
+  const isHost = Boolean(user?.id && focusedStream?.userId && user.id === focusedStream.userId)
+  const liveAds = useLiveStreamAds(focusedStream?.userId || null, { isHost })
 
   return (
     <div className="p-4 md:p-6 max-w-[1400px] mx-auto space-y-6">
@@ -204,6 +209,9 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
                 This screen is only on this browser. Other viewers still see the lobby until ingest is connected.
               </p>
             )}
+            {liveAds.creative ? (
+              <VideoInStreamAd creative={liveAds.creative} slot={liveAds.slot} onDone={liveAds.finishAd} />
+            ) : null}
           </div>
           <div className="p-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#23232c]">
             <div className="text-sm text-zinc-400">
@@ -212,6 +220,14 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
             </div>
             <div className="flex items-center gap-2">
               {isAuthenticated && user?.id === focusedStream.userId && (
+                <>
+                <button
+                  type="button"
+                  onClick={() => cueLiveAd(focusedStream.userId, 'live-creator')}
+                  className="h-9 px-3 rounded-full bg-white text-black text-xs font-semibold"
+                >
+                  Run ad
+                </button>
                 <button
                   type="button"
                   onClick={shareScreen}
@@ -219,6 +235,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
                 >
                   <MonitorUp className="h-4 w-4" /> {sharing ? 'Sharing this PC' : 'Share this screen'}
                 </button>
+                </>
               )}
               <SubscribeButton creatorId={focusedStream.userId} handle={focusedStream.handle} onOpenAuth={onOpenAuth} />
             </div>
