@@ -1,11 +1,12 @@
 import { useMemo, useEffect, useState, useRef } from 'react'
-import { ChevronLeft, Clapperboard, Heart, MessageCircle, Search, Share2, Volume2, VolumeX, X } from 'lucide-react'
+import { ChevronLeft, Clapperboard, Heart, MessageCircle, Search, Share2, Volume2, VolumeX, X, RotateCcw } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getStableShortsFeed, getStableFollowingFeed, getById } from '../lib/contentService'
 import { getMediaBlobUrl } from '../lib/videoStorage'
 import { parseEmbedUrl } from '../lib/videoEmbed'
 import { safeIframeSrc, safeMediaUrl } from '../lib/safeUrl'
 import { recordView, toggleVote, getVotes, getUserVote, isSubscribed, toggleSubscribe } from '../lib/engagement'
+import { getWatchProgress, recordWatchProgress } from '../lib/watchProgress'
 import { listComments } from '../lib/youtubeParity'
 import { recordInteraction } from '../lib/algorithmEngine'
 import { copyShareUrl } from '../lib/routes'
@@ -54,6 +55,34 @@ function ClipSlide({
   const viewCountedRef = useRef(false)
   const creatorId = item.creatorId || item.userId
   const commentCount = listComments(item.id).length
+  const [finished, setFinished] = useState(() => Boolean(user?.id && getWatchProgress(user.id, item.id)?.completed))
+
+  useEffect(() => {
+    setFinished(Boolean(user?.id && getWatchProgress(user.id, item.id)?.completed))
+  }, [user?.id, item.id, progress])
+
+  const watchAgain = (e) => {
+    e?.stopPropagation?.()
+    const el = vidRef.current
+    if (!el) return
+    try { el.currentTime = 0 } catch {}
+    el.play?.().catch(() => {
+      el.muted = true
+      el.play()?.catch(() => {})
+    })
+    if (user?.id) {
+      recordWatchProgress(user.id, {
+        contentId: item.id,
+        title: item.title,
+        sourceUrl: item.sourceUrl || item.mediaUrl,
+        watchRatio: 0,
+        durationSec: el.duration || item.durationSec || 0,
+        positionSec: 0,
+        creatorId,
+        handle: item.handle,
+      })
+    }
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -169,6 +198,11 @@ function ClipSlide({
       <RailBtn circled={circled} onClick={like} label={votes.up || 0} active={myVote === 'up'}>
         <Heart className={`h-7 w-7 ${myVote === 'up' ? 'fill-current' : ''}`} />
       </RailBtn>
+      {finished ? (
+        <RailBtn circled={circled} onClick={watchAgain} label="Again">
+          <RotateCcw className="h-6 w-6" />
+        </RailBtn>
+      ) : null}
       <RailBtn circled={circled} onClick={() => setCommentsOpen(true)} label={commentCount}>
         <MessageCircle className="h-7 w-7" />
       </RailBtn>
@@ -229,6 +263,19 @@ function ClipSlide({
               if (active && el.currentTime >= 1 && !viewCountedRef.current) {
                 viewCountedRef.current = true
                 recordView(item.id)
+              }
+              if (active && user?.id && el.duration && el.currentTime / el.duration >= 0.92) {
+                recordWatchProgress(user.id, {
+                  contentId: item.id,
+                  title: item.title,
+                  sourceUrl: item.sourceUrl || item.mediaUrl,
+                  watchRatio: el.currentTime / el.duration,
+                  durationSec: el.duration,
+                  positionSec: el.currentTime,
+                  creatorId,
+                  handle: item.handle,
+                })
+                setFinished(true)
               }
               if (el.currentTime + 0.35 < lastTime.current && user?.id && !looped.current) {
                 looped.current = true

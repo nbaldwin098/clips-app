@@ -3,7 +3,7 @@ import {
   Share2, ListPlus, Music, Clock, ExternalLink, AlertCircle,
   Loader2, SkipForward, SkipBack, ThumbsUp, ThumbsDown,
   Bookmark, PictureInPicture2, Subtitles, Maximize2, Clapperboard,
-  MoreHorizontal, Flag, Download,
+  MoreHorizontal, Flag, Download, RotateCcw,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getById, getWatchItem, getRelated, getMoreFromCreator, getWatchQueue } from '../lib/contentService'
@@ -245,6 +245,26 @@ export default function WatchPage({
   const showingAd = vast.showingVast || showingCampaignAd
   showingAdRef.current = showingAd
   const locked = useMemo(() => !canAccessPaidPost(user, item), [user, item, syncTick])
+  const watchProgress = useMemo(
+    () => (user?.id && item?.id ? getWatchProgress(user.id, item.id) : null),
+    [user?.id, item?.id, syncTick],
+  )
+  const canWatchAgain = Boolean(watchProgress?.completed || (watchProgress?.watchRatio || 0) >= 0.92 || endScreen)
+
+  const watchAgain = () => {
+    const el = videoRef.current
+    setEndScreen(false)
+    setCountdown(0)
+    if (countRef.current) clearInterval(countRef.current)
+    if (!el) return
+    try { el.currentTime = 0 } catch {}
+    if (!showingAdRef.current && !locked) {
+      el.play?.().catch(() => {
+        el.muted = true
+        el.play?.().catch(() => {})
+      })
+    }
+  }
 
   const skipAd = useCallback(() => {
     if (activeAd) recordAdSkip(activeAd.id)
@@ -757,6 +777,12 @@ export default function WatchPage({
                   <Share2 className="h-4 w-4" />
                   {copied === 'link' ? 'Copied' : 'Share'}
                 </Pill>
+                {canWatchAgain ? (
+                  <Pill onClick={watchAgain} title="Start from the beginning">
+                    <RotateCcw className="h-4 w-4" />
+                    Watch again
+                  </Pill>
+                ) : null}
                 <Pill onClick={save} active={isSaved}>
                   <Bookmark className={`h-4 w-4 ${isSaved ? 'fill-current' : ''}`} />
                   Save

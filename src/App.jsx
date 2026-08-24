@@ -12,6 +12,8 @@ import CreatorWallet from './components/CreatorWallet'
 import SettingsHub from './components/settings/SettingsHub'
 import LibraryPage from './components/LibraryPage'
 import HistoryPage from './components/HistoryPage'
+import WatchAgainPage from './components/WatchAgainPage'
+import HeartsPage from './components/HeartsPage'
 import LikedPage from './components/LikedPage'
 import WatchLaterPage from './components/WatchLaterPage'
 import StatsPage from './components/StatsPage'
@@ -70,7 +72,7 @@ import { isOwnerAccount } from './data/ownerLogin'
 
 const KNOWN_VIEWS = new Set([
   'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
-  'explore', 'history', 'liked', 'watch-later', 'library', 'stats', 'help', 'about',
+  'explore', 'history', 'watch-again', 'hearts', 'liked', 'watch-later', 'library', 'stats', 'help', 'about',
   'notifications', 'pics', 'checkout', 'creator-apply', 'verify', 'advertise', 'advertiser-portal', 'support', 'admin',
   'analytics', 'channel', 'profile', 'content-rules', 'vods',
   'subscriptions', 'playlists', 'community', 'studio-tools', 'stream-settings',
@@ -437,6 +439,8 @@ function AppShell() {
       case 'admin': return <AdminPortal onNavigate={navigate} />
       case 'content-rules': return <ContentRulesPage />
       case 'history': return <HistoryPage onNavigate={navigate} onPlayItem={openWatch} />
+      case 'watch-again': return <WatchAgainPage onNavigate={navigate} onPlayItem={openWatch} />
+      case 'hearts': return <HeartsPage onNavigate={navigate} onOpenPic={openPic} />
       case 'liked': return <LikedPage onNavigate={navigate} onPlayItem={openWatch} />
       case 'watch-later': return <WatchLaterPage onNavigate={navigate} onPlayItem={openWatch} />
       case 'stats': return <StatsPage onNavigate={navigate} />
