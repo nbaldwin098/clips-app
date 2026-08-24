@@ -124,9 +124,7 @@ export function healLocalState() {
   }
 
   try {
-    if (lsGet('clips_ads_running', null) === null) {
-      lsSet('clips_ads_running', true)
-    }
+    lsRemove('clips_ads_running')
   } catch {}
 
   try {

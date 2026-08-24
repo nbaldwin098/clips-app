@@ -12,7 +12,6 @@ const ADVERTISERS_KEY = 'clips_advertisers'
 const AD_CAMPAIGNS_KEY = 'clips_ad_campaigns'
 const AD_SESSION_KEY = 'clips_advertiser_session'
 const AD_METRICS_KEY = 'clips_ad_metrics'
-const ADS_RUNNING_KEY = 'clips_ads_running'
 const AD_SETTINGS_KEY = 'clips_ad_settings'
 
 export const AD_PLACEMENTS = [
@@ -228,13 +227,9 @@ export function saveAdvertiserCampaign(campaign) {
   return all
 }
 
+/** Ads always run. Admins choose placements, not whether the site earns. */
 export function adsAreRunning() {
-  return lsGet(ADS_RUNNING_KEY, true) === true
-}
-
-export function setAdsRunning(on) {
-  lsSet(ADS_RUNNING_KEY, !!on)
-  return adsAreRunning()
+  return true
 }
 
 export function getAdSettings() {

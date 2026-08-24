@@ -49,7 +49,7 @@ export default function CreatorDashboard({ onOpenImport, onOpenUpload, onNavigat
       <PageHeader title="Creator Dashboard" subtitle="Stream, content, analytics, wallet" onBack={() => onNavigate('home')} />
       {!approved ? (
         <div className="mb-4 rounded-xl border border-zinc-800 bg-[#121218] p-4 text-sm text-zinc-300">
-          Anyone can upload and go live. Apply if you want to earn. Payouts are sent by hand after approval.{' '}
+          Anyone can upload and go live. Apply if you want to earn. Site ads run on every post, but ad money is not a creator share and no earnings show here until you are approved. Payouts are sent by hand after approval.{' '}
           <button type="button" className="text-white underline" onClick={() => onNavigate('creator-apply')}>Apply to earn</button>
         </div>
       ) : null}
@@ -68,9 +68,12 @@ export default function CreatorDashboard({ onOpenImport, onOpenUpload, onNavigat
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
           <div><p className="text-lg text-white font-semibold">{clips.length}</p><p className="text-[10px] text-zinc-500">Posts</p></div>
           <div><p className="text-lg text-white font-semibold">{views}</p><p className="text-[10px] text-zinc-500">Views</p></div>
-          <div><p className="text-lg text-white font-semibold">${b.paid.toFixed(2)}</p><p className="text-[10px] text-zinc-500">Paid</p></div>
+          <div><p className="text-lg text-white font-semibold">{vods.length}</p><p className="text-[10px] text-zinc-500">VODs</p></div>
           <div><p className="text-lg text-white font-semibold">{live?.isLive ? 'Live' : 'Off'}</p><p className="text-[10px] text-zinc-500">Lobby</p></div>
         </div>
+        {approved ? (
+          <p className="mt-3 text-[11px] text-zinc-500">${b.paid.toFixed(2)} marked sent by hand. Views do not pay a rate and ads are not a creator share.</p>
+        ) : null}
         <div className="mt-4 flex flex-wrap gap-2">
           <button type="button" onClick={copyChannel} className="h-9 px-3 rounded-lg bg-white text-black text-xs font-semibold">
             {copied === 'profile' ? 'Copied' : 'Copy profile link'}

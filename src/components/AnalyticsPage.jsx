@@ -231,7 +231,7 @@ export default function AnalyticsPage({ onNavigate }) {
         )}
 
         <p className="mt-6 text-xs text-zinc-500 max-w-2xl">
-          Ads are not a creator share until the owner turns ads on and a pool exists. Apply to earn if you want payouts. This portal does not invent daily graphs.
+          Site ads always run, but ad money is not a creator share and no ad revenue shows here. Apply to earn if you want payouts. This portal does not invent daily graphs.
         </p>
       </div>
     </div>

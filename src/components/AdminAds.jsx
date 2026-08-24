@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import {
-  adsAreRunning, setAdsRunning, getAdSettings, setAdSettings,
+  getAdSettings, setAdSettings,
   listAdApplications, approveAdApplication, rejectAdApplication,
   listAllCampaigns, saveAdvertiserCampaign, AD_PLACEMENTS, campaignPlacements,
 } from '../lib/adEngine'
@@ -18,7 +18,6 @@ const field = 'h-9 w-full rounded-lg border border-zinc-800 bg-black px-2.5 text
 export default function AdminAds() {
   const [, bump] = useState(0)
   const refresh = () => bump((n) => n + 1)
-  const adsOn = adsAreRunning()
   const settings = getAdSettings()
   const adApps = listAdApplications()
   const campaigns = listAllCampaigns()
@@ -41,16 +40,10 @@ export default function AdminAds() {
         <div>
           <p className="text-sm font-medium text-white">Site ads</p>
           <p className="text-xs text-zinc-500 mt-0.5">
-            Videos use the ExoClick VAST tag as a skippable preroll (skip after 5 seconds, like YouTube). Videos 8 minutes or longer also get mid-rolls. Clip full ads sit every 4–6 clips at random, never twice in a row and never on a banner. Clip banners sit every 10 clips, never on a full ad. Pic full ads sit every 6–10 photos at random as a full-width mosaic row at photo height. Live viewers get the video tag 30 seconds after they open a stream. Creators can run a separate live tag with !ad, with at least 5 minutes between breaks. If a tag has no fill, we do not invent a fake ad.
+            Ads always run. There is no site-wide off switch — use the placement switches below to choose where they show. Videos use the ExoClick VAST tag as a skippable preroll (skip after 5 seconds, like YouTube), plus an in-feed card every 6–10 videos on home and a banner under the player. Videos 8 minutes or longer also get mid-rolls. Clip full ads sit every 4–6 clips at random, never twice in a row and never on a banner. Clip banners sit every 10 clips scrolled, never on a full ad. Pic full ads sit every 6–10 photos at random as a full-width mosaic row at photo height. Live viewers get the video tag 30 seconds after they open a stream. Creators can run a separate live tag with !ad, with at least 5 minutes between breaks. If a tag has no fill, we do not invent a fake ad.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => { setAdsRunning(!adsOn); refresh() }}
-          className={`h-10 px-4 rounded-lg text-xs font-semibold ${adsOn ? 'bg-white text-black' : 'border border-zinc-700 text-zinc-300'}`}
-        >
-          {adsOn ? 'Ads are ON' : 'Ads are off'}
-        </button>
+        <Pill on>Always on</Pill>
       </div>
 
       <div className="rounded-2xl border border-zinc-800 bg-[#121218] p-4 space-y-4">

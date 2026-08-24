@@ -1,29 +1,13 @@
 /**
  * Creator financial engine.
- * - Ad revenue: 90% to creators by impression share, 10% platform.
  * - Subscriptions & tips: 100% of listed price to creator.
  * - Transaction fee charged on top to the buyer (Stripe-ready).
+ * Site ads are platform revenue. There is no creator ad share, so no ad
+ * revenue is computed or shown to creators.
  */
 
-const PLATFORM_AD_SHARE = 0.1
-const CREATOR_AD_SHARE = 0.9
 const TRANSACTION_FEE_RATE = 0.029
 const TRANSACTION_FEE_FIXED = 0.3
-
-export function calculateAdRevenueSplit(totalPool, creatorImpressions, totalImpressions) {
-  const platformCut = totalPool * PLATFORM_AD_SHARE
-  const creatorPool = totalPool * CREATOR_AD_SHARE
-  const share = totalImpressions > 0 ? creatorImpressions / totalImpressions : 0
-  const creatorAmount = creatorPool * share
-
-  return {
-    totalPool,
-    platformCut,
-    creatorPool,
-    creatorSharePct: share * 100,
-    creatorAmount,
-  }
-}
 
 export function buildCheckout(amount) {
   const n = Number(amount) || 0
@@ -40,8 +24,6 @@ export function buildCheckout(amount) {
 
 export function getEmptyWalletSnapshot() {
   return {
-    adImpressions: 0,
-    estimatedAdRevenue: 0,
     activeSubscribers: 0,
     monthlySubscriptionRevenue: 0,
     pendingPayout: 0,

@@ -7,7 +7,6 @@ import {
   isAdminSession, adminLogin, adminLogout, listApplications, setApplicationStatus,
   listTickets, updateTicket, isPlatformOwner,
 } from '../lib/moderation'
-import { adsAreRunning } from '../lib/adEngine'
 import {
   listCreatorBalances,
   recordManualPayout, listPayoutLedger, getPayoutContact,
@@ -110,7 +109,6 @@ export default function AdminPortal() {
   const live = lsGet('live_board', [])
   const balances = listCreatorBalances()
   const ledger = listPayoutLedger()
-  const adsOn = adsAreRunning()
   const stats = adminOverview()
 
   const approve = (app, status) => {
@@ -164,7 +162,7 @@ export default function AdminPortal() {
           {NAV.map(navBtn)}
         </nav>
         <div className="p-3 border-t border-white/10 text-[10px] text-zinc-600">
-          Ads {adsOn ? 'on' : 'off'} · {ORG.domain}
+          Ads always on · {ORG.domain}
         </div>
       </aside>
 
@@ -194,7 +192,7 @@ export default function AdminPortal() {
               ['Posts', stats.posts],
               ['Open tickets', tickets.filter((t) => t.status === 'open').length],
               ['Live lobbies', live.filter((l) => l.isLive).length],
-              ['Ads', adsOn ? 'On' : 'Off'],
+              ['Ads', 'Always on'],
             ].map(([label, value]) => (
               <div key={label} className="rounded-2xl border border-white/10 bg-[#111113] p-4">
                 <p className="text-[11px] uppercase tracking-wider text-zinc-500">{label}</p>
