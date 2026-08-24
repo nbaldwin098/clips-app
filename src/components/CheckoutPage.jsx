@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { getMembershipPrice, isPremiumSub, addPremiumSub, markContentPurchased } from '../lib/engagement'
+import { getMembershipPrice, isPremiumSub } from '../lib/engagement'
 import { isStripeConfigured, getStripePaymentLink, membershipReturnPaid } from '../lib/stripeConfig'
 import { startPremiumCheckout } from '../lib/checkout'
+import { stashPendingStripe } from '../lib/tips'
 import { openSafeUrl } from '../lib/safeUrl'
 import PageHeader from './PageHeader'
 
@@ -19,15 +20,7 @@ export default function CheckoutPage({ onNavigate, creatorId, returnParams = {} 
     if (!isAuthenticated || !user?.id || !target) return
     const search = typeof window !== 'undefined' ? window.location.search : ''
     if (!membershipReturnPaid(returnParams, search)) return
-    addPremiumSub(user.id, target)
-    try {
-      const pending = sessionStorage.getItem('clips_pending_purchase')
-      if (pending) {
-        markContentPurchased(user.id, pending)
-        sessionStorage.removeItem('clips_pending_purchase')
-      }
-    } catch {}
-    setStatus('Stripe sent you back here. Premium is marked on this device. A webhook will confirm the charge later.')
+    setStatus('Stripe sent you back here. Donations, paid posts, and premium only apply if that is what you started — a webhook will confirm the charge later.')
   }, [isAuthenticated, user?.id, target, returnParams])
 
   const pay = async () => {
@@ -35,6 +28,7 @@ export default function CheckoutPage({ onNavigate, creatorId, returnParams = {} 
       setStatus('Sign in first.')
       return
     }
+    stashPendingStripe({ kind: 'premium', donorId: user.id, handle: user.handle, creatorId: target })
     const result = await startPremiumCheckout({
       already,
       email: user?.email || '',

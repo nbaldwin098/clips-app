@@ -21,7 +21,7 @@ function id(prefix) {
 export function listComments(contentId) {
   return (lsGet(K.comments, {})[contentId] || []).filter((c) => !c.deleted)
 }
-export function addComment(contentId, { userId, handle, text, parentId = null }) {
+export function addComment(contentId, { userId, handle, text, parentId = null, donationUsd = 0 }) {
   const all = lsGet(K.comments, {})
   const list = all[contentId] || []
   const words = getBlockedWords()
@@ -30,6 +30,7 @@ export function addComment(contentId, { userId, handle, text, parentId = null })
   const row = {
     id: id('cmt'), userId, handle, text: String(text).slice(0, 5000), parentId,
     likes: 0, likedBy: [], pinned: false, hearted: false,
+    donationUsd: Number(donationUsd) > 0 ? Number(donationUsd) : 0,
     createdAt: new Date().toISOString(), held, deleted: false,
   }
   list.push(row)
@@ -340,6 +341,28 @@ export function saveInspiration(userId, note) {
   return all[userId]
 }
 export function listInspiration(userId) { return lsGet(K.inspiration, {})[userId] || [] }
+
+const COMMENT_PREFS = 'clips_comment_prefs'
+export const DEFAULT_COMMENT_PREFS = {
+  showDonationsOnComments: true,
+  defaultSort: 'top',
+}
+
+export function getCommentPrefs(userId) {
+  if (!userId) return { ...DEFAULT_COMMENT_PREFS }
+  const all = lsGet(COMMENT_PREFS, {}) || {}
+  return { ...DEFAULT_COMMENT_PREFS, ...(all[userId] || {}) }
+}
+
+export function setCommentPrefs(userId, partial) {
+  if (!userId) return { ...DEFAULT_COMMENT_PREFS }
+  const all = lsGet(COMMENT_PREFS, {}) || {}
+  const next = { ...getCommentPrefs(userId), ...partial, updatedAt: new Date().toISOString() }
+  all[userId] = next
+  lsSet(COMMENT_PREFS, all)
+  return next
+}
+
 export const FEATURE_CHECKLIST = [
   'Comments + playlists + community posts', 'Like/dislike + views + subs', 'Clips Rank algorithm', 'Live chat/donate/premium', 'Studio tools + analytics', 'Admin + DMCA pages', 'Watch history toggle', 'Unique handles', 'Report/block', 'Sounds library',
 ]

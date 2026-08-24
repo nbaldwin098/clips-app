@@ -10,7 +10,12 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { cn } from '../lib/utils'
-import { getLiveChat, postLiveChat } from '../lib/engagement'
+import { getLiveChat } from '../lib/engagement'
+import { trySendLiveChat, removeLiveChatMessage } from '../lib/liveChat'
+import { isChannelMod, timeoutChatUser, banChatUser } from '../lib/channelStaff'
+import { startTipCheckout, TIP_AMOUNTS } from '../lib/tips'
+import { openSafeUrl } from '../lib/safeUrl'
+import { getStripePaymentLink } from '../lib/stripeConfig'
 
 // Small set of neutral text emotes — a decorative input helper only, not user/content data.
 const QUICK_EMOTES = ['🔥', '👏', '😂', '❤️', '🎉', '👀', '💯', '🙌']
@@ -28,7 +33,8 @@ export default function LiveChatPanel({
   const [messages, setMessages] = useState(() => (channel?.userId ? getLiveChat(channel.userId) : []))
   const [inputText, setInputText] = useState('')
   const [showEmotes, setShowEmotes] = useState(false)
-  const [chatSettingsOpen, setChatSettingsOpen] = useState(false)
+  const [chatError, setChatError] = useState('')
+  const [tipBusy, setTipBusy] = useState('')
   const [timestampsEnabled, setTimestampsEnabled] = useState(false)
 
   const messagesEndRef = useRef(null)
@@ -79,17 +85,40 @@ export default function LiveChatPanel({
       onOpenAuth?.()
       return
     }
-    postLiveChat(streamUserId, {
+    const result = trySendLiveChat(streamUserId, {
       userId: user.id,
       handle: user.handle,
       text: inputText.trim().slice(0, 500),
-    })
+    }, { actor: user })
+    if (!result.ok) {
+      setChatError(result.error || 'Could not send.')
+      return
+    }
+    setChatError('')
     setInputText('')
     setShowEmotes(false)
     isScrolledToBottomRef.current = true
     refreshMessages()
     scrollToBottom()
   }
+
+  const donateLive = async (amount) => {
+    if (!isAuthenticated) { onOpenAuth?.(); return }
+    if (!streamUserId) return
+    setTipBusy(String(amount))
+    const result = await startTipCheckout({
+      user,
+      kind: 'live_tip',
+      creatorId: streamUserId,
+      amount,
+      handle: user.handle,
+    })
+    setTipBusy('')
+    setChatError(result.message || '')
+    if (result.url) openSafeUrl(result.url)
+  }
+
+  const canMod = isAuthenticated && streamUserId && isChannelMod(streamUserId, user)
 
   const handleAddEmote = (symbol) => {
     setInputText((prev) => (prev ? `${prev} ${symbol}` : symbol))
@@ -171,12 +200,15 @@ export default function LiveChatPanel({
             messages.map((m) => {
               const isHost = m.userId === channel.userId
               const isSelf = isAuthenticated && m.userId === user?.id
+              const isGift = m.kind === 'donation'
+              const isBot = m.kind === 'bot'
               return (
                 <div
                   key={m.id}
                   className={cn(
                     'chat-message-text leading-relaxed hover:bg-[#161622] rounded px-1.5 py-0.5 -mx-1.5 transition-colors',
-                    isSelf && 'bg-[#181826]'
+                    isSelf && 'bg-[#181826]',
+                    isGift && 'bg-white/10 border border-white/20 py-1.5'
                   )}
                 >
                   {timestampsEnabled && (
@@ -189,10 +221,27 @@ export default function LiveChatPanel({
                       Host
                     </span>
                   )}
+                  {isBot && (
+                    <span className="px-1 py-0.5 rounded text-[9px] font-bold uppercase mr-1.5 align-middle bg-white/10 text-zinc-200">
+                      Bot
+                    </span>
+                  )}
+                  {isGift && (
+                    <span className="px-1 py-0.5 rounded text-[9px] font-bold uppercase mr-1.5 align-middle bg-white text-black">
+                      ${Number(m.amount || 0).toFixed(2)}
+                    </span>
+                  )}
                   <span className={cn('font-bold mr-1.5', isSelf ? 'text-white' : 'text-zinc-300')}>
                     {m.handle || 'viewer'}:
                   </span>
                   <span className="text-zinc-200 select-text">{m.text}</span>
+                  {canMod && m.kind !== 'bot' && m.userId !== channel.userId && (
+                    <span className="ml-2 inline-flex gap-1">
+                      <button type="button" className="text-[10px] text-zinc-500 hover:text-white" onClick={() => { timeoutChatUser(streamUserId, m.userId, 60); setChatError('Timed out 60s.') }}>Timeout</button>
+                      <button type="button" className="text-[10px] text-zinc-500 hover:text-white" onClick={() => { banChatUser(streamUserId, m.userId, true); setChatError('Banned.') }}>Ban</button>
+                      <button type="button" className="text-[10px] text-zinc-500 hover:text-white" onClick={() => { removeLiveChatMessage(streamUserId, m.id); refreshMessages() }}>Delete</button>
+                    </span>
+                  )}
                 </div>
               )
             })
@@ -235,6 +284,24 @@ export default function LiveChatPanel({
           </button>
         ) : (
           <form onSubmit={handleSendMessage} className="space-y-2">
+            {getStripePaymentLink() ? (
+              <div className="flex flex-wrap gap-1">
+                {TIP_AMOUNTS.map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    disabled={!!tipBusy || streamUserId === user?.id}
+                    onClick={() => donateLive(n)}
+                    className="h-7 px-2 rounded-md bg-white/10 text-[11px] font-semibold text-white disabled:opacity-40"
+                  >
+                    {tipBusy === String(n) ? '…' : `$${n}`}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[10px] text-zinc-600">Live donate needs a Stripe Payment Link on this deploy.</p>
+            )}
+            {chatError ? <p className="text-[11px] text-red-400">{chatError}</p> : null}
             <div className="relative flex items-center">
               <input
                 type="text"

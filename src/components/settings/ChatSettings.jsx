@@ -33,7 +33,7 @@ export default function ChatSettings() {
       <div>
         <h1 className="text-xl font-semibold text-white">Chat & Moderation</h1>
         <p className="mt-1 text-sm text-zinc-500">
-          Saved on this device only. Live chat is not a server yet, so these rules do not run for other viewers.
+          Slow mode, subscriber-only, and blocked terms run when someone chats on this site. They are stored on this device’s origin — not a Twitch/TikTok server.
         </p>
       </div>
 
@@ -55,7 +55,7 @@ export default function ChatSettings() {
         <h2 className="text-sm font-semibold text-white">Audience</h2>
         <label className="flex items-center gap-3">
           <input type="checkbox" checked={subOnly} onChange={(e) => setSubOnly(e.target.checked)} />
-          <span className="text-sm text-zinc-300">Subscribers only (preference)</span>
+          <span className="text-sm text-zinc-300">Subscribers only</span>
         </label>
       </section>
 

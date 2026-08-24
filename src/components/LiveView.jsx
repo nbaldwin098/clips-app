@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
-import { Radio, Key, Copy, Check, Play, Square } from 'lucide-react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { Radio, Key, Copy, Check, Play, Square, MonitorUp } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { lsGet, lsSet } from '../lib/storage'
 import { getSubscriberCount } from '../lib/engagement'
@@ -34,6 +34,8 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
   const [category, setCategory] = useState('Just chatting')
   const [liveNow, setLiveNow] = useState(() => (lsGet('live_board', []) || []).filter((b) => b.isLive))
   const [, setTick] = useState(0)
+  const [sharing, setSharing] = useState(false)
+  const screenRef = useRef(null)
 
   const streamKey = isAuthenticated && approved ? ensureStreamKey(user?.id) : null
 
@@ -128,6 +130,23 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
     onFocusStream?.(entry)
   }
 
+  const shareScreen = async () => {
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getDisplayMedia) return
+    try {
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true })
+      const el = screenRef.current
+      if (el) {
+        el.srcObject = stream
+        el.play?.().catch(() => {})
+      }
+      setSharing(true)
+      stream.getVideoTracks()[0].addEventListener('ended', () => {
+        setSharing(false)
+        if (screenRef.current) screenRef.current.srcObject = null
+      })
+    } catch {}
+  }
+
   const subCount = focusedStream?.userId ? getSubscriberCount(focusedStream.userId) : 0
 
   return (
@@ -143,6 +162,9 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
       {focusedStream && (
         <div className="rounded-2xl border border-[#23232c] bg-[#121218] overflow-hidden">
           <div className="relative aspect-video w-full bg-gradient-to-br from-[#1a1a24] to-[#0c0c10] flex flex-col items-center justify-center text-center p-6">
+            <video ref={screenRef} className={`absolute inset-0 h-full w-full object-contain bg-black ${sharing ? '' : 'hidden'}`} muted playsInline autoPlay />
+            {!sharing && (
+              <>
             <div className="absolute top-3 left-3 flex items-center gap-2">
               <span className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#eb0400] text-white font-extrabold text-xs uppercase tracking-wider">
                 <Radio className="h-3.5 w-3.5" />
@@ -164,6 +186,13 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
             <p className="text-zinc-500 text-xs mt-4 max-w-lg">
               Stream health: not connected. No ingest server is receiving video. Viewers see this presence stage only — not a live picture.
             </p>
+              </>
+            )}
+            {sharing && (
+              <p className="absolute bottom-3 left-3 right-3 text-[11px] text-white/80 bg-black/50 px-2 py-1 rounded">
+                This screen is only on this browser. Other viewers still see the lobby until ingest is connected.
+              </p>
+            )}
           </div>
           <div className="p-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#23232c]">
             <div className="text-sm text-zinc-400">
@@ -171,6 +200,15 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
               {subCount > 0 && <span> · {subCount} subscribers</span>}
             </div>
             <div className="flex items-center gap-2">
+              {isAuthenticated && user?.id === focusedStream.userId && (
+                <button
+                  type="button"
+                  onClick={shareScreen}
+                  className="h-9 px-3 rounded-full bg-white/10 text-xs font-semibold text-white inline-flex items-center gap-1.5"
+                >
+                  <MonitorUp className="h-4 w-4" /> {sharing ? 'Sharing this PC' : 'Share this screen'}
+                </button>
+              )}
               <SubscribeButton creatorId={focusedStream.userId} handle={focusedStream.handle} onOpenAuth={onOpenAuth} />
             </div>
           </div>

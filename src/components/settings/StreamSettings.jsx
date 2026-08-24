@@ -74,6 +74,21 @@ export default function StreamSettings() {
       </section>
 
       <section className="rounded-xl border border-zinc-800 bg-[#121218] p-4 space-y-3">
+        <p className="text-sm font-semibold text-white">Xbox, PS5, and PC screens</p>
+        <p className="text-xs text-zinc-400 leading-relaxed">
+          This site does not have a live ingest server yet, so a console picture cannot land on other people’s screens from here. Keep the stream key for OBS when ingest ships.
+        </p>
+        <ul className="text-xs text-zinc-400 space-y-2 list-disc pl-5">
+          <li>
+            <strong className="text-zinc-200">PC:</strong> On Live, use Share this screen for a preview on this browser only. For a real broadcast later, OBS (or similar) will use the stream key plus an ingest address we will print here — we do not invent one now.
+          </li>
+          <li>
+            <strong className="text-zinc-200">Xbox / PS5:</strong> Those consoles only push to their own apps (Twitch, YouTube). To send a game to a PC first, use an HDMI capture card, then OBS on the PC. There is no Xbox or PS5 setting that talks to calabi.us today.
+          </li>
+        </ul>
+      </section>
+
+      <section className="rounded-xl border border-zinc-800 bg-[#121218] p-4 space-y-3">
         <p className="text-sm font-semibold text-white">Second channel for VODs</p>
         <p className="text-xs text-zinc-500">Every ended lobby is copied to Studio → VODs. Turn on a second channel if you want public VOD posts under another handle. Keep them private to stay on the main account only.</p>
         <label className="flex items-center gap-2 text-sm text-zinc-200">

@@ -2,10 +2,12 @@ import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import {
   listComments, addComment, toggleCommentLike, pinComment, heartComment, deleteComment,
+  getCommentPrefs,
 } from '../lib/youtubeParity'
 import ChannelAvatar from './ChannelAvatar'
 import PostedStamp from './PostedStamp'
 import { canComment } from '../lib/trustSafety'
+import { donatedToPost } from '../lib/tips'
 
 function openProfile(handle, userId) {
   try {
@@ -20,13 +22,21 @@ export default function CommentsPanel({ contentId, creatorId }) {
   const [rows, setRows] = useState(() => listComments(contentId))
   const [text, setText] = useState('')
   const [replyTo, setReplyTo] = useState(null)
-  const [sort, setSort] = useState('top')
+  const [sort, setSort] = useState(() => getCommentPrefs(user?.id).defaultSort || 'top')
   const refresh = () => setRows(listComments(contentId))
   const submit = (e) => {
     e.preventDefault()
     if (!isAuthenticated || !text.trim()) return
     if (!canComment(user)) return
-    addComment(contentId, { userId: user.id, handle: user.handle, text: text.trim(), parentId: replyTo })
+    const prefs = getCommentPrefs(user.id)
+    const gifted = prefs.showDonationsOnComments ? donatedToPost(contentId, user.id) : 0
+    addComment(contentId, {
+      userId: user.id,
+      handle: user.handle,
+      text: text.trim(),
+      parentId: replyTo,
+      donationUsd: gifted,
+    })
     setText('')
     setReplyTo(null)
     refresh()
@@ -80,6 +90,9 @@ export default function CommentsPanel({ contentId, creatorId }) {
                     <button type="button" onClick={() => openProfile(c.handle, c.userId)} className="text-white hover:text-zinc-200 font-medium">@{c.handle}</button>
                     {c.createdAt ? <> · <PostedStamp at={c.createdAt} /></> : null}
                     {c.pinned && <span className="ml-2 text-[10px] text-[#aaa]">Pinned</span>}
+                    {c.donationUsd > 0 && getCommentPrefs(c.userId).showDonationsOnComments !== false && (
+                      <span className="ml-2 text-[10px] font-semibold text-white">Donated ${Number(c.donationUsd).toFixed(2)}</span>
+                    )}
                   </p>
                   <p className="text-zinc-100 mt-1 whitespace-pre-wrap leading-relaxed">{c.text}</p>
                   <div className="flex flex-wrap gap-3 mt-1.5 text-[12px] text-[#aaa]">
