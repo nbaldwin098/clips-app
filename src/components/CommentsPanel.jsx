@@ -37,14 +37,14 @@ export default function CommentsPanel({ contentId, creatorId }) {
     <div className="mt-4 border-t border-zinc-800 pt-4">
       <div className="flex items-center justify-between mb-3">
         <p className="text-sm text-zinc-200 font-medium">{rows.length} comments</p>
-        <select value={sort} onChange={(e) => setSort(e.target.value)} className="h-8 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-2 text-xs text-zinc-300">
+        <select value={sort} onChange={(e) => setSort(e.target.value)} className="h-8 rounded-lg border border-zinc-800 bg-[#000000] px-2 text-xs text-zinc-300">
           <option value="top">Top</option>
           <option value="new">Newest</option>
         </select>
       </div>
       {isAuthenticated ? (
         <form onSubmit={submit} className="flex gap-2 mb-4">
-          <input value={text} onChange={(e) => setText(e.target.value)} placeholder={replyTo ? 'Write a reply…' : 'Add a comment…'} className="flex-1 h-10 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100" maxLength={5000} />
+          <input value={text} onChange={(e) => setText(e.target.value)} placeholder={replyTo ? 'Write a reply…' : 'Add a comment…'} className="flex-1 h-10 rounded-lg border border-zinc-800 bg-[#000000] px-3 text-sm text-zinc-100" maxLength={5000} />
           <button type="submit" className="h-10 px-3 rounded-lg bg-white text-black text-xs">Post</button>
           {replyTo && <button type="button" onClick={() => setReplyTo(null)} className="text-xs text-zinc-500">Cancel</button>}
         </form>

@@ -2,8 +2,8 @@
 
 /* Streaming dark theme — white accent only */
 :root {
-  --color-bg: #09090b;
-  --color-bg-alt: #111116;
+  --color-bg: #000000;
+  --color-bg-alt: #000000;
   --color-surface: #18181f;
   --color-surface-2: #21212a;
   --color-surface-hover: #292934;

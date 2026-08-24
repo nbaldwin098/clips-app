@@ -42,7 +42,7 @@ export default function PlaylistPicker({ open, onClose, contentId, onOpenAuth })
           </button>
         </div>
         <form onSubmit={make} className="flex gap-2">
-          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="New playlist" className="flex-1 h-9 rounded-lg border border-zinc-700 bg-[#0e0e10] px-3 text-sm text-white" />
+          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="New playlist" className="flex-1 h-9 rounded-lg border border-zinc-700 bg-[#000000] px-3 text-sm text-white" />
           <button type="submit" className="h-9 px-3 rounded-lg bg-white text-black text-xs font-bold">Create</button>
         </form>
         <div className="space-y-1.5 max-h-56 overflow-y-auto">

@@ -41,7 +41,7 @@ export default function SoundPicker({ value, onChange, onOpenAuth }) {
     <div>
       <p className="text-xs text-zinc-400 mb-1.5">Sound</p>
       {value ? (
-        <div className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-[#0e0e10] px-3 h-10">
+        <div className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-[#000000] px-3 h-10">
           <Music className="h-3.5 w-3.5 text-white shrink-0" />
           <span className="text-sm text-white truncate flex-1">{value.title}</span>
           <button type="button" onClick={() => select(null)} className="text-zinc-500 hover:text-white" aria-label="Remove sound">
@@ -52,7 +52,7 @@ export default function SoundPicker({ value, onChange, onOpenAuth }) {
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
-          className="w-full h-10 rounded-lg border border-dashed border-zinc-700 bg-[#0e0e10] text-sm text-zinc-400 hover:text-white hover:border-zinc-500 flex items-center justify-center gap-1.5"
+          className="w-full h-10 rounded-lg border border-dashed border-zinc-700 bg-[#000000] text-sm text-zinc-400 hover:text-white hover:border-zinc-500 flex items-center justify-center gap-1.5"
         >
           <Music className="h-3.5 w-3.5" /> Add a sound
         </button>
@@ -67,9 +67,9 @@ export default function SoundPicker({ value, onChange, onOpenAuth }) {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Sound name"
-                className="flex-1 h-9 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100"
+                className="flex-1 h-9 rounded-lg border border-zinc-800 bg-[#000000] px-3 text-sm text-zinc-100"
               />
-              <select value={category} onChange={(e) => setCategory(e.target.value)} className="h-9 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-2 text-xs text-zinc-100">
+              <select value={category} onChange={(e) => setCategory(e.target.value)} className="h-9 rounded-lg border border-zinc-800 bg-[#000000] px-2 text-xs text-zinc-100">
                 {SOUND_CATEGORIES.filter((c) => c !== 'All').map((c) => (<option key={c} value={c}>{c}</option>))}
               </select>
               <button type="submit" className="h-9 px-3 rounded-lg bg-white text-black text-xs font-semibold shrink-0">Save</button>

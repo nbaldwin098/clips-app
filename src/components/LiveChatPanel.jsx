@@ -96,7 +96,7 @@ export default function LiveChatPanel({
   }
 
   const chatContent = (
-    <div className="flex flex-col h-full bg-[#111116] border-l border-[#23232c] relative select-none">
+    <div className="flex flex-col h-full bg-[#000000] border-l border-[#23232c] relative select-none">
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-[#23232c] bg-[#14141c]">
         <button
           type="button"

@@ -21,14 +21,14 @@ export default function Navbar({ onNavigate, onOpenAuth, onOpenUpload, onToggleS
   }
 
   return (
-    <header className="sticky top-0 z-50 h-14 border-b border-zinc-800 bg-[#0b0b0f]/95 backdrop-blur-md">
+    <header className="sticky top-0 z-50 h-14 border-b border-zinc-800 bg-[#000000]/95 backdrop-blur-md">
       <div className="flex h-full w-full items-center px-3 sm:px-4 gap-2">
         <div className="flex items-center gap-1 shrink-0">
           <button type="button" onClick={onToggleSidebar} className="h-9 w-9 flex items-center justify-center rounded-lg text-white hover:bg-zinc-800" style={{ color: '#ffffff' }} aria-label="Menu">
             <Menu className="h-5 w-5" color="#ffffff" stroke="#ffffff" />
           </button>
           <button type="button" onClick={() => onNavigate('home')} className="flex items-center gap-2">
-            <BrandMark size={32} word="calabi" wordClassName="hidden sm:block text-lg font-semibold tracking-tight text-white" />
+            <BrandMark size={32} />
           </button>
         </div>
         <div className="flex-1 flex justify-center px-2">

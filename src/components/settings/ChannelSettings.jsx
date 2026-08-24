@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getUserSettings, saveUserSettings } from '../../lib/storage'
 
-const field = 'mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100'
+const field = 'mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#000000] px-3 text-sm text-zinc-100'
 
 export default function ChannelSettings() {
   const stored = getUserSettings()

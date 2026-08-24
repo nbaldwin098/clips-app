@@ -41,7 +41,7 @@ export default function ChatSettings() {
         <h2 className="text-sm font-semibold text-white">Rate limiting</h2>
         <label className="block max-w-xs">
           <span className="text-xs font-medium text-zinc-400">Slow mode (seconds)</span>
-          <select value={slowMode} onChange={(e) => setSlowMode(Number(e.target.value))} className="mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100">
+          <select value={slowMode} onChange={(e) => setSlowMode(Number(e.target.value))} className="mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#000000] px-3 text-sm text-zinc-100">
             <option value={0}>Off</option>
             <option value={5}>5</option>
             <option value={10}>10</option>
@@ -65,7 +65,7 @@ export default function ChatSettings() {
           value={blockedTerms}
           onChange={(e) => setBlockedTerms(e.target.value)}
           rows={5}
-          className="w-full rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 py-2 text-sm text-zinc-100"
+          className="w-full rounded-lg border border-zinc-800 bg-[#000000] px-3 py-2 text-sm text-zinc-100"
           placeholder="One phrase per line"
         />
         <button type="button" onClick={save} className="h-9 px-4 rounded-lg bg-white text-black text-sm font-medium">

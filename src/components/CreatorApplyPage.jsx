@@ -5,7 +5,7 @@ import { notifyApplicationSubmitted } from '../lib/notifications'
 import { ORG, applicationsAreOpen, applicationsWindowLabel } from '../lib/orgConfig'
 
 const inputCls =
-  'mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100 placeholder:text-zinc-600'
+  'mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#000000] px-3 text-sm text-zinc-100 placeholder:text-zinc-600'
 
 export default function CreatorApplyPage({ onOpenAuth }) {
   const { user, isAuthenticated, updateProfile } = useAuth()
@@ -126,7 +126,7 @@ export default function CreatorApplyPage({ onOpenAuth }) {
           </select>
         </label>
         <label className="block text-xs text-white">Bio — Tell us about yourself
-          <textarea required value={bio} onChange={(e) => setBio(e.target.value)} rows={3} maxLength={280} placeholder="Who you are and what you’ll post (280 chars)" className="mt-1 w-full rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600" />
+          <textarea required value={bio} onChange={(e) => setBio(e.target.value)} rows={3} maxLength={280} placeholder="Who you are and what you’ll post (280 chars)" className="mt-1 w-full rounded-lg border border-zinc-800 bg-[#000000] px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600" />
         </label>
         <div>
           <p className="text-xs text-white mb-1">Social links (up to 4)</p>

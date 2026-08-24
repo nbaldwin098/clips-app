@@ -16,7 +16,7 @@ export default function CopyrightSettings() {
           <Mail className="h-4 w-4" /> Designated intake
         </h2>
         <p className="text-sm text-zinc-400">Send a complete DMCA notice to:</p>
-        <div className="rounded-lg bg-[#0b0b0f] border border-zinc-800 px-4 py-3 font-mono text-sm text-white">
+        <div className="rounded-lg bg-[#000000] border border-zinc-800 px-4 py-3 font-mono text-sm text-white">
           {ORG.copyrightEmail}
         </div>
         <p className="text-xs text-zinc-500">Counter-notifications: {ORG.dmcaEmail}</p>

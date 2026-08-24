@@ -82,8 +82,8 @@ function ShortTile({ item, onOpen }) {
 
 export default function ShortsGrid({ items, onOpen, tab = 'recommended', onTab }) {
   return (
-    <div className="h-full overflow-y-auto bg-[#0f0f0f]">
-      <div className="sticky top-0 z-10 bg-[#0f0f0f]/95 backdrop-blur px-3 py-3">
+    <div className="h-full overflow-y-auto bg-[#000000]">
+      <div className="sticky top-0 z-10 bg-[#000000]/95 backdrop-blur px-3 py-3">
         {onTab ? (
           <div className="flex gap-1 rounded-full bg-white/10 p-1 w-fit">
             {['recommended', 'following'].map((id) => (

@@ -244,13 +244,13 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
             onChange={(e) => setTitle(e.target.value)}
             disabled={isLive}
             placeholder="Stream title"
-            className="w-full h-10 rounded-lg border border-[#272734] bg-[#0e0e10] px-3 text-sm text-zinc-100"
+            className="w-full h-10 rounded-lg border border-[#272734] bg-[#000000] px-3 text-sm text-zinc-100"
           />
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             disabled={isLive}
-            className="w-full h-10 rounded-lg border border-[#272734] bg-[#0e0e10] px-3 text-sm text-zinc-100"
+            className="w-full h-10 rounded-lg border border-[#272734] bg-[#000000] px-3 text-sm text-zinc-100"
           >
             {LIVE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
@@ -258,9 +258,9 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
             Ingest is not connected. This lists you in the lobby. It does not start a video stream, clip-from-live, VOD, or raids. The key below is unused until a real ingest server exists.
           </p>
           <p className="text-[11px] text-zinc-600">Ingest URL — reserved, not receiving video</p>
-          <code className="block text-xs bg-[#0e0e10] border border-[#272734] rounded-lg px-3 py-2 text-zinc-500">{rtmpUrl}</code>
+          <code className="block text-xs bg-[#000000] border border-[#272734] rounded-lg px-3 py-2 text-zinc-500">{rtmpUrl}</code>
           <div className="flex gap-2">
-            <code className="flex-1 text-xs bg-[#0e0e10] border border-[#272734] rounded-lg px-3 py-2 text-zinc-300 break-all">{streamKey}</code>
+            <code className="flex-1 text-xs bg-[#000000] border border-[#272734] rounded-lg px-3 py-2 text-zinc-300 break-all">{streamKey}</code>
             <button
               type="button"
               onClick={() => copy(streamKey, 'key')}

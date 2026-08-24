@@ -163,14 +163,14 @@ export default function UploadModal({
           </div>
 
           <label className="block text-xs text-zinc-400">Title
-            <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} className="mt-1 w-full h-10 rounded-lg border border-zinc-700 bg-[#0e0e10] px-3 text-sm text-white" placeholder="What is this about?" />
+            <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} className="mt-1 w-full h-10 rounded-lg border border-zinc-700 bg-[#000000] px-3 text-sm text-white" placeholder="What is this about?" />
           </label>
           <label className="block text-xs text-zinc-400">Description
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} maxLength={5000} className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0e0e10] px-3 py-2 text-sm text-white" placeholder="Tell viewers more… #tags in the text are picked up" />
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} maxLength={5000} className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#000000] px-3 py-2 text-sm text-white" placeholder="Tell viewers more… #tags in the text are picked up" />
           </label>
 
           <label className="block text-xs text-zinc-400">Tags
-            <input value={tags} onChange={(e) => setTags(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-zinc-700 bg-[#0e0e10] px-3 text-sm text-white" placeholder="music, gaming, comedy" />
+            <input value={tags} onChange={(e) => setTags(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-zinc-700 bg-[#000000] px-3 text-sm text-white" placeholder="music, gaming, comedy" />
           </label>
 
           <SoundPicker value={sound} onChange={setSound} onOpenAuth={onOpenAuth} />
@@ -180,7 +180,7 @@ export default function UploadModal({
               <select
                 value={stitchId}
                 onChange={(e) => setStitchId(e.target.value)}
-                className="mt-1 w-full h-10 rounded-lg border border-zinc-700 bg-[#0e0e10] px-3 text-sm text-white"
+                className="mt-1 w-full h-10 rounded-lg border border-zinc-700 bg-[#000000] px-3 text-sm text-white"
               >
                 <option value="">None</option>
                 {stitchItem && !stitchOptions.some((s) => s.id === stitchItem.id) ? (
@@ -200,13 +200,13 @@ export default function UploadModal({
                 <input
                   value={ch.t}
                   onChange={(e) => setChapters((rows) => rows.map((r, idx) => (idx === i ? { ...r, t: e.target.value } : r)))}
-                  className="w-20 h-9 rounded-lg border border-zinc-700 bg-[#0e0e10] px-2 text-xs text-white"
+                  className="w-20 h-9 rounded-lg border border-zinc-700 bg-[#000000] px-2 text-xs text-white"
                   placeholder="0:00"
                 />
                 <input
                   value={ch.title}
                   onChange={(e) => setChapters((rows) => rows.map((r, idx) => (idx === i ? { ...r, title: e.target.value } : r)))}
-                  className="flex-1 h-9 rounded-lg border border-zinc-700 bg-[#0e0e10] px-2 text-xs text-white"
+                  className="flex-1 h-9 rounded-lg border border-zinc-700 bg-[#000000] px-2 text-xs text-white"
                   placeholder="Chapter title"
                 />
               </div>
@@ -221,7 +221,7 @@ export default function UploadModal({
               value={captionsText}
               onChange={(e) => setCaptionsText(e.target.value)}
               rows={3}
-              className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0e0e10] px-3 py-2 text-xs text-white"
+              className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#000000] px-3 py-2 text-xs text-white"
               placeholder="Plain lines, or 00:00.000 --> 00:04.000"
             />
           </label>
@@ -231,7 +231,7 @@ export default function UploadModal({
               type="datetime-local"
               value={scheduledFor}
               onChange={(e) => setScheduledFor(e.target.value)}
-              className="mt-1 w-full h-10 rounded-lg border border-zinc-700 bg-[#0e0e10] px-3 text-sm text-white"
+              className="mt-1 w-full h-10 rounded-lg border border-zinc-700 bg-[#000000] px-3 text-sm text-white"
             />
           </label>
 

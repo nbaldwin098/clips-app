@@ -78,7 +78,7 @@ export default function LibraryPage({ initialTab = 'history' }) {
           const active = tab === t.id
           return (
             <button key={t.id} onClick={() => setTab(t.id)} className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-sm font-medium border transition-colors ${
-              active ? 'bg-white text-black border-white' : 'bg-[#121218] text-zinc-400 border-zinc-800 hover:bg-[#0b0b0f]'
+              active ? 'bg-white text-black border-white' : 'bg-[#121218] text-zinc-400 border-zinc-800 hover:bg-[#000000]'
             }`}>
               <Icon className="h-4 w-4" />{t.label}
             </button>

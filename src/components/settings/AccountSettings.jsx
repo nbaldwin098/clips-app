@@ -22,7 +22,7 @@ function readImage(file, maxW, cb) {
   reader.readAsDataURL(file)
 }
 
-const field = 'mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100'
+const field = 'mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#000000] px-3 text-sm text-zinc-100'
 
 export default function AccountSettings({ onNavigate }) {
   const { user, updateProfile } = useAuth()
@@ -75,13 +75,13 @@ export default function AccountSettings({ onNavigate }) {
             <input
               value={handle}
               onChange={(e) => setHandle(e.target.value.replace(/\s/g, '').toLowerCase())}
-              className="h-10 flex-1 rounded-r-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100"
+              className="h-10 flex-1 rounded-r-lg border border-zinc-800 bg-[#000000] px-3 text-sm text-zinc-100"
             />
           </div>
         </label>
         <label className="block">
           <span className="text-xs font-medium text-zinc-400">Bio</span>
-          <textarea value={bio} onChange={(e) => setBio(e.target.value.slice(0, 280))} rows={3} maxLength={280} className="mt-1 w-full rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 py-2 text-sm text-zinc-100" />
+          <textarea value={bio} onChange={(e) => setBio(e.target.value.slice(0, 280))} rows={3} maxLength={280} className="mt-1 w-full rounded-lg border border-zinc-800 bg-[#000000] px-3 py-2 text-sm text-zinc-100" />
         </label>
         <label className="block">
           <span className="text-xs font-medium text-zinc-400">Email</span>

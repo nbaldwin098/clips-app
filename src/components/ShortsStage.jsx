@@ -112,7 +112,7 @@ export default function ShortsStage({
   }
 
   return (
-    <div className="h-full min-h-0 w-full bg-[#0f0f0f] flex flex-col relative">
+    <div className="h-full min-h-0 w-full bg-[#000000] flex flex-col relative">
       {header}
       <div className="flex-1 min-h-0 relative">
         <div

@@ -17,7 +17,7 @@ import {
 import PageHeader from './PageHeader'
 
 const inputCls =
-  'mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-white focus:outline-none'
+  'mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#000000] px-3 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-white focus:outline-none'
 
 export default function AdvertiserPortal({ onNavigate }) {
   const [session, setSession] = useState(() => getAdvertiserSession())
@@ -344,15 +344,15 @@ export default function AdvertiserPortal({ onNavigate }) {
 
                 {/* Performance Metrics */}
                 <div className="grid grid-cols-3 gap-2 pt-2 border-t border-zinc-800/80 text-center">
-                  <div className="p-2 rounded-xl bg-[#0e0e14]">
+                  <div className="p-2 rounded-xl bg-[#000000]">
                     <span className="text-[10px] text-zinc-500 uppercase font-semibold">Impressions</span>
                     <p className="text-sm font-bold text-white mt-0.5">{c.impressions || 0}</p>
                   </div>
-                  <div className="p-2 rounded-xl bg-[#0e0e14]">
+                  <div className="p-2 rounded-xl bg-[#000000]">
                     <span className="text-[10px] text-zinc-500 uppercase font-semibold">Clicks</span>
                     <p className="text-sm font-bold text-white mt-0.5">{c.clicks || 0}</p>
                   </div>
-                  <div className="p-2 rounded-xl bg-[#0e0e14]">
+                  <div className="p-2 rounded-xl bg-[#000000]">
                     <span className="text-[10px] text-zinc-500 uppercase font-semibold">Skips</span>
                     <p className="text-sm font-bold text-white mt-0.5">{c.skips || 0}</p>
                   </div>

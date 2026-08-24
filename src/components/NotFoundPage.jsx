@@ -2,7 +2,7 @@ import { Home, Compass } from 'lucide-react'
 
 export default function NotFoundPage({ onNavigate }) {
   return (
-    <div className="flex flex-1 items-center justify-center p-6 min-h-[60vh] bg-[#0b0b0f]">
+    <div className="flex flex-1 items-center justify-center p-6 min-h-[60vh] bg-[#000000]">
       <div className="max-w-md text-center">
         <p className="text-6xl font-semibold text-zinc-800 tracking-tight">404</p>
         <h1 className="mt-4 text-lg font-semibold text-zinc-100">Page not found</h1>
