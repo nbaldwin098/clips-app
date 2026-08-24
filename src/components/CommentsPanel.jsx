@@ -3,6 +3,8 @@ import { useAuth } from '../context/AuthContext'
 import {
   listComments, addComment, toggleCommentLike, pinComment, heartComment, deleteComment,
 } from '../lib/youtubeParity'
+import ChannelAvatar from './ChannelAvatar'
+import PostedStamp from './PostedStamp'
 
 function openProfile(handle, userId) {
   try {
@@ -34,38 +36,52 @@ export default function CommentsPanel({ contentId, creatorId }) {
       : (b.likes || 0) - (a.likes || 0) || new Date(b.createdAt) - new Date(a.createdAt)
   )
   return (
-    <div className="mt-4 border-t border-zinc-800 pt-4">
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-sm text-zinc-200 font-medium">{rows.length} comments</p>
-        <select value={sort} onChange={(e) => setSort(e.target.value)} className="h-8 rounded-lg border border-zinc-800 bg-[#000000] px-2 text-xs text-zinc-300">
+    <div className="mt-6">
+      <div className="flex items-center gap-4 mb-5">
+        <p className="text-base font-semibold text-white">{rows.length} {rows.length === 1 ? 'comment' : 'comments'}</p>
+        <select value={sort} onChange={(e) => setSort(e.target.value)} className="h-8 rounded-lg bg-transparent text-sm text-[#aaa]">
           <option value="top">Top</option>
           <option value="new">Newest</option>
         </select>
       </div>
       {isAuthenticated ? (
-        <form onSubmit={submit} className="flex gap-2 mb-4">
-          <input value={text} onChange={(e) => setText(e.target.value)} placeholder={replyTo ? 'Write a reply…' : 'Add a comment…'} className="flex-1 h-10 rounded-lg border border-zinc-800 bg-[#000000] px-3 text-sm text-zinc-100" maxLength={5000} />
-          <button type="submit" className="h-10 px-4 rounded-full bg-white text-black text-xs font-semibold">Post</button>
-          {replyTo && <button type="button" onClick={() => setReplyTo(null)} className="text-xs text-zinc-500">Cancel</button>}
+        <form onSubmit={submit} className="flex gap-3 mb-6">
+          <ChannelAvatar src={user?.avatarUrl} name={user?.displayName || user?.handle} size={40} />
+          <div className="flex-1 min-w-0">
+            <input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder={replyTo ? 'Write a reply…' : 'Add a comment…'}
+              className="w-full h-10 bg-transparent border-b border-[#3f3f3f] text-sm text-zinc-100 placeholder:text-[#aaa] focus:outline-none focus:border-white"
+              maxLength={5000}
+            />
+            <div className="flex justify-end gap-2 mt-2">
+              {replyTo && <button type="button" onClick={() => setReplyTo(null)} className="h-9 px-3 rounded-full text-xs text-zinc-300">Cancel</button>}
+              <button type="submit" disabled={!text.trim()} className="h-9 px-4 rounded-full bg-white text-black text-xs font-semibold disabled:bg-[#272727] disabled:text-[#717171]">Post</button>
+            </div>
+          </div>
         </form>
       ) : (
-        <p className="text-xs text-zinc-500 mb-4">Sign in to comment.</p>
+        <p className="text-sm text-[#aaa] mb-6">Sign in to comment.</p>
       )}
-      <div className="space-y-4">
+      <div className="space-y-5">
         {sorted.map((c) => {
           const replies = rows.filter((r) => r.parentId === c.id)
           return (
             <div key={c.id} className="text-sm">
-              <div className="flex gap-2">
-                <button type="button" onClick={() => openProfile(c.handle, c.userId)} className="h-8 w-8 rounded-full bg-white/20 text-white text-xs font-semibold shrink-0">{(c.handle || '?')[0]?.toUpperCase()}</button>
+              <div className="flex gap-3">
+                <button type="button" onClick={() => openProfile(c.handle, c.userId)}>
+                  <ChannelAvatar name={c.handle} size={36} />
+                </button>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs text-zinc-400">
-                    <button type="button" onClick={() => openProfile(c.handle, c.userId)} className="text-white hover:underline font-medium">@{c.handle}</button>
-                    {c.pinned && <span className="ml-2 text-[10px] text-zinc-500">Pinned</span>}
+                  <p className="text-xs text-[#aaa]">
+                    <button type="button" onClick={() => openProfile(c.handle, c.userId)} className="text-white hover:text-zinc-200 font-medium">@{c.handle}</button>
+                    {c.createdAt ? <> · <PostedStamp at={c.createdAt} /></> : null}
+                    {c.pinned && <span className="ml-2 text-[10px] text-[#aaa]">Pinned</span>}
                   </p>
-                  <p className="text-zinc-200 mt-0.5 whitespace-pre-wrap">{c.text}</p>
-                  <div className="flex flex-wrap gap-3 mt-1 text-[11px] text-zinc-500">
-                    <button type="button" onClick={() => { if (!user) return; toggleCommentLike(contentId, c.id, user.id); refresh() }}>Like {c.likes || 0}</button>
+                  <p className="text-zinc-100 mt-1 whitespace-pre-wrap leading-relaxed">{c.text}</p>
+                  <div className="flex flex-wrap gap-3 mt-1.5 text-[12px] text-[#aaa]">
+                    <button type="button" onClick={() => { if (!user) return; toggleCommentLike(contentId, c.id, user.id); refresh() }}>Like {c.likes || ''}</button>
                     <button type="button" onClick={() => setReplyTo(c.id)}>Reply</button>
                     {user?.id === creatorId && (
                       <>
@@ -78,11 +94,16 @@ export default function CommentsPanel({ contentId, creatorId }) {
                     )}
                   </div>
                   {replies.length > 0 && (
-                    <div className="mt-2 ml-2 space-y-2 border-l border-zinc-800 pl-3">
+                    <div className="mt-3 space-y-3 pl-2 border-l border-[#272727]">
                       {replies.map((r) => (
-                        <div key={r.id}>
-                          <button type="button" onClick={() => openProfile(r.handle, r.userId)} className="text-xs text-white hover:underline">@{r.handle}</button>
-                          <p className="text-zinc-200 text-sm">{r.text}</p>
+                        <div key={r.id} className="flex gap-2">
+                          <ChannelAvatar name={r.handle} size={24} />
+                          <div>
+                            <p className="text-xs text-[#aaa]">
+                              <button type="button" onClick={() => openProfile(r.handle, r.userId)} className="text-white font-medium">@{r.handle}</button>
+                            </p>
+                            <p className="text-zinc-100 mt-0.5">{r.text}</p>
+                          </div>
                         </div>
                       ))}
                     </div>

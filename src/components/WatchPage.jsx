@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  ArrowLeft, Share2, ListPlus, Music, Clock, ExternalLink, AlertCircle,
+  Share2, ListPlus, Music, Clock, ExternalLink, AlertCircle,
   Loader2, SkipForward, SkipBack, ArrowUpRight, ThumbsUp, ThumbsDown,
   Bookmark, PictureInPicture2, Subtitles, Maximize2, Clapperboard,
   MoreHorizontal, Flag, Download,
@@ -25,7 +25,11 @@ import PlaylistPicker from './PlaylistPicker'
 import ReportModal from './ReportModal'
 import { downloadPostedMedia } from '../lib/mediaDownload'
 import PostedStamp from './PostedStamp'
+import RelatedRow from './RelatedRow'
 import ContentCard from './ContentCard'
+import ChannelAvatar from './ChannelAvatar'
+import VerifiedBadge from './VerifiedBadge'
+import { creatorDisplayName, isOfficialCreator, likesLabel, viewsLabel } from '../lib/uiFormat'
 
 function Pill({ children, onClick, active = false, title, disabled }) {
   return (
@@ -99,6 +103,7 @@ export default function WatchPage({
   const countRef = useRef(null)
   const appliedStart = useRef(false)
 
+  const [descOpen, setDescOpen] = useState(false)
   const chapters = useMemo(() => {
     if (!item) return []
     const fromItem = Array.isArray(item.chapters) ? item.chapters : []
@@ -412,12 +417,8 @@ export default function WatchPage({
   const endPicks = [queue.next, ...related].filter((x, i, a) => x && a.findIndex((y) => y?.id === x.id) === i).slice(0, 3)
 
   return (
-    <div className={`p-4 md:p-8 mx-auto pb-24 ${theater ? 'max-w-[1400px]' : 'max-w-[1280px]'}`}>
-      <button type="button" onClick={onBack} className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white mb-3">
-        <ArrowLeft className="h-4 w-4" /> Back
-      </button>
-
-      <div className={`grid gap-6 ${theater || isVertical ? 'lg:grid-cols-1' : 'lg:grid-cols-[minmax(0,1fr)_320px]'}`}>
+    <div className={`px-4 md:px-6 py-4 mx-auto pb-24 ${theater ? 'max-w-[1600px]' : 'max-w-[1400px]'}`}>
+      <div className={`grid gap-6 ${theater || isVertical ? 'lg:grid-cols-1' : 'lg:grid-cols-[minmax(0,1fr)_402px]'}`}>
         <div>
           <div
             className={`relative w-full overflow-hidden rounded-xl ${isVertical ? 'aspect-[9/16] max-h-[78vh] mx-auto' : 'aspect-video'} ${ambient ? 'bg-zinc-950' : 'bg-black'}`}
@@ -527,7 +528,7 @@ export default function WatchPage({
             </div>
           )}
 
-          <div className="mt-5 space-y-5">
+          <div className="mt-4 space-y-4">
             <h1 className="text-xl font-semibold text-white leading-snug">{item.title || 'Untitled'}</h1>
 
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -535,22 +536,27 @@ export default function WatchPage({
                 <button
                   type="button"
                   onClick={() => onOpenProfile?.(item.handle, item.creatorId)}
-                  className="h-11 w-11 rounded-full bg-white/10 text-white text-sm font-bold shrink-0 overflow-hidden"
+                  className="shrink-0"
                 >
-                  {item.avatarUrl ? <img src={item.avatarUrl} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" /> : (item.handle || '?')[0]?.toUpperCase()}
+                  <ChannelAvatar
+                    src={item.avatarUrl}
+                    name={creatorDisplayName(item)}
+                    size={40}
+                    official={isOfficialCreator(item.creatorId, item.handle)}
+                  />
                 </button>
                 <div className="min-w-0">
                   <button
                     type="button"
                     onClick={() => onOpenProfile?.(item.handle, item.creatorId)}
-                    className="block text-[15px] font-semibold text-white hover:underline truncate"
+                    className="flex items-center gap-1.5 text-[15px] font-semibold text-white hover:text-zinc-200 min-w-0"
                   >
-                    @{item.handle || 'creator'}
+                    <span className="truncate">{creatorDisplayName(item)}</span>
+                    {isOfficialCreator(item.creatorId, item.handle) ? <VerifiedBadge /> : null}
                   </button>
-                  <p className="text-xs text-zinc-400 mt-0.5">
-                    {views} views
+                  <p className="text-xs text-[#aaa] mt-0.5">
+                    {viewsLabel(views)}
                     {(item.createdAt || item.publishedAt) ? <> · <PostedStamp item={item} /></> : null}
-                    {item.durationSec ? ` · ${formatClock(item.durationSec)}` : ''}
                   </p>
                 </div>
                 {item.creatorId && item.creatorId !== user?.id ? (
@@ -574,7 +580,7 @@ export default function WatchPage({
                     className={`h-full px-4 inline-flex items-center gap-2 text-sm font-medium hover:bg-[#3f3f3f] ${myVote === 'up' ? 'text-white' : 'text-zinc-100'}`}
                   >
                     <ThumbsUp className={`h-4 w-4 ${myVote === 'up' ? 'fill-current' : ''}`} />
-                    {votes.up || 0}
+                    {likesLabel(votes.up)}
                   </button>
                   <span className="w-px my-2 bg-white/15" />
                   <button
@@ -678,7 +684,11 @@ export default function WatchPage({
             ) : null}
 
             {(desc || (item.tags || []).length > 0) ? (
-              <div className="rounded-xl bg-[#121212] px-4 py-3 space-y-2">
+              <div className="rounded-xl bg-[#272727] px-4 py-3 space-y-2">
+                <p className="text-xs font-medium text-zinc-200">
+                  {viewsLabel(views)}
+                  {(item.createdAt || item.publishedAt) ? <> · <PostedStamp item={item} /></> : null}
+                </p>
                 {(item.tags || []).length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {item.tags.map((t) => (
@@ -689,19 +699,26 @@ export default function WatchPage({
                   </div>
                 )}
                 {desc ? (
-                  <p className="text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">
-                    {desc.split(/(#[a-zA-Z0-9_]{1,40})/g).map((part, i) => {
-                      if (part.startsWith('#')) {
-                        const tag = part.slice(1)
-                        return (
-                          <button key={`${tag}-${i}`} type="button" onClick={() => onOpenTag?.(tag)} className="text-white hover:underline">
-                            {part}
-                          </button>
-                        )
-                      }
-                      return <span key={i}>{part}</span>
-                    })}
-                  </p>
+                  <>
+                    <p className={`text-sm text-zinc-200 whitespace-pre-wrap leading-relaxed ${descOpen ? '' : 'line-clamp-3'}`}>
+                      {desc.split(/(#[a-zA-Z0-9_]{1,40})/g).map((part, i) => {
+                        if (part.startsWith('#')) {
+                          const tag = part.slice(1)
+                          return (
+                            <button key={`${tag}-${i}`} type="button" onClick={() => onOpenTag?.(tag)} className="text-white hover:underline">
+                              {part}
+                            </button>
+                          )
+                        }
+                        return <span key={i}>{part}</span>
+                      })}
+                    </p>
+                    {desc.length > 180 ? (
+                      <button type="button" onClick={() => setDescOpen((v) => !v)} className="text-xs font-semibold text-white">
+                        {descOpen ? 'Show less' : 'Show more'}
+                      </button>
+                    ) : null}
+                  </>
                 ) : null}
               </div>
             ) : null}
@@ -718,7 +735,7 @@ export default function WatchPage({
                 <p className="text-xs text-zinc-500">Nothing else in the catalog yet.</p>
               ) : (
                 related.map((rel) => (
-                  <ContentCard key={rel.id} item={rel} onOpen={onPlayItem} variant="video" />
+                  <RelatedRow key={rel.id} item={rel} onOpen={onPlayItem} />
                 ))
               )}
             </div>
@@ -726,7 +743,7 @@ export default function WatchPage({
               <div className="space-y-3">
                 <h2 className="text-sm font-semibold text-zinc-200">More from this creator</h2>
                 {moreFrom.map((rel) => (
-                  <ContentCard key={rel.id} item={rel} onOpen={onPlayItem} variant="video" />
+                  <RelatedRow key={rel.id} item={rel} onOpen={onPlayItem} />
                 ))}
               </div>
             )}

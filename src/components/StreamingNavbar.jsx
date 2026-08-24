@@ -2,23 +2,21 @@ import { useState, useRef, useEffect } from 'react'
 import {
   Search,
   Bell,
-  LogIn,
   Menu,
   Plus,
   Settings,
   LogOut,
-  ChevronDown,
-  Sparkles,
   Radio,
-  Compass,
   Tv,
   SlidersHorizontal,
   Film,
   Clapperboard,
+  CircleUserRound,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { cn } from '../lib/utils'
 import BrandMark from './BrandMark'
+import ChannelAvatar from './ChannelAvatar'
 import { subscribeNotifications, unreadCount } from '../lib/notifications'
 
 export default function StreamingNavbar({
@@ -66,13 +64,13 @@ export default function StreamingNavbar({
   }
 
   return (
-    <header className="sticky top-0 z-50 h-14 w-full border-b border-[#272730] bg-[#000000]/95 backdrop-blur-md">
-      <div className="flex h-full w-full items-center justify-between px-2 sm:px-4 gap-2">
-        <div className="flex items-center gap-2 md:gap-4 shrink-0">
+    <header className="sticky top-0 z-50 h-14 w-full border-b border-[#272727] bg-[#0f0f0f]">
+      <div className="flex h-full w-full items-center px-2 sm:px-4 gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           <button
             type="button"
             onClick={onToggleSidebar}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-300 hover:bg-[#1f1f27] hover:text-white transition-colors"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-zinc-200 hover:bg-white/10 transition-colors"
             aria-label="Toggle sidebar"
             title="Toggle sidebar"
           >
@@ -82,73 +80,47 @@ export default function StreamingNavbar({
           <button
             type="button"
             onClick={() => handleNav('home')}
-            className="flex items-center gap-2 group text-left focus:outline-none"
+            className="flex items-center text-left focus:outline-none"
           >
-            <BrandMark size={32} />
+            <BrandMark size={32} withWord />
           </button>
-
-          <nav className="hidden lg:flex items-center gap-1 pl-2">
-            <button
-              type="button"
-              onClick={() => handleNav('home')}
-              className={cn(
-                'px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5',
-                currentView === 'home' ? 'text-white bg-[#1f1f27]' : 'text-zinc-400 hover:text-zinc-100 hover:bg-[#18181f]'
-              )}
-            >
-              Recommended
-            </button>
-            <button
-              type="button"
-              onClick={() => handleNav('live')}
-              className={cn(
-                'px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5',
-                currentView === 'live' ? 'text-white bg-[#1f1f27]' : 'text-zinc-400 hover:text-zinc-100 hover:bg-[#18181f]'
-              )}
-            >
-              <Radio className="h-4 w-4 text-white" />
-              Live
-            </button>
-            <button
-              type="button"
-              onClick={() => handleNav('explore')}
-              className={cn(
-                'px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5',
-                currentView === 'explore' ? 'text-white bg-[#1f1f27]' : 'text-zinc-400 hover:text-zinc-100 hover:bg-[#18181f]'
-              )}
-            >
-              <Compass className="h-4 w-4" />
-              Explore
-            </button>
-            <button
-              type="button"
-              onClick={() => handleNav('clips')}
-              className={cn(
-                'px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5',
-                currentView === 'clips' || currentView === 'shorts' ? 'text-white bg-[#1f1f27]' : 'text-zinc-400 hover:text-zinc-100 hover:bg-[#18181f]'
-              )}
-            >
-              <Sparkles className="h-4 w-4" />
-              Clips
-            </button>
-          </nav>
         </div>
 
-        <div className="flex-1 max-w-md mx-2 md:mx-4">
-          <div className="relative w-full group">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 group-focus-within:text-white transition-colors" />
+        <form
+          className="flex-1 flex justify-center px-2 sm:px-6"
+          onSubmit={(e) => { e.preventDefault(); handleNav('explore') }}
+        >
+          <div className="flex w-full max-w-[640px]">
             <input
               type="search"
               value={searchQuery || ''}
               onChange={(e) => onSearchChange?.(e.target.value)}
               onFocus={() => handleNav('explore')}
-              placeholder="Search videos, clips, and pics..."
-              className="w-full h-9 rounded-full border border-[#272730] bg-[#16161d] pl-9 pr-4 text-sm text-zinc-100 placeholder:text-zinc-500 transition-all focus:bg-[#1a1a23] focus:border-white/40 focus:outline-none focus:ring-1 focus:ring-white"
+              placeholder="Search"
+              className="w-full h-10 rounded-l-full border border-[#303030] bg-[#121212] pl-4 pr-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-[#3ea6ff] focus:outline-none"
             />
+            <button
+              type="submit"
+              className="h-10 w-16 shrink-0 rounded-r-full border border-l-0 border-[#303030] bg-[#222222] text-zinc-200 hover:bg-[#2a2a2a]"
+              aria-label="Search"
+            >
+              <Search className="h-5 w-5 mx-auto" />
+            </button>
           </div>
-        </div>
+        </form>
 
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => handleNav('live')}
+            className={cn(
+              'hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-sm font-medium',
+              currentView === 'live' ? 'bg-white text-black' : 'text-zinc-200 hover:bg-white/10'
+            )}
+          >
+            <Radio className="h-4 w-4" />
+            Live
+          </button>
           <div className="relative" ref={createRef}>
             <button
               type="button"
@@ -156,12 +128,13 @@ export default function StreamingNavbar({
                 setMenuOpen(false)
                 setCreateOpen((o) => !o)
               }}
-              className="flex h-9 w-9 items-center justify-center text-white hover:text-zinc-300 active:scale-90 transition-transform"
+              className="inline-flex h-9 items-center gap-1.5 rounded-full bg-[#272727] px-3 text-sm font-medium text-white hover:bg-[#3f3f3f]"
               title="Upload a video, clip, or go live"
               aria-label="Create"
               aria-expanded={createOpen}
             >
-              <Plus className="h-6 w-6 stroke-[2.5]" />
+              <Plus className="h-5 w-5" />
+              <span className="hidden md:inline">Create</span>
             </button>
             {createOpen && (
               <div className="absolute right-0 mt-2 w-52 rounded-xl border border-[#2d2d38] bg-[#14141b] shadow-2xl py-1 z-50">
@@ -198,12 +171,12 @@ export default function StreamingNavbar({
               <button
                 type="button"
                 onClick={() => handleNav('notifications')}
-                className="relative h-9 w-9 flex items-center justify-center rounded-lg text-zinc-300 hover:bg-[#1f1f27] hover:text-white transition-colors"
+                className="relative h-10 w-10 flex items-center justify-center rounded-full text-zinc-200 hover:bg-white/10 transition-colors"
                 title="Notifications"
               >
-                <Bell className="h-4.5 w-4.5" />
+                <Bell className="h-5 w-5" />
                 {unread > 0 && (
-                  <span className="absolute top-1 right-1 min-w-4 h-4 px-1 rounded-full bg-white text-black text-[10px] font-bold leading-4">
+                  <span className="absolute top-1.5 right-1.5 min-w-4 h-4 px-1 rounded-full bg-[#eb0400] text-white text-[10px] font-bold leading-4">
                     {unread > 9 ? '9+' : unread}
                   </span>
                 )}
@@ -213,12 +186,10 @@ export default function StreamingNavbar({
                 <button
                   type="button"
                   onClick={() => setMenuOpen((o) => !o)}
-                  className="flex items-center gap-1.5 h-9 pl-1 pr-2 rounded-lg bg-[#181822] border border-[#272730] hover:border-[#3b3b47] transition-all"
+                  className="flex items-center rounded-full p-0.5 hover:bg-white/10"
+                  aria-label="Account"
                 >
-                  <div className="h-7 w-7 rounded-md flex items-center justify-center text-xs font-extrabold bg-white/10 text-white border border-white/25">
-                    {user?.displayName?.[0]?.toUpperCase() || 'U'}
-                  </div>
-                  <ChevronDown className="h-3.5 w-3.5 text-zinc-400" />
+                  <ChannelAvatar src={user?.avatarUrl} name={user?.displayName || user?.handle} size={32} />
                 </button>
 
                 {menuOpen && (
@@ -268,10 +239,10 @@ export default function StreamingNavbar({
             <button
               type="button"
               onClick={onOpenAuth}
-              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border border-[#3b3b47] bg-[#181822] text-xs font-semibold text-white hover:bg-[#23232f] transition-colors shadow-sm"
+              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border border-[#3ea6ff] text-sm font-medium text-[#3ea6ff] hover:bg-[#3ea6ff]/10"
             >
-              <LogIn className="h-3.5 w-3.5" />
-              <span>Log In</span>
+              <CircleUserRound className="h-5 w-5" />
+              <span>Sign in</span>
             </button>
           )}
         </div>

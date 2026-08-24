@@ -258,7 +258,7 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
           <button type="button" onClick={openUpload} className="mt-4 h-9 px-4 rounded-lg bg-white text-black text-sm font-semibold">Upload first pic</button>
         </div>
       ) : (
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-0.5 p-0.5 pb-20">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1 p-1 pb-20">
           {items.map((pic, index) => (
             <button
               key={pic.id}
@@ -267,7 +267,12 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
               className="relative block w-full aspect-square overflow-hidden bg-zinc-800 group focus:outline-none"
             >
               <PicImage key={pic.id} pic={pic} fill onUnplayable={dropBroken} />
-              <div className="pointer-events-none absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+              <div className="pointer-events-none absolute inset-0 bg-black/0 group-hover:bg-black/35 transition-colors" />
+              {pic.title ? (
+                <span className="pointer-events-none absolute bottom-1.5 left-1.5 right-1.5 text-[11px] text-white line-clamp-2 opacity-0 group-hover:opacity-100 drop-shadow">
+                  {pic.title}
+                </span>
+              ) : null}
             </button>
           ))}
         </div>

@@ -17,10 +17,8 @@ export default function Footer({ onNavigate }) {
       <div className="max-w-[1400px] mx-auto px-4 py-8">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
           <div>
-            <div className="mb-2">
-            <BrandMark size={28} />
-            </div>
-            <p className="text-xs text-zinc-500 max-w-xs leading-relaxed">
+            <BrandMark size={28} withWord />
+            <p className="text-xs text-[#aaa] max-w-xs leading-relaxed mt-2">
               Video, clips, and pics. Follow the creator. Pay only after Stripe.
             </p>
           </div>
@@ -37,7 +35,7 @@ export default function Footer({ onNavigate }) {
           </div>
         </div>
         <p className="mt-8 text-[11px] text-zinc-600">
-          © {new Date().getFullYear()} Clips. No fabricated content.
+          © {new Date().getFullYear()} calabi
         </p>
       </div>
     </footer>

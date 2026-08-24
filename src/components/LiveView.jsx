@@ -7,6 +7,7 @@ import { notifyFollowersWentLive } from '../lib/notifications'
 import { pushLiveLobby, endLiveLobby } from '../lib/graphSync'
 import { cn } from '../lib/utils'
 import { LIVE_CATEGORIES } from '../lib/mediaMeta'
+import { watchingLabel } from '../lib/uiFormat'
 import { ensureStreamKey } from '../lib/streamKeys'
 import { archiveEndedLive } from '../lib/vods'
 
@@ -134,14 +135,11 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
   const subCount = focusedStream?.userId ? getSubscriberCount(focusedStream.userId) : 0
 
   return (
-    <div className="p-4 md:p-6 max-w-[1100px] mx-auto space-y-6">
+    <div className="p-4 md:p-6 max-w-[1400px] mx-auto space-y-6">
       <div>
-        <h1 className="text-lg font-semibold text-white flex items-center gap-2">
-          <Radio className="h-5 w-5 text-white" />
-          Live lobby
-        </h1>
-        <p className="mt-1 text-xs text-zinc-500">
-          Live video is not on yet. This page is a presence lobby — name, category, and chat. There is no picture, HLS, or OBS ingest.
+        <h1 className="text-2xl font-bold text-white">Live</h1>
+        <p className="mt-1 text-sm text-[#aaa]">
+          Live video ingest is not connected yet. People can list themselves in the lobby.
         </p>
       </div>
 
@@ -150,9 +148,9 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
         <div className="rounded-2xl border border-[#23232c] bg-[#121218] overflow-hidden">
           <div className="relative aspect-video w-full bg-gradient-to-br from-[#1a1a24] to-[#0c0c10] flex flex-col items-center justify-center text-center p-6">
             <div className="absolute top-3 left-3 flex items-center gap-2">
-              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-white/15 text-white font-extrabold text-xs uppercase tracking-wider">
+              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#eb0400] text-white font-extrabold text-xs uppercase tracking-wider">
                 <Radio className="h-3.5 w-3.5" />
-                Lobby
+                Live
               </span>
               <span className="px-2 py-1 rounded bg-black/50 text-zinc-300 text-xs font-medium">
                 {formatElapsed(focusedStream.startedAt)}
@@ -207,37 +205,46 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream 
       {/* Real "Live Now" list */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-zinc-200">In the lobby ({liveNow.length})</h2>
+          <h2 className="text-lg font-semibold text-white">Live channels</h2>
         </div>
 
         {liveNow.length === 0 ? (
-          <div className="rounded-2xl border border-[#23232c] bg-[#121218] px-6 py-10 text-center">
-            <Radio className="h-6 w-6 mx-auto text-white" />
-            <p className="mt-4 text-sm text-zinc-200">No one is in the lobby</p>
-            <p className="mt-1 text-xs text-zinc-500">Approved creators can list themselves here. That is not a video stream.</p>
+          <div className="rounded-2xl border border-[#272727] bg-[#0f0f0f] px-6 py-14 text-center">
+            <div className="mx-auto h-14 w-14 rounded-full bg-[#272727] flex items-center justify-center">
+              <Radio className="h-6 w-6 text-white" />
+            </div>
+            <p className="mt-4 text-base font-semibold text-white">No one is live</p>
+            <p className="mt-1 text-sm text-[#aaa]">Approved creators can list a lobby presence here.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {liveNow.map((s) => (
               <button
                 key={s.userId}
                 type="button"
                 onClick={() => selectStream(s)}
-                className={cn(
-                  'text-left rounded-xl border p-4 transition-colors',
-                  focusedStream?.userId === s.userId
-                    ? 'border-white bg-[#181822]'
-                    : 'border-[#23232c] bg-[#121218] hover:border-[#3b3b47]'
-                )}
+                className="text-left group"
               >
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="h-2 w-2 rounded-full bg-[#eb0400] animate-pulse" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Lobby</span>
-                  <span className="text-[10px] text-zinc-500 ml-auto">{formatElapsed(s.startedAt)}</span>
+                <div className={cn(
+                  'relative aspect-video rounded-xl overflow-hidden bg-[#1a1a1a]',
+                  focusedStream?.userId === s.userId ? 'ring-2 ring-white' : ''
+                )}>
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#2a1a1a] via-[#141414] to-[#1a1a28]" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="h-16 w-16 rounded-full bg-black/40 border border-white/20 flex items-center justify-center text-2xl font-bold text-white">
+                      {(s.displayName || s.handle || '?')[0]?.toUpperCase()}
+                    </span>
+                  </div>
+                  <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded px-1.5 py-0.5 bg-[#eb0400] text-white text-[11px] font-bold uppercase">
+                    Live
+                  </span>
+                  <span className="absolute bottom-2 left-2 rounded px-1.5 py-0.5 bg-black/80 text-[11px] text-white">
+                    {watchingLabel(s.watchers || s.watcherIds?.length || 0)}
+                  </span>
                 </div>
-                <p className="text-sm text-zinc-100 font-medium truncate">{s.title}</p>
-                <p className="text-xs text-zinc-500 mt-0.5">@{s.handle}{s.category ? ` · ${s.category}` : ''}</p>
-                <p className="text-[11px] text-zinc-500 mt-1">{s.watchers || s.watcherIds?.length || 0} watching</p>
+                <p className="mt-2 text-sm font-medium text-white line-clamp-1 group-hover:text-zinc-200">{s.title}</p>
+                <p className="text-xs text-[#aaa]">{s.displayName || s.handle}{s.category ? ` · ${s.category}` : ''}</p>
+                <p className="text-[11px] text-[#717171]">{formatElapsed(s.startedAt)}</p>
               </button>
             ))}
           </div>

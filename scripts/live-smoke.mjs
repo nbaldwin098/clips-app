@@ -121,7 +121,7 @@ assert(gridSrc.includes('Recommended'), 'clips recommended tab')
 assert(gridSrc.includes('Following'), 'clips following tab')
 
 const liveSrc = readFileSync(new URL('../src/components/LiveView.jsx', import.meta.url), 'utf8')
-assert(liveSrc.includes('Live lobby'), 'live page is a lobby')
+assert(liveSrc.includes('Live video ingest is not connected'), 'live page is a lobby')
 assert(!liveSrc.includes('live-badge-glow'), 'no fake glowing LIVE badge')
 
 const mig = readFileSync(new URL('../supabase/migrations/0006_social_graph.sql', import.meta.url), 'utf8')
@@ -210,6 +210,7 @@ assert(channelSrc.includes('Change profile picture'), 'avatar camera is on the p
 
 const cardSrc = readFileSync(new URL('../src/components/ContentCard.jsx', import.meta.url), 'utf8')
 assert(cardSrc.includes('PostedStamp'), 'home cards show real post time')
+assert(cardSrc.includes('viewsLabel'), 'cards format view counts')
 assert(cardSrc.includes('Download'), 'cards can download a post')
 const watchSrc2 = readFileSync(new URL('../src/components/WatchPage.jsx', import.meta.url), 'utf8')
 assert(watchSrc2.includes('downloadPostedMedia'), 'watch page can download')
@@ -221,6 +222,8 @@ const pubSrc = readFileSync(new URL('../src/lib/contentService.js', import.meta.
 assert(pubSrc.includes('transcodeVideoForUpload'), 'publish path uses the transcode')
 const navSrc = readFileSync(new URL('../src/components/StreamingNavbar.jsx', import.meta.url), 'utf8')
 assert(!navSrc.includes('SiteClock'), 'header does not show a site clock')
+assert(navSrc.includes('withWord'), 'header shows the calabi wordmark')
+assert(watchSrc2.includes('RelatedRow'), 'watch sidebar uses compact related rows')
 const stampSrc = readFileSync(new URL('../src/components/PostedStamp.jsx', import.meta.url), 'utf8')
 assert(stampSrc.includes('formatPostedAt'), 'posted stamp ages over time')
 

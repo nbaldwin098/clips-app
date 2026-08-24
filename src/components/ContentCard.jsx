@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Flag, Share2, Bookmark, Play, Music, MoreVertical, Download } from 'lucide-react'
+import { Flag, Share2, Bookmark, Music, MoreVertical, Download } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getViews, recordView, getSubscriberCount } from '../lib/engagement'
 import { recordInteraction } from '../lib/algorithmEngine'
@@ -11,7 +11,16 @@ import { hideBrokenMedia } from '../lib/catalogHealth'
 import { openSafeUrl } from '../lib/safeUrl'
 import ReportModal from './ReportModal'
 import PostedStamp from './PostedStamp'
+import ChannelAvatar from './ChannelAvatar'
+import VerifiedBadge from './VerifiedBadge'
 import { downloadPostedMedia } from '../lib/mediaDownload'
+import {
+  creatorDisplayName,
+  followersLabel,
+  formatDuration,
+  isOfficialCreator,
+  viewsLabel,
+} from '../lib/uiFormat'
 
 /** video = YouTube row card; short = Shorts-style vertical */
 export default function ContentCard({ item, onOpen, variant }) {
@@ -105,14 +114,17 @@ export default function ContentCard({ item, onOpen, variant }) {
 
   const thumb = item.thumbUrl || item.mediaUrl
   const subs = item.creatorId ? getSubscriberCount(item.creatorId) : 0
-  const handle = item.handle ? `@${String(item.handle).replace(/^@/, '')}` : 'Creator'
+  const name = creatorDisplayName(item)
+  const official = isOfficialCreator(item.creatorId || item.userId, item.handle)
+  const handle = item.handle ? `@${String(item.handle).replace(/^@/, '')}` : ''
+  const followLine = followersLabel(subs)
 
   const menu = (
     <div className="relative shrink-0" ref={menuRef}>
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v) }}
-        className="h-8 w-8 rounded-full text-zinc-400 hover:bg-white/10 hover:text-white flex items-center justify-center"
+        className="h-8 w-8 rounded-full text-[#aaa] hover:bg-white/10 hover:text-white flex items-center justify-center"
         aria-label="More"
       >
         <MoreVertical className="h-4 w-4" />
@@ -148,23 +160,27 @@ export default function ContentCard({ item, onOpen, variant }) {
     return (
       <div className="group w-full">
         <button type="button" onClick={open} className="w-full text-left">
-          <div className="relative aspect-video w-full bg-zinc-900 overflow-hidden rounded-xl">
+          <div className="relative aspect-video w-full bg-[#272727] overflow-hidden rounded-xl">
             {thumb ? (
-              <img src={thumb} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" referrerPolicy="no-referrer" onError={drop} />
+              <img
+                src={thumb}
+                alt=""
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+                loading="lazy"
+                referrerPolicy="no-referrer"
+                onError={drop}
+              />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center text-zinc-600 text-xs">No thumb</div>
             )}
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
-              <span className="h-12 w-12 rounded-full bg-black/70 flex items-center justify-center"><Play className="h-6 w-6 text-white ml-0.5" /></span>
-            </div>
             {item.durationSec > 0 && (
-              <span className="absolute bottom-2 right-2 rounded bg-black/80 px-1.5 py-0.5 text-[10px] text-white font-medium">
-                {Math.floor(item.durationSec / 60)}:{String(Math.floor(item.durationSec % 60)).padStart(2, '0')}
+              <span className="absolute bottom-1.5 right-1.5 rounded px-1 py-0.5 text-[11px] text-white font-medium bg-black/80">
+                {formatDuration(item.durationSec)}
               </span>
             )}
             {resumeRatio > 0.05 && (
-              <div className="absolute bottom-0 inset-x-0 h-1 bg-black/50">
-                <div className="h-full bg-white" style={{ width: `${Math.round(resumeRatio * 100)}%` }} />
+              <div className="absolute bottom-0 inset-x-0 h-[3px] bg-black/50">
+                <div className="h-full bg-[#eb0400]" style={{ width: `${Math.round(resumeRatio * 100)}%` }} />
               </div>
             )}
           </div>
@@ -173,21 +189,25 @@ export default function ContentCard({ item, onOpen, variant }) {
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); window.__clipsOpenProfile?.(item.handle, item.creatorId || item.userId) }}
-            className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden"
+            className="shrink-0 mt-0.5"
           >
-            {item.avatarUrl ? <img src={item.avatarUrl} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" /> : (item.creatorName || item.handle || '?')[0]?.toUpperCase()}
+            <ChannelAvatar src={item.avatarUrl} name={name} size={36} official={official} />
           </button>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-zinc-100 line-clamp-2 leading-snug cursor-pointer" onClick={open}>{item.title || 'Untitled'}</p>
-            <p className="text-xs text-zinc-500 mt-1">
-              <button type="button" onClick={(e) => { e.stopPropagation(); window.__clipsOpenProfile?.(item.handle, item.creatorId || item.userId) }} className="hover:text-white">
-                {handle}
+            <p className="text-sm font-medium text-zinc-100 line-clamp-2 leading-snug cursor-pointer" onClick={open}>{item.title || 'Untitled'}</p>
+            <p className="text-xs text-[#aaa] mt-1 inline-flex items-center gap-1 min-w-0">
+              <button type="button" onClick={(e) => { e.stopPropagation(); window.__clipsOpenProfile?.(item.handle, item.creatorId || item.userId) }} className="hover:text-white truncate">
+                {name}
               </button>
-              {subs > 0 ? ` · ${subs} followers` : ''}
+              {official ? <VerifiedBadge /> : null}
             </p>
-            <p className="text-xs text-zinc-500">{views} views{item.createdAt || item.publishedAt ? <> · <PostedStamp item={item} /></> : ''}</p>
+            <p className="text-xs text-[#aaa]">
+              {viewsLabel(views)}
+              {item.createdAt || item.publishedAt ? <> · <PostedStamp item={item} /></> : ''}
+              {followLine ? ` · ${followLine}` : ''}
+            </p>
             {item.soundTitle ? (
-              <button type="button" onClick={(e) => { e.stopPropagation(); window.__clipsOpenSound?.(item.soundId || item.soundTitle) }} className="text-xs text-zinc-500 mt-1 inline-flex items-center gap-1 hover:text-white">
+              <button type="button" onClick={(e) => { e.stopPropagation(); window.__clipsOpenSound?.(item.soundId || item.soundTitle) }} className="text-xs text-[#aaa] mt-1 inline-flex items-center gap-1 hover:text-white">
                 <Music className="h-3 w-3" />{item.soundTitle}
               </button>
             ) : null}
@@ -202,30 +222,40 @@ export default function ContentCard({ item, onOpen, variant }) {
   return (
     <div className="group w-full">
       <button type="button" onClick={open} className="w-full text-left">
-        <div className="relative aspect-[9/16] w-full bg-zinc-900 overflow-hidden rounded-xl">
+        <div className="relative aspect-[9/16] w-full bg-[#272727] overflow-hidden rounded-xl">
           {thumb ? (
-            <img src={thumb} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" referrerPolicy="no-referrer" onError={drop} />
+            <img
+              src={thumb}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+              loading="lazy"
+              referrerPolicy="no-referrer"
+              onError={drop}
+            />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center text-zinc-600 text-xs">No thumb</div>
           )}
+          <div className="absolute inset-x-0 bottom-0 pt-10 pb-2 px-2 bg-gradient-to-t from-black/80 to-transparent">
+            <p className="text-[13px] font-medium text-white leading-snug line-clamp-2">{item.title || 'Untitled'}</p>
+          </div>
           {item.durationSec > 0 && (
-            <span className="absolute bottom-2 right-2 rounded bg-black/80 px-1.5 py-0.5 text-[10px] text-white font-medium">
-              {Math.floor(item.durationSec / 60)}:{String(Math.floor(item.durationSec % 60)).padStart(2, '0')}
+            <span className="absolute top-2 right-2 rounded px-1 py-0.5 text-[10px] text-white font-medium bg-black/80">
+              {formatDuration(item.durationSec)}
             </span>
           )}
           {resumeRatio > 0.05 && (
-            <div className="absolute bottom-0 inset-x-0 h-1 bg-black/50">
-              <div className="h-full bg-white" style={{ width: `${Math.round(resumeRatio * 100)}%` }} />
+            <div className="absolute bottom-0 inset-x-0 h-[3px] bg-black/50">
+              <div className="h-full bg-[#eb0400]" style={{ width: `${Math.round(resumeRatio * 100)}%` }} />
             </div>
           )}
         </div>
       </button>
       <div className="pt-2 flex gap-1">
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold text-zinc-100 line-clamp-2 leading-snug cursor-pointer" onClick={open}>{item.title || 'Untitled'}</p>
-          <p className="text-[11px] text-zinc-500 mt-0.5">
-            <button type="button" onClick={(e) => { e.stopPropagation(); window.__clipsOpenProfile?.(item.handle, item.creatorId || item.userId) }} className="hover:text-white">{handle}</button>
-            {' · '}{views} views{item.createdAt || item.publishedAt ? <> · <PostedStamp item={item} /></> : ''}
+          <p className="text-xs text-[#aaa] mt-0.5 inline-flex items-center gap-1">
+            <button type="button" onClick={(e) => { e.stopPropagation(); window.__clipsOpenProfile?.(item.handle, item.creatorId || item.userId) }} className="hover:text-white truncate">{handle || name}</button>
+            {' · '}{viewsLabel(views)}
+            {item.createdAt || item.publishedAt ? <> · <PostedStamp item={item} /></> : ''}
           </p>
         </div>
         {menu}

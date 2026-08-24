@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react'
-import PageHeader from './PageHeader'
 import MediaShelves from './MediaShelves'
 import { useAuth } from '../context/AuthContext'
 import { listIndexedUsers } from '../lib/moderation'
@@ -7,10 +6,13 @@ import { getCreatorPublicContent, togglePin, isPinned } from '../lib/contentServ
 import { listPlaylists } from '../lib/youtubeParity'
 import { lsGet } from '../lib/storage'
 import { getPicsFeed } from '../lib/picsService'
-import { getSubscriberCount, getCreatorRanking, toggleSubscribe, isSubscribed } from '../lib/engagement'
+import { getSubscriberCount, toggleSubscribe, isSubscribed } from '../lib/engagement'
 import { useContentSyncTick } from '../lib/useContentSync'
 import { Pin } from 'lucide-react'
 import { cn } from '../lib/utils'
+import ChannelAvatar from './ChannelAvatar'
+import VerifiedBadge from './VerifiedBadge'
+import { followersLabel, isOfficialCreator } from '../lib/uiFormat'
 
 export default function ProfilePage({ onNavigate, profileHandle, profileUserId, onPlayItem, onOpenPic }) {
   const { user, isAuthenticated } = useAuth()
@@ -46,8 +48,8 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
   const banner = found?.bannerUrl || (isSelf ? user?.bannerUrl : null)
   const bio = found?.bio || (isSelf ? user?.bio : '') || ''
   const subs = creatorId ? getSubscriberCount(creatorId) : 0
-  const rank = creatorId ? getCreatorRanking(creatorId) : null
   const subscribed = user && creatorId ? isSubscribed(user.id, creatorId) : false
+  const official = isOfficialCreator(creatorId, handle)
 
   const onPin = (contentId) => {
     if (!isSelf || !creatorId) return
@@ -56,28 +58,32 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
   }
 
   return (
-    <div className="max-w-[1000px] mx-auto pb-16">
-      <div className="px-4 pt-4">
-        <PageHeader title="Profile" onBack={() => onNavigate?.('home')} />
+    <div className="max-w-[1280px] mx-auto pb-16">
+      <div className="relative mx-4 mt-4 h-40 sm:h-52 rounded-2xl overflow-hidden bg-[#272727]">
+        {banner ? <img src={banner} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" /> : (
+          <div className="h-full w-full bg-gradient-to-r from-[#1a1a1a] via-[#2a2a2a] to-[#3a3a3a]" />
+        )}
       </div>
-      <div className="relative mx-4 h-36 sm:h-44 rounded-xl overflow-hidden bg-gradient-to-r from-zinc-900 via-zinc-800 to-white/30 border border-zinc-800">
-        {banner ? <img src={banner} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" /> : null}
-      </div>
-      <div className="px-4 -mt-10 relative z-10 flex flex-wrap items-end gap-4">
-        <div className="h-24 w-24 rounded-full border-4 border-[#000000] bg-white/30 flex items-center justify-center text-3xl font-semibold text-white overflow-hidden">
-          {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" /> : (displayName[0] || '?').toUpperCase()}
+      <div className="px-4 -mt-12 relative z-10 flex flex-wrap items-end gap-4">
+        <div className="rounded-full ring-4 ring-black">
+          <ChannelAvatar src={avatar} name={displayName} size={96} />
         </div>
         <div className="flex-1 min-w-[160px] pb-1">
-          <h1 className="text-xl font-semibold text-zinc-100">{displayName}</h1>
-          <p className="text-sm text-zinc-500">@{handle || found?.handle || 'user'}</p>
-          <p className="text-xs text-zinc-500 mt-1">{subs} followers{rank != null ? ` · Rank #${rank}` : ''} · {videos.length} videos · {clips.length} clips · {pics.length} pics</p>
+          <h1 className="text-2xl font-bold text-white inline-flex items-center gap-2">
+            {displayName}
+            {official ? <VerifiedBadge className="h-4 w-4" /> : null}
+          </h1>
+          <p className="text-sm text-[#aaa]">@{handle || found?.handle || 'user'}</p>
+          <p className="text-xs text-[#aaa] mt-1">
+            {[followersLabel(subs), videos.length ? `${videos.length} videos` : '', clips.length ? `${clips.length} clips` : '', pics.length ? `${pics.length} pics` : ''].filter(Boolean).join(' · ')}
+          </p>
         </div>
         <div className="flex gap-2 pb-1">
           {isSelf ? (
             <button type="button" onClick={() => onNavigate?.('channel')} className="h-9 px-4 rounded-full border border-zinc-700 text-xs text-zinc-200">Customize channel</button>
           ) : (
             isAuthenticated && creatorId && (
-              <button type="button" onClick={() => { toggleSubscribe(user.id, creatorId); setTick((t) => t + 1) }} className={`h-9 px-4 rounded-full text-xs font-medium ${subscribed ? 'border border-zinc-700 text-zinc-300' : 'bg-white text-black'}`}>
+              <button type="button" onClick={() => { toggleSubscribe(user.id, creatorId); setTick((t) => t + 1) }} className={`h-9 px-4 rounded-full text-sm font-medium ${subscribed ? 'bg-[#272727] text-white' : 'bg-white text-black'}`}>
                 {subscribed ? 'Following' : 'Follow'}
               </button>
             )
@@ -85,21 +91,21 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
         </div>
       </div>
       {bio && <p className="px-4 mt-4 text-sm text-zinc-400 max-w-2xl">{bio}</p>}
-      <div className="px-4 mt-6 flex gap-1.5">
+      <div className="px-4 mt-6 flex gap-6 border-b border-[#272727]">
         {[
-          { id: 'videos', label: `Videos ${videos.length}` },
-          { id: 'clips', label: `Clips ${clips.length}` },
-          { id: 'pics', label: `Pics ${pics.length}` },
-          { id: 'live', label: liveEntry ? 'Live now' : 'Live' },
-          { id: 'playlists', label: `Playlists ${playlists.length}` },
+          { id: 'videos', label: 'Videos' },
+          { id: 'clips', label: 'Clips' },
+          { id: 'pics', label: 'Pics' },
+          { id: 'live', label: liveEntry ? 'Live' : 'Live' },
+          { id: 'playlists', label: 'Playlists' },
         ].map((t) => (
           <button
             key={t.id}
             type="button"
             onClick={() => setTab(t.id)}
             className={cn(
-              'h-8 px-3 rounded-full text-xs font-medium border',
-              tab === t.id ? 'bg-white text-black border-white' : 'border-zinc-800 text-zinc-400'
+              'h-10 text-sm font-medium border-b-2 -mb-px',
+              tab === t.id ? 'text-white border-white' : 'text-[#aaa] border-transparent hover:text-white'
             )}
           >
             {t.label}
