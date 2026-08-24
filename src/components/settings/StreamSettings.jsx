@@ -7,10 +7,11 @@ import {
   cueLiveAd,
   getLiveAdState,
   scheduleLiveAd,
-  setLiveAdInterval,
+  setLiveAdsPerHour,
   cancelLiveAdSchedule,
   LIVE_VIEWER_AD_DELAY_SEC,
-  EXOCLICK_LIVE_CREATOR_VAST_URL,
+  LIVE_ADS_PER_HOUR_MAX,
+  liveAdIntervalFromPerHour,
 } from '../../lib/liveAds'
 
 export default function StreamSettings() {
@@ -28,7 +29,7 @@ export default function StreamSettings() {
   const [saved, setSaved] = useState(false)
   const [copied, setCopied] = useState(false)
   const liveAds = getLiveAdState(user?.id)
-  const [adEveryMin, setAdEveryMin] = useState(() => Math.round((liveAds.intervalSec || 0) / 60) || 0)
+  const [adsPerHour, setAdsPerHour] = useState(() => liveAds.adsPerHour || 0)
   const [adInMin, setAdInMin] = useState('10')
   const [adNote, setAdNote] = useState('')
   const [, bumpAds] = useState(0)
@@ -130,7 +131,7 @@ export default function StreamSettings() {
       <section className="rounded-xl border border-zinc-800 bg-[#121218] p-4 space-y-3">
         <p className="text-sm font-semibold text-white">Live ads</p>
         <p className="text-xs text-zinc-400 leading-relaxed">
-          Viewers get the same video ad tag {LIVE_VIEWER_AD_DELAY_SEC} seconds after they open your stream. You can also run a mid-stream ad with {EXOCLICK_LIVE_CREATOR_VAST_URL}. Empty tags do not invent a fake overlay. Ingest is still not connected, so the ad plays over the live stage on this site.
+          Viewers get the same video ad tag {LIVE_VIEWER_AD_DELAY_SEC} seconds after they open your stream. Set 1–5 mid-stream ads per hour below, or run one manually. Empty tags do not invent a fake overlay. Ingest is still not connected, so the ad plays over the live stage on this site.
         </p>
         <div className="flex flex-wrap gap-2">
           <button
@@ -172,29 +173,34 @@ export default function StreamSettings() {
         </div>
         <div className="flex flex-wrap items-end gap-2">
           <label className="text-xs text-zinc-400">
-            Repeat every
-            <input
-              type="number"
-              min="0"
-              max="180"
-              value={adEveryMin}
-              onChange={(e) => setAdEveryMin(e.target.value)}
-              className="mt-1 w-20 h-10 rounded-lg border border-zinc-800 bg-black px-3 text-sm text-white"
-            />
+            Mid-stream ads per hour
+            <select
+              value={adsPerHour}
+              onChange={(e) => setAdsPerHour(Number(e.target.value))}
+              className="mt-1 block w-28 h-10 rounded-lg border border-zinc-800 bg-black px-3 text-sm text-white"
+            >
+              <option value={0}>Off</option>
+              {Array.from({ length: LIVE_ADS_PER_HOUR_MAX }, (_, i) => i + 1).map((n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
           </label>
-          <span className="text-xs text-zinc-500 pb-3">minutes (0 is off)</span>
           <button
             type="button"
             className="h-10 px-3 rounded-lg border border-zinc-700 text-white text-xs"
             onClick={() => {
               if (!user?.id) return
-              const mins = Math.max(0, Number(adEveryMin) || 0)
-              const used = setLiveAdInterval(user.id, mins ? mins * 60 : 0)
-              setAdNote(used ? `Repeating every ${Math.round(used / 60)}m (5 minute minimum).` : 'Repeat is off.')
+              const used = setLiveAdsPerHour(user.id, adsPerHour)
+              const gap = liveAdIntervalFromPerHour(used)
+              setAdNote(
+                used
+                  ? `About ${used} ad${used === 1 ? '' : 's'} per hour (every ${Math.round(gap / 60)}m).`
+                  : 'Auto repeat is off.',
+              )
               refreshAds()
             }}
           >
-            Save repeat
+            Save
           </button>
         </div>
         {(adState.schedules || []).length ? (
@@ -216,7 +222,7 @@ export default function StreamSettings() {
           <p className="text-[11px] text-zinc-600">No one-off times queued.</p>
         )}
         <p className="text-[11px] text-zinc-500 leading-relaxed">
-          Chat (creator or mod): <code className="text-zinc-300">!ad</code> now, <code className="text-zinc-300">!ad 5m</code> schedule, <code className="text-zinc-300">!ad every 15m</code> repeat, <code className="text-zinc-300">!ad off</code>, <code className="text-zinc-300">!ads</code> status. Mid-stream ads cannot run more than once every 5 minutes, including repeat timers.
+          Chat (creator or mod): <code className="text-zinc-300">!ad</code> now, <code className="text-zinc-300">!ad 5m</code> schedule, <code className="text-zinc-300">!ad 3/h</code> repeat (1–5 per hour), <code className="text-zinc-300">!ad off</code>, <code className="text-zinc-300">!ads</code> status. Mid-stream ads cannot run more than once every 5 minutes.
         </p>
         {adNote ? <p className="text-[11px] text-white">{adNote}</p> : null}
       </section>

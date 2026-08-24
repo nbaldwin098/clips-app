@@ -6,6 +6,19 @@ import { createNotification } from './notifications'
 
 const PENDING = 'clips_pending_stripe'
 export const TIP_AMOUNTS = [2, 5, 10, 25]
+export const TIP_AMOUNT_MIN = 1
+export const TIP_AMOUNT_MAX = 500
+
+export function normalizeTipAmount(raw) {
+  const n = Math.round(Number(raw) * 100) / 100
+  if (!Number.isFinite(n)) return null
+  if (n < TIP_AMOUNT_MIN || n > TIP_AMOUNT_MAX) return null
+  return n
+}
+
+export function isValidTipAmount(amount) {
+  return normalizeTipAmount(amount) != null
+}
 
 export function stashPendingStripe(payload) {
   if (typeof sessionStorage === 'undefined' || !payload?.kind) return
@@ -45,9 +58,11 @@ function recordPostTip(row) {
 }
 
 export async function startTipCheckout({ user, kind, creatorId, contentId, amount, handle }) {
-  const dollars = Number(amount)
+  const dollars = normalizeTipAmount(amount)
   if (!user?.id) return { ok: false, url: '', message: 'Sign in first.' }
-  if (!TIP_AMOUNTS.includes(dollars)) return { ok: false, url: '', message: 'Pick a listed amount.' }
+  if (dollars == null) {
+    return { ok: false, url: '', message: `Enter $${TIP_AMOUNT_MIN}–$${TIP_AMOUNT_MAX}.` }
+  }
   stashPendingStripe({
     kind,
     donorId: user.id,

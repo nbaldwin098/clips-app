@@ -13,7 +13,7 @@ import { cn } from '../lib/utils'
 import { getLiveChat } from '../lib/engagement'
 import { trySendLiveChat, removeLiveChatMessage } from '../lib/liveChat'
 import { isChannelMod, timeoutChatUser, banChatUser } from '../lib/channelStaff'
-import { startTipCheckout, TIP_AMOUNTS } from '../lib/tips'
+import { startTipCheckout, TIP_AMOUNTS, TIP_AMOUNT_MIN, TIP_AMOUNT_MAX } from '../lib/tips'
 import { redirectSafeUrl } from '../lib/safeUrl'
 import { getStripePaymentLink } from '../lib/stripeConfig'
 
@@ -35,6 +35,7 @@ export default function LiveChatPanel({
   const [showEmotes, setShowEmotes] = useState(false)
   const [chatError, setChatError] = useState('')
   const [tipBusy, setTipBusy] = useState('')
+  const [customTip, setCustomTip] = useState('')
   const [timestampsEnabled, setTimestampsEnabled] = useState(false)
 
   const messagesEndRef = useRef(null)
@@ -285,18 +286,40 @@ export default function LiveChatPanel({
         ) : (
           <form onSubmit={handleSendMessage} className="space-y-2">
             {getStripePaymentLink() ? (
-              <div className="flex flex-wrap gap-1">
-                {TIP_AMOUNTS.map((n) => (
+              <div className="space-y-1">
+                <div className="flex flex-wrap gap-1">
+                  {TIP_AMOUNTS.map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      disabled={!!tipBusy || streamUserId === user?.id}
+                      onClick={() => donateLive(n)}
+                      className="h-7 px-2 rounded-md bg-white/10 text-[11px] font-semibold text-white disabled:opacity-40"
+                    >
+                      {tipBusy === String(n) ? '…' : `$${n}`}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    min={TIP_AMOUNT_MIN}
+                    max={TIP_AMOUNT_MAX}
+                    step="0.01"
+                    value={customTip}
+                    onChange={(e) => setCustomTip(e.target.value)}
+                    placeholder={`$${TIP_AMOUNT_MIN}–${TIP_AMOUNT_MAX}`}
+                    className="h-7 w-24 rounded-md border border-zinc-800 bg-black px-2 text-[11px] text-white"
+                  />
                   <button
-                    key={n}
                     type="button"
-                    disabled={!!tipBusy || streamUserId === user?.id}
-                    onClick={() => donateLive(n)}
-                    className="h-7 px-2 rounded-md bg-white/10 text-[11px] font-semibold text-white disabled:opacity-40"
+                    disabled={!!tipBusy || !customTip || streamUserId === user?.id}
+                    onClick={() => donateLive(customTip)}
+                    className="h-7 px-2 rounded-md bg-white text-[11px] font-semibold text-black disabled:opacity-40"
                   >
-                    {tipBusy === String(n) ? '…' : `$${n}`}
+                    {tipBusy === customTip ? '…' : 'Give'}
                   </button>
-                ))}
+                </div>
               </div>
             ) : (
               <p className="text-[10px] text-zinc-600">Live donate needs a Stripe Payment Link on this deploy.</p>

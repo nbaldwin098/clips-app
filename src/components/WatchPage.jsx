@@ -35,7 +35,7 @@ import { videoVastAdsEnabled } from '../lib/vastAds'
 import { creatorDisplayName, isOfficialCreator, likesLabel, viewsLabel, formatDuration } from '../lib/uiFormat'
 import { isVerifiedChannel } from '../lib/verification'
 import { startPremiumCheckout } from '../lib/checkout'
-import { stashPendingStripe, startTipCheckout, TIP_AMOUNTS } from '../lib/tips'
+import { stashPendingStripe, startTipCheckout, TIP_AMOUNTS, TIP_AMOUNT_MIN, TIP_AMOUNT_MAX } from '../lib/tips'
 import { getStripePaymentLink } from '../lib/stripeConfig'
 import { preloadPostedItem } from '../lib/preloadMedia'
 
@@ -147,6 +147,7 @@ export default function WatchPage({
   const [isSaved, setIsSaved] = useState(() => (getSaved() || []).includes(itemId))
   const [payBusy, setPayBusy] = useState(false)
   const [tipBusy, setTipBusy] = useState('')
+  const [customTip, setCustomTip] = useState('')
   const countRef = useRef(null)
   const appliedStart = useRef(false)
   const showingAdRef = useRef(false)
@@ -672,7 +673,7 @@ export default function WatchPage({
                 </div>
                 <SubscribeButton creatorId={item.creatorId || item.userId} handle={item.handle} onOpenAuth={onOpenAuth} className="ml-2" />
                 {getStripePaymentLink() ? (
-                  <div className="ml-2 flex items-center gap-1">
+                  <div className="ml-2 flex items-center gap-1 flex-wrap justify-end">
                     {TIP_AMOUNTS.map((n) => (
                       <button
                         key={n}
@@ -684,6 +685,24 @@ export default function WatchPage({
                         {tipBusy === String(n) ? '…' : `$${n}`}
                       </button>
                     ))}
+                    <input
+                      type="number"
+                      min={TIP_AMOUNT_MIN}
+                      max={TIP_AMOUNT_MAX}
+                      step="0.01"
+                      value={customTip}
+                      onChange={(e) => setCustomTip(e.target.value)}
+                      placeholder="Other"
+                      className="h-8 w-16 rounded-full border border-white/20 bg-black/40 px-2 text-[11px] text-white"
+                    />
+                    <button
+                      type="button"
+                      disabled={!!tipBusy || !customTip}
+                      onClick={() => donatePost(customTip)}
+                      className="h-8 px-2 rounded-full bg-white text-[11px] font-semibold text-black disabled:opacity-40"
+                    >
+                      {tipBusy === customTip ? '…' : 'Give'}
+                    </button>
                   </div>
                 ) : null}
               </div>

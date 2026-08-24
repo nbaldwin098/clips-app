@@ -7,7 +7,7 @@ import { parseRoute, buildHash } from '../src/lib/routes.js'
 import { sanitizeAuthError, normalizePhone } from '../src/lib/authBrand.js'
 import { findOwnerLogin, isLocalOwnerLogin, isOwnerAccount, OWNER_LOGIN } from '../src/data/ownerLogin.js'
 import { parseVastXml, parseVastClock, youtubeMidrollBreaks, EXOCLICK_VAST_URL, EXOCLICK_LIVE_CREATOR_VAST_URL, YT_MIDROLL_MIN_SEC } from '../src/lib/vastAds.js'
-import { mixClipFeedRows, clipBannerAllowedOnMixed, CLIP_BANNER_EVERY } from '../src/lib/feedAdCadence.js'
+import { mixClipFeedRows, mixPicFeedRows, clipBannerAllowedOnMixed, CLIP_BANNER_EVERY, PIC_AD_GAPS } from '../src/lib/feedAdCadence.js'
 import { featuredWindowStart, nextFeaturedRefreshAt, lastHourRange, interleaveHourlyHits, HOURLY_PATTERN, HOURLY_VIDEO_COUNT, HOURLY_CLIP_COUNT, HOURLY_PIC_COUNT } from '../src/lib/hourWindow.js'
 
 let failed = 0
@@ -73,6 +73,22 @@ assert(!parseVastXml('<VAST version="3.0"></VAST>'), 'empty vast is not a fake a
     assert(mixed[i - 1]?.kind === 'item' && mixed[i + 1]?.kind !== 'ad', 'full ads sit between clips')
     assert(!clipBannerAllowedOnMixed(mixed, i - 1) && !clipBannerAllowedOnMixed(mixed, i + 1), 'full ads are not next to a banner')
   }
+}
+{
+  const fake = Array.from({ length: 50 }, (_, i) => ({ id: `p${i}` }))
+  const mixed = mixPicFeedRows(fake)
+  const gaps = []
+  let since = 0
+  mixed.forEach((row) => {
+    if (row.kind === 'item') {
+      since += 1
+      return
+    }
+    gaps.push(since)
+    since = 0
+  })
+  assert(gaps.length >= 4, 'pic feed gets several random ad breaks')
+  assert(gaps.every((g) => PIC_AD_GAPS.includes(g)), 'pic gaps stay between 6 and 10')
 }
 assert(existsSync(new URL('../public/_redirects', import.meta.url)), 'static host rewrites unknown paths to the app')
 
@@ -225,10 +241,13 @@ const adEng = readFileSync(new URL('../src/lib/adEngine.js', import.meta.url), '
 assert(adEng.includes('clips_ads_running'), 'ads have a global on/off switch')
 assert(adEng.includes('if (!adsAreRunning()) return null'), 'preroll stays off until admin enables ads')
 assert(adEng.includes('mixFeedAds'), 'clip and pic feeds can insert ads between items')
-assert(adEng.includes("provider: 'exoclick'"), 'clip and pic feeds use the ExoClick display zone')
 assert(adEng.includes('mixClipFeedRows'), 'clip ads use the 4-6 cadence')
+assert(adEng.includes('mixPicFeedRows'), 'pic ads use the 6-10 cadence')
 const cadenceSrc = readFileSync(new URL('../src/lib/feedAdCadence.js', import.meta.url), 'utf8')
+assert(cadenceSrc.includes("provider: 'exoclick'"), 'clip and pic feeds use the ExoClick display zone')
 assert(cadenceSrc.includes('CLIP_AD_GAPS = [4, 5, 6]'), 'clip ads sit every 4-6 items')
+assert(cadenceSrc.includes('PIC_AD_GAPS = [6, 7, 8, 9, 10]'), 'pic ads sit every 6-10 items')
+assert(cadenceSrc.includes('randomGap'), 'ad gaps are random not fixed')
 assert(cadenceSrc.includes('CLIP_BANNER_EVERY = 10'), 'clip banners sit every 10 clips')
 assert(shortsFeedSrc.includes('mixFeedAds'), 'clip player inserts ads between clips')
 assert(adEng.includes('clip-banner') && adEng.includes('pic-feed'), 'clip and pic placements exist')
@@ -238,7 +257,6 @@ assert(adUnitsSrc.includes('aspect-[3/1]'), 'pic full ads match photo row height
 const picsPageSrc = readFileSync(new URL('../src/components/PicsPage.jsx', import.meta.url), 'utf8')
 assert(picsPageSrc.includes('variant="pic-row"'), 'pics mosaic uses the full-width pic ad card')
 assert(picsPageSrc.includes('aspect-square'), 'pic viewer ads sit in a square photo card')
-assert(adEng.includes('picFeedEvery: 6'), 'pic full ads sit about every 6 photos')
 const paySrc = readFileSync(new URL('../src/lib/payouts.js', import.meta.url), 'utf8')
 assert(!paySrc.includes('rpmPerThousand'), 'payouts are not a per-1000-views rate')
 assert(!paySrc.includes('DEFAULT_RPM'), 'no default view rpm')
@@ -314,13 +332,15 @@ assert(authOwner.includes('isLocalOwnerLogin'), 'gmail password can use cloud au
 const streamSet2 = readFileSync(new URL('../src/components/settings/StreamSettings.jsx', import.meta.url), 'utf8')
 assert(streamSet2.includes('ensureStreamKey'), 'stream settings expose a key')
 assert(streamSet2.includes('Enable VOD channel'), 'stream settings have VOD channel')
+assert(streamSet2.includes('Mid-stream ads per hour'), 'stream settings use ads per hour')
 assert(streamSet2.includes('Run ad now'), 'stream settings can run a live ad')
 assert(streamSet2.includes('!ad'), 'stream settings list slash ad commands')
 assert(liveSrc.includes('useLiveStreamAds'), 'live stage plays VAST over the stream')
 const liveAdsSrc = readFileSync(new URL('../src/lib/liveAds.js', import.meta.url), 'utf8')
 assert(liveAdsSrc.includes('LIVE_VIEWER_AD_DELAY_SEC = 30'), 'live viewers get an ad after 30 seconds')
 assert(liveAdsSrc.includes('LIVE_AD_COOLDOWN_SEC = 300'), 'creator live ads have a 5 minute cooldown')
-assert(liveAdsSrc.includes('clampLiveAdIntervalSec'), 'repeat live ads cannot go under the cooldown')
+assert(liveAdsSrc.includes('setLiveAdsPerHour'), 'creators set ads per hour')
+assert(liveAdsSrc.includes('LIVE_ADS_PER_HOUR_MAX = 5'), 'creators can run up to 5 ads per hour')
 assert(liveAdsSrc.includes('6010934'), 'creator live ads use zone 6010934')
 assert(algoSrc.includes('bumpCatalogEngagement'), 'watch signals write back onto posts')
 assert(!algoSrc.includes('valorant'), 'search does not invent trending queries')
@@ -570,7 +590,11 @@ const liveViewSrc = readFileSync(new URL('../src/components/LiveView.jsx', impor
 assert(liveViewSrc.includes('getDisplayMedia'), 'PC screen share uses the browser capture API')
 assert(liveSrc.includes('getDisplayMedia') || liveViewSrc.includes('Share this screen'), 'live has share this screen')
 const panelSrc = readFileSync(new URL('../src/components/LiveChatPanel.jsx', import.meta.url), 'utf8')
+assert(tipsSrc.includes('normalizeTipAmount'), 'tips accept custom amounts')
+assert(tipsSrc.includes('TIP_AMOUNT_MIN'), 'tips have a minimum donation')
 assert(panelSrc.includes('startTipCheckout'), 'live chat has donate amounts')
+assert(panelSrc.includes('placeholder="Other"') || panelSrc.includes('Give'), 'live chat has custom donate')
+assert(watchSrc2.includes('placeholder="Other"'), 'watch page has custom donate')
 assert(panelSrc.includes("kind === 'donation'"), 'live donations render in chat')
 
 {

@@ -12,7 +12,7 @@ export default function HelpPage() {
     },
     {
       q: 'Can I donate on live or on a video?',
-      a: 'Yes if this deploy has a Stripe Payment Link. Pick $2, $5, $10, or $25. Nothing is marked until Stripe sends you back. Live donations appear in that chat. Post donations can show on your comments unless you turn that off in Settings → Comments.',
+      a: 'Yes if this deploy has a Stripe Payment Link. Pick $2, $5, $10, $25, or enter a custom amount ($1–$500). Nothing is marked until Stripe sends you back. Live donations appear in that chat. Post donations can show on your comments unless you turn that off in Settings → Comments.',
     },
     {
       q: 'How do I stream from a PC, Xbox, or PS5?',
