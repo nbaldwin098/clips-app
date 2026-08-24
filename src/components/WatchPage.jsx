@@ -10,7 +10,8 @@ import { getById, getWatchItem, getRelated, getMoreFromCreator, getWatchQueue } 
 import { recordView, getViews, toggleVote, getVotes, getUserVote, canAccessPaidPost } from '../lib/engagement'
 import { getWatchProgress, recordWatchProgress } from '../lib/watchProgress'
 import { recordInteraction } from '../lib/algorithmEngine'
-import { getActiveAdForVideo, recordAdImpression, recordAdSkip } from '../lib/adEngine'
+import { getActiveAdForVideo, recordAdImpression, recordAdSkip, watchBannerAllowed } from '../lib/adEngine'
+import ExoClickDisplay, { EXOCLICK_BANNER_ZONE, EXOCLICK_BANNER_CLASS } from './ExoClickDisplay'
 import { resolvePlayback, PLAYBACK_SPEEDS, formatClock, isHttp } from '../lib/playback'
 import { parseEmbedUrl } from '../lib/videoEmbed'
 import { redirectSafeUrl, safeIframeSrc, safeMediaUrl } from '../lib/safeUrl'
@@ -671,6 +672,18 @@ export default function WatchPage({
             )}
           </div>
       </div>
+
+          {watchBannerAllowed() ? (
+            <div className="max-w-3xl mx-auto px-4 md:px-6 mt-3">
+              <div className="min-h-[90px] overflow-hidden rounded-lg bg-[#111]">
+                <ExoClickDisplay
+                  zoneId={EXOCLICK_BANNER_ZONE}
+                  insClass={EXOCLICK_BANNER_CLASS}
+                  className="min-h-[90px] h-[90px]"
+                />
+              </div>
+            </div>
+          ) : null}
 
           {chapters.length > 0 && (
             <div className="max-w-3xl mx-auto px-4 md:px-6 mt-3 flex flex-wrap gap-1.5">
