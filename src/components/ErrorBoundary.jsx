@@ -22,7 +22,7 @@ export default class ErrorBoundary extends Component {
   goHome = () => {
     try {
       this.setState({ hasError: false, message: '' })
-      window.location.href = window.location.pathname || '/'
+      window.location.href = '/'
     } catch {
       window.location.reload()
     }

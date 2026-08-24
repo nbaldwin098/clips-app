@@ -9,7 +9,7 @@ import {
   CLIPS_SMS_TEMPLATE,
 } from '../lib/authBrand'
 
-function CopyBlock({ title, text }) {
+function CopyBlock({ title, text, preview = false }) {
   const [copied, setCopied] = useState(false)
   const copy = async () => {
     try {
@@ -30,6 +30,9 @@ function CopyBlock({ title, text }) {
           {copied ? 'Copied' : 'Copy'}
         </button>
       </div>
+      {preview ? (
+        <pre className="text-xs text-zinc-300 whitespace-pre-wrap leading-relaxed">{text}</pre>
+      ) : null}
     </div>
   )
 }
@@ -57,6 +60,18 @@ export default function AdminSetup() {
         {SETUP_SCRIPTS.map((script) => (
           <CopyBlock key={script.id} title={`${script.title} (${script.id})`} text={script.sql} />
         ))}
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold text-white">Site paths</h2>
+        <p className="text-sm text-zinc-400">
+          calabi.us is a single-page app. Render must rewrite every missing path to index.html, or /clips, /watch/…, and /about return Not Found. In the static site: Redirects/Rewrites → add this rewrite (or apply the repo Blueprint).
+        </p>
+        <CopyBlock
+          title="Render rewrite"
+          preview
+          text={'Source: /*\nDestination: /index.html\nAction: Rewrite'}
+        />
       </section>
 
       <section className="space-y-3">
