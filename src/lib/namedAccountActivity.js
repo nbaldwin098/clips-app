@@ -2,8 +2,9 @@
  * Named people accounts keep using the catalog the way a viewer would:
  * scroll recommended / clips / pics, finish watches, sit in live lobbies,
  * and like. They never unlike, comment, or send live chat.
- * When Supabase is configured, public.run_named_activity (migration 0009)
- * is the job that keeps going. This browser loop is only the offline fallback.
+ * Each person picks a random surface and a random item so they are not
+ * locked in the same order. When the Supabase job is actually writing
+ * watches, this tab loop stops.
  */
 import { lsGet, lsSet } from '../lib/storage'
 import { NAMED_ACCOUNTS } from '../data/namedAccountsSeed'
@@ -13,17 +14,19 @@ import { ensureUpvote, recordView, addWatchSeconds, getUserVote } from './engage
 import { recordInteraction, startSession } from './algorithmEngine'
 import { recordWatchProgress } from './watchProgress'
 import { notifyContentChanged } from './contentSync'
-import { getSupabase, isSupabaseConfigured } from './supabaseClient'
 
-const CURSOR_KEY = 'named_activity_cursor'
 const VIEWED_KEY = 'named_activity_viewed'
 const SESSION_KEY = 'named_activity_sessions'
-const BATCH = 8
 const TICK_MS = 450
 
 let timer = null
 let catalogCache = { at: 0, items: [] }
 let ticks = 0
+
+function pick(list) {
+  if (!list?.length) return null
+  return list[Math.floor(Math.random() * list.length)]
+}
 
 function sessionUserId() {
   return String(lsGet('user', null)?.id || '')
@@ -38,6 +41,14 @@ function catalogItems() {
   }
   catalogCache = { at: now, items: [...byId.values()] }
   return catalogCache.items
+}
+
+function splitCatalog(items) {
+  return {
+    video: items.filter((i) => i.type === 'video'),
+    short: items.filter((i) => i.type === 'short'),
+    pic: items.filter((i) => i.type === 'pic'),
+  }
 }
 
 function viewedMap() {
@@ -63,19 +74,28 @@ function ensureSession(userId) {
   lsSet(SESSION_KEY, started)
 }
 
-function sitInLiveLobbies(userId) {
+function liveRows() {
+  const board = lsGet('live_board', [])
+  return Array.isArray(board) ? board.filter((row) => row?.isLive) : []
+}
+
+function sitInOneLive(userId, row) {
+  if (!userId || !row?.userId) return
   const board = lsGet('live_board', [])
   if (!Array.isArray(board) || !board.length) return
-  let changed = false
-  const next = board.map((row) => {
-    if (!row?.isLive) return row
-    const ids = Array.isArray(row.watcherIds) ? row.watcherIds : []
-    if (ids.includes(userId)) return row
-    changed = true
+  const next = board.map((entry) => {
+    if (entry.userId !== row.userId || !entry.isLive) return entry
+    const ids = Array.isArray(entry.watcherIds) ? entry.watcherIds : []
+    if (ids.includes(userId)) return entry
     const watcherIds = [...ids, userId]
-    return { ...row, watcherIds, watchers: watcherIds.length }
+    return { ...entry, watcherIds, watchers: watcherIds.length }
   })
-  if (changed) lsSet('live_board', next)
+  lsSet('live_board', next)
+}
+
+function pickItemFor(account, pool, fallback) {
+  const unliked = (pool || []).filter((item) => getUserVote(account.id, item.id) !== 'up')
+  return pick(unliked.length ? unliked : (pool?.length ? pool : fallback))
 }
 
 function watchAndLike(account, item) {
@@ -83,7 +103,6 @@ function watchAndLike(account, item) {
   if (item.creatorId === account.id || item.userId === account.id) return
 
   ensureSession(account.id)
-  sitInLiveLobbies(account.id)
 
   const firstView = markViewed(account.id, item.id)
   if (firstView) {
@@ -92,23 +111,24 @@ function watchAndLike(account, item) {
   }
 
   const duration = Number(item.durationSec) || (item.type === 'pic' ? 8 : 30)
+  const ratio = item.type === 'pic' ? 1 : Math.min(1, 0.62 + Math.random() * 0.38)
   recordWatchProgress(account.id, {
     contentId: item.id,
     title: item.title,
     sourceUrl: item.mediaUrl || item.sourceUrl,
-    watchRatio: 1,
+    watchRatio: ratio,
     durationSec: duration,
-    positionSec: duration,
+    positionSec: Math.round(ratio * duration),
     creatorId: item.creatorId || item.userId,
     handle: item.handle,
   })
-  addWatchSeconds(item.creatorId || item.userId, Math.min(duration, 45))
+  addWatchSeconds(item.creatorId || item.userId, Math.min(duration * ratio, 45))
 
   const eventType = item.type === 'short' ? 'loop' : 'complete'
   recordInteraction(account.id, {
     contentId: item.id,
     type: eventType,
-    watchRatio: 1,
+    watchRatio: ratio,
     tags: item.tags || [],
     creatorId: item.creatorId || item.userId,
     title: item.title,
@@ -127,48 +147,54 @@ function watchAndLike(account, item) {
 }
 
 function stepNamedActivity() {
-  const people = NAMED_ACCOUNTS
+  const skipId = sessionUserId()
+  const people = NAMED_ACCOUNTS.filter((row) => row.id !== skipId)
   const items = catalogItems()
+  const by = splitCatalog(items)
+  const live = liveRows()
   if (!people.length) return
 
-  const skipId = sessionUserId()
-  let cursor = Number(lsGet(CURSOR_KEY, 0)) || 0
-  const nItems = Math.max(items.length, 1)
+  const batch = 5 + Math.floor(Math.random() * 7)
+  const used = new Set()
 
-  for (let i = 0; i < BATCH; i += 1) {
-    const account = people[cursor % people.length]
-    const item = items.length ? items[Math.floor(cursor / people.length) % nItems] : null
-    cursor += 1
-    if (!account || account.id === skipId) continue
-    if (item) watchAndLike(account, item)
-    else sitInLiveLobbies(account.id)
+  for (let i = 0; i < batch; i += 1) {
+    const account = pick(people)
+    if (!account) continue
+    const roll = Math.random()
+
+    if (roll < 0.18 && live.length) {
+      sitInOneLive(account.id, pick(live))
+      continue
+    }
+
+    let pool = by.video
+    if (roll < 0.42) pool = by.pic
+    else if (roll < 0.72) pool = by.short
+
+    const item = pickItemFor(account, pool, items)
+    if (!item) {
+      if (live.length) sitInOneLive(account.id, pick(live))
+      continue
+    }
+    const key = `${account.id}:${item.id}`
+    if (used.has(key)) continue
+    used.add(key)
+    watchAndLike(account, item)
+    if (Math.random() < 0.35 && live.length) sitInOneLive(account.id, pick(live))
   }
 
-  lsSet(CURSOR_KEY, cursor)
   ticks += 1
   if (ticks % 6 === 0) notifyContentChanged()
 }
 
 export { stepNamedActivity }
 
-async function namedCloudJobReady() {
-  if (!isSupabaseConfigured()) return false
-  try {
-    const sb = await getSupabase()
-    if (!sb) return false
-    const { error, count } = await sb.from('named_people').select('n', { count: 'exact', head: true })
-    return !error && Number(count) > 0
-  } catch {
-    return false
-  }
-}
-
 export async function startNamedAccountActivity() {
   if (typeof window === 'undefined') return
   if (timer) return
-  if (await namedCloudJobReady()) return
-  stepNamedActivity()
-  timer = window.setInterval(stepNamedActivity, TICK_MS)
+  const tick = () => { stepNamedActivity() }
+  tick()
+  timer = window.setInterval(tick, TICK_MS)
 }
 
 export function stopNamedAccountActivity() {

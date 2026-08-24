@@ -87,4 +87,10 @@ if (/named-0/.test(comments)) {
   console.error('FAIL bots commented')
   process.exit(1)
 }
-console.log('ok bots are actively working in this process')
+const likesMap = JSON.parse(store.get('engagement_likes') || '{}')
+const likedIds = Object.keys(likesMap)
+if (likedIds.length < 2) {
+  console.error('FAIL bots are all hitting one item', likedIds)
+  process.exit(1)
+}
+console.log('ok bots are actively working on different items', likedIds.slice(0, 8))
