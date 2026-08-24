@@ -53,8 +53,10 @@ import {
 import { startSession } from './lib/algorithmEngine'
 import { lsGet, lsSet } from './lib/storage'
 import { syncContentFromCloud } from './lib/contentSync'
-import { setGraphActor, syncGraphFromCloud } from './lib/graphSync'
+import { setGraphActor, syncGraphFromCloud, syncPublicEngagementFromCloud } from './lib/graphSync'
 import { installRuntimeGuards } from './lib/selfHeal'
+import { startNamedAccountActivity } from './lib/namedAccountActivity'
+import { pushLibraryCatalogToCloud } from './data/publicMediaSeed'
 import { isAdminSession } from './lib/moderation'
 import { getById, flushScheduledPublishes } from './lib/contentService'
 import { parseRoute, pushHash } from './lib/routes'
@@ -101,22 +103,27 @@ function AppShell() {
   }, [isAuthenticated, user?.id, user?.provider])
 
   useEffect(() => installRuntimeGuards(), [])
+  useEffect(() => startNamedAccountActivity(), [])
 
   useEffect(() => {
     syncContentFromCloud(user)
+    pushLibraryCatalogToCloud().catch(() => {})
     flushScheduledPublishes()
     syncPromotionsFromCloud()
     syncGraphFromCloud().catch(() => {})
+    syncPublicEngagementFromCloud().catch(() => {})
     const interval = setInterval(() => {
       syncContentFromCloud(user)
       flushScheduledPublishes()
       syncPromotionsFromCloud()
       syncGraphFromCloud().catch(() => {})
+      syncPublicEngagementFromCloud().catch(() => {})
     }, 45_000)
     const onFocus = () => {
       syncContentFromCloud(user)
       flushScheduledPublishes()
       syncGraphFromCloud().catch(() => {})
+      syncPublicEngagementFromCloud().catch(() => {})
     }
     window.addEventListener('focus', onFocus)
     return () => {

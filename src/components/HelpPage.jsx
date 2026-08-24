@@ -40,7 +40,7 @@ export default function HelpPage() {
   const faqs = [
     {
       q: 'The SQL editor said trailing junk after 0005',
-      a: 'You typed the file name. Postgres tried to read 0005 as a number. On this page, tap Copy SQL, paste the whole script into Supabase → SQL, then Run. Do that for 0005, 0006, and 0007.',
+      a: 'You typed the file name. Postgres tried to read 0005 as a number. On this page, tap Copy SQL, paste the whole script into Supabase → SQL, then Run. Do that for 0005, 0006, 0007, 0008, and 0009.',
     },
     {
       q: 'How do I sign in?',
@@ -61,6 +61,10 @@ export default function HelpPage() {
     {
       q: 'Can I watch without an account?',
       a: 'Yes. Sign in is required to comment, post, upload, import, or go live.',
+    },
+    {
+      q: 'The 467 people stopped when I closed the tab',
+      a: 'Copy SQL 0009 on this page, paste it into the SQL editor, and Run. That starts a database job so they keep watching and liking without a browser tab. If the last lines fail, turn on pg_cron under Database → Extensions and run those last lines again. They still never comment or chat.',
     },
     {
       q: 'How does discovery work?',
@@ -102,7 +106,7 @@ export default function HelpPage() {
       <section className="mb-8 space-y-3">
         <h2 className="text-sm font-semibold text-white">Supabase SQL — copy and run</h2>
         <p className="text-xs text-zinc-500">
-          Open Supabase → SQL Editor. Tap Copy SQL below. Paste. Run. Repeat for each step. 0007 and 0008 delete pics and clips that cannot load.
+          Open Supabase → SQL Editor. Tap Copy SQL below. Paste. Run. Repeat for each step. 0007 and 0008 delete pics and clips that cannot load. 0009 is the job that keeps the 467 people accounts watching and liking.
         </p>
         {SETUP_SCRIPTS.map((script) => (
           <CopyScript key={script.id} script={script} />

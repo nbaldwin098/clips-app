@@ -541,3 +541,34 @@ export function seedOfficialCatalog() {
     saveImport(record)
   }
 }
+
+export async function pushLibraryCatalogToCloud() {
+  try {
+    const { getSupabase, isSupabaseConfigured } = await import('../lib/supabaseClient')
+    if (!isSupabaseConfigured()) return false
+    const sb = await getSupabase()
+    if (!sb) return false
+    for (const item of OFFICIAL_MEDIA) {
+      if (!isHttpUrl(item.mediaUrl) || isKnownDeadUrl(item.mediaUrl)) continue
+      await sb.rpc('upsert_library_video', {
+        payload: {
+          id: item.id,
+          handle: item.handle,
+          type: item.type,
+          title: item.title,
+          description: item.description || '',
+          source_url: item.sourceUrl || item.mediaUrl,
+          media_url: item.mediaUrl,
+          thumb_url: item.thumbUrl,
+          origin: item.origin || 'public-domain-org',
+          duration_sec: item.durationSec || 0,
+          tags: item.tags || [],
+          created_at: item.createdAt,
+        },
+      })
+    }
+    return true
+  } catch {
+    return false
+  }
+}

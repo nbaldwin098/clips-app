@@ -50,6 +50,24 @@ export function toggleVote(userId, contentId, direction) {
   return cur
 }
 
+/** Like once. Never removes a like. Does not write the signed-in user's Liked page. */
+export function ensureUpvote(userId, contentId) {
+  if (!userId || !contentId) return getVotes(contentId)
+  const votes = lsGet(USER_VOTES, {})
+  const mine = { ...(votes[userId] || {}) }
+  if (mine[contentId] === 'up') return getVotes(contentId)
+  const tally = lsGet(LIKES, {})
+  const cur = { ...(tally[contentId] || { up: 0, down: 0 }) }
+  if (mine[contentId] === 'down') cur.down = Math.max(0, cur.down - 1)
+  cur.up += 1
+  mine[contentId] = 'up'
+  votes[userId] = mine
+  tally[contentId] = cur
+  lsSet(USER_VOTES, votes)
+  lsSet(LIKES, tally)
+  return cur
+}
+
 export function getUserUpvotedIds(userId) {
   if (!userId) return []
   const mine = lsGet(USER_VOTES, {})[userId] || {}

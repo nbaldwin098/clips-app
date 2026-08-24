@@ -286,6 +286,77 @@ async function pushMine() {
   }
 }
 
+export async function syncPublicEngagementFromCloud() {
+  if (!isSupabaseConfigured()) return false
+  try {
+    const sb = await getSupabase()
+    if (!sb) return false
+    const [tallies, lobby] = await Promise.all([
+      sb.from('vote_tallies').select('content_id, up, down').limit(4000),
+      sb.from('live_lobby').select('*').eq('is_live', true).limit(200),
+    ])
+    if (!tallies.error && Array.isArray(tallies.data)) {
+      const likes = lsGet(LIKES, {}) || {}
+      for (const r of tallies.data) {
+        if (!r?.content_id) continue
+        likes[r.content_id] = { up: Number(r.up) || 0, down: Number(r.down) || 0 }
+      }
+      lsSet(LIKES, likes)
+    }
+    if (!lobby.error && Array.isArray(lobby.data)) {
+      const board = lobby.data.map((r) => ({
+        userId: r.user_id,
+        isLive: r.is_live !== false,
+        title: r.title || 'Live on Clips',
+        handle: r.handle,
+        displayName: r.display_name,
+        category: r.category,
+        startedAt: r.started_at,
+        watcherIds: Array.isArray(r.watcher_ids) ? r.watcher_ids : [],
+        watchers: Array.isArray(r.watcher_ids) ? r.watcher_ids.length : 0,
+      }))
+      lsSet('live_board', board)
+    }
+    emit()
+    return true
+  } catch {
+    return false
+  }
+}
+
+export async function pushLiveLobby(payload) {
+  if (!payload?.userId || !isSupabaseConfigured()) return false
+  try {
+    const sb = await getSupabase()
+    if (!sb) return false
+    const { error } = await sb.from('live_lobby').upsert({
+      user_id: payload.userId,
+      is_live: true,
+      title: payload.title || 'Live on Clips',
+      handle: payload.handle || null,
+      display_name: payload.displayName || null,
+      category: payload.category || null,
+      started_at: payload.startedAt || new Date().toISOString(),
+      watcher_ids: payload.watcherIds || [],
+    })
+    return !error
+  } catch {
+    return false
+  }
+}
+
+export async function endLiveLobby(userId) {
+  if (!userId || !isSupabaseConfigured()) return false
+  try {
+    const sb = await getSupabase()
+    if (!sb) return false
+    const { error } = await sb.from('live_lobby').delete().eq('user_id', userId)
+    return !error
+  } catch {
+    return false
+  }
+}
+
 export async function syncGraphFromCloud() {
   if (!canSync()) return false
   const sb = await client()
