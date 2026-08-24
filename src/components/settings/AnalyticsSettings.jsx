@@ -8,7 +8,7 @@ export default function AnalyticsSettings({ onNavigate }) {
         </p>
       </div>
       <p className="text-sm text-zinc-400">
-        Studio analytics (when you have posted content) is under Analytics in your profile menu.
+        The creator portal is Overview (views, likes, mix) and a Posts table. Open it from here or from Analytics in the profile menu.
       </p>
       <button type="button" onClick={() => onNavigate?.('analytics')} className="h-9 px-4 rounded-lg bg-white text-black text-sm font-medium">
         Open analytics
