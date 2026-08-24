@@ -1,10 +1,12 @@
 /** Live-project smoke checks — no mock catalog, no invented checkout grant. */
 import { readFileSync, existsSync } from 'node:fs'
 import { createHash } from 'node:crypto'
+import { execFileSync } from 'node:child_process'
 import { extractHashtags, mergeTags, parseClock, parseCaptionCues, isReleased, filterExploreItems, formatPostedAt, olderIso, postedAtOf } from '../src/lib/mediaMeta.js'
 import { parseRoute, buildHash } from '../src/lib/routes.js'
 import { sanitizeAuthError, normalizePhone } from '../src/lib/authBrand.js'
 import { findOwnerLogin, isLocalOwnerLogin, isOwnerAccount, OWNER_LOGIN } from '../src/data/ownerLogin.js'
+import { parseVastXml, parseVastClock, youtubeMidrollBreaks, EXOCLICK_VAST_URL, YT_MIDROLL_MIN_SEC } from '../src/lib/vastAds.js'
 import { featuredWindowStart, nextFeaturedRefreshAt, lastHourRange, interleaveHourlyHits, HOURLY_PATTERN, HOURLY_VIDEO_COUNT, HOURLY_CLIP_COUNT, HOURLY_PIC_COUNT } from '../src/lib/hourWindow.js'
 
 let failed = 0
@@ -44,6 +46,16 @@ assert(!buildHash('watch', 'abc').includes('#'), 'share paths do not use hash')
 const pathParsed = parseRoute('/watch/abc?t=12')
 assert(pathParsed.kind === 'watch' && pathParsed.id === 'abc' && pathParsed.params.t === '12', 'pathname watch route')
 assert(buildHash('home') === '/', 'home is slash')
+assert(parseVastClock('00:00:05.0') === 5, 'vast skipoffset clock')
+assert(youtubeMidrollBreaks(YT_MIDROLL_MIN_SEC - 1).length === 0, 'no mid-roll under 8 minutes')
+assert(youtubeMidrollBreaks(8 * 60).length === 1, '8 minute video gets one mid-roll')
+assert(EXOCLICK_VAST_URL.includes('idz=6010924'), 'exoClick zone is wired')
+{
+  const sample = '<?xml version="1.0"?><VAST version="3.0"><Ad><InLine><Impression><![CDATA[https://s.magsrv.com/i]]></Impression><Creatives><Creative><Linear skipoffset="00:00:05.0"><Duration>00:00:17.500</Duration><MediaFiles><MediaFile delivery="progressive" type="video/mp4"><![CDATA[https://cdn.example.com/ad.mp4]]></MediaFile></MediaFiles><VideoClicks><ClickThrough><![CDATA[https://s.magsrv.com/click]]></ClickThrough></VideoClicks></Linear></Creative></Creatives></InLine></Ad></VAST>'
+  const parsed = parseVastXml(sample)
+  assert(parsed?.mediaUrl?.includes('ad.mp4') && parsed.skipAfterSec === 5, 'vast parser reads mp4 and skip')
+}
+assert(!parseVastXml('<VAST version="3.0"></VAST>'), 'empty vast is not a fake ad')
 assert(existsSync(new URL('../public/_redirects', import.meta.url)), 'static host rewrites unknown paths to the app')
 
 function isPromoLive(promo, now = Date.now()) {
@@ -218,7 +230,9 @@ const picsSrc = readFileSync(new URL('../src/components/PicsPage.jsx', import.me
 assert(picsSrc.includes('mixFeedAds'), 'pic mosaic inserts in-feed ads')
 assert(picsSrc.includes('pic-banner'), 'pic viewer has a bottom banner')
 const watchAds = readFileSync(new URL('../src/components/WatchPage.jsx', import.meta.url), 'utf8')
-assert(watchAds.includes('VideoPreroll'), 'watch uses YouTube-style preroll')
+assert(watchAds.includes('VideoInStreamAd'), 'watch plays VAST in-stream ads on videos')
+assert(watchAds.includes('useVideoVastAds'), 'watch loads ExoClick VAST for videos')
+assert(!shortsFeedSrc.includes('useVideoVastAds'), 'clips do not play VAST preroll')
 const dashSrc = readFileSync(new URL('../src/components/CreatorDashboard.jsx', import.meta.url), 'utf8')
 assert(dashSrc.includes('Copy stream key'), 'creator dashboard has stream key')
 assert(dashSrc.includes('Wallet'), 'creator dashboard links wallet')
@@ -505,6 +519,19 @@ assert(liveSrc.includes('getDisplayMedia') || liveViewSrc.includes('Share this s
 const panelSrc = readFileSync(new URL('../src/components/LiveChatPanel.jsx', import.meta.url), 'utf8')
 assert(panelSrc.includes('startTipCheckout'), 'live chat has donate amounts')
 assert(panelSrc.includes("kind === 'donation'"), 'live donations render in chat')
+
+{
+  let live = null
+  for (let i = 0; i < 2 && !live?.mediaUrl; i += 1) {
+    try {
+      const xml = execFileSync('curl', ['-fsS', '-A', 'Mozilla/5.0', EXOCLICK_VAST_URL], { encoding: 'utf8', timeout: 12000 })
+      live = parseVastXml(xml)
+    } catch {
+      live = null
+    }
+  }
+  assert(!!live?.mediaUrl, 'live exoClick vast returns a playable file')
+}
 
 if (failed) {
   console.error(`${failed} failed`)
