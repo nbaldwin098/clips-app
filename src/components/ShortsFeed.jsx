@@ -375,7 +375,7 @@ function ClipSlide({
           ) : null}
           {showBanner ? (
             <div className="mt-2 mr-16 md:mr-4 min-h-[90px] rounded-lg overflow-hidden bg-black/40" onClick={(e) => e.stopPropagation()}>
-              <ExoClickDisplay zoneId={EXOCLICK_BANNER_ZONE} insClass={EXOCLICK_BANNER_CLASS} className="min-h-[90px] h-[90px]" />
+              <ExoClickDisplay format="banner" zoneId={EXOCLICK_BANNER_ZONE} insClass={EXOCLICK_BANNER_CLASS} />
             </div>
           ) : null}
         </div>
@@ -494,10 +494,10 @@ export default function ShortsFeed({
         const row = mixed[index]
         if (row?.kind === 'ad') {
           return (
-            <div className="h-full w-full max-w-md mx-auto bg-black flex flex-col">
+            <div className="h-full w-full max-w-md mx-auto bg-black flex flex-col items-center justify-center px-4">
               <p className="shrink-0 px-3 py-2 text-[11px] text-white/70">Sponsored · swipe for the next clip</p>
-              <div className="flex-1 min-h-0">
-                <ExoClickDisplay zoneId={row.ad?.zoneId} active={active} />
+              <div className="w-full flex items-center justify-center">
+                <ExoClickDisplay zoneId={row.ad?.zoneId} format="display" active={active} />
               </div>
             </div>
           )
@@ -516,7 +516,7 @@ export default function ShortsFeed({
             onStitch={onStitch}
             onBack={backToGrid}
             onSearch={() => onNavigate?.('explore')}
-            showBanner={(active && bannerSlide === index) || clipBannerAllowed(mixed, index)}
+            showBanner={active && (bannerSlide === index || clipBannerAllowed(mixed, index))}
           />
         ) : null
       }}

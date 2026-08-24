@@ -40,7 +40,7 @@ export default function AdminAds() {
         <div>
           <p className="text-sm font-medium text-white">Site ads</p>
           <p className="text-xs text-zinc-500 mt-0.5">
-            Ads always run. There is no site-wide off switch — use the placement switches below to choose where they show. Videos use the ExoClick VAST tag as a skippable preroll (skip after 5 seconds, like YouTube), plus an in-feed card every 6–10 videos on home and a banner under the player. Videos 8 minutes or longer also get mid-rolls. Clip full ads sit every 4–6 clips at random, never twice in a row and never on a banner. Clip banners sit every 10 clips scrolled, never on a full ad. Pic full ads sit every 6–10 photos at random as a full-width mosaic row at photo height. Live viewers get the video tag 30 seconds after they open a stream. Creators can run a separate live tag with !ad, with at least 5 minutes between breaks. If a tag has no fill, we do not invent a fake ad.
+            Ads always run. There is no site-wide off switch — use the placement switches below to choose where they show. Videos use the ExoClick VAST tag as a skippable preroll (skip after 5 seconds, like YouTube), plus a horizontal banner strip every 6–10 videos on home and a banner under the player. Videos 8 minutes or longer also get mid-rolls. Clip full ads sit every 4–6 clips at random at native display size (never stretched into the 9:16 frame), never twice in a row and never on a banner. Clip banners sit every 10 clips scrolled, never on a full ad. Pic mosaic ads sit every 6–10 photos as a full-width banner row at photo height. Live viewers get the video tag 30 seconds after they open a stream. Creators can run a separate live tag with !ad, with at least 5 minutes between breaks. If a tag has no fill, we do not invent a fake ad. Ads keep their IAB size — we do not stretch them.
           </p>
         </div>
         <Pill on>Always on</Pill>
@@ -51,12 +51,12 @@ export default function AdminAds() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-2">
           {[
             ['videoPreroll', 'Videos', 'ExoClick VAST preroll + mid-roll'],
-            ['videoInFeed', 'Videos in-feed', 'Between video cards on home'],
+            ['videoInFeed', 'Videos in-feed', 'Banner strip between video rows'],
             ['watchBanner', 'Watch banner', 'Under the video player'],
             ['clipBanner', 'Clips banner', 'Bottom of clip'],
             ['clipInFeed', 'Clips in-feed', 'Between clips'],
             ['picBanner', 'Pics banner', 'Bottom of photo'],
-            ['picInFeed', 'Pics in-feed', 'Full-width mosaic row'],
+            ['picInFeed', 'Pics in-feed', 'Full-width banner at photo height'],
           ].map(([key, label, hint]) => (
             <button
               key={key}

@@ -38,7 +38,7 @@ export default function MediaShelves({ items, onPlayItem, onOpenPic, pinOverlay,
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-8">
             {videoRows.map((row) => (
               row.kind === 'ad' ? (
-                <div key={row.key} className="relative">
+                <div key={row.key} className="relative col-span-full">
                   <InFeedAd ad={row.ad} variant="video" />
                 </div>
               ) : (
