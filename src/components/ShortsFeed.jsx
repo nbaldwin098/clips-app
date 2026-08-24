@@ -12,6 +12,7 @@ import { copyShareUrl } from '../lib/routes'
 import CommentsPanel from './CommentsPanel'
 import ShortsStage, { ShortsCard } from './ShortsStage'
 import ShortsGrid from './ShortsGrid'
+import { PlacementBanner } from './AdUnits'
 
 function resolvePlayUrl(item) {
   return item?.mediaUrl || item?.sourceUrl || ''
@@ -279,43 +280,46 @@ function ClipSlide({
         </div>
       )}
 
-      <div className="absolute inset-x-0 bottom-0 z-10 pt-24 pb-5 px-3 bg-gradient-to-t from-black/80 via-black/25 to-transparent">
-        <div className="flex items-center gap-2 pr-16 md:pr-4">
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onOpenProfile?.(item.handle, creatorId) }}
-            className="text-sm font-semibold text-white drop-shadow"
-          >
-            {item.displayName || handle}
-          </button>
-          <button
-            type="button"
-            onClick={follow}
-            className={`h-7 px-3 rounded-full text-xs font-semibold ${
-              following ? 'bg-white/15 text-white' : 'bg-white text-black'
-            }`}
-          >
-            {following ? 'Subscribed' : 'Subscribe'}
-          </button>
+      <div className="absolute inset-x-0 bottom-0 z-10">
+        <div className="pt-24 pb-2 px-3 bg-gradient-to-t from-black/80 via-black/25 to-transparent">
+          <div className="flex items-center gap-2 pr-16 md:pr-4">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onOpenProfile?.(item.handle, creatorId) }}
+              className="text-sm font-semibold text-white drop-shadow"
+            >
+              {item.displayName || handle}
+            </button>
+            <button
+              type="button"
+              onClick={follow}
+              className={`h-7 px-3 rounded-full text-xs font-semibold ${
+                following ? 'bg-white/15 text-white' : 'bg-white text-black'
+              }`}
+            >
+              {following ? 'Subscribed' : 'Subscribe'}
+            </button>
+          </div>
+          <p className="text-sm text-white mt-2 line-clamp-2 drop-shadow pr-16 md:pr-4">{item.title || 'Untitled'}</p>
+          {item.soundTitle ? (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onOpenSound?.(item.soundId || item.soundTitle) }}
+              className="mt-2 max-w-[80%] h-8 px-3 rounded-full bg-black/45 text-[12px] text-white inline-flex items-center gap-2"
+            >
+              <span className="h-4 w-4 rounded-full bg-white/90" />
+              <span className="truncate">{item.soundTitle}</span>
+            </button>
+          ) : null}
         </div>
-        <p className="text-sm text-white mt-2 line-clamp-2 drop-shadow pr-16 md:pr-4">{item.title || 'Untitled'}</p>
-        {item.soundTitle ? (
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onOpenSound?.(item.soundId || item.soundTitle) }}
-            className="mt-2 max-w-[80%] h-8 px-3 rounded-full bg-black/45 text-[12px] text-white inline-flex items-center gap-2"
-          >
-            <span className="h-4 w-4 rounded-full bg-white/90" />
-            <span className="truncate">{item.soundTitle}</span>
-          </button>
-        ) : null}
+        <PlacementBanner placement="clip-banner" itemId={item.id} />
+        <div className="h-0.5 bg-white/20">
+          <div className="h-full bg-white" style={{ width: `${Math.round((progress || 0) * 100)}%` }} />
+        </div>
       </div>
 
-      <div className="md:hidden absolute right-2 bottom-28 flex flex-col items-center gap-5 z-10">
+      <div className="md:hidden absolute right-2 bottom-36 flex flex-col items-center gap-5 z-10">
         {actions(false)}
-      </div>
-      <div className="absolute inset-x-0 bottom-0 z-10 h-0.5 bg-white/20">
-        <div className="h-full bg-white" style={{ width: `${Math.round((progress || 0) * 100)}%` }} />
       </div>
 
       {commentsOpen && (

@@ -4,10 +4,7 @@ import {
   listTickets, updateTicket, listIndexedUsers, listImports, listUserClips,
 } from '../lib/moderation'
 import { listIdVerifications, setIdVerificationStatus } from '../lib/verification'
-import {
-  listAdApplications, approveAdApplication, rejectAdApplication,
-  adsAreRunning, setAdsRunning, listAllCampaigns, saveAdvertiserCampaign,
-} from '../lib/adEngine'
+import { adsAreRunning } from '../lib/adEngine'
 import {
   getPayoutSettings, setPayoutSettings, setCreatorRpm, listCreatorBalances,
   recordManualPayout, listPayoutLedger, getPayoutContact,
@@ -16,6 +13,7 @@ import { lsGet, lsSet } from '../lib/storage'
 import { useAuth } from '../context/AuthContext'
 import { ORG, OPS_CHECKLIST, applicationsAreOpen, applicationsWindowLabel } from '../lib/orgConfig'
 import AdminPromos from './AdminPromos'
+import AdminAds from './AdminAds'
 
 const TABS = [
   ['ops', 'Overview'],
@@ -77,14 +75,12 @@ export default function AdminPortal() {
 
   const apps = listApplications()
   const pendingApps = apps.filter((a) => a.status === 'pending')
-  const adApps = listAdApplications()
   const tickets = listTickets()
   const openTickets = tickets.filter((t) => t.status === 'open')
   const users = listIndexedUsers()
   const imports = listImports()
   const clips = listUserClips()
   const live = lsGet('live_board', [])
-  const campaigns = listAllCampaigns()
   const balances = listCreatorBalances()
   const ledger = listPayoutLedger()
   const adsOn = adsAreRunning()
@@ -241,84 +237,7 @@ export default function AdminPortal() {
         </div>
       )}
 
-      {tab === 'ads' && (
-        <div className="space-y-4">
-          <div className="rounded-xl border border-zinc-800 bg-[#121218] p-4 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-medium text-white">Site ads</p>
-              <p className="text-xs text-zinc-500">Off means watch and clips never show preroll, even if a campaign is scheduled.</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => { setAdsRunning(!adsOn); refresh() }}
-              className={`h-10 px-4 rounded-lg text-xs font-semibold ${adsOn ? 'bg-white text-black' : 'border border-zinc-700 text-zinc-300'}`}
-            >
-              {adsOn ? 'Ads are ON' : 'Ads are off'}
-            </button>
-          </div>
-          <p className="text-sm text-white">Applications</p>
-          {adApps.length === 0 ? (
-            <p className="text-xs text-zinc-500">No advertisement applications yet.</p>
-          ) : (
-            adApps.map((a) => (
-              <div key={a.id} className="rounded-xl border border-zinc-800 bg-[#121218] p-4 text-sm space-y-2">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <span className="font-bold text-white">{a.businessName}</span>
-                    <span className="ml-2 text-xs text-zinc-400">{a.contactName} ({a.email})</span>
-                  </div>
-                  <Pill on={a.status === 'approved'}>{a.status}</Pill>
-                </div>
-                <p className="text-xs text-zinc-400">{a.website} · {a.monthlyBudget} · {a.targetAudience}</p>
-                {a.campaignGoals ? <p className="text-xs text-zinc-300">"{a.campaignGoals}"</p> : null}
-                {a.status === 'approved' && a.account && (
-                  <div className="p-3 rounded-lg bg-black border border-zinc-800 text-xs text-zinc-300 space-y-1">
-                    <p className="font-semibold text-white">Portal login (show this once)</p>
-                    <p>Username <code className="text-white">{a.account.username}</code></p>
-                    <p>Password <code className="text-white">{a.account.password}</code></p>
-                  </div>
-                )}
-                {a.status === 'pending' && (
-                  <div className="flex gap-2 pt-1">
-                    <button type="button" onClick={async () => { await approveAdApplication(a.id); refresh() }} className="h-8 px-4 rounded-lg bg-white text-black text-xs font-bold">Approve</button>
-                    <button type="button" onClick={() => { rejectAdApplication(a.id); refresh() }} className="h-8 px-3 rounded-lg bg-red-600 text-white text-xs">Reject</button>
-                  </div>
-                )}
-              </div>
-            ))
-          )}
-          <p className="text-sm text-white pt-2">Campaigns</p>
-          {campaigns.length === 0 ? <p className="text-xs text-zinc-500">No campaigns. Approve a brand, then schedule here.</p> : campaigns.map((c) => (
-            <div key={c.id} className="rounded-xl border border-zinc-800 bg-[#121218] p-4 text-xs space-y-2">
-              <div className="flex justify-between gap-2">
-                <p className="text-sm text-white">{c.headline} · {c.businessName}</p>
-                <Pill on={c.status === 'active'}>{c.status}</Pill>
-              </div>
-              <p className="text-zinc-500">{c.impressions || 0} impressions · {c.clicks || 0} clicks</p>
-              <div className="grid sm:grid-cols-4 gap-2">
-                <select
-                  value={c.status}
-                  onChange={(e) => { saveAdvertiserCampaign({ ...c, status: e.target.value }); refresh() }}
-                  className="h-9 rounded-lg border border-zinc-800 bg-black px-2 text-white"
-                >
-                  <option value="draft">draft</option>
-                  <option value="scheduled">scheduled</option>
-                  <option value="active">active</option>
-                  <option value="paused">paused</option>
-                  <option value="ended">ended</option>
-                </select>
-                <label className="text-zinc-500">Start
-                  <input type="datetime-local" defaultValue={c.startsAt ? c.startsAt.slice(0, 16) : ''} onBlur={(e) => { saveAdvertiserCampaign({ ...c, startsAt: e.target.value ? new Date(e.target.value).toISOString() : '' }); refresh() }} className="mt-1 block w-full h-9 rounded-lg border border-zinc-800 bg-black px-2 text-white" />
-                </label>
-                <label className="text-zinc-500">End
-                  <input type="datetime-local" defaultValue={c.endsAt ? c.endsAt.slice(0, 16) : ''} onBlur={(e) => { saveAdvertiserCampaign({ ...c, endsAt: e.target.value ? new Date(e.target.value).toISOString() : '' }); refresh() }} className="mt-1 block w-full h-9 rounded-lg border border-zinc-800 bg-black px-2 text-white" />
-                </label>
-                <input defaultValue={c.targetUrl || ''} placeholder="https link" onBlur={(e) => { try { saveAdvertiserCampaign({ ...c, targetUrl: e.target.value }); refresh() } catch {} }} className="h-9 self-end rounded-lg border border-zinc-800 bg-black px-2 text-white" />
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {tab === 'ads' && <AdminAds />}
 
       {tab === 'promos' && <AdminPromos />}
 

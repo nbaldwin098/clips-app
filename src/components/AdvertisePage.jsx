@@ -64,7 +64,7 @@ export default function AdvertisePage({ onNavigate }) {
             Advertise next to real videos, not invented traffic
           </h1>
           <p className="text-sm text-zinc-400 leading-relaxed">
-            Inventory today is preroll and banners on this site after we approve your brand. There is no live CPM, no guaranteed 24-hour turnaround, and no ad-revenue share until an ad pool actually exists. We will not sell you fake reach.
+            Inventory today is skippable preroll on videos, plus clip and pic banners and in-feed tiles, after we approve your brand. There is no live CPM, no guaranteed 24-hour turnaround, and no ad-revenue share until an ad pool actually exists. We will not sell you fake reach.
           </p>
         </div>
       </div>
@@ -89,7 +89,7 @@ export default function AdvertisePage({ onNavigate }) {
           <div className="h-9 w-9 rounded-xl bg-white/10 text-white flex items-center justify-center font-bold">3</div>
           <h3 className="text-sm font-semibold text-white">Placement</h3>
           <p className="text-xs text-zinc-400 leading-relaxed">
-            Approved campaigns can show skippable preroll on watch. Counts are impressions and clicks we actually record — not a sold audience number.
+            Approved campaigns can show skippable preroll on videos, a banner at the bottom of a clip or photo, and tiles between clips or photos as people scroll. Counts are impressions and clicks we actually record — not a sold audience number.
           </p>
         </div>
       </div>

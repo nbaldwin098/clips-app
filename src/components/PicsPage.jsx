@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { ImagePlus, X, Share2, Download } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getPicsFeed, publishPhoto, pickImmediatePhotoSrc, isHttpUrl, isDataImageUrl } from '../lib/picsService'
@@ -8,6 +8,8 @@ import { getMediaBlobUrl } from '../lib/videoStorage'
 import { copyShareUrl, replaceHash } from '../lib/routes'
 import ShortsStage, { ShortsCard } from './ShortsStage'
 import { downloadPostedMedia } from '../lib/mediaDownload'
+import { mixFeedAds } from '../lib/adEngine'
+import { InFeedAd, PlacementBanner } from './AdUnits'
 
 function PicImage({ pic, className, alt = '', full = false, fill = false, onUnplayable }) {
   const immediate = pickImmediatePhotoSrc(pic, { full })
@@ -101,17 +103,24 @@ function PicSlide({ pic, onOpenProfile }) {
         <PicImage pic={pic} full className="max-h-full max-w-full w-auto h-auto object-contain" />
       </div>
       {handle ? (
-        <div className="absolute inset-x-0 bottom-0 pt-16 pb-5 px-3 bg-gradient-to-t from-black/70 to-transparent z-10">
-          <button
-            type="button"
-            onClick={() => onOpenProfile?.(pic.handle, pic.creatorId)}
-            className="text-sm font-semibold text-white"
-          >
-            {handle}
-          </button>
+        <div className="absolute inset-x-0 bottom-0 z-10">
+          <div className="pt-16 pb-2 px-3 bg-gradient-to-t from-black/70 to-transparent">
+            <button
+              type="button"
+              onClick={() => onOpenProfile?.(pic.handle, pic.creatorId)}
+              className="text-sm font-semibold text-white"
+            >
+              {handle}
+            </button>
+          </div>
+          <PlacementBanner placement="pic-banner" itemId={pic.id} />
         </div>
-      ) : null}
-      <div className="md:hidden absolute right-2 bottom-24 z-10">{actions}</div>
+      ) : (
+        <div className="absolute inset-x-0 bottom-0 z-10">
+          <PlacementBanner placement="pic-banner" itemId={pic.id} />
+        </div>
+      )}
+      <div className="md:hidden absolute right-2 bottom-32 z-10">{actions}</div>
     </ShortsCard>
   )
 }
@@ -136,6 +145,7 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
     return idx >= 0 ? idx : 0
   })
 
+  const mixed = useMemo(() => mixFeedAds(items, 'pic-feed'), [items])
   const skipAutoOpen = useRef(false)
   const refresh = useCallback(() => setItems(getPicsFeed()), [])
   const dropBroken = useCallback((id) => {
@@ -259,22 +269,29 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
         </div>
       ) : (
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1 p-1 pb-20">
-          {items.map((pic, index) => (
-            <button
-              key={pic.id}
-              type="button"
-              onClick={() => openAt(index)}
-              className="relative block w-full aspect-square overflow-hidden bg-zinc-800 group focus:outline-none"
-            >
-              <PicImage key={pic.id} pic={pic} fill onUnplayable={dropBroken} />
-              <div className="pointer-events-none absolute inset-0 bg-black/0 group-hover:bg-black/35 transition-colors" />
-              {pic.title ? (
-                <span className="pointer-events-none absolute bottom-1.5 left-1.5 right-1.5 text-[11px] text-white line-clamp-2 opacity-0 group-hover:opacity-100 drop-shadow">
-                  {pic.title}
-                </span>
-              ) : null}
-            </button>
-          ))}
+          {mixed.map((row) => {
+            if (row.kind === 'ad') {
+              return <InFeedAd key={row.key} ad={row.ad} variant="pic" />
+            }
+            const pic = row.item
+            const index = items.findIndex((p) => p.id === pic.id)
+            return (
+              <button
+                key={row.key || pic.id}
+                type="button"
+                onClick={() => openAt(index)}
+                className="relative block w-full aspect-square overflow-hidden bg-zinc-800 group focus:outline-none"
+              >
+                <PicImage key={pic.id} pic={pic} fill onUnplayable={dropBroken} />
+                <div className="pointer-events-none absolute inset-0 bg-black/0 group-hover:bg-black/35 transition-colors" />
+                {pic.title ? (
+                  <span className="pointer-events-none absolute bottom-1.5 left-1.5 right-1.5 text-[11px] text-white line-clamp-2 opacity-0 group-hover:opacity-100 drop-shadow">
+                    {pic.title}
+                  </span>
+                ) : null}
+              </button>
+            )
+          })}
         </div>
       )}
     </div>

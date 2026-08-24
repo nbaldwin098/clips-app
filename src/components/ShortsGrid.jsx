@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { MoreVertical, Share2 } from 'lucide-react'
 import { copyShareUrl } from '../lib/routes'
 import { isRecentShort } from '../lib/mediaMeta'
 import { safeMediaUrl } from '../lib/safeUrl'
+import { mixFeedAds } from '../lib/adEngine'
+import { InFeedAd } from './AdUnits'
 
 function GridThumb({ item }) {
   const src = safeMediaUrl(item.thumbUrl)
@@ -81,6 +83,7 @@ function ShortTile({ item, onOpen }) {
 }
 
 export default function ShortsGrid({ items, onOpen, tab = 'recommended', onTab }) {
+  const mixed = useMemo(() => mixFeedAds(items, 'clip-feed'), [items])
   return (
     <div className="h-full overflow-y-auto bg-[#000000]">
       <div className="sticky top-0 z-10 bg-[#000000]/95 backdrop-blur px-4 py-3">
@@ -107,8 +110,12 @@ export default function ShortsGrid({ items, onOpen, tab = 'recommended', onTab }
         </p>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 p-4 pb-16">
-          {items.map((item) => (
-            <ShortTile key={item.id} item={item} onOpen={onOpen} />
+          {mixed.map((row) => (
+            row.kind === 'ad' ? (
+              <InFeedAd key={row.key} ad={row.ad} variant="clip" />
+            ) : (
+              <ShortTile key={row.key || row.item.id} item={row.item} onOpen={onOpen} />
+            )
           ))}
         </div>
       )}
