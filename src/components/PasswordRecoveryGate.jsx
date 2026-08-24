@@ -37,14 +37,14 @@ export default function PasswordRecoveryGate() {
           value={pw}
           onChange={(e) => setPw(e.target.value)}
           placeholder="New password"
-          className="w-full h-11 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-white"
+          className="w-full h-11 rounded-lg border border-[#2f2f37] bg-[#000000] px-3 text-sm text-white"
         />
         <input
           type="password"
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           placeholder="Confirm"
-          className="w-full h-11 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-white"
+          className="w-full h-11 rounded-lg border border-[#2f2f37] bg-[#000000] px-3 text-sm text-white"
         />
         {error ? <p className="text-sm text-red-400">{error}</p> : null}
         <button type="submit" disabled={busy || pw.length < 6} className="w-full h-10 rounded-lg bg-white text-black text-sm font-bold disabled:opacity-50">

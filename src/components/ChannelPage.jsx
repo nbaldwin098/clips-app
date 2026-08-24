@@ -71,10 +71,10 @@ export default function ChannelPage({ onNavigate }) {
 
       <div className="px-4 sm:px-6 -mt-10 relative flex flex-col sm:flex-row sm:items-end gap-4">
         <div className="relative shrink-0">
-          <div className="h-24 w-24 rounded-full border-4 border-[#0b0b0f] bg-[#121218] overflow-hidden flex items-center justify-center text-3xl font-bold text-white">
+          <div className="h-24 w-24 rounded-full border-4 border-[#000000] bg-[#121218] overflow-hidden flex items-center justify-center text-3xl font-bold text-white">
             {user?.avatarUrl ? <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" /> : (user?.displayName || '?')[0].toUpperCase()}
           </div>
-          <button type="button" onClick={() => avatarRef.current?.click()} className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-white text-black flex items-center justify-center border-2 border-[#0b0b0f]" title="Change avatar">
+          <button type="button" onClick={() => avatarRef.current?.click()} className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-white text-black flex items-center justify-center border-2 border-[#000000]" title="Change avatar">
             <Camera className="h-3.5 w-3.5" />
           </button>
           <input ref={avatarRef} type="file" accept="image/*" className="hidden" onChange={onAvatar} />
@@ -124,7 +124,7 @@ export default function ChannelPage({ onNavigate }) {
           <div className="rounded-xl border border-zinc-800 bg-[#121218] p-4">
             <p className="text-xs text-white mb-2">Subscriber emotes</p>
             <form onSubmit={add} className="flex gap-2">
-              <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="emoteCode" className="flex-1 h-9 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100" />
+              <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="emoteCode" className="flex-1 h-9 rounded-lg border border-zinc-800 bg-[#000000] px-3 text-sm text-zinc-100" />
               <button type="submit" className="h-9 px-3 rounded-lg bg-white text-black text-xs">Add</button>
             </form>
             <div className="flex flex-wrap gap-2 mt-2">

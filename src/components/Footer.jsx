@@ -13,12 +13,12 @@ export default function Footer({ onNavigate }) {
   )
 
   return (
-    <footer className="border-t border-zinc-800 bg-[#0b0b0f] mt-auto">
+    <footer className="border-t border-zinc-800 bg-[#000000] mt-auto">
       <div className="max-w-[1400px] mx-auto px-4 py-8">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
           <div>
             <div className="mb-2">
-            <BrandMark size={28} word="calabi" wordClassName="font-semibold text-zinc-100" />
+            <BrandMark size={28} />
             </div>
             <p className="text-xs text-zinc-500 max-w-xs leading-relaxed">
               Short video, live, and creator tools. Bootstrapped MVP.

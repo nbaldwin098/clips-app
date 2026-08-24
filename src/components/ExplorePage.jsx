@@ -69,13 +69,13 @@ export default function ExplorePage({ onPlayItem, onOpenPic, onOpenTag, initialQ
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <select value={date} onChange={(e) => setDate(e.target.value)} className="h-8 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-2 text-xs text-zinc-200">
+        <select value={date} onChange={(e) => setDate(e.target.value)} className="h-8 rounded-lg border border-zinc-800 bg-[#000000] px-2 text-xs text-zinc-200">
           {DATES.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
         </select>
-        <select value={duration} onChange={(e) => setDuration(e.target.value)} className="h-8 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-2 text-xs text-zinc-200">
+        <select value={duration} onChange={(e) => setDuration(e.target.value)} className="h-8 rounded-lg border border-zinc-800 bg-[#000000] px-2 text-xs text-zinc-200">
           {DURS.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
         </select>
-        <select value={sort} onChange={(e) => setSort(e.target.value)} className="h-8 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-2 text-xs text-zinc-200">
+        <select value={sort} onChange={(e) => setSort(e.target.value)} className="h-8 rounded-lg border border-zinc-800 bg-[#000000] px-2 text-xs text-zinc-200">
           <option value="newest">Newest</option>
           <option value="recommended">Most watched here</option>
         </select>

@@ -64,7 +64,7 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
         {banner ? <img src={banner} alt="" className="h-full w-full object-cover" /> : null}
       </div>
       <div className="px-4 -mt-10 relative z-10 flex flex-wrap items-end gap-4">
-        <div className="h-24 w-24 rounded-full border-4 border-[#0b0b0f] bg-white/30 flex items-center justify-center text-3xl font-semibold text-white overflow-hidden">
+        <div className="h-24 w-24 rounded-full border-4 border-[#000000] bg-white/30 flex items-center justify-center text-3xl font-semibold text-white overflow-hidden">
           {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" /> : (displayName[0] || '?').toUpperCase()}
         </div>
         <div className="flex-1 min-w-[160px] pb-1">

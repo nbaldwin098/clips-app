@@ -192,7 +192,7 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
 
   if (viewerIndex != null && items.length > 0) {
     return (
-      <div className="h-full min-h-0 flex flex-col bg-[#0f0f0f]">
+      <div className="h-full min-h-0 flex flex-col bg-[#000000]">
         <ShortsStage
           key={`pic-reel-${openedAt}`}
           count={items.length}
@@ -222,8 +222,8 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
   }
 
   return (
-    <div className="h-full overflow-y-auto bg-[#09090c]">
-      <div className="sticky top-0 z-10 border-b border-zinc-800/80 bg-[#09090c]/95 backdrop-blur px-4 py-3 flex items-center justify-between gap-3">
+    <div className="h-full overflow-y-auto bg-[#000000]">
+      <div className="sticky top-0 z-10 border-b border-zinc-800/80 bg-[#000000]/95 backdrop-blur px-4 py-3 flex items-center justify-between gap-3">
         <h1 className="text-lg font-semibold text-zinc-100">Pics</h1>
         <button type="button" onClick={openUpload} disabled={busy} className="h-9 px-3 rounded-lg bg-white text-black text-sm font-semibold disabled:opacity-60 inline-flex items-center gap-1.5">
           <ImagePlus className="h-4 w-4" />

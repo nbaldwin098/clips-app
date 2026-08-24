@@ -4,7 +4,7 @@ export default function AboutPage() {
   return (
     <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-6">
       <div>
-        <BrandMark size={48} word="calabi" wordClassName="text-xl font-semibold text-white" />
+        <BrandMark size={48} />
         <h1 className="sr-only">About Clips</h1>
         <p className="mt-2 text-sm text-[#adadb8] leading-relaxed">
           On big platforms, people come for the app — not for you. Clips is built so{' '}

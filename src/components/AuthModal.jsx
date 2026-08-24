@@ -168,7 +168,7 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
       <div className="w-full max-w-md rounded-2xl border border-[#2f2f37] bg-[#1f1f23] shadow-2xl">
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#2f2f37]">
           <div className="flex items-center gap-3 min-w-0">
-            <BrandMark size={32} withWord={false} />
+            <BrandMark size={32} />
             <div>
               <h2 className="text-lg font-semibold text-[#efeff1]">{title}</h2>
               <p className="text-[10px] text-zinc-500 mt-0.5">
@@ -199,7 +199,7 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
                         setBusy(false)
                       }
                     }}
-                    className="w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] text-sm font-semibold text-white hover:bg-[#18181b] disabled:opacity-60"
+                    className="w-full h-10 rounded-lg border border-[#2f2f37] bg-[#000000] text-sm font-semibold text-white hover:bg-[#18181b] disabled:opacity-60"
                   >
                     {p.label}
                   </button>
@@ -239,7 +239,7 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
                       setDisplayName(v)
                       if (!handle.trim()) setHandle(v.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24))
                     }}
-                    className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-white"
+                    className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#000000] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-white"
                   />
                 </label>
                 <label className="block">
@@ -249,7 +249,7 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
                     <input
                       value={handle}
                       onChange={(e) => setHandle(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24))}
-                      className="h-10 flex-1 rounded-r-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-white"
+                      className="h-10 flex-1 rounded-r-lg border border-[#2f2f37] bg-[#000000] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-white"
                     />
                   </div>
                 </label>
@@ -265,7 +265,7 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+1 555 123 4567"
-                    className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1]"
+                    className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#000000] px-3 text-sm text-[#efeff1]"
                     autoComplete="tel"
                   />
                 </label>
@@ -276,7 +276,7 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
                       value={smsCode}
                       onChange={(e) => setSmsCode(e.target.value.replace(/\D/g, '').slice(0, 8))}
                       inputMode="numeric"
-                      className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] tracking-widest"
+                      className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#000000] px-3 text-sm text-[#efeff1] tracking-widest"
                     />
                   </label>
                 ) : null}
@@ -288,7 +288,7 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-white"
+                  className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#000000] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-white"
                   autoComplete="email"
                 />
               </label>
@@ -301,7 +301,7 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-white"
+                  className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#000000] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-white"
                   autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
                 />
               </label>

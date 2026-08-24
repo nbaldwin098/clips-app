@@ -152,7 +152,7 @@ export default function CollapsibleSidebar({
                   <span className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold border-2 border-[#eb0400] bg-white/10 text-white">
                     {(s.displayName || s.handle || '?')[0]?.toUpperCase()}
                   </span>
-                  <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-[#eb0400] ring-1 ring-[#111116] animate-pulse" />
+                  <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-[#eb0400] ring-1 ring-[#000000] animate-pulse" />
                 </span>
                 {!collapsed && (
                   <span className="min-w-0 flex-1">
@@ -264,12 +264,7 @@ export default function CollapsibleSidebar({
           )}
           title="calabi"
         >
-          <BrandMark
-            size={collapsed ? 28 : 32}
-            withWord={!collapsed}
-            word="calabi"
-            wordClassName="text-sm font-extrabold tracking-tight text-white"
-          />
+          <BrandMark size={collapsed ? 28 : 32} />
         </button>
       </div>
     </div>
@@ -279,7 +274,7 @@ export default function CollapsibleSidebar({
     <>
       <aside
         className={cn(
-          'hidden md:block shrink-0 h-[calc(100vh-3.5rem)] sticky top-14 bg-[#111116] border-r border-[#23232c] transition-all duration-200 z-30',
+          'hidden md:block shrink-0 h-[calc(100vh-3.5rem)] sticky top-14 bg-[#000000] border-r border-[#23232c] transition-all duration-200 z-30',
           collapsed ? 'w-14' : 'w-60'
         )}
       >
@@ -289,7 +284,7 @@ export default function CollapsibleSidebar({
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex">
           <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={onMobileClose} />
-          <div className="relative w-64 max-w-[80vw] h-full bg-[#111116] border-r border-[#23232c] shadow-2xl z-10">
+          <div className="relative w-64 max-w-[80vw] h-full bg-[#000000] border-r border-[#23232c] shadow-2xl z-10">
             {body}
           </div>
         </div>

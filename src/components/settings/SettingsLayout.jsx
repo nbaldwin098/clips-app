@@ -32,7 +32,7 @@ export default function SettingsLayout({ section, onSection, children }) {
           ))}
         </select>
       </div>
-      <aside className="hidden lg:flex w-56 shrink-0 flex-col border-r border-zinc-800 bg-[#0e0e12] p-3">
+      <aside className="hidden lg:flex w-56 shrink-0 flex-col border-r border-zinc-800 bg-[#000000] p-3">
         <p className="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">Settings</p>
         <nav className="space-y-0.5">
           {SECTIONS.map(s => {

@@ -154,7 +154,7 @@ export default function SecuritySettings() {
             {enroll.totp?.secret ? (
               <p className="text-[11px] text-zinc-500 break-all">Or type this key: {enroll.totp.secret}</p>
             ) : null}
-            <input value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 8))} placeholder="6-digit code" className="w-full h-10 rounded-lg border border-zinc-800 bg-[#0e0e10] px-3 text-sm text-white tracking-widest" />
+            <input value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 8))} placeholder="6-digit code" className="w-full h-10 rounded-lg border border-zinc-800 bg-[#000000] px-3 text-sm text-white tracking-widest" />
             <button type="button" onClick={confirmEnroll} className="h-9 px-4 rounded-lg bg-white text-black text-sm font-medium">Confirm 2FA</button>
           </div>
         ) : (

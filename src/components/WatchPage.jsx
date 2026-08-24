@@ -534,7 +534,7 @@ export default function WatchPage({
               ) : null}
               <label className="text-[11px] text-zinc-500 inline-flex items-center gap-1.5">
                 Speed
-                <select value={speed} onChange={(e) => setSpeed(Number(e.target.value))} className="h-8 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-2 text-xs text-zinc-200">
+                <select value={speed} onChange={(e) => setSpeed(Number(e.target.value))} className="h-8 rounded-lg border border-zinc-800 bg-[#000000] px-2 text-xs text-zinc-200">
                   {PLAYBACK_SPEEDS.map((s) => (
                     <option key={s} value={s}>{s}×</option>
                   ))}

@@ -37,7 +37,7 @@ export default function StreamSettings() {
         <h2 className="text-sm font-semibold text-white">Preferences on this device</h2>
         <label className="block max-w-xs">
           <span className="text-xs font-medium text-zinc-400">Preferred quality</span>
-          <select value={quality} onChange={(e) => setQuality(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100">
+          <select value={quality} onChange={(e) => setQuality(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#000000] px-3 text-sm text-zinc-100">
             <option value="1080p30">1080p30</option>
             <option value="720p30">720p30</option>
             <option value="480p30">480p30</option>
@@ -45,14 +45,14 @@ export default function StreamSettings() {
         </label>
         <label className="block max-w-xs">
           <span className="text-xs font-medium text-zinc-400">Latency preference</span>
-          <select value={latency} onChange={(e) => setLatency(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100">
+          <select value={latency} onChange={(e) => setLatency(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#000000] px-3 text-sm text-zinc-100">
             <option value="low">Low</option>
             <option value="normal">Normal</option>
           </select>
         </label>
         <label className="block max-w-md">
           <span className="text-xs font-medium text-zinc-400">Title template</span>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100" placeholder="Optional" />
+          <input value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#000000] px-3 text-sm text-zinc-100" placeholder="Optional" />
         </label>
         <button type="button" onClick={save} className="h-9 px-4 rounded-lg bg-white text-black text-sm font-medium">
           {saved ? 'Saved' : 'Save'}

@@ -31,7 +31,7 @@ export default function MfaGate() {
           inputMode="numeric"
           autoComplete="one-time-code"
           placeholder="6-digit code"
-          className="w-full h-11 rounded-lg border border-[#2f2f37] bg-[#0e0e10] px-3 text-sm text-white tracking-widest"
+          className="w-full h-11 rounded-lg border border-[#2f2f37] bg-[#000000] px-3 text-sm text-white tracking-widest"
         />
         {error ? <p className="text-sm text-red-400">{error}</p> : null}
         <button type="submit" disabled={busy || code.length < 6} className="w-full h-10 rounded-lg bg-white text-black text-sm font-bold disabled:opacity-50">

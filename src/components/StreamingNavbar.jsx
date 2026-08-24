@@ -66,7 +66,7 @@ export default function StreamingNavbar({
   }
 
   return (
-    <header className="sticky top-0 z-50 h-14 w-full border-b border-[#272730] bg-[#0e0e12]/95 backdrop-blur-md">
+    <header className="sticky top-0 z-50 h-14 w-full border-b border-[#272730] bg-[#000000]/95 backdrop-blur-md">
       <div className="flex h-full w-full items-center justify-between px-2 sm:px-4 gap-2">
         <div className="flex items-center gap-2 md:gap-4 shrink-0">
           <button
@@ -84,7 +84,7 @@ export default function StreamingNavbar({
             onClick={() => handleNav('home')}
             className="flex items-center gap-2 group text-left focus:outline-none"
           >
-            <BrandMark size={32} word="calabi" wordClassName="text-base font-extrabold tracking-tight text-white" />
+            <BrandMark size={32} />
           </button>
 
           <nav className="hidden lg:flex items-center gap-1 pl-2">

@@ -44,10 +44,10 @@ export default function ReportModal({ open, onClose, target = {} }) {
         ) : (
           <form onSubmit={submit} className="space-y-3">
             <label className="block text-xs text-white">Reason
-              <select value={reason} onChange={(e) => setReason(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm">{REASONS.map((r) => <option key={r}>{r}</option>)}</select>
+              <select value={reason} onChange={(e) => setReason(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#000000] px-3 text-sm">{REASONS.map((r) => <option key={r}>{r}</option>)}</select>
             </label>
             <label className="block text-xs text-white">Details
-              <textarea value={detail} onChange={(e) => setDetail(e.target.value)} rows={3} maxLength={500} className="mt-1 w-full rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 py-2 text-sm" />
+              <textarea value={detail} onChange={(e) => setDetail(e.target.value)} rows={3} maxLength={500} className="mt-1 w-full rounded-lg border border-zinc-800 bg-[#000000] px-3 py-2 text-sm" />
             </label>
             <button type="submit" className="w-full h-10 rounded-lg bg-white text-black text-sm">Submit report</button>
             {target.userId && isAuthenticated && (

@@ -89,17 +89,17 @@ export default function AdminPromos() {
       <div className="rounded-xl border border-zinc-800 bg-[#121218] p-4 space-y-3">
         <p className="text-sm font-medium text-white">{editingId ? 'Edit promo' : 'New promo'}</p>
         <label className="block text-xs text-zinc-400">Headline
-          <input value={draft.headline || ''} onChange={(e) => setDraft((d) => ({ ...d, headline: e.target.value }))} className="mt-1 w-full h-10 rounded-lg border border-zinc-700 bg-[#0e0e10] px-3 text-sm text-white" />
+          <input value={draft.headline || ''} onChange={(e) => setDraft((d) => ({ ...d, headline: e.target.value }))} className="mt-1 w-full h-10 rounded-lg border border-zinc-700 bg-[#000000] px-3 text-sm text-white" />
         </label>
         <label className="block text-xs text-zinc-400">Body
-          <textarea value={draft.body || ''} onChange={(e) => setDraft((d) => ({ ...d, body: e.target.value }))} rows={2} className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#0e0e10] px-3 py-2 text-sm text-white" />
+          <textarea value={draft.body || ''} onChange={(e) => setDraft((d) => ({ ...d, body: e.target.value }))} rows={2} className="mt-1 w-full rounded-lg border border-zinc-700 bg-[#000000] px-3 py-2 text-sm text-white" />
         </label>
         <div className="grid sm:grid-cols-2 gap-2">
           <label className="block text-xs text-zinc-400">Button
-            <input value={draft.ctaLabel || ''} onChange={(e) => setDraft((d) => ({ ...d, ctaLabel: e.target.value }))} className="mt-1 w-full h-10 rounded-lg border border-zinc-700 bg-[#0e0e10] px-3 text-sm text-white" />
+            <input value={draft.ctaLabel || ''} onChange={(e) => setDraft((d) => ({ ...d, ctaLabel: e.target.value }))} className="mt-1 w-full h-10 rounded-lg border border-zinc-700 bg-[#000000] px-3 text-sm text-white" />
           </label>
           <label className="block text-xs text-zinc-400">Goes to
-            <select value={draft.destView || 'home'} onChange={(e) => setDraft((d) => ({ ...d, destView: e.target.value }))} className="mt-1 w-full h-10 rounded-lg border border-zinc-700 bg-[#0e0e10] px-3 text-sm text-white">
+            <select value={draft.destView || 'home'} onChange={(e) => setDraft((d) => ({ ...d, destView: e.target.value }))} className="mt-1 w-full h-10 rounded-lg border border-zinc-700 bg-[#000000] px-3 text-sm text-white">
               {['home', 'explore', 'clips', 'pics', 'live', 'creator-apply', 'advertise', 'checkout', 'dashboard', 'subscriptions', 'help', 'content-rules', 'watch'].map((v) => (
                 <option key={v} value={v}>{v}</option>
               ))}
@@ -110,16 +110,16 @@ export default function AdminPromos() {
           <input
             value={draft.destView === 'watch' ? (draft.destId || draft.featureContentId || '') : (draft.featureContentId || '')}
             onChange={(e) => setDraft((d) => ({ ...d, destId: e.target.value, featureContentId: e.target.value }))}
-            className="mt-1 w-full h-10 rounded-lg border border-zinc-700 bg-[#0e0e10] px-3 text-sm text-white"
+            className="mt-1 w-full h-10 rounded-lg border border-zinc-700 bg-[#000000] px-3 text-sm text-white"
             placeholder="Leave blank unless featuring a published item"
           />
         </label>
         <div className="grid sm:grid-cols-2 gap-2">
           <label className="block text-xs text-zinc-400">Start (optional)
-            <input type="datetime-local" value={draft.startsAt || ''} onChange={(e) => setDraft((d) => ({ ...d, startsAt: e.target.value }))} className="mt-1 w-full h-10 rounded-lg border border-zinc-700 bg-[#0e0e10] px-3 text-sm text-white" />
+            <input type="datetime-local" value={draft.startsAt || ''} onChange={(e) => setDraft((d) => ({ ...d, startsAt: e.target.value }))} className="mt-1 w-full h-10 rounded-lg border border-zinc-700 bg-[#000000] px-3 text-sm text-white" />
           </label>
           <label className="block text-xs text-zinc-400">End (optional)
-            <input type="datetime-local" value={draft.endsAt || ''} onChange={(e) => setDraft((d) => ({ ...d, endsAt: e.target.value }))} className="mt-1 w-full h-10 rounded-lg border border-zinc-700 bg-[#0e0e10] px-3 text-sm text-white" />
+            <input type="datetime-local" value={draft.endsAt || ''} onChange={(e) => setDraft((d) => ({ ...d, endsAt: e.target.value }))} className="mt-1 w-full h-10 rounded-lg border border-zinc-700 bg-[#000000] px-3 text-sm text-white" />
           </label>
         </div>
         <div className="flex flex-wrap gap-2">

@@ -135,7 +135,7 @@ export default function AdminPortal() {
                 <p className="text-xs text-zinc-400">{a.website} · Budget: {a.monthlyBudget} · Target: {a.targetAudience}</p>
                 {a.campaignGoals && <p className="text-xs text-zinc-300 italic">"{a.campaignGoals}"</p>}
                 {a.status === 'approved' && a.account && (
-                  <div className="p-3 rounded-lg bg-[#0e0e14] border border-zinc-800 text-xs text-zinc-300 space-y-1">
+                  <div className="p-3 rounded-lg bg-[#000000] border border-zinc-800 text-xs text-zinc-300 space-y-1">
                     <p className="font-semibold text-white">Generated Portal Login Credentials:</p>
                     <p>Username: <code className="bg-white/10 px-1.5 py-0.5 rounded text-white">{a.account.username}</code></p>
                     <p>Password: <code className="bg-white/10 px-1.5 py-0.5 rounded text-white">{a.account.password}</code></p>
@@ -176,7 +176,7 @@ export default function AdminPortal() {
         tickets.map((t) => (
         <div key={t.id} className="rounded-xl border border-zinc-800 bg-[#121218] p-4 text-sm mb-2">
           <div className="flex justify-between"><span>{t.subject}</span>
-            <select value={t.status} onChange={(e)=>{updateTicket(t.id,{status:e.target.value});refresh()}} className="text-xs bg-[#0b0b0f] border border-zinc-700 rounded px-2">
+            <select value={t.status} onChange={(e)=>{updateTicket(t.id,{status:e.target.value});refresh()}} className="text-xs bg-[#000000] border border-zinc-700 rounded px-2">
               <option value="open">open</option><option value="closed">closed</option>
             </select>
           </div>

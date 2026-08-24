@@ -10,7 +10,7 @@ import { submitAdApplication } from '../lib/adEngine'
 import PageHeader from './PageHeader'
 
 const inputCls =
-  'mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-white focus:outline-none'
+  'mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#000000] px-3 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-white focus:outline-none'
 
 export default function AdvertisePage({ onNavigate }) {
   const [businessName, setBusinessName] = useState('')
@@ -228,7 +228,7 @@ export default function AdvertisePage({ onNavigate }) {
               onChange={(e) => setCampaignGoals(e.target.value)}
               rows={3}
               placeholder="Tell us what product or service you're promoting, call to action, and any specific format preferences."
-              className="mt-1 w-full rounded-lg border border-zinc-800 bg-[#0b0b0f] px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-white focus:outline-none"
+              className="mt-1 w-full rounded-lg border border-zinc-800 bg-[#000000] px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-white focus:outline-none"
             />
           </label>
 
