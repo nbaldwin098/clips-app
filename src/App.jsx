@@ -58,7 +58,6 @@ import { lsGet, lsSet } from './lib/storage'
 import { syncContentFromCloud, notifyContentChanged } from './lib/contentSync'
 import { setGraphActor, syncGraphFromCloud, syncPublicEngagementFromCloud } from './lib/graphSync'
 import { installRuntimeGuards } from './lib/selfHeal'
-import { startNamedAccountActivity } from './lib/namedAccountActivity'
 import { pushLibraryCatalogToCloud } from './data/publicMediaSeed'
 import { isAdminSession } from './lib/moderation'
 import { getById, flushScheduledPublishes, resolvePublicCreator } from './lib/contentService'
@@ -108,7 +107,6 @@ function AppShell() {
   }, [isAuthenticated, user?.id, user?.provider])
 
   useEffect(() => installRuntimeGuards(), [])
-  useEffect(() => startNamedAccountActivity(), [])
 
   useEffect(() => {
     if (!user?.id || typeof window === 'undefined') return

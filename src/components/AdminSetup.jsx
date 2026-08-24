@@ -52,7 +52,7 @@ export default function AdminSetup() {
           , paste one script, then Run. Do not type the file name into the box.
         </p>
         <p className="text-xs text-zinc-500">
-          0009 keeps the named accounts watching and liking in the database. If pg_cron is off, turn it on under Database → Extensions, then run 0009 again.
+          0010 turns off the named-account like/watch job. The 467 people accounts still exist for sign-in. Run 0010 in the SQL editor if 0009 already scheduled that job.
         </p>
         {SETUP_SCRIPTS.map((script) => (
           <CopyBlock key={script.id} title={`${script.title} (${script.id})`} text={script.sql} />
