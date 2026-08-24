@@ -11,6 +11,9 @@ import { safeIframeSrc, safeMediaUrl } from '../lib/safeUrl'
 import PostedStamp from './PostedStamp'
 import { downloadPostedMedia } from '../lib/mediaDownload'
 import { VideoPreroll } from './AdUnits'
+import VideoInStreamAd from './VideoInStreamAd'
+import { useVideoVastAds } from '../hooks/useVideoVastAds'
+import { videoVastAdsEnabled } from '../lib/vastAds'
 
 function isHttp(url) {
   return typeof url === 'string' && (url.startsWith('https://') || url.startsWith('http://'))
@@ -49,6 +52,7 @@ export default function VideoPlayerModal({ item, onClose }) {
   const candidatesRef = useRef([])
   const attemptRef = useRef(0)
   const videoRef = useRef(null)
+  const vast = useVideoVastAds(item)
 
   useEffect(() => {
     if (!item?.id) return
@@ -95,12 +99,16 @@ export default function VideoPlayerModal({ item, onClose }) {
 
     resolve()
 
-    const ad = getActiveAdForVideo(item.id)
-    if (ad) {
-      setActiveAd(ad)
-      recordAdImpression(ad.id)
-    } else {
+    if (item.type === 'video' && videoVastAdsEnabled()) {
       setActiveAd(null)
+    } else {
+      const ad = getActiveAdForVideo(item.id)
+      if (ad) {
+        setActiveAd(ad)
+        recordAdImpression(ad.id)
+      } else {
+        setActiveAd(null)
+      }
     }
 
     return () => {
@@ -146,7 +154,8 @@ export default function VideoPlayerModal({ item, onClose }) {
     })
   }
 
-  const showingAd = Boolean(activeAd && !adDismissed)
+  const showingCampaignAd = Boolean(activeAd && !adDismissed && !vast.showingVast)
+  const showingAd = vast.showingVast || showingCampaignAd
   showingAdRef.current = showingAd
 
   const skipAd = useCallback(() => {
@@ -172,19 +181,24 @@ export default function VideoPlayerModal({ item, onClose }) {
 
   const handleTimeUpdate = (e) => {
     const video = e.target
-    if (!video?.duration || !user?.id || !item?.id) return
+    if (!video?.duration || !item?.id) return
+    if (mode === 'video' && item.type === 'video') {
+      vast.onContentTime(video.currentTime, video.duration)
+    }
     const ratio = video.currentTime / video.duration
-    recordWatchProgress(user.id, {
-      contentId: item.id,
-      title: item.title,
-      sourceUrl: item.sourceUrl || item.mediaUrl,
-      watchRatio: ratio,
-      durationSec: video.duration,
-      positionSec: video.currentTime,
-      creatorId: item.creatorId,
-      handle: item.handle,
-    })
-    if (ratio >= 0.9) {
+    if (user?.id) {
+      recordWatchProgress(user.id, {
+        contentId: item.id,
+        title: item.title,
+        sourceUrl: item.sourceUrl || item.mediaUrl,
+        watchRatio: ratio,
+        durationSec: video.duration,
+        positionSec: video.currentTime,
+        creatorId: item.creatorId,
+        handle: item.handle,
+      })
+    }
+    if (ratio >= 0.9 && user?.id) {
       recordInteraction(user.id, {
         contentId: item.id,
         type: 'complete',
@@ -216,7 +230,11 @@ export default function VideoPlayerModal({ item, onClose }) {
         </div>
 
         <div className={`relative w-full bg-black flex items-center justify-center ${isVertical ? 'aspect-[9/16] max-h-[72vh]' : 'aspect-video max-h-[65vh]'} overflow-hidden`}>
-          {showingAd ? (
+          {vast.creative ? (
+            <VideoInStreamAd creative={vast.creative} slot={vast.slot} onDone={vast.finishAd} />
+          ) : vast.awaitingPreroll ? (
+            <div className="absolute inset-0 z-30 bg-black" />
+          ) : showingCampaignAd ? (
             <VideoPreroll ad={activeAd} onSkip={skipAd} onComplete={() => setAdDismissed(true)} />
           ) : null}
 
