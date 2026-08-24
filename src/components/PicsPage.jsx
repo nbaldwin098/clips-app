@@ -351,8 +351,8 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
               return (
                 <div className="h-full w-full bg-black flex flex-col items-center justify-center p-4">
                   <p className="shrink-0 pb-3 text-[11px] text-white/70">Sponsored · swipe for the next pic</p>
-                  <div className="w-full max-w-md aspect-square overflow-hidden bg-[#111]">
-                    <ExoClickDisplay zoneId={row.ad?.zoneId} active={active} />
+                  <div className="w-full max-w-md aspect-square overflow-hidden bg-[#111] flex items-center justify-center">
+                    <ExoClickDisplay zoneId={row.ad?.zoneId} format="display" active={active} />
                   </div>
                 </div>
               )

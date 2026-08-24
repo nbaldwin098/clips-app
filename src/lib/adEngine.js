@@ -12,12 +12,11 @@ const ADVERTISERS_KEY = 'clips_advertisers'
 const AD_CAMPAIGNS_KEY = 'clips_ad_campaigns'
 const AD_SESSION_KEY = 'clips_advertiser_session'
 const AD_METRICS_KEY = 'clips_ad_metrics'
-const ADS_RUNNING_KEY = 'clips_ads_running'
 const AD_SETTINGS_KEY = 'clips_ad_settings'
 
 export const AD_PLACEMENTS = [
   { id: 'video', label: 'Videos', hint: 'YouTube-style skippable preroll on watch' },
-  { id: 'video-feed', label: 'Videos in-feed', hint: 'Between video cards on home' },
+  { id: 'video-feed', label: 'Videos in-feed', hint: 'Banner strip between video rows' },
   { id: 'watch-banner', label: 'Watch banner', hint: 'Bar under the video player' },
   { id: 'clip-banner', label: 'Clips banner', hint: 'Bar at the bottom of a clip' },
   { id: 'clip-feed', label: 'Clips in-feed', hint: 'Between clips as you scroll' },
@@ -228,13 +227,9 @@ export function saveAdvertiserCampaign(campaign) {
   return all
 }
 
+/** Ads always run. Admins choose placements, not whether the site earns. */
 export function adsAreRunning() {
-  return lsGet(ADS_RUNNING_KEY, true) === true
-}
-
-export function setAdsRunning(on) {
-  lsSet(ADS_RUNNING_KEY, !!on)
-  return adsAreRunning()
+  return true
 }
 
 export function getAdSettings() {
@@ -344,9 +339,13 @@ export function mixFeedAds(items, placement) {
   return mapped
 }
 
-/** True when the ExoClick display slot under the player should render. */
+export function placementAdsAllowed(placement) {
+  return adsAreRunning() && settingAllows(placement)
+}
+
+/** True when the ExoClick banner under the player should render. */
 export function watchBannerAllowed() {
-  return adsAreRunning() && settingAllows('watch-banner')
+  return placementAdsAllowed('watch-banner')
 }
 
 /** Banner under a clip every 10 clips scrolled, never on or next to a full in-feed ad. */

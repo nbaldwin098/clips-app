@@ -4,7 +4,10 @@ export const CLIP_AD_GAPS = [4, 5, 6]
 export const PIC_AD_GAPS = [6, 7, 8, 9, 10]
 export const VIDEO_AD_GAPS = [6, 7, 8, 9, 10]
 export const CLIP_BANNER_EVERY = 10
+/** Medium-rectangle display zone — clip/pic interstitials, never stretched. */
 export const EXOCLICK_FEED_ZONE = '6010926'
+/** Horizontal banner zone — watch/clip/pic bars and video-grid strips. */
+export const EXOCLICK_BANNER_ZONE = '6010930'
 
 function randomGap(gaps) {
   const list = Array.isArray(gaps) ? gaps : []
@@ -41,7 +44,7 @@ export function mixClipFeedRows(list, { banners = true } = {}) {
 
     out.push({
       kind: 'ad',
-      ad: { id: `exo-clip-feed-${i}`, provider: 'exoclick', zoneId: EXOCLICK_FEED_ZONE },
+      ad: { id: `exo-clip-feed-${i}`, provider: 'exoclick', zoneId: EXOCLICK_FEED_ZONE, format: 'display' },
       key: `exo-clip-feed-${i}`,
     })
     sinceAd = 0
@@ -51,7 +54,7 @@ export function mixClipFeedRows(list, { banners = true } = {}) {
   if (!out.some((r) => r.kind === 'ad') && items.length >= 2) {
     out.splice(Math.min(2, out.length), 0, {
       kind: 'ad',
-      ad: { id: 'exo-clip-feed-fallback', provider: 'exoclick', zoneId: EXOCLICK_FEED_ZONE },
+      ad: { id: 'exo-clip-feed-fallback', provider: 'exoclick', zoneId: EXOCLICK_FEED_ZONE, format: 'display' },
       key: 'exo-clip-feed-fallback',
     })
   }
@@ -72,7 +75,7 @@ export function mixPicFeedRows(list) {
 
     out.push({
       kind: 'ad',
-      ad: { id: `exo-pic-feed-${i}`, provider: 'exoclick', zoneId: EXOCLICK_FEED_ZONE },
+      ad: { id: `exo-pic-feed-${i}`, provider: 'exoclick', zoneId: EXOCLICK_FEED_ZONE, format: 'display' },
       key: `exo-pic-feed-${i}`,
     })
     sinceAd = 0
@@ -82,7 +85,7 @@ export function mixPicFeedRows(list) {
   if (!out.some((r) => r.kind === 'ad') && items.length >= 2) {
     out.splice(Math.min(3, out.length), 0, {
       kind: 'ad',
-      ad: { id: 'exo-pic-feed-fallback', provider: 'exoclick', zoneId: EXOCLICK_FEED_ZONE },
+      ad: { id: 'exo-pic-feed-fallback', provider: 'exoclick', zoneId: EXOCLICK_FEED_ZONE, format: 'display' },
       key: 'exo-pic-feed-fallback',
     })
   }
@@ -103,7 +106,7 @@ export function mixVideoFeedRows(list) {
 
     out.push({
       kind: 'ad',
-      ad: { id: `exo-video-feed-${i}`, provider: 'exoclick', zoneId: EXOCLICK_FEED_ZONE },
+      ad: { id: `exo-video-feed-${i}`, provider: 'exoclick', zoneId: EXOCLICK_BANNER_ZONE, format: 'banner' },
       key: `exo-video-feed-${i}`,
     })
     sinceAd = 0
@@ -113,7 +116,7 @@ export function mixVideoFeedRows(list) {
   if (!out.some((r) => r.kind === 'ad') && items.length >= 2) {
     out.splice(Math.min(3, out.length), 0, {
       kind: 'ad',
-      ad: { id: 'exo-video-feed-fallback', provider: 'exoclick', zoneId: EXOCLICK_FEED_ZONE },
+      ad: { id: 'exo-video-feed-fallback', provider: 'exoclick', zoneId: EXOCLICK_BANNER_ZONE, format: 'banner' },
       key: 'exo-video-feed-fallback',
     })
   }

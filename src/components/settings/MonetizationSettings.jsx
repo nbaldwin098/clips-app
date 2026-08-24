@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { getMembershipPrice, setMembershipPrice } from '../../lib/engagement'
-import { adsAreRunning } from '../../lib/adEngine'
 
 export default function MonetizationSettings({ onNavigate }) {
   const { user } = useAuth()
@@ -42,7 +41,7 @@ export default function MonetizationSettings({ onNavigate }) {
       <section className="pt-6 border-t border-zinc-800 space-y-3">
         <h2 className="text-sm font-semibold text-white">Earn</h2>
         <p className="text-sm text-zinc-500">
-          Anyone can create. You have to apply to earn. Site ads are {adsAreRunning() ? 'on' : 'off'}. There is no ad share in earnings until a pool exists.
+          Anyone can create. You have to apply to earn. Site ads always run, but ad money is not a creator share and no ad earnings show on your dashboard.
         </p>
         {!approved ? (
           <button type="button" onClick={() => onNavigate?.('creator-apply')} className="h-9 px-4 rounded-lg bg-white text-black text-sm font-medium">

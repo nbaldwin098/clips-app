@@ -677,9 +677,9 @@ export default function WatchPage({
             <div className="max-w-3xl mx-auto px-4 md:px-6 mt-3">
               <div className="min-h-[90px] overflow-hidden rounded-lg bg-[#111]">
                 <ExoClickDisplay
+                  format="banner"
                   zoneId={EXOCLICK_BANNER_ZONE}
                   insClass={EXOCLICK_BANNER_CLASS}
-                  className="min-h-[90px] h-[90px]"
                 />
               </div>
             </div>

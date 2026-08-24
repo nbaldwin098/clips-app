@@ -103,3 +103,12 @@ body::before {
   word-break: break-word;
   overflow-wrap: anywhere;
 }
+
+/* ExoClick zones have fixed IAB sizes. Never stretch them into clip/video frames. */
+.exo-slot ins {
+  display: inline-block !important;
+  max-width: 100%;
+}
+.exo-slot ins iframe {
+  max-width: 100% !important;
+}

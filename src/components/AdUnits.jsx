@@ -1,13 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowUpRight, SkipForward } from 'lucide-react'
-import { getActiveAd, getVideoAdDurationSec, getVideoSkipAfterSec, recordAdClick, recordAdImpression } from '../lib/adEngine'
+import { getActiveAd, getVideoAdDurationSec, getVideoSkipAfterSec, placementAdsAllowed, recordAdClick, recordAdImpression } from '../lib/adEngine'
 import { openSafeUrl, safeHttpUrl } from '../lib/safeUrl'
 import ExoClickDisplay from './ExoClickDisplay'
 
 export function PlacementBanner({ placement, itemId }) {
-  const ad = useMemo(() => getActiveAd(placement), [placement, itemId])
-  if (!ad) return null
-  return <AdBanner ad={ad} />
+  const campaign = useMemo(() => getActiveAd(placement), [placement, itemId])
+  if (campaign) return <AdBanner ad={campaign} />
+  if (!placementAdsAllowed(placement)) return null
+  if (placement === 'clip-banner' || placement === 'pic-banner' || placement === 'watch-banner') {
+    return (
+      <div className="pointer-events-auto w-full" onClick={(e) => e.stopPropagation()}>
+        <ExoClickDisplay format="banner" />
+      </div>
+    )
+  }
+  return null
 }
 
 function creativeImage(ad) {
@@ -60,17 +68,27 @@ export default function AdBanner({ ad }) {
 
 export function InFeedAd({ ad, variant = 'clip' }) {
   if (ad?.provider === 'exoclick') {
+    if (variant === 'video') {
+      return (
+        <div className="relative w-full overflow-hidden rounded-xl bg-[#1a1a1a]">
+          <ExoClickDisplay format="banner" />
+        </div>
+      )
+    }
+    if (variant === 'pic-row') {
+      return (
+        <div className="relative col-span-3 sm:col-span-4 md:col-span-5 lg:col-span-6 w-full overflow-hidden bg-[#1a1a1a] aspect-[3/1] sm:aspect-[4/1] md:aspect-[5/1] lg:aspect-[6/1] flex items-center justify-center">
+          <ExoClickDisplay format="banner" />
+        </div>
+      )
+    }
     const frame =
-      variant === 'pic-row'
-        ? 'relative col-span-3 sm:col-span-4 md:col-span-5 lg:col-span-6 w-full overflow-hidden bg-[#1a1a1a] aspect-[3/1] sm:aspect-[4/1] md:aspect-[5/1] lg:aspect-[6/1]'
-        : variant === 'pic'
-          ? 'relative w-full aspect-square overflow-hidden bg-[#1a1a1a]'
-          : variant === 'video'
-            ? 'relative block w-full aspect-video overflow-hidden rounded-xl bg-[#1a1a1a]'
-            : 'relative block w-full aspect-[9/16] overflow-hidden rounded-xl bg-[#1a1a1a]'
+      variant === 'pic'
+        ? 'relative w-full aspect-square overflow-hidden bg-[#1a1a1a] flex items-center justify-center'
+        : 'relative block w-full aspect-[9/16] overflow-hidden rounded-xl bg-[#1a1a1a] flex items-center justify-center'
     return (
       <div className={frame}>
-        <ExoClickDisplay zoneId={ad.zoneId} />
+        <ExoClickDisplay zoneId={ad.zoneId} format="display" />
       </div>
     )
   }
