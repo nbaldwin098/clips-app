@@ -94,7 +94,7 @@ export default function NotificationsMenu({ onNavigate, onOpenWatch, onOpenAuth 
           }
           setOpen((v) => !v)
         }}
-        className="relative h-10 w-10 flex items-center justify-center rounded-full text-zinc-200 hover:bg-white/10 transition-colors"
+        className="relative h-9 w-9 flex items-center justify-center text-zinc-200 hover:bg-white/10 transition-colors shrink-0"
         title="Notifications"
         aria-expanded={open}
         aria-haspopup="true"

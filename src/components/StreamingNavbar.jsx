@@ -57,12 +57,12 @@ export default function StreamingNavbar({
 
   return (
     <header className="sticky top-0 z-50 h-14 w-full border-b border-[#272727] bg-[#0f0f0f]">
-      <div className="flex h-full w-full items-center pr-2 sm:pr-4">
+      <div className="flex h-full w-full min-w-0 items-center gap-1 pr-1.5 sm:pr-3">
         <div className="flex items-center shrink-0">
           <button
             type="button"
             onClick={onToggleSidebar}
-            className="flex h-14 w-14 items-center justify-center text-zinc-200"
+            className="flex h-14 w-11 sm:w-14 items-center justify-center text-zinc-200 shrink-0"
             aria-label={sidebarOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={!!sidebarOpen}
             title={sidebarOpen ? 'Close menu' : 'Open menu'}
@@ -76,36 +76,36 @@ export default function StreamingNavbar({
           <button
             type="button"
             onClick={() => handleNav('home')}
-            className="flex items-center text-left focus:outline-none pl-0.5"
+            className="flex items-center text-left focus:outline-none pl-0.5 shrink-0"
           >
             <BrandMark size={32} withWord />
           </button>
         </div>
 
         <form
-          className="flex-1 flex justify-center px-2 sm:px-6"
+          className="flex-1 flex justify-center min-w-0 px-1 sm:px-4"
           onSubmit={(e) => { e.preventDefault(); handleNav('explore') }}
         >
-          <div className="flex w-full max-w-[640px]">
+          <div className="flex w-full max-w-[640px] min-w-0">
             <input
               type="search"
               value={searchQuery || ''}
               onChange={(e) => onSearchChange?.(e.target.value)}
               onFocus={() => handleNav('explore')}
               placeholder="Search"
-              className="w-full h-10 rounded-l-full border border-[#303030] bg-[#121212] pl-4 pr-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-[#3ea6ff] focus:outline-none"
+              className="w-full min-w-0 h-9 border border-[#303030] bg-[#121212] pl-3 pr-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-[#3ea6ff] focus:outline-none"
             />
             <button
               type="submit"
-              className="h-10 w-16 shrink-0 rounded-r-full border border-l-0 border-[#303030] bg-[#222222] text-zinc-200 hover:bg-[#2a2a2a]"
+              className="h-9 w-11 sm:w-14 shrink-0 border border-l-0 border-[#303030] bg-[#222222] text-zinc-200 hover:bg-[#2a2a2a] flex items-center justify-center"
               aria-label="Search"
             >
-              <Search className="h-5 w-5 mx-auto" />
+              <Search className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
           </div>
         </form>
 
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <div className="flex items-center gap-0.5 sm:gap-1.5 shrink-0 flex-nowrap">
           {isAuthenticated ? (
             <>
               <NotificationsMenu
@@ -114,14 +114,14 @@ export default function StreamingNavbar({
                 onOpenAuth={onOpenAuth}
               />
 
-              <div className="relative" ref={menuRef}>
+              <div className="relative shrink-0" ref={menuRef}>
                 <button
                   type="button"
                   onClick={() => setMenuOpen((o) => !o)}
-                  className="flex items-center rounded-full p-0.5 hover:bg-white/10"
+                  className="flex h-9 w-9 items-center justify-center hover:bg-white/10 shrink-0"
                   aria-label="Account"
                 >
-                  <ChannelAvatar src={user?.avatarUrl} name={user?.displayName || user?.handle} size={32} />
+                  <ChannelAvatar src={user?.avatarUrl} name={user?.displayName || user?.handle} size={28} />
                 </button>
 
                 {menuOpen && (
@@ -208,10 +208,10 @@ export default function StreamingNavbar({
             <button
               type="button"
               onClick={onOpenAuth}
-              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border border-[#3ea6ff] text-sm font-medium text-[#3ea6ff] hover:bg-[#3ea6ff]/10"
+              className="inline-flex items-center justify-center gap-1.5 h-9 min-w-9 px-2 sm:px-3.5 border border-[#3ea6ff] text-sm font-medium text-[#3ea6ff] hover:bg-[#3ea6ff]/10 shrink-0"
             >
-              <CircleUserRound className="h-5 w-5" />
-              <span>Sign in</span>
+              <CircleUserRound className="h-5 w-5 shrink-0" />
+              <span className="hidden sm:inline whitespace-nowrap">Sign in</span>
             </button>
           )}
         </div>
