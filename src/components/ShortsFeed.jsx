@@ -512,6 +512,21 @@ export default function ShortsFeed({
     )
   }
 
+  if (!mixed.length) {
+    return (
+      <div className="h-full min-h-0 flex flex-col items-center justify-center gap-4 bg-[#000000] px-6 text-center">
+        <p className="text-sm text-zinc-300">This clip was removed or is no longer available.</p>
+        <button
+          type="button"
+          onClick={backToGrid}
+          className="h-10 px-5 rounded-full bg-white text-black text-sm font-semibold"
+        >
+          Back to clips
+        </button>
+      </div>
+    )
+  }
+
   return (
     <ShortsStage
       key={`clips-player-${tab}-${focusId}`}
