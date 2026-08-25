@@ -43,14 +43,24 @@ export function hasStableImage(item) {
 
 export function hasLocalMediaHint(item) {
   if (!item?.id) return false
-  if (isUserUploadRecord(item)) return true
-  if (Number(item.storedBytes) > 0) return true
+  // Only treat as locally playable when this device likely has IndexedDB bytes.
+  // Bare upload origin / storedBytes on a cloud stub used to mark empty rows
+  // as feedable for other viewers who could never play them.
+  if (item.localStored === true) return true
+  if (isUserUploadRecord(item) && Number(item.storedBytes) > 0 && !item.hosted) {
+    const media = String(item.mediaUrl || '')
+    const source = String(item.sourceUrl || '')
+    // Empty or blob-only rows on this device still recover via IndexedDB.
+    if (!media && !source) return true
+    if (isBlobUrl(media) || isBlobUrl(source)) return true
+  }
   return false
 }
 
 export function hasPlayableVideo(item) {
   if ([item?.mediaUrl, item?.sourceUrl].some(isKnownDeadUrl)) return false
-  if ([item?.mediaUrl, item?.sourceUrl].some((u) => isHttpUrl(u) || isBlobUrl(u))) return true
+  if ([item?.mediaUrl, item?.sourceUrl].some((u) => isHttpUrl(u))) return true
+  if ([item?.mediaUrl, item?.sourceUrl].some(isBlobUrl)) return true
   return hasLocalMediaHint(item)
 }
 
@@ -83,6 +93,11 @@ export function hiddenBrokenIds() {
 
 export function hideBrokenMedia(id) {
   if (!id) return
+  // Never delete a user upload because a thumbnail or one source failed —
+  // that was wiping clips after refresh when a dead blob: thumb errored.
+  const imports = lsGet('imports', []) || []
+  const row = Array.isArray(imports) ? imports.find((r) => r?.id === id) : null
+  if (row && isUserUploadRecord(row)) return
   const next = hiddenBrokenIds()
   next.add(id)
   lsSet(HIDDEN_KEY, [...next])

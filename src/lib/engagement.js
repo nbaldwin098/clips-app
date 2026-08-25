@@ -182,16 +182,10 @@ export function markContentPurchased(userId, contentId) {
   return true
 }
 
-export function canAccessPaidPost(user, item) {
-  const price = Number(item?.priceUsd) || 0
-  if (price <= 0) return true
-  if (!item) return true
-  const uid = user?.id
-  if (!uid) return false
-  const owner = item.creatorId || item.userId
-  if (owner && owner === uid) return true
-  if (owner && isPremiumSub(uid, owner)) return true
-  return hasPurchasedContent(uid, item.id)
+export function canAccessPaidPost(_user, _item) {
+  // Per-post pricing was removed. Uploads and videos are always free to watch.
+  // The only paid product is livestream premium membership.
+  return true
 }
 
 export const PREMIUM_PRICE = 5

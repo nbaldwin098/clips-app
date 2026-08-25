@@ -23,12 +23,10 @@ export default function UploadModal({
   const [status, setStatus] = useState('idle')
   const [meta, setMeta] = useState(null)
   const [error, setError] = useState('')
-  const [hosted, setHosted] = useState(false)
   const [chapters, setChapters] = useState([{ t: '0:00', title: '' }])
   const [captionsText, setCaptionsText] = useState('')
   const [scheduledFor, setScheduledFor] = useState('')
   const [stitchId, setStitchId] = useState(initialStitch?.id || '')
-  const [priceUsd, setPriceUsd] = useState('')
 
   const stitchOptions = useMemo(() => getShortsFeed(user?.id || null).slice(0, 40), [user?.id, open])
   const stitchItem = stitchId ? (getById(stitchId) || initialStitch) : initialStitch
@@ -45,13 +43,11 @@ export default function UploadModal({
     setStatus('idle')
     setMeta(null)
     setError('')
-    setHosted(false)
     setChapters([{ t: '0:00', title: '' }])
     setCaptionsText('')
     setScheduledFor('')
     setStitchId(initialStitch?.id || '')
     setDraftSaved(false)
-    setPriceUsd('')
   }
 
   const onPick = (e) => {
@@ -73,7 +69,6 @@ export default function UploadModal({
     chapters: parseChaptersInput(chapters),
     captionsText: captionsText.trim(),
     scheduledFor: scheduledFor || null,
-    priceUsd: priceUsd ? Number(priceUsd) : 0,
   })
 
   const submit = async (asDraft = false) => {
@@ -106,7 +101,6 @@ export default function UploadModal({
         setStatus('error')
         return
       }
-      setHosted(!!published.hosted)
       setMeta({
         name: published.item?.title || title,
         sizeMb: Math.round((file.size / (1024 * 1024)) * 10) / 10,
@@ -180,19 +174,6 @@ export default function UploadModal({
 
           <label className="block text-xs text-zinc-400">Tags
             <input value={tags} onChange={(e) => setTags(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-zinc-700 bg-[#000000] px-3 text-sm text-white" placeholder="music, gaming, comedy" />
-          </label>
-
-          <label className="block text-xs text-zinc-400">Price (USD, optional)
-            <input
-              type="number"
-              min="0"
-              max="50"
-              step="0.01"
-              value={priceUsd}
-              onChange={(e) => setPriceUsd(e.target.value)}
-              className="mt-1 w-full h-10 rounded-lg border border-zinc-700 bg-[#000000] px-3 text-sm text-white"
-              placeholder="0 = free. Subscribe is always free."
-            />
           </label>
 
           <SoundPicker value={sound} onChange={setSound} onOpenAuth={onOpenAuth} />
@@ -278,8 +259,8 @@ export default function UploadModal({
             <div className="rounded-lg border border-zinc-700 bg-[#18181b] p-3 text-sm space-y-1">
               <div className="flex items-center gap-2 font-medium text-white"><Film className="h-4 w-4" />{meta.name}</div>
               <p className="text-xs text-zinc-400">{meta.sizeMb ? `${meta.sizeMb} MB · ` : ''}{meta.type}{meta.soundTitle ? ` · ${meta.soundTitle}` : ''}</p>
-              <p className={`text-xs ${hosted ? 'text-green-400' : 'text-amber-400'}`}>
-                {meta.status === 'draft' ? 'Saved as a draft' : meta.status === 'scheduled' ? 'Scheduled on this device' : hosted ? 'Live shared link' : 'Saved on this device only'}
+              <p className={`text-xs ${meta.status === 'draft' || meta.status === 'scheduled' ? 'text-amber-400' : 'text-green-400'}`}>
+                {meta.status === 'draft' ? 'Saved as a draft' : meta.status === 'scheduled' ? 'Scheduled' : 'Uploaded'}
               </p>
             </div>
           )}

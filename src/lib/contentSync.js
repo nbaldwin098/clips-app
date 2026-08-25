@@ -99,6 +99,10 @@ export async function pushContentRecord(record, actor) {
   if (!record?.id || !actor?.id || actor.provider !== 'supabase' || !isSupabaseConfigured()) {
     return false
   }
+  // Never push unplayable stubs — empty/blob media left other users with
+  // feed cards that could not play.
+  const media = cloudUrl(record.mediaUrl) || cloudUrl(record.sourceUrl)
+  if (!media) return false
   try {
     const sb = await getSupabase()
     if (!sb) return false
@@ -117,6 +121,9 @@ export async function pushContentRecord(record, actor) {
 function keepCloudRow(row) {
   if (!row?.id || isReferenceItem(row)) return false
   if (row.type === 'pic') return hasStableImage(row)
+  // Cloud rows must have a real http(s) playable URL for other viewers.
+  const media = cloudUrl(row.mediaUrl) || cloudUrl(row.sourceUrl)
+  if (!media) return false
   return isFeedable(row)
 }
 

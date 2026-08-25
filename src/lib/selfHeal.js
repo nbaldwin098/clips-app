@@ -5,10 +5,13 @@
 import { isOwnerAccount } from '../data/ownerLogin'
 import { lsGet, lsSet, lsRemove } from './storage'
 import { safeHttpUrl } from './safeUrl'
-import { purgeDeadCatalog } from './catalogHealth'
+import { purgeDeadCatalog, isHttpUrl, isBlobUrl } from './catalogHealth'
 import { normalizeTaste } from './algorithmEngine'
 import { seedOfficialCatalog } from '../data/publicMediaSeed'
 import { seedNamedAccounts } from '../data/namedAccountsSeed'
+import { isUserUploadRecord } from './mediaMeta'
+import { getMediaFile } from './videoStorage'
+import { notifyContentChanged } from './contentSync'
 
 function isRecord(v) {
   return !!v && typeof v === 'object' && !Array.isArray(v)
@@ -52,6 +55,102 @@ function healCampaigns(list) {
   }).filter(Boolean)
 }
 
+function stripDeadBlobUrl(url) {
+  const u = String(url || '')
+  if (!u || isBlobUrl(u)) return ''
+  return u
+}
+
+/**
+ * Sync repair for upload rows: clear dead blob: URLs and strip post prices.
+ * Blob object URLs die on refresh; keeping them made cards look broken and
+ * previously triggered hideBrokenMedia to delete the whole post.
+ */
+export function healUploadCatalog() {
+  const imports = lsGet('imports', []) || []
+  if (!Array.isArray(imports) || !imports.length) return 0
+  let changed = 0
+  const next = imports.map((row) => {
+    if (!row || typeof row !== 'object') return row
+    let dirty = false
+    const r = { ...row }
+    if (Number(r.priceUsd) > 0) {
+      r.priceUsd = 0
+      dirty = true
+    }
+    for (const key of ['mediaUrl', 'sourceUrl', 'thumbUrl', 'mosaicThumb']) {
+      const cleaned = stripDeadBlobUrl(r[key])
+      if (cleaned !== String(r[key] || '')) {
+        r[key] = cleaned
+        dirty = true
+      }
+    }
+    if (!r.thumbUrl && String(row.thumbUrl || '').startsWith('data:image/')) {
+      r.thumbUrl = row.thumbUrl
+    }
+    if (
+      isUserUploadRecord(r)
+      && Number(r.storedBytes) > 0
+      && r.localStored !== true
+      && !isHttpUrl(r.mediaUrl)
+      && !isHttpUrl(r.sourceUrl)
+    ) {
+      r.localStored = true
+      dirty = true
+    }
+    if (dirty) changed += 1
+    return r
+  })
+  if (changed) lsSet('imports', next)
+  return changed
+}
+
+/**
+ * Async self-debugger: confirm IndexedDB still holds each local upload and
+ * clear the localStored flag when the file is gone so feeds stay honest.
+ */
+export async function verifyLocalUploads() {
+  const imports = lsGet('imports', []) || []
+  if (!Array.isArray(imports) || !imports.length) return { checked: 0, fixed: 0 }
+  let fixed = 0
+  let checked = 0
+  const next = []
+  for (const row of imports) {
+    if (!row?.id || !isUserUploadRecord(row)) {
+      next.push(row)
+      continue
+    }
+    checked += 1
+    const r = { ...row, priceUsd: 0 }
+    for (const key of ['mediaUrl', 'sourceUrl', 'thumbUrl', 'mosaicThumb']) {
+      r[key] = stripDeadBlobUrl(r[key])
+    }
+    const hasHttp = isHttpUrl(r.mediaUrl) || isHttpUrl(r.sourceUrl)
+    if (!hasHttp) {
+      try {
+        const file = await getMediaFile(r.id)
+        const ok = !!file
+        if (r.localStored !== ok) {
+          r.localStored = ok
+          fixed += 1
+        } else if (!ok && Number(r.storedBytes) > 0) {
+          r.storedBytes = 0
+          fixed += 1
+        }
+      } catch {
+        r.localStored = false
+        fixed += 1
+      }
+    }
+    next.push(r)
+  }
+  if (fixed) {
+    lsSet('imports', next)
+    try { notifyContentChanged() } catch {}
+  }
+  return { checked, fixed }
+}
+
 export function healLocalState() {
   try {
     const user = lsGet('user', null)
@@ -81,7 +180,10 @@ export function healLocalState() {
   try {
     const imports = lsGet('imports', [])
     if (!Array.isArray(imports)) lsSet('imports', [])
-    else purgeDeadCatalog()
+    else {
+      healUploadCatalog()
+      purgeDeadCatalog()
+    }
   } catch {
     try { lsSet('imports', []) } catch {}
   }

@@ -131,7 +131,8 @@ export function normalizeItem(raw) {
     handle: raw.handle || raw.creatorHandle,
     displayName: raw.displayName || raw.creatorName || '',
     avatarUrl: raw.avatarUrl || '',
-    priceUsd: Number(raw.priceUsd) > 0 ? Math.round(Number(raw.priceUsd) * 100) / 100 : 0,
+    // Posts are always free; membership price lives on monetization/livestream only.
+    priceUsd: 0,
     engagement: raw.engagement || { completionRate: 0, loops: 0, shares: 0, comments: 0, saves: 0, earlySkips: 0, likes: 0 },
     createdAt: raw.createdAt || raw.publishedAt || raw.importedAt || '',
     crossPost: raw.crossPost || null,
@@ -553,7 +554,6 @@ export function importUserLink(url, actor = null) {
 export async function publishLocalMedia(file, actor = null, {
   type = null, title = null, description = null, sound = null, tags = [],
   stitchOf = null, chapters = [], captionsText = '', scheduledFor = null, status = 'published',
-  priceUsd = 0,
 } = {}) {
   if (!file) return { ok: false, item: null, error: 'Choose a video file.' }
   try {
@@ -561,9 +561,12 @@ export async function publishLocalMedia(file, actor = null, {
     const outFile = processed.file || file
     const id = `up_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
 
-    let mediaUrl = processed.rawUrl
+    // Never persist ephemeral blob: object URLs — they die on refresh and leave
+    // other viewers with an empty/unplayable cloud row.
+    let mediaUrl = ''
     let origin = 'upload-local'
     let hosted = false
+    let localStored = false
 
     if (actor?.id && isSupabaseConfigured()) {
       const up = await uploadVideoToSupabase(outFile, actor.id)
@@ -572,14 +575,22 @@ export async function publishLocalMedia(file, actor = null, {
         origin = 'upload'
         hosted = true
       } else if (up.error) {
-        console.warn('[Clips] Supabase upload failed, using local link:', up.error)
+        console.warn('[Clips] Supabase upload failed, using local IndexedDB copy:', up.error)
       }
     }
 
     try {
-      await storeMediaBlob(id, outFile)
-      record.localStored = true
-    } catch {}
+      localStored = !!(await storeMediaBlob(id, outFile))
+    } catch {
+      localStored = false
+    }
+
+    if (!mediaUrl && !localStored) {
+      return { ok: false, item: null, error: 'Could not save this video on this device.' }
+    }
+
+    const thumbRaw = String(processed.thumbUrl || '')
+    const thumbUrl = thumbRaw.startsWith('data:image/') ? thumbRaw : ''
 
     const isVertical = processed.height > processed.width
     const isShortDuration = processed.durationSec && processed.durationSec <= 90
@@ -604,9 +615,10 @@ export async function publishLocalMedia(file, actor = null, {
       description: finalDescription.slice(0, 5000),
       sourceUrl: mediaUrl,
       mediaUrl,
-      thumbUrl: processed.thumbUrl || '',
+      thumbUrl,
       origin,
       hosted,
+      localStored,
       storedBytes: outFile.size || file.size || 0,
       durationSec: processed.durationSec,
       width: processed.width,
@@ -627,7 +639,8 @@ export async function publishLocalMedia(file, actor = null, {
       scheduledFor: isFuture ? new Date(when).toISOString() : null,
       status: finalStatus,
       publishedAt: finalStatus === 'published' ? new Date().toISOString() : null,
-      priceUsd: Number(priceUsd) > 0 ? Math.round(Number(priceUsd) * 100) / 100 : 0,
+      // Per-post pricing is removed — only livestream premium memberships are paid.
+      priceUsd: 0,
     }
 
     if (actor?.id) {
@@ -652,7 +665,7 @@ export async function publishLocalMedia(file, actor = null, {
       })
     }
 
-    return { ok: true, item: normalizeItem(record), error: null, hosted, status: finalStatus }
+    return { ok: true, item: normalizeItem(record), error: null, hosted, localStored, status: finalStatus }
   } catch (err) {
     return { ok: false, item: null, error: err?.message || 'Could not process video file.' }
   }

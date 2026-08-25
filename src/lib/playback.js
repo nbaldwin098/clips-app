@@ -33,13 +33,17 @@ export async function resolvePlayback(item) {
       else candidates.push(idbUrl)
     }
   } catch {}
-  if (!candidates.length) return { candidates, playSrc: '', mode: 'video' }
-  const first = candidates[0]
+  // Prefer stable http sources; keep blob/idb as fallbacks.
+  const usable = candidates.filter((u) => isHttp(u) || isBlob(u))
+  const preferred = usable.filter(isHttp)
+  const list = preferred.length ? [...preferred, ...usable.filter((u) => !isHttp(u))] : usable
+  if (!list.length) return { candidates: list, playSrc: '', mode: 'video' }
+  const first = list[0]
   const parsed = parseEmbedUrl(first)
   if (parsed?.type === 'iframe') {
-    return { candidates, playSrc: parsed.src, mode: 'iframe' }
+    return { candidates: list, playSrc: parsed.src, mode: 'iframe' }
   }
-  return { candidates, playSrc: parsed?.src || first, mode: 'video' }
+  return { candidates: list, playSrc: parsed?.src || first, mode: 'video' }
 }
 
 export function formatClock(sec) {
