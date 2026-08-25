@@ -248,6 +248,23 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
   }, [items, initialPicId])
   // Ads only while scrolling the viewer — never in the recommended mosaic.
   const scrollRows = useMemo(() => mixFeedAds(shuffled, 'pic-feed'), [shuffled])
+  const [skippedAdKeys, setSkippedAdKeys] = useState(() => new Set())
+  const visibleScrollRows = useMemo(
+    () => scrollRows.filter((row) => row.kind !== 'ad' || !skippedAdKeys.has(row.key)),
+    [scrollRows, skippedAdKeys],
+  )
+  const goToRef = useRef(null)
+  useEffect(() => { setSkippedAdKeys(new Set()) }, [initialPicId])
+  const skipAdSlide = useCallback((index) => {
+    const row = visibleScrollRows[index]
+    if (!row || row.kind !== 'ad') return
+    setSkippedAdKeys((prev) => {
+      const next = new Set(prev)
+      next.add(row.key)
+      return next
+    })
+    window.setTimeout(() => goToRef.current?.(index, 'auto'), 150)
+  }, [visibleScrollRows])
   const skipAutoOpen = useRef(false)
   const refresh = useCallback(() => setItems(getPicsFeed()), [])
   const dropBroken = useCallback((id) => {
@@ -259,17 +276,17 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
 
   useEffect(() => {
     const from = viewerIndex == null ? 0 : viewerIndex + 1
-    preloadPostedItems(scrollRows.slice(from), viewerIndex == null ? 6 : 3)
-  }, [scrollRows, viewerIndex])
+    preloadPostedItems(visibleScrollRows.slice(from), viewerIndex == null ? 6 : 3)
+  }, [visibleScrollRows, viewerIndex])
 
   useEffect(() => {
     if (!initialPicId || skipAutoOpen.current) return
-    const idx = scrollRows.findIndex((row) => row.kind === 'item' && row.item?.id === initialPicId)
+    const idx = visibleScrollRows.findIndex((row) => row.kind === 'item' && row.item?.id === initialPicId)
     if (idx >= 0) {
       setOpenedAt(idx)
       setViewerIndex(idx)
     }
-  }, [initialPicId, scrollRows])
+  }, [initialPicId, visibleScrollRows])
 
   const closeViewer = () => {
     skipAutoOpen.current = true
@@ -278,7 +295,7 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
   }
 
   const openPic = (pic) => {
-    const idx = scrollRows.findIndex((row) => row.kind === 'item' && row.item?.id === pic.id)
+    const idx = visibleScrollRows.findIndex((row) => row.kind === 'item' && row.item?.id === pic.id)
     const at = idx >= 0 ? idx : 0
     setOpenedAt(at)
     setViewerIndex(at)
@@ -322,11 +339,12 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
       <div className="h-full min-h-0 flex flex-col bg-[#000000]">
         <ShortsStage
           key={`pic-reel-${openedAt}`}
-          count={scrollRows.length}
+          count={visibleScrollRows.length}
           activeIndex={viewerIndex}
+          goToRef={goToRef}
           onActiveIndex={(i) => {
             setViewerIndex(i)
-            const pic = scrollRows[i]?.item
+            const pic = visibleScrollRows[i]?.item
             if (pic && typeof window !== 'undefined') {
               replaceHash('pic', pic.id)
             }
@@ -337,16 +355,16 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
               <button type="button" onClick={closeViewer} className="h-9 px-3 rounded-full bg-white/10 text-white text-xs inline-flex items-center gap-1.5">
                 <X className="h-4 w-4" /> Back to pics
               </button>
-              <p className="text-[11px] text-white/50">{viewerIndex + 1}/{scrollRows.length}</p>
+              <p className="text-[11px] text-white/50">{viewerIndex + 1}/{visibleScrollRows.length}</p>
             </div>
           )}
           renderSlide={(index, active, warm) => {
-            const row = scrollRows[index]
+            const row = visibleScrollRows[index]
             if (row?.kind === 'ad') {
               return (
                 <div className="h-full w-full max-w-md mx-auto bg-black flex flex-col items-center justify-center px-4">
                   <p className="shrink-0 px-3 py-2 text-[11px] text-white/70">Sponsored · swipe for the next pic</p>
-                  <InFeedAd ad={row.ad} variant="pic" active={active} />
+                  <InFeedAd ad={row.ad} variant="pic" active={active} onFill={(ok) => { if (!ok) skipAdSlide(index) }} />
                 </div>
               )
             }

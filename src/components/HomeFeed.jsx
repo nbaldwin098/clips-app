@@ -20,7 +20,7 @@ const FILTERS = [
   { id: 'pic', label: 'Pics' },
 ]
 
-export default function HomeFeed({ onPlayItem, onOpenPic, onNavigate }) {
+export default function HomeFeed({ onPlayItem, onOpenPic, onOpenProfile, onNavigate }) {
   const { user } = useAuth()
   const [picked, setPicked] = useState(() => hasPickedTopics())
   const [filter, setFilter] = useState('all')
@@ -44,7 +44,7 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onNavigate }) {
 
   return (
     <div className="w-full">
-      <HourlyHitsCarousel onPlayItem={onPlayItem} onOpenPic={onOpenPic} />
+      <HourlyHitsCarousel onPlayItem={onPlayItem} onOpenPic={onOpenPic} onOpenProfile={onOpenProfile} />
       <div className="px-4 md:px-6 py-4 max-w-[1600px] mx-auto w-full space-y-6">
       <FilterChips value={filter} onChange={setFilter} options={FILTERS} />
 
@@ -77,7 +77,7 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onNavigate }) {
         <section>
           <h2 className="text-lg font-semibold text-white mb-4">Featured</h2>
           <div className="max-w-md">
-            <ContentCard item={featured} onOpen={onPlayItem} variant={featured.type === 'short' ? 'short' : 'video'} />
+            <ContentCard item={featured} onOpen={onPlayItem} onOpenProfile={onOpenProfile} variant={featured.type === 'short' ? 'short' : 'video'} />
           </div>
         </section>
       )}
@@ -88,7 +88,7 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onNavigate }) {
           <div className="flex gap-4 overflow-x-auto pb-2 chip-scroll">
             {continueItems.slice(0, 8).map((item) => (
               <div key={item.id} className="w-[260px] sm:w-[280px] shrink-0">
-                <ContentCard item={item} onOpen={onPlayItem} variant="video" />
+                <ContentCard item={item} onOpen={onPlayItem} onOpenProfile={onOpenProfile} variant="video" />
               </div>
             ))}
           </div>
@@ -98,7 +98,7 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onNavigate }) {
       {following.length > 0 && filter === 'all' && (
         <section>
           <h2 className="text-lg font-semibold text-white mb-4">Subscribed</h2>
-          <MediaShelves items={following.slice(0, 12)} onPlayItem={onPlayItem} onOpenPic={onOpenPic} />
+          <MediaShelves items={following.slice(0, 12)} onPlayItem={onPlayItem} onOpenPic={onOpenPic} onOpenProfile={onOpenProfile} />
         </section>
       )}
 
@@ -110,7 +110,7 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onNavigate }) {
           <p className="mt-4 text-sm font-medium text-zinc-200">No posts yet</p>
         </div>
       ) : (
-        <MediaShelves items={items} onPlayItem={onPlayItem} onOpenPic={onOpenPic} filter={filter} />
+        <MediaShelves items={items} onPlayItem={onPlayItem} onOpenPic={onOpenPic} onOpenProfile={onOpenProfile} filter={filter} />
       )}
       <Footer onNavigate={onNavigate} />
       </div>

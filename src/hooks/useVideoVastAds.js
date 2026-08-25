@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { loadExoClickVast, videoVastAdsEnabled, videoInStreamBreaks, VIDEO_FIRST_AD_SEC } from '../lib/vastAds'
+import { loadExoClickVast, videoVastAdsEnabled, videoInStreamBreaks, VIDEO_FIRST_AD_SEC, VIDEO_PREROLL_BREAK } from '../lib/vastAds'
 
-export function useVideoVastAds(item, { embed = false } = {}) {
+export function useVideoVastAds(item, { embed = false, skipPreroll = false } = {}) {
   const [creative, setCreative] = useState(null)
   const [slot, setSlot] = useState(null)
   const [campaignBreak, setCampaignBreak] = useState(0)
@@ -17,7 +17,7 @@ export function useVideoVastAds(item, { embed = false } = {}) {
     loadExoClickVast().then((ad) => {
       if (ad?.mediaUrl) {
         showing.current = true
-        setSlot('midroll')
+        setSlot(t === VIDEO_PREROLL_BREAK ? 'preroll' : 'midroll')
         setCreative(ad)
         return
       }
@@ -33,8 +33,12 @@ export function useVideoVastAds(item, { embed = false } = {}) {
     setSlot(null)
     setCampaignBreak(0)
     if (!enabled) return undefined
-    // Iframe embeds do not report currentTime. Wait 30s of wall clock once.
-    if (!embed) return undefined
+    if (!skipPreroll) triggerBreak(VIDEO_PREROLL_BREAK)
+    return undefined
+  }, [item?.id, enabled, skipPreroll, triggerBreak])
+
+  useEffect(() => {
+    if (!enabled || !embed) return undefined
     const timer = window.setTimeout(() => {
       triggerBreak(VIDEO_FIRST_AD_SEC)
     }, VIDEO_FIRST_AD_SEC * 1000)

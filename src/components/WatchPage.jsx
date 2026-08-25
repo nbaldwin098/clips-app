@@ -152,7 +152,14 @@ export default function WatchPage({
   const showingAdRef = useRef(false)
   const viewCountedRef = useRef(false)
   const iframeViewTimerRef = useRef(null)
-  const vast = useVideoVastAds(item, { embed: mode === 'iframe' })
+  const skipPreroll = useMemo(() => {
+    const fromHash = Number(startAt) || 0
+    if (fromHash > 2) return true
+    const progress = user?.id && item?.id ? getWatchProgress(user.id, item.id) : null
+    if (!progress || progress.completed) return false
+    return (progress.positionSec || 0) > 2
+  }, [startAt, user?.id, item?.id])
+  const vast = useVideoVastAds(item, { embed: mode === 'iframe', skipPreroll })
 
   const [descOpen, setDescOpen] = useState(false)
   const chapters = useMemo(() => {

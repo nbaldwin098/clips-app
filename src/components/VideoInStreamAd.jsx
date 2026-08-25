@@ -67,7 +67,7 @@ export default function VideoInStreamAd({ creative, slot, onDone }) {
       />
       <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2 pointer-events-none">
         <span className="px-2 py-0.5 rounded bg-amber-500 text-black text-[10px] font-extrabold uppercase pointer-events-none">
-          {slot === 'midroll' ? 'Ad' : 'Ad'}
+          {slot === 'preroll' ? 'Ad · Before video' : 'Ad'}
         </span>
         <div className="pointer-events-auto">
           {canSkip ? (

@@ -15,7 +15,7 @@ import SubscribeButton from './SubscribeButton'
 import { subscribersLabel, isOfficialCreator } from '../lib/uiFormat'
 import { isVerifiedChannel } from '../lib/verification'
 
-export default function ProfilePage({ onNavigate, profileHandle, profileUserId, onPlayItem, onOpenPic, onOpenAuth, onOpenCheckout }) {
+export default function ProfilePage({ onNavigate, profileHandle, profileUserId, onPlayItem, onOpenPic, onOpenProfile, onOpenAuth, onOpenCheckout }) {
   const { user } = useAuth()
   const handle = String(profileHandle || '').toLowerCase().replace(/^@/, '')
   const found = resolvePublicCreator(handle, profileUserId)
@@ -164,6 +164,7 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
             filter={tab === 'clips' ? 'clip' : tab === 'pics' ? 'pic' : 'video'}
             onPlayItem={onPlayItem}
             onOpenPic={onOpenPic}
+            onOpenProfile={onOpenProfile}
             pinOverlay={(item) => (
               <>
                 {(item.pinned || isPinned(creatorId, item.id)) && (

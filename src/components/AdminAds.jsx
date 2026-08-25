@@ -105,7 +105,7 @@ export default function AdminAds() {
         <p className="text-sm font-medium text-white">Where ads show</p>
         <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-2">
           {[
-            ['videoInStream', 'Videos', 'In-stream VAST at 30s, plus 8 minutes if that long'],
+            ['videoInStream', 'Videos', 'Skippable preroll at start, then VAST at 30s and every 8 min'],
             ['clipBanner', 'Clips banner', 'Under the description while scrolling the player'],
             ['clipInFeed', 'Clips while scrolling', 'Between clips after you open one — not on Recommended'],
             ['picInFeed', 'Pics while scrolling', 'Between pics after you open one — not on the mosaic'],
