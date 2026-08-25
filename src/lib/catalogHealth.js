@@ -5,6 +5,7 @@
  */
 import { lsGet, lsSet, removeImport } from './storage'
 import { isUserUploadRecord } from './mediaMeta'
+import { clearFrozenFeeds } from './frozenFeeds'
 
 const HIDDEN_KEY = 'hidden_broken_media'
 
@@ -115,15 +116,19 @@ export function purgeDeadCatalog() {
   }
   const next = list.filter((row) => {
     if (!row?.id || hidden.has(row.id)) return false
-    // User uploads survive purge — cloud-hosted links are the source of truth;
-    // legacy device-only rows may still recover from IndexedDB until promoted.
-    if (isUserUploadRecord(row)) return true
     if (isReferenceItem(row)) return false
     if (isRetiredCatalogItem(row)) return false
+    // Drop deleted / device-only / empty-media uploads — they become empty snap
+    // slots in the reel and freeze vertical scroll between real clips.
+    if (isUserUploadRecord(row)) return isFeedable(row)
     if (row.type === 'pic' && !hasStableImage(row)) return false
     if ((row.type === 'video' || row.type === 'short') && !hasPlayableVideo(row)) return false
     return true
   })
-  if (next.length !== list.length) lsSet('imports', next)
-  return list.length - next.length
+  const removed = list.length - next.length
+  if (removed) {
+    lsSet('imports', next)
+    try { clearFrozenFeeds() } catch {}
+  }
+  return removed
 }

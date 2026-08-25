@@ -8,7 +8,7 @@ import {
 } from './mediaUpload'
 import { pushContentRecord, notifyContentChanged, syncContentFromCloud } from './contentSync'
 import { processImageFile } from './videoStorage'
-import { hasStableImage, hiddenBrokenIds } from './catalogHealth'
+import { hasStableImage, hiddenBrokenIds, isFeedable } from './catalogHealth'
 import { isAccountHidden } from './trustSafety'
 import { newContentId } from './newContentId'
 
@@ -49,7 +49,7 @@ export function pickImmediatePhotoSrc(pic, { full = false } = {}) {
 
 export function getPicsFeed() {
   const hidden = hiddenBrokenIds()
-  const all = (getImports() || []).filter((i) => i && i.type === 'pic' && hasStableImage(i) && !hidden.has(i.id) && !isAccountHidden(i.creatorId || i.userId, i.handle))
+  const all = (getImports() || []).filter((i) => i && i.type === 'pic' && isFeedable(i) && hasStableImage(i) && !hidden.has(i.id) && !isAccountHidden(i.creatorId || i.userId, i.handle))
   return all
     .map((raw) => ({
       id: raw.id,
