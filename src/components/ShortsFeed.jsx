@@ -14,7 +14,7 @@ import { copyShareUrl } from '../lib/routes'
 import CommentsPanel from './CommentsPanel'
 import ShortsStage, { ShortsCard } from './ShortsStage'
 import ShortsGrid from './ShortsGrid'
-import ExoClickDisplay, { clipBannerAllowed, EXOCLICK_BANNER_ZONE, EXOCLICK_BANNER_CLASS, BANNER_FILL_TIMEOUT_MS } from './ExoClickDisplay'
+import { InFeedAd } from './AdUnits'
 import { mixFeedAds } from '../lib/adEngine'
 import { preloadPostedItems } from '../lib/preloadMedia'
 import { useContentSyncTick } from '../lib/useContentSync'
@@ -40,7 +40,6 @@ function RailBtn({ onClick, label, children, active = false, circled = true }) {
 
 function ClipSlide({
   item, active, warm = false, muted, onToggleMute, user, onOpenAuth, onOpenProfile, onOpenSound, onStitch, onBack, onSearch,
-  showBanner = false,
 }) {
   const vidRef = useRef(null)
   const [src, setSrc] = useState(() => resolvePlayUrl(item))
@@ -402,20 +401,6 @@ function ClipSlide({
               <span className="truncate">{item.soundTitle}</span>
             </button>
           ) : null}
-          {showBanner ? (
-            <div
-              className="mt-2 mr-16 md:mr-4 overflow-hidden pointer-events-auto relative z-20 touch-pan-y"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <ExoClickDisplay
-                zoneId={EXOCLICK_BANNER_ZONE}
-                insClass={EXOCLICK_BANNER_CLASS}
-                className="min-h-[90px] rounded-md"
-                active={active}
-                fillTimeoutMs={BANNER_FILL_TIMEOUT_MS}
-              />
-            </div>
-          ) : null}
         </div>
         <div className="h-0.5 bg-white/20">
           <div className="h-full bg-white" style={{ width: `${Math.round((progress || 0) * 100)}%` }} />
@@ -439,6 +424,31 @@ function ClipSlide({
           </div>
         </div>
       )}
+    </ShortsCard>
+  )
+}
+
+function ClipFeedAdSlide({ active, warm = false, ad, onEmpty }) {
+  const filledRef = useRef(false)
+  useEffect(() => {
+    if (!active || filledRef.current) return undefined
+    const t = window.setTimeout(() => {
+      if (!filledRef.current) onEmpty?.()
+    }, 2800)
+    return () => window.clearTimeout(t)
+  }, [active, onEmpty])
+
+  return (
+    <ShortsCard fillMobile data-ad-slide="">
+      <InFeedAd
+        ad={ad}
+        variant="clip"
+        active={active || warm}
+        onFill={(ok) => { if (ok) filledRef.current = true }}
+      />
+      <p className="pointer-events-none absolute top-3 left-3 z-20 rounded bg-black/70 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-white/90">
+        Sponsored · swipe for next
+      </p>
     </ShortsCard>
   )
 }
@@ -478,25 +488,48 @@ export default function ShortsFeed({
     if (!focusId) return []
     return mixFeedAds(items, 'clip-feed', user?.id)
   }, [items, focusId, user?.id])
+  const [skippedAdKeys, setSkippedAdKeys] = useState(() => new Set())
+  const visibleMixed = useMemo(
+    () => mixed.filter((row) => row.kind !== 'ad' || !skippedAdKeys.has(row.key)),
+    [mixed, skippedAdKeys],
+  )
   const goToRef = useRef(null)
   const [activeIdx, setActiveIdx] = useState(0)
+  const visibleMixedRef = useRef(visibleMixed)
+  visibleMixedRef.current = visibleMixed
+  const activeIdxRef = useRef(0)
+  activeIdxRef.current = activeIdx
   const [muted, setMuted] = useState(true)
-  const [bannerSlide, setBannerSlide] = useState(null)
-  const sinceBanner = useRef(0)
   const shownAt = useRef(Date.now())
   const prevIdx = useRef(0)
   const inPlayer = Boolean(focusId)
   const startIdx = useMemo(() => {
-    if (!focusId || !mixed.length) return 0
-    const idx = mixed.findIndex((row) => row.item?.id === focusId)
+    if (!focusId || !visibleMixed.length) return 0
+    const idx = visibleMixed.findIndex((row) => row.item?.id === focusId)
     return idx >= 0 ? idx : 0
-  }, [focusId, mixed])
+  }, [focusId, visibleMixed])
+
+  useEffect(() => { setSkippedAdKeys(new Set()) }, [focusId, tab])
 
   useEffect(() => { setActiveIdx(startIdx) }, [startIdx])
   useEffect(() => {
     const from = inPlayer ? activeIdx + 1 : 0
-    preloadPostedItems(mixed.slice(from), inPlayer ? 3 : 2)
-  }, [mixed, activeIdx, inPlayer])
+    preloadPostedItems(visibleMixed.slice(from), inPlayer ? 3 : 2)
+  }, [visibleMixed, activeIdx, inPlayer])
+
+  const skipAdSlide = useCallback((index) => {
+    const row = visibleMixedRef.current[index]
+    if (!row || row.kind !== 'ad') return
+    setSkippedAdKeys((prev) => {
+      if (prev.has(row.key)) return prev
+      const next = new Set(prev)
+      next.add(row.key)
+      return next
+    })
+    if (activeIdxRef.current === index) {
+      window.setTimeout(() => goToRef.current?.(index, 'auto'), 40)
+    }
+  }, [])
 
   const openClip = (item) => onNavigate?.('clips', item.id)
   const backToGrid = () => {
@@ -517,7 +550,7 @@ export default function ShortsFeed({
     )
   }
 
-  if (!mixed.length) {
+  if (!visibleMixed.length) {
     return (
       <div className="h-full min-h-0 flex flex-col items-center justify-center gap-4 bg-[#000000] px-6 text-center">
         <p className="text-sm text-zinc-300">This clip was removed or is no longer available.</p>
@@ -535,12 +568,12 @@ export default function ShortsFeed({
   return (
     <ShortsStage
       key={`clips-player-${tab}-${focusId}`}
-      count={mixed.length}
+      count={visibleMixed.length}
       activeIndex={activeIdx}
       goToRef={goToRef}
-      loop={mixed.length >= 2}
+      loop={visibleMixed.length >= 4}
       onActiveIndex={(i) => {
-        const prev = mixed[prevIdx.current]?.item
+        const prev = visibleMixed[prevIdx.current]?.item
         const waited = Date.now() - shownAt.current
         if (prev && user?.id && i !== prevIdx.current) {
           recordInteraction(user.id, {
@@ -549,15 +582,6 @@ export default function ShortsFeed({
             tags: prev.tags || [],
             creatorId: prev.creatorId || prev.userId,
           })
-        }
-        if (i !== prevIdx.current && mixed[i]?.kind === 'item') {
-          sinceBanner.current += 1
-          if (clipBannerAllowed(mixed, i, sinceBanner.current, user?.id)) {
-            sinceBanner.current = 0
-            setBannerSlide(i)
-          } else {
-            setBannerSlide(null)
-          }
         }
         shownAt.current = Date.now()
         prevIdx.current = i
@@ -569,7 +593,12 @@ export default function ShortsFeed({
         <div className="h-full flex items-center justify-center text-sm text-zinc-400">No clips</div>
       )}
       renderSlide={(index, active, warm) => {
-        const row = mixed[index]
+        const row = visibleMixed[index]
+        if (row?.kind === 'ad') {
+          return (
+            <ClipFeedAdSlide active={active} warm={warm} ad={row.ad} onEmpty={() => skipAdSlide(index)} />
+          )
+        }
         return row?.item ? (
           <ClipSlide
             item={row.item}
@@ -584,7 +613,6 @@ export default function ShortsFeed({
             onStitch={onStitch}
             onBack={backToGrid}
             onSearch={() => onNavigate?.('explore')}
-            showBanner={active && (row.banner || bannerSlide === index || clipBannerAllowed(mixed, index, sinceBanner.current, user?.id))}
           />
         ) : null
       }}

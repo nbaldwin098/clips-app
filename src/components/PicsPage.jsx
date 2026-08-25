@@ -14,6 +14,8 @@ import ShortsStage, { ShortsCard } from './ShortsStage'
 import { downloadPostedMedia } from '../lib/mediaDownload'
 import { shuffleFeed } from '../lib/shuffleFeed'
 import { preloadPostedItems } from '../lib/preloadMedia'
+import { mixFeedAds } from '../lib/adEngine'
+import { InFeedAd } from './AdUnits'
 
 function PicImage({ pic, className, alt = '', full = false, fill = false, eager = false, onUnplayable }) {
   const immediate = pickImmediatePhotoSrc(pic, { full })
@@ -236,6 +238,31 @@ function MosaicPicTile({ pic, onOpen, onOpenAuth, onUnplayable }) {
   )
 }
 
+function PicFeedAdSlide({ active, warm = false, ad, onEmpty }) {
+  const filledRef = useRef(false)
+  useEffect(() => {
+    if (!active || filledRef.current) return undefined
+    const t = window.setTimeout(() => {
+      if (!filledRef.current) onEmpty?.()
+    }, 2800)
+    return () => window.clearTimeout(t)
+  }, [active, onEmpty])
+
+  return (
+    <ShortsCard data-ad-slide="">
+      <InFeedAd
+        ad={ad}
+        variant="pic"
+        active={active || warm}
+        onFill={(ok) => { if (ok) filledRef.current = true }}
+      />
+      <p className="pointer-events-none absolute top-3 left-3 z-20 rounded bg-black/70 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-white/90">
+        Sponsored · swipe for next
+      </p>
+    </ShortsCard>
+  )
+}
+
 /** Mosaic of every real pic · tap opens a Shorts-style roll · X returns to the mosaic */
 export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
   const { user, isAuthenticated } = useAuth()
@@ -255,12 +282,32 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
     const rest = shuffleFeed(list.filter((p) => p.id !== initialPicId))
     return focused && isFeedable(focused) ? [focused, ...rest] : shuffleFeed(list)
   }, [items, initialPicId])
-  // Pic reel is content-only — no full-screen ad slides that stop scroll.
-  const scrollRows = useMemo(
-    () => shuffled.map((item, i) => ({ kind: 'item', item, key: item?.id || `item-${i}` })),
-    [shuffled],
+  // Ads only while scrolling the viewer — never in the mosaic grid.
+  const scrollRows = useMemo(() => mixFeedAds(shuffled, 'pic-feed', user?.id), [shuffled, user?.id])
+  const [skippedAdKeys, setSkippedAdKeys] = useState(() => new Set())
+  const visibleScrollRows = useMemo(
+    () => scrollRows.filter((row) => row.kind !== 'ad' || !skippedAdKeys.has(row.key)),
+    [scrollRows, skippedAdKeys],
   )
   const goToRef = useRef(null)
+  const visibleRowsRef = useRef(visibleScrollRows)
+  visibleRowsRef.current = visibleScrollRows
+  const viewerIndexRef = useRef(viewerIndex)
+  viewerIndexRef.current = viewerIndex
+  useEffect(() => { setSkippedAdKeys(new Set()) }, [initialPicId])
+  const skipAdSlide = useCallback((index) => {
+    const row = visibleRowsRef.current[index]
+    if (!row || row.kind !== 'ad') return
+    setSkippedAdKeys((prev) => {
+      if (prev.has(row.key)) return prev
+      const next = new Set(prev)
+      next.add(row.key)
+      return next
+    })
+    if (viewerIndexRef.current === index) {
+      window.setTimeout(() => goToRef.current?.(index, 'auto'), 40)
+    }
+  }, [])
   const skipAutoOpen = useRef(false)
   const refresh = useCallback(() => setItems(getPicsFeed()), [])
   const dropBroken = useCallback((id) => {
@@ -272,17 +319,17 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
 
   useEffect(() => {
     const from = viewerIndex == null ? 0 : viewerIndex + 1
-    preloadPostedItems(scrollRows.slice(from), viewerIndex == null ? 6 : 3)
-  }, [scrollRows, viewerIndex])
+    preloadPostedItems(visibleScrollRows.slice(from), viewerIndex == null ? 6 : 3)
+  }, [visibleScrollRows, viewerIndex])
 
   useEffect(() => {
     if (!initialPicId || skipAutoOpen.current) return
-    const idx = scrollRows.findIndex((row) => row.item?.id === initialPicId)
+    const idx = visibleScrollRows.findIndex((row) => row.kind === 'item' && row.item?.id === initialPicId)
     if (idx >= 0) {
       setOpenedAt(idx)
       setViewerIndex(idx)
     }
-  }, [initialPicId, scrollRows])
+  }, [initialPicId, visibleScrollRows])
 
   const closeViewer = () => {
     skipAutoOpen.current = true
@@ -291,7 +338,7 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
   }
 
   const openPic = (pic) => {
-    const idx = scrollRows.findIndex((row) => row.item?.id === pic.id)
+    const idx = visibleScrollRows.findIndex((row) => row.kind === 'item' && row.item?.id === pic.id)
     const at = idx >= 0 ? idx : 0
     setOpenedAt(at)
     setViewerIndex(at)
@@ -335,13 +382,13 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
       <div className="h-full min-h-0 flex flex-col bg-[#000000]">
         <ShortsStage
           key={`pic-reel-${openedAt}`}
-          count={scrollRows.length}
+          count={visibleScrollRows.length}
           activeIndex={viewerIndex}
           goToRef={goToRef}
-          loop={scrollRows.length >= 2}
+          loop={visibleScrollRows.length >= 4}
           onActiveIndex={(i) => {
             setViewerIndex(i)
-            const pic = scrollRows[i]?.item
+            const pic = visibleScrollRows[i]?.item
             if (pic && typeof window !== 'undefined') {
               replaceHash('content', pic.id)
             }
@@ -352,11 +399,17 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
               <button type="button" onClick={closeViewer} className="h-9 px-3 rounded-full bg-white/10 text-white text-xs inline-flex items-center gap-1.5">
                 <X className="h-4 w-4" /> Back to pics
               </button>
-              <p className="text-[11px] text-white/50">{viewerIndex + 1}/{scrollRows.length}</p>
+              <p className="text-[11px] text-white/50">{viewerIndex + 1}/{visibleScrollRows.length}</p>
             </div>
           )}
           renderSlide={(index, active, warm) => {
-            const pic = scrollRows[index]?.item
+            const row = visibleScrollRows[index]
+            if (row?.kind === 'ad') {
+              return (
+                <PicFeedAdSlide active={active} warm={warm} ad={row.ad} onEmpty={() => skipAdSlide(index)} />
+              )
+            }
+            const pic = row?.item
             return pic ? (
               <PicSlide
                 pic={pic}
