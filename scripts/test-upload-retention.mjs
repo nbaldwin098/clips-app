@@ -20,11 +20,12 @@ function upload(i) {
     id: `up_test_${i}`,
     type: 'short',
     title: `User clip ${i}`,
-    origin: 'upload-local',
-    mediaUrl: '',
-    sourceUrl: '',
+    origin: 'upload',
+    mediaUrl: `https://example.com/up_${i}.mp4`,
+    sourceUrl: `https://example.com/up_${i}.mp4`,
+    hosted: true,
     storedBytes: 1024,
-    localStored: true,
+    localStored: false,
     createdAt: new Date(Date.now() - i * 1000).toISOString(),
   }
 }
@@ -59,9 +60,21 @@ for (let i = 0; i < 12; i += 1) {
 hideBrokenMedia('up_test_0')
 assert.ok(getImports().some((r) => r.id === 'up_test_0'), 'hideBrokenMedia leaves user uploads')
 
-// Purge must keep uploads even with empty media.
+// Purge must keep hosted user uploads but drop empty device-only rows.
+saveImport({
+  id: 'up_empty_local',
+  type: 'short',
+  title: 'Ghost upload',
+  origin: 'upload-local',
+  mediaUrl: '',
+  sourceUrl: '',
+  storedBytes: 1024,
+  localStored: true,
+  createdAt: new Date().toISOString(),
+})
 purgeDeadCatalog()
-assert.ok(getImports().some((r) => r.id === 'up_test_1'), 'purgeDeadCatalog leaves user uploads')
+assert.ok(getImports().some((r) => r.id === 'up_test_1'), 'purgeDeadCatalog keeps hosted user uploads')
+assert.ok(!getImports().some((r) => r.id === 'up_empty_local'), 'purgeDeadCatalog drops empty-media uploads')
 
 // mergeImports must keep uploads when cloud pushes hundreds of rows.
 const cloud = Array.from({ length: 400 }, (_, i) => ({

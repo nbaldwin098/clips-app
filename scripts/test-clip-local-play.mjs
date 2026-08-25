@@ -28,7 +28,7 @@ const raw = {
 const n = normalizeItem(raw)
 assert.equal(n.localStored, true, 'normalize keeps localStored')
 assert.equal(isUserUploadRecord(n), true, 'short id upload is user upload')
-assert.equal(hasPlayableVideo(n), true, 'localStored empty url is playable')
-assert.equal(isFeedable(n), true, 'localStored clip is feedable')
+assert.equal(hasPlayableVideo(n), true, 'localStored empty url is playable on device')
+assert.equal(isFeedable(n), false, 'device-only clip stays off shared feeds until hosted')
 
 console.log('ok clip load localStored')
