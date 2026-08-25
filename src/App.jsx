@@ -7,8 +7,7 @@ import LiveChatPanel from './components/LiveChatPanel'
 import HomeFeed from './components/HomeFeed'
 import ShortsFeed from './components/ShortsFeed'
 import LiveView from './components/LiveView'
-import CreatorDashboard from './components/CreatorDashboard'
-import CreatorWallet from './components/CreatorWallet'
+import CreatorStudio from './components/studio/CreatorStudio'
 import SettingsHub from './components/settings/SettingsHub'
 import LibraryPage from './components/LibraryPage'
 import HistoryPage from './components/HistoryPage'
@@ -31,15 +30,12 @@ import PicsPage from './components/PicsPage'
 import CheckoutPage from './components/CheckoutPage'
 import CheckoutModal from './components/CheckoutModal'
 import CreatorApplyPage from './components/CreatorApplyPage'
-import VerifyPage from './components/VerifyPage'
 import AdvertisePage from './components/AdvertisePage'
 import AdvertiserPortal from './components/AdvertiserPortal'
 import SupportPage from './components/SupportPage'
 import AdminPortal from './components/AdminPortal'
 import CreatorsPage from './components/CreatorsPage'
-import AnalyticsPage from './components/AnalyticsPage'
 import ChannelPage from './components/ChannelPage'
-import VodsPage from './components/VodsPage'
 import ProfilePage from './components/ProfilePage'
 import SubscriptionsPage from './components/SubscriptionsPage'
 import PlaylistsPage from './components/PlaylistsPage'
@@ -416,10 +412,50 @@ function AppShell() {
             onOpenAuth={openAuth}
           />
         )
-      case 'dashboard': return <CreatorDashboard onOpenImport={openImport} onOpenUpload={openUpload} onNavigate={navigate} onPlayItem={openWatch} />
-      case 'vods': return <VodsPage onNavigate={navigate} />
-      case 'wallet': return <CreatorWallet onNavigate={navigate} />
-      case 'analytics': return <AnalyticsPage onNavigate={navigate} />
+      case 'dashboard':
+        return (
+          <CreatorStudio
+            onOpenImport={openImport}
+            onOpenUpload={openUpload}
+            onNavigate={navigate}
+            onPlayItem={openWatch}
+            onOpenAuth={openAuth}
+            initialSection={routeId || 'overview'}
+          />
+        )
+      case 'vods':
+        return (
+          <CreatorStudio
+            onOpenImport={openImport}
+            onOpenUpload={openUpload}
+            onNavigate={navigate}
+            onPlayItem={openWatch}
+            onOpenAuth={openAuth}
+            initialSection="vods"
+          />
+        )
+      case 'wallet':
+        return (
+          <CreatorStudio
+            onOpenImport={openImport}
+            onOpenUpload={openUpload}
+            onNavigate={navigate}
+            onPlayItem={openWatch}
+            onOpenAuth={openAuth}
+            initialSection="wallet"
+          />
+        )
+      case 'analytics':
+        return (
+          <CreatorStudio
+            onOpenImport={openImport}
+            onOpenUpload={openUpload}
+            onNavigate={navigate}
+            onPlayItem={openWatch}
+            onOpenAuth={openAuth}
+            initialSection="analytics"
+          />
+        )
       case 'channel': return <ChannelPage onNavigate={navigate} />
       case 'profile': return <ProfilePage onNavigate={navigate} profileHandle={profileTarget.handle} profileUserId={profileTarget.userId} onPlayItem={openWatch} onOpenPic={openPic} onOpenProfile={openProfile} onOpenAuth={openAuth} onOpenCheckout={openCheckout} />
       case 'subscriptions': return <SubscriptionsPage onNavigate={navigate} onOpenAuth={openAuth} onPlayItem={openWatch} onOpenPic={openPic} onOpenProfile={openProfile} />
@@ -432,7 +468,17 @@ function AppShell() {
       case 'pics': return <PicsPage onOpenAuth={openAuth} onOpenProfile={openProfile} initialPicId={routeId} />
       case 'checkout': return <CheckoutPage onNavigate={navigate} creatorId={checkoutTarget.id} returnParams={routeParams} />
       case 'creator-apply': return <CreatorApplyPage onOpenAuth={openAuth} onNavigate={navigate} />
-      case 'verify': return <VerifyPage onOpenAuth={openAuth} onNavigate={navigate} />
+      case 'verify':
+        return (
+          <CreatorStudio
+            onOpenImport={openImport}
+            onOpenUpload={openUpload}
+            onNavigate={navigate}
+            onPlayItem={openWatch}
+            onOpenAuth={openAuth}
+            initialSection="verify"
+          />
+        )
       case 'advertise': return <AdvertisePage onNavigate={navigate} />
       case 'advertiser-portal': return <AdvertiserPortal onNavigate={navigate} />
       case 'support': return <SupportPage onOpenAuth={openAuth} />
@@ -458,7 +504,7 @@ function AppShell() {
   }
 
   const isLiveView = view === 'live'
-  const lockStage = view === 'clips' || view === 'shorts' || view === 'pics'
+  const lockStage = view === 'clips' || view === 'shorts' || view === 'pics' || view === 'dashboard' || view === 'analytics' || view === 'wallet' || view === 'vods' || view === 'verify'
 
   return (
     <div className={`${lockStage ? 'h-dvh overflow-hidden' : 'min-h-screen'} bg-[#000000] text-zinc-100 flex flex-col selection:bg-white selection:text-black`}>
