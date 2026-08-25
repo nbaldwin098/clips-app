@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { ImagePlus, X, Share2, Download, Heart } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getPicsFeed, publishPhoto, pickImmediatePhotoSrc, isHttpUrl, isDataImageUrl } from '../lib/picsService'
+import { isFeedable } from '../lib/catalogHealth'
 import { isPicHearted, togglePicHeart } from '../lib/picHearts'
 import { useContentSyncTick } from '../lib/useContentSync'
 import { subscribeContentUpdates } from '../lib/contentSync'
@@ -237,13 +238,13 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
   const [openedAt, setOpenedAt] = useState(0)
 
   const shuffled = useMemo(() => {
-    const list = items || []
+    const list = (items || []).filter(isFeedable)
     if (!initialPicId) return shuffleFeed(list)
     // Deep-link / profile tap: keep that pic first so the viewer does not
     // open a random neighbor from the unshuffled index.
     const focused = list.find((p) => p.id === initialPicId)
     const rest = shuffleFeed(list.filter((p) => p.id !== initialPicId))
-    return focused ? [focused, ...rest] : shuffleFeed(list)
+    return focused && isFeedable(focused) ? [focused, ...rest] : shuffleFeed(list)
   }, [items, initialPicId])
   // Pic reel is content-only — no full-screen ad slides that stop scroll.
   const scrollRows = useMemo(
