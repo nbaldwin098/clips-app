@@ -43,18 +43,13 @@ export function hasStableImage(item) {
 
 export function hasLocalMediaHint(item) {
   if (!item?.id) return false
+  // Only rows explicitly marked localStored may play from IndexedDB.
+  // Empty-media "uploads" used to stay feedable and never played for anyone.
   if (item.localStored === true) return true
   if (isUserUploadRecord(item) && Number(item.storedBytes) > 0) {
     const media = String(item.mediaUrl || '')
     const source = String(item.sourceUrl || '')
-    if (!media && !source) return true
     if (isBlobUrl(media) || isBlobUrl(source)) return true
-    if (isHttpUrl(media) || isHttpUrl(source)) return true
-    return true
-  }
-  // Opaque public ids with empty media still play from IndexedDB after upload.
-  if (isUserUploadRecord(item) && !isHttpUrl(item.mediaUrl) && !isHttpUrl(item.sourceUrl)) {
-    return true
   }
   return false
 }

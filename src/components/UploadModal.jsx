@@ -113,7 +113,7 @@ export default function UploadModal({
         type: published.item?.type || kind,
         soundTitle: published.item?.soundTitle || sound?.title || null,
         status: published.status,
-        sharePath: published.item?.id ? shareUrl('content', published.item.id) : '',
+        sharePath: published.hosted && published.item?.id ? shareUrl('content', published.item.id) : '',
       })
       setStatus('ready')
       setDraftSaved(asDraft || published.status === 'draft' || published.status === 'scheduled')

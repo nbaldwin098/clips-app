@@ -1,11 +1,11 @@
 import { getImports, saveImport, updateImport, removeImport, parseExternalShort, lsGet, lsSet } from './storage'
 import { rankForUser, computeContentQuality, computeVelocity } from './algorithmEngine'
 import { notifyFollowersOfUpload } from './notifications'
-import { transcodeVideoForUpload, storeMediaBlob } from './videoStorage'
+import { transcodeVideoForUpload } from './videoStorage'
 import {
   uploadVideoToSupabase,
   uploadDataUrlToSupabase,
-  canHostUploads,
+  resolveUploadHost,
   signInToUploadMessage,
   uploadFailedMessage,
   deleteHostedMedia,
@@ -557,45 +557,29 @@ export async function publishLocalMedia(file, actor = null, {
 } = {}) {
   if (!file) return { ok: false, item: null, error: 'Choose a video file.' }
   if (!actor?.id) return { ok: false, item: null, error: signInToUploadMessage() }
+
+  // Playable for everyone = public http URL. Never publish empty-media rows.
+  const host = await resolveUploadHost(actor)
+  if (!host?.id) {
+    return { ok: false, item: null, error: signInToUploadMessage() }
+  }
+
   try {
     const processed = await transcodeVideoForUpload(file, { asClip: type === 'short' })
     const outFile = processed.file || file
     const id = newContentId()
 
-    let mediaUrl = ''
-    let thumbUrl = ''
-    let hosted = false
-    let localStored = false
-    let storagePath = ''
-    let origin = 'upload-local'
-
-    if (canHostUploads(actor)) {
-      const up = await uploadVideoToSupabase(outFile, actor.id)
-      if (up.ok && up.publicUrl) {
-        mediaUrl = up.publicUrl
-        hosted = true
-        origin = 'upload'
-        storagePath = up.path || ''
-        const thumbRaw = String(processed.thumbUrl || '')
-        if (thumbRaw.startsWith('data:image/')) {
-          const thumbUp = await uploadDataUrlToSupabase(thumbRaw, actor.id, `${id}_thumb.jpg`)
-          if (thumbUp.ok && thumbUp.publicUrl) thumbUrl = thumbUp.publicUrl
-        }
-      }
-    }
-
-    if (!mediaUrl) {
-      try {
-        localStored = !!(await storeMediaBlob(id, outFile))
-      } catch {
-        localStored = false
-      }
-      const thumbRaw = String(processed.thumbUrl || '')
-      if (thumbRaw.startsWith('data:image/')) thumbUrl = thumbRaw
-    }
-
-    if (!mediaUrl && !localStored) {
+    const up = await uploadVideoToSupabase(outFile, host.id)
+    if (!up.ok || !up.publicUrl) {
       return { ok: false, item: null, error: uploadFailedMessage() }
+    }
+    const mediaUrl = up.publicUrl
+
+    let thumbUrl = ''
+    const thumbRaw = String(processed.thumbUrl || '')
+    if (thumbRaw.startsWith('data:image/')) {
+      const thumbUp = await uploadDataUrlToSupabase(thumbRaw, host.id, `${id}_thumb.jpg`)
+      if (thumbUp.ok && thumbUp.publicUrl) thumbUrl = thumbUp.publicUrl
     }
 
     const isVertical = processed.height > processed.width
@@ -622,10 +606,10 @@ export async function publishLocalMedia(file, actor = null, {
       sourceUrl: mediaUrl,
       mediaUrl,
       thumbUrl: thumbUrl || mediaUrl,
-      origin,
-      hosted,
-      localStored,
-      storagePath,
+      origin: 'upload',
+      hosted: true,
+      localStored: false,
+      storagePath: up.path || '',
       storedBytes: outFile.size || file.size || 0,
       durationSec: processed.durationSec,
       width: processed.width,
@@ -647,13 +631,13 @@ export async function publishLocalMedia(file, actor = null, {
       status: finalStatus,
       publishedAt: finalStatus === 'published' ? new Date().toISOString() : null,
       priceUsd: 0,
-      creatorId: actor.id,
-      userId: actor.id,
-      handle: actor.handle,
+      creatorId: host.id,
+      userId: host.id,
+      handle: host.handle || actor.handle,
     }
 
-    if (hosted && finalStatus === 'published') {
-      const pushed = await pushContentRecord(record, actor)
+    if (finalStatus === 'published') {
+      const pushed = await pushContentRecord(record, host)
       if (!pushed) {
         await deleteHostedMedia(mediaUrl)
         if (thumbUrl && thumbUrl !== mediaUrl) await deleteHostedMedia(thumbUrl)
@@ -668,14 +652,14 @@ export async function publishLocalMedia(file, actor = null, {
 
     if (finalStatus === 'published') {
       notifyFollowersOfUpload({
-        creatorId: actor.id,
-        handle: actor.handle,
+        creatorId: record.creatorId,
+        handle: record.handle,
         title: record.title,
       })
     }
 
-    return { ok: true, item: normalizeItem(record), error: null, hosted, localStored, status: finalStatus }
-  } catch (err) {
+    return { ok: true, item: normalizeItem(record), error: null, hosted: true, localStored: false, status: finalStatus }
+  } catch {
     return { ok: false, item: null, error: uploadFailedMessage() }
   }
 }
@@ -685,19 +669,21 @@ export async function publishDraftItem(id, actor = null) {
   if (!raw) return { ok: false, error: 'Draft not found.' }
   const media = String(raw.mediaUrl || raw.sourceUrl || '')
   const hasHttp = media.startsWith('http://') || media.startsWith('https://')
+  if (!hasHttp) {
+    return { ok: false, error: uploadFailedMessage() }
+  }
   const next = {
     ...raw,
     status: 'published',
     publishedAt: new Date().toISOString(),
     scheduledFor: null,
-    hosted: hasHttp ? true : !!raw.hosted,
+    hosted: true,
+    localStored: false,
     origin: raw.origin === 'pic-local' ? 'pic-upload' : (raw.origin === 'upload-local' ? 'upload' : raw.origin),
   }
-  const who = actor?.id
-    ? actor
-    : (raw.creatorId ? { id: raw.creatorId, handle: raw.handle, provider: actor?.provider || 'supabase' } : null)
-  if (hasHttp && canHostUploads(who)) {
-    const pushed = await pushContentRecord(next, who)
+  const host = await resolveUploadHost(actor?.id ? actor : { id: raw.creatorId, handle: raw.handle, provider: 'supabase' })
+  if (host?.id) {
+    const pushed = await pushContentRecord(next, host)
     if (!pushed) return { ok: false, error: uploadFailedMessage() }
   }
   saveImport(next)

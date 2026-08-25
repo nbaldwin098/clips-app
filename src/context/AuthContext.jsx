@@ -264,6 +264,43 @@ export function AuthProvider({ children }) {
         }
       }
       if (ok) {
+        // Prefer a real hosted session so uploads get public URLs anyone can play.
+        if (isSupabaseConfigured()) {
+          try {
+            const sb = await getSupabase()
+            const emails = [...new Set([
+              owner.email,
+              'cs1@calabi.us',
+              'kiddnixk@gmail.com',
+              String(email || '').includes('@') ? String(email).trim().toLowerCase() : '',
+            ].filter(Boolean))]
+            for (const mail of emails) {
+              const { data, error } = await sb.auth.signInWithPassword({ email: mail, password })
+              if (error || !data?.user) continue
+              const mapped = await hydratePrivileges(mapSbUser(data.user, {
+                handle: owner.handle,
+                displayName: owner.displayName,
+              }))
+              const next = {
+                ...mapped,
+                handle: owner.handle,
+                displayName: owner.displayName,
+                isCreator: true,
+                creatorStatus: 'approved',
+                isPlatformAdmin: true,
+                role: 'admin',
+              }
+              const blocked = accessBlockMessage(next)
+              if (blocked) throw new Error(blocked)
+              setUser(next)
+              setMode('creator')
+              try { indexUser(next) } catch {}
+              return next
+            }
+          } catch (err) {
+            if (err?.message && /blocked|banned|suspend/i.test(err.message)) throw err
+          }
+        }
         const next = {
           id: owner.id,
           email: owner.email,

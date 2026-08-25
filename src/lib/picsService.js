@@ -1,19 +1,17 @@
 import { getImports, saveImport } from './storage'
 import {
   uploadImageToSupabase,
-  canHostUploads,
+  resolveUploadHost,
   signInToUploadMessage,
   uploadFailedMessage,
   deleteHostedMedia,
 } from './mediaUpload'
 import { pushContentRecord, notifyContentChanged } from './contentSync'
-import { processImageFile, storeMediaBlob } from './videoStorage'
+import { processImageFile } from './videoStorage'
 import { hasStableImage, hiddenBrokenIds } from './catalogHealth'
 import { isAccountHidden } from './trustSafety'
 import { newContentId } from './newContentId'
 
-// Defensively strip raw storage/database error text that may have been saved
-// into `description` by an earlier build, so it never renders on a card.
 const LEAKED_ERROR_PATTERN = /row-level security|violates|local only\s*—/i
 function sanitizeDescription(desc) {
   const text = String(desc || '')
@@ -29,7 +27,6 @@ export function isDataImageUrl(url) {
   return String(url || '').startsWith('data:image/')
 }
 
-/** Prefer a URL that still paints after refresh (https / data) over a dead blob. */
 export function pickImmediatePhotoSrc(pic, { full = false } = {}) {
   if (!pic) return ''
   if (full) {
@@ -80,39 +77,20 @@ export async function publishPhoto(file, actor = null) {
     return { ok: false, item: null, error: 'Choose an image file (jpg, png, webp).' }
   }
   if (!actor?.id) return { ok: false, item: null, error: signInToUploadMessage() }
+
+  const host = await resolveUploadHost(actor)
+  if (!host?.id) return { ok: false, item: null, error: signInToUploadMessage() }
+
   try {
     const processed = await processImageFile(file)
     const id = newContentId()
     const uploadFile = processed.displayFile || file
 
-    let mediaUrl = ''
-    let hosted = false
-    let localStored = false
-    let storagePath = ''
-
-    if (canHostUploads(actor)) {
-      const up = await uploadImageToSupabase(uploadFile, actor.id)
-      if (up.ok && up.publicUrl) {
-        mediaUrl = up.publicUrl
-        hosted = true
-        storagePath = up.path || ''
-      }
-    }
-
-    if (!mediaUrl) {
-      try {
-        localStored = !!(await storeMediaBlob(id, processed.displayFile || file))
-      } catch {
-        localStored = false
-      }
-    }
-
-    if (!mediaUrl && !localStored && !processed.thumbUrl) {
+    const up = await uploadImageToSupabase(uploadFile, host.id)
+    if (!up.ok || !up.publicUrl) {
       return { ok: false, item: null, error: uploadFailedMessage() }
     }
-
-    const thumbUrl = mediaUrl
-      || (String(processed.thumbUrl || '').startsWith('data:image/') ? processed.thumbUrl : '')
+    const mediaUrl = up.publicUrl
 
     const record = {
       id,
@@ -121,38 +99,36 @@ export async function publishPhoto(file, actor = null) {
       description: '',
       sourceUrl: mediaUrl,
       mediaUrl,
-      thumbUrl,
+      thumbUrl: mediaUrl,
       mosaicThumb: String(processed.thumbUrl || '').startsWith('data:image/')
         ? processed.thumbUrl
-        : (mediaUrl || ''),
-      origin: hosted ? 'pic-upload' : 'pic-local',
-      hosted,
-      localStored,
-      storagePath,
+        : mediaUrl,
+      origin: 'pic-upload',
+      hosted: true,
+      localStored: false,
+      storagePath: up.path || '',
       storedBytes: (processed.displayFile || file).size || 0,
       width: processed.width,
       height: processed.height,
       createdAt: new Date().toISOString(),
       priceUsd: 0,
-      creatorId: actor.id,
-      userId: actor.id,
-      handle: actor.handle,
-      displayName: actor.displayName || actor.handle,
+      creatorId: host.id,
+      userId: host.id,
+      handle: host.handle || actor.handle,
+      displayName: host.displayName || actor.displayName || actor.handle,
       avatarUrl: actor.avatarUrl || null,
     }
 
-    if (hosted) {
-      const pushed = await pushContentRecord(record, actor)
-      if (!pushed) {
-        await deleteHostedMedia(mediaUrl)
-        return { ok: false, item: null, error: uploadFailedMessage() }
-      }
+    const pushed = await pushContentRecord(record, host)
+    if (!pushed) {
+      await deleteHostedMedia(mediaUrl)
+      return { ok: false, item: null, error: uploadFailedMessage() }
     }
 
     saveImport(record)
     notifyContentChanged()
-    return { ok: true, item: record, error: null, hosted }
-  } catch (err) {
+    return { ok: true, item: record, error: null, hosted: true }
+  } catch {
     return { ok: false, item: null, error: uploadFailedMessage() }
   }
 }
