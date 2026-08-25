@@ -3,7 +3,6 @@
  * Device IndexedDB is not the source of truth for published media.
  */
 import { getSupabase, isSupabaseConfigured } from './supabaseClient'
-import { isOwnerAccount } from '../data/ownerLogin'
 
 const BUCKET = 'clips'
 const MAX_VIDEO = 80 * 1024 * 1024
@@ -31,20 +30,19 @@ export function canHostUploads(actor) {
   )
 }
 
+/** Plain user-facing copy — no infrastructure jargon. */
+export function signInToUploadMessage() {
+  return 'Sign in to upload.'
+}
+
+export function uploadFailedMessage() {
+  return "Couldn't upload. Try again."
+}
+
+/** @deprecated use signInToUploadMessage / uploadFailedMessage */
 export function cloudHostRequiredMessage(actor) {
-  if (!isSupabaseConfigured()) {
-    return 'Cloud storage is not connected. Uploads must be hosted as links — they are not saved on this device.'
-  }
-  if (!actor?.id) {
-    return 'Sign in to upload. Files are hosted in the cloud, not on this device.'
-  }
-  if (actor.provider !== 'supabase') {
-    if (isOwnerAccount(actor) || actor.provider === 'local') {
-      return 'You are on a local login (like cs1). Sign out, then sign in with a cloud email or Apple/Microsoft/X so uploads get a calabi.us link.'
-    }
-    return 'Sign in with a cloud Clips account to upload. Local-only sessions cannot host media.'
-  }
-  return 'Could not host this upload in the cloud.'
+  if (!actor?.id) return signInToUploadMessage()
+  return uploadFailedMessage()
 }
 
 async function uploadToBucket(file, userId, { maxBytes, kind }) {

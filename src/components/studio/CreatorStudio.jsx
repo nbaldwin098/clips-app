@@ -215,9 +215,9 @@ export default function CreatorStudio({
     try {
       const res = await restoreLostUploads(user)
       const n = Number(res?.total) || 0
-      setRestoreNote(n ? `Restored ${n} post${n === 1 ? '' : 's'} from this device / cloud.` : 'No missing uploads found on this device.')
+      setRestoreNote(n ? `Restored ${n} post${n === 1 ? '' : 's'}.` : 'Nothing to restore.')
     } catch {
-      setRestoreNote('Could not restore right now.')
+      setRestoreNote("Couldn't restore right now.")
     } finally {
       setRestoreBusy(false)
     }
@@ -305,7 +305,7 @@ export default function CreatorStudio({
               onClick={onRestore}
               disabled={restoreBusy}
               className="h-8 inline-flex items-center justify-center gap-1 border border-zinc-700 text-[11px] text-white disabled:opacity-50"
-              title="Bring back uploads still saved on this device or in the cloud"
+              title="Restore missing posts"
             >
               <RotateCcw className={cn('h-3.5 w-3.5', restoreBusy && 'animate-spin')} />
               {restoreBusy ? 'Restoring…' : 'Restore'}
@@ -325,7 +325,7 @@ export default function CreatorStudio({
                 disabled={restoreBusy}
                 className="text-[11px] text-zinc-300 underline underline-offset-2 disabled:opacity-50"
               >
-                Restore old uploads from this device…
+                Restore posts…
               </button>
             </div>
           ) : filteredPosts.map((post) => (

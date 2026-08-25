@@ -1,12 +1,13 @@
 import { getImports, saveImport, updateImport, removeImport, parseExternalShort, lsGet, lsSet } from './storage'
 import { rankForUser, computeContentQuality, computeVelocity } from './algorithmEngine'
 import { notifyFollowersOfUpload } from './notifications'
-import { transcodeVideoForUpload } from './videoStorage'
+import { transcodeVideoForUpload, storeMediaBlob } from './videoStorage'
 import {
   uploadVideoToSupabase,
   uploadDataUrlToSupabase,
   canHostUploads,
-  cloudHostRequiredMessage,
+  signInToUploadMessage,
+  uploadFailedMessage,
   deleteHostedMedia,
 } from './mediaUpload'
 import { pushContentRecord, deleteContentRecord, notifyContentChanged } from './contentSync'
@@ -561,30 +562,46 @@ export async function publishLocalMedia(file, actor = null, {
   stitchOf = null, chapters = [], captionsText = '', scheduledFor = null, status = 'published',
 } = {}) {
   if (!file) return { ok: false, item: null, error: 'Choose a video file.' }
-  // Published media is a cloud link — never the device copy as source of truth.
-  if (!canHostUploads(actor)) {
-    return { ok: false, item: null, error: cloudHostRequiredMessage(actor) }
-  }
+  if (!actor?.id) return { ok: false, item: null, error: signInToUploadMessage() }
   try {
     const processed = await transcodeVideoForUpload(file, { asClip: type === 'short' })
     const outFile = processed.file || file
     const id = newContentId()
 
-    const up = await uploadVideoToSupabase(outFile, actor.id)
-    if (!up.ok || !up.publicUrl) {
-      return {
-        ok: false,
-        item: null,
-        error: up.error || 'Could not upload this video to cloud storage.',
+    let mediaUrl = ''
+    let thumbUrl = ''
+    let hosted = false
+    let localStored = false
+    let storagePath = ''
+    let origin = 'upload-local'
+
+    if (canHostUploads(actor)) {
+      const up = await uploadVideoToSupabase(outFile, actor.id)
+      if (up.ok && up.publicUrl) {
+        mediaUrl = up.publicUrl
+        hosted = true
+        origin = 'upload'
+        storagePath = up.path || ''
+        const thumbRaw = String(processed.thumbUrl || '')
+        if (thumbRaw.startsWith('data:image/')) {
+          const thumbUp = await uploadDataUrlToSupabase(thumbRaw, actor.id, `${id}_thumb.jpg`)
+          if (thumbUp.ok && thumbUp.publicUrl) thumbUrl = thumbUp.publicUrl
+        }
       }
     }
-    const mediaUrl = up.publicUrl
 
-    let thumbUrl = ''
-    const thumbRaw = String(processed.thumbUrl || '')
-    if (thumbRaw.startsWith('data:image/')) {
-      const thumbUp = await uploadDataUrlToSupabase(thumbRaw, actor.id, `${id}_thumb.jpg`)
-      if (thumbUp.ok && thumbUp.publicUrl) thumbUrl = thumbUp.publicUrl
+    if (!mediaUrl) {
+      try {
+        localStored = !!(await storeMediaBlob(id, outFile))
+      } catch {
+        localStored = false
+      }
+      const thumbRaw = String(processed.thumbUrl || '')
+      if (thumbRaw.startsWith('data:image/')) thumbUrl = thumbRaw
+    }
+
+    if (!mediaUrl && !localStored) {
+      return { ok: false, item: null, error: uploadFailedMessage() }
     }
 
     const isVertical = processed.height > processed.width
@@ -611,10 +628,10 @@ export async function publishLocalMedia(file, actor = null, {
       sourceUrl: mediaUrl,
       mediaUrl,
       thumbUrl: thumbUrl || mediaUrl,
-      origin: 'upload',
-      hosted: true,
-      localStored: false,
-      storagePath: up.path || '',
+      origin,
+      hosted,
+      localStored,
+      storagePath,
       storedBytes: outFile.size || file.size || 0,
       durationSec: processed.durationSec,
       width: processed.width,
@@ -641,17 +658,12 @@ export async function publishLocalMedia(file, actor = null, {
       handle: actor.handle,
     }
 
-    // Catalog row in the cloud first — posts must not depend on this browser.
-    if (finalStatus === 'published') {
+    if (hosted && finalStatus === 'published') {
       const pushed = await pushContentRecord(record, actor)
       if (!pushed) {
         await deleteHostedMedia(mediaUrl)
         if (thumbUrl && thumbUrl !== mediaUrl) await deleteHostedMedia(thumbUrl)
-        return {
-          ok: false,
-          item: null,
-          error: 'Uploaded the file but could not save it to the cloud catalog. Try again.',
-        }
+        return { ok: false, item: null, error: uploadFailedMessage() }
       }
     }
 
@@ -668,9 +680,9 @@ export async function publishLocalMedia(file, actor = null, {
       })
     }
 
-    return { ok: true, item: normalizeItem(record), error: null, hosted: true, localStored: false, status: finalStatus }
+    return { ok: true, item: normalizeItem(record), error: null, hosted, localStored, status: finalStatus }
   } catch (err) {
-    return { ok: false, item: null, error: err?.message || 'Could not process video file.' }
+    return { ok: false, item: null, error: uploadFailedMessage() }
   }
 }
 
@@ -678,27 +690,21 @@ export async function publishDraftItem(id, actor = null) {
   const raw = getImports().find((i) => i.id === id)
   if (!raw) return { ok: false, error: 'Draft not found.' }
   const media = String(raw.mediaUrl || raw.sourceUrl || '')
-  if (!media.startsWith('http://') && !media.startsWith('https://')) {
-    return { ok: false, error: 'This draft has no cloud link yet. Upload again so it can be hosted.' }
-  }
+  const hasHttp = media.startsWith('http://') || media.startsWith('https://')
   const next = {
     ...raw,
     status: 'published',
     publishedAt: new Date().toISOString(),
     scheduledFor: null,
-    hosted: true,
-    localStored: false,
+    hosted: hasHttp ? true : !!raw.hosted,
     origin: raw.origin === 'pic-local' ? 'pic-upload' : (raw.origin === 'upload-local' ? 'upload' : raw.origin),
   }
   const who = actor?.id
     ? actor
-    : (raw.creatorId ? { id: raw.creatorId, handle: raw.handle, provider: 'supabase' } : null)
-  if (!canHostUploads(who)) {
-    return { ok: false, error: cloudHostRequiredMessage(who) }
-  }
-  const pushed = await pushContentRecord(next, who)
-  if (!pushed) {
-    return { ok: false, error: 'Could not publish this draft to the cloud catalog.' }
+    : (raw.creatorId ? { id: raw.creatorId, handle: raw.handle, provider: actor?.provider || 'supabase' } : null)
+  if (hasHttp && canHostUploads(who)) {
+    const pushed = await pushContentRecord(next, who)
+    if (!pushed) return { ok: false, error: uploadFailedMessage() }
   }
   saveImport(next)
   notifyContentChanged()

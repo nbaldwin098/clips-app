@@ -2,11 +2,12 @@ import { getImports, saveImport } from './storage'
 import {
   uploadImageToSupabase,
   canHostUploads,
-  cloudHostRequiredMessage,
+  signInToUploadMessage,
+  uploadFailedMessage,
   deleteHostedMedia,
 } from './mediaUpload'
 import { pushContentRecord, notifyContentChanged } from './contentSync'
-import { processImageFile } from './videoStorage'
+import { processImageFile, storeMediaBlob } from './videoStorage'
 import { hasStableImage, hiddenBrokenIds } from './catalogHealth'
 import { isAccountHidden } from './trustSafety'
 import { newContentId } from './newContentId'
@@ -78,24 +79,40 @@ export async function publishPhoto(file, actor = null) {
   if (!String(file.type || '').startsWith('image/')) {
     return { ok: false, item: null, error: 'Choose an image file (jpg, png, webp).' }
   }
-  if (!canHostUploads(actor)) {
-    return { ok: false, item: null, error: cloudHostRequiredMessage(actor) }
-  }
+  if (!actor?.id) return { ok: false, item: null, error: signInToUploadMessage() }
   try {
     const processed = await processImageFile(file)
     const id = newContentId()
     const uploadFile = processed.displayFile || file
 
-    const up = await uploadImageToSupabase(uploadFile, actor.id)
-    if (!up.ok || !up.publicUrl) {
-      return {
-        ok: false,
-        item: null,
-        error: up.error || 'Could not upload this photo to cloud storage.',
+    let mediaUrl = ''
+    let hosted = false
+    let localStored = false
+    let storagePath = ''
+
+    if (canHostUploads(actor)) {
+      const up = await uploadImageToSupabase(uploadFile, actor.id)
+      if (up.ok && up.publicUrl) {
+        mediaUrl = up.publicUrl
+        hosted = true
+        storagePath = up.path || ''
       }
     }
-    const mediaUrl = up.publicUrl
+
+    if (!mediaUrl) {
+      try {
+        localStored = !!(await storeMediaBlob(id, processed.displayFile || file))
+      } catch {
+        localStored = false
+      }
+    }
+
+    if (!mediaUrl && !localStored && !processed.thumbUrl) {
+      return { ok: false, item: null, error: uploadFailedMessage() }
+    }
+
     const thumbUrl = mediaUrl
+      || (String(processed.thumbUrl || '').startsWith('data:image/') ? processed.thumbUrl : '')
 
     const record = {
       id,
@@ -107,11 +124,11 @@ export async function publishPhoto(file, actor = null) {
       thumbUrl,
       mosaicThumb: String(processed.thumbUrl || '').startsWith('data:image/')
         ? processed.thumbUrl
-        : mediaUrl,
-      origin: 'pic-upload',
-      hosted: true,
-      localStored: false,
-      storagePath: up.path || '',
+        : (mediaUrl || ''),
+      origin: hosted ? 'pic-upload' : 'pic-local',
+      hosted,
+      localStored,
+      storagePath,
       storedBytes: (processed.displayFile || file).size || 0,
       width: processed.width,
       height: processed.height,
@@ -124,20 +141,18 @@ export async function publishPhoto(file, actor = null) {
       avatarUrl: actor.avatarUrl || null,
     }
 
-    const pushed = await pushContentRecord(record, actor)
-    if (!pushed) {
-      await deleteHostedMedia(mediaUrl)
-      return {
-        ok: false,
-        item: null,
-        error: 'Uploaded the file but could not save it to the cloud catalog. Try again.',
+    if (hosted) {
+      const pushed = await pushContentRecord(record, actor)
+      if (!pushed) {
+        await deleteHostedMedia(mediaUrl)
+        return { ok: false, item: null, error: uploadFailedMessage() }
       }
     }
 
     saveImport(record)
     notifyContentChanged()
-    return { ok: true, item: record, error: null, hosted: true }
+    return { ok: true, item: record, error: null, hosted }
   } catch (err) {
-    return { ok: false, item: null, error: err?.message || 'Could not upload photo.' }
+    return { ok: false, item: null, error: uploadFailedMessage() }
   }
 }
