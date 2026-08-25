@@ -20,6 +20,9 @@ import { isFeedable, isReferenceItem, isRetiredCatalogItem } from './catalogHeal
 import { isAccountHidden } from './trustSafety'
 import { listIndexedUsers } from './moderation'
 import { OFFICIAL_CREATORS } from '../data/publicMediaSeed'
+import { freezeFeed, clearFrozenFeeds } from './frozenFeeds'
+
+export { clearFrozenFeeds }
 
 const VIEW_KEY = 'clips_content_views'
 const PIN_KEY = 'clips_pinned_by_creator'
@@ -120,6 +123,7 @@ function sanitizeDescription(desc) {
 
 export function normalizeItem(raw) {
   if (!raw) return null
+  const origin = raw.origin || raw.platform || ''
   return {
     id: raw.id,
     type: raw.type || 'short',
@@ -128,7 +132,7 @@ export function normalizeItem(raw) {
     sourceUrl: raw.sourceUrl || raw.mediaUrl || '',
     mediaUrl: raw.mediaUrl || raw.sourceUrl || '',
     thumbUrl: raw.thumbUrl || '',
-    origin: raw.origin || raw.platform || 'user',
+    origin: origin || 'user',
     storedBytes: raw.storedBytes ?? 0,
     durationSec: raw.durationSec || 0,
     tags: Array.isArray(raw.tags) ? raw.tags : [],
@@ -143,6 +147,8 @@ export function normalizeItem(raw) {
     createdAt: raw.createdAt || raw.publishedAt || raw.importedAt || '',
     crossPost: raw.crossPost || null,
     hosted: !!raw.hosted,
+    localStored: raw.localStored === true,
+    storagePath: raw.storagePath || '',
     soundId: raw.soundId || raw.engagement?.soundId || null,
     soundTitle: raw.soundTitle || raw.engagement?.soundTitle || null,
     stitchOf: raw.stitchOf || null,
@@ -431,33 +437,21 @@ export function getFollowingFeed(userId, { shortsOnly = false } = {}) {
 }
 
 /** Rank once per tab load. Bots, likes, and cloud sync must not reshuffle Recommended. */
-const frozenFeeds = {
-  home: new Map(),
-  shorts: new Map(),
-  following: new Map(),
-  followingShorts: new Map(),
-}
-
-function freezeFeed(map, key, build) {
-  const prev = map.get(key)
-  if (prev?.length) return prev
-  const next = build()
-  if (next?.length) map.set(key, next)
-  return next
-}
-
 export function getStableHomeFeed(userId = null) {
-  return freezeFeed(frozenFeeds.home, userId || 'anon', () => getHomeFeed(userId))
+  return freezeFeed('home', userId || 'anon', () => getHomeFeed(userId))
 }
 
 export function getStableShortsFeed(userId = null) {
-  return freezeFeed(frozenFeeds.shorts, userId || 'anon', () => getShortsFeed(userId))
+  return freezeFeed('shorts', userId || 'anon', () => getShortsFeed(userId))
 }
 
 export function getStableFollowingFeed(userId, { shortsOnly = false } = {}) {
   if (!userId) return []
-  const map = shortsOnly ? frozenFeeds.followingShorts : frozenFeeds.following
-  return freezeFeed(map, userId, () => getFollowingFeed(userId, { shortsOnly }))
+  return freezeFeed(
+    shortsOnly ? 'followingShorts' : 'following',
+    userId,
+    () => getFollowingFeed(userId, { shortsOnly }),
+  )
 }
 
 export function listCatalogTags(limit = 24) {

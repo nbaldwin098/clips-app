@@ -3,6 +3,8 @@
  * Local-only — no invented ASR, no server ingest.
  */
 
+import { isShortPublicId } from './publicId.js'
+
 export const LIVE_CATEGORIES = [
   'Just chatting',
   'Gaming',
@@ -41,8 +43,14 @@ export function isUserUploadRecord(rec) {
   if (origin === 'upload' || origin === 'upload-local') return true
   if (origin === 'pic-upload' || origin === 'pic-local') return true
   if (String(rec.id).startsWith('up_') || String(rec.id).startsWith('pic_')) return true
-  // Cloud-hosted user posts use opaque public ids (no up_/pic_ prefix).
-  if (rec.hosted && (origin === 'upload' || origin === 'pic-upload')) return true
+  if (rec.hosted === true || rec.localStored === true) {
+    if (origin.startsWith('upload') || origin.startsWith('pic') || isShortPublicId(rec.id) || !origin || origin === 'user') {
+      return true
+    }
+  }
+  if (isShortPublicId(rec.id) && (Number(rec.storedBytes) > 0 || rec.hosted === true || rec.localStored === true)) {
+    return true
+  }
   return false
 }
 

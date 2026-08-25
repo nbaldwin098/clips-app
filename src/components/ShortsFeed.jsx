@@ -17,6 +17,7 @@ import ExoClickDisplay, { clipBannerAllowed, EXOCLICK_BANNER_ZONE, EXOCLICK_BANN
 import { InFeedAd } from './AdUnits'
 import { mixFeedAds } from '../lib/adEngine'
 import { preloadPostedItems } from '../lib/preloadMedia'
+import { useContentSyncTick } from '../lib/useContentSync'
 
 function resolvePlayUrl(item) {
   return item?.mediaUrl || item?.sourceUrl || ''
@@ -44,6 +45,10 @@ function ClipSlide({
   const vidRef = useRef(null)
   const [src, setSrc] = useState(() => resolvePlayUrl(item))
   const [embed, setEmbed] = useState(() => parseEmbedUrl(resolvePlayUrl(item)))
+  const [resolving, setResolving] = useState(() => {
+    const raw = resolvePlayUrl(item)
+    return !(raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('blob:'))
+  })
   const [votes, setVotes] = useState(() => getVotes(item.id))
   const [myVote, setMyVote] = useState(() => getUserVote(user?.id, item.id))
   const [heartBurst, setHeartBurst] = useState(false)
@@ -91,6 +96,15 @@ function ClipSlide({
     const parsed = parseEmbedUrl(raw)
     setEmbed(parsed)
 
+    const http = raw.startsWith('http://') || raw.startsWith('https://')
+    if (http) {
+      setSrc(parsed?.src || raw)
+      setResolving(false)
+      // Still try IDB as a silent fallback if the hosted URL dies later (onError).
+      return () => { cancelled = true }
+    }
+
+    setResolving(true)
     ;(async () => {
       try {
         const idb = await getMediaBlobUrl(item.id)
@@ -98,14 +112,18 @@ function ClipSlide({
         if (idb) {
           setSrc(idb)
           setEmbed({ type: 'video', src: idb, platform: 'direct' })
+          setResolving(false)
           return
         }
       } catch {}
-      if (!cancelled) setSrc(parsed?.src || raw)
+      if (!cancelled) {
+        setSrc(parsed?.src || raw || '')
+        setResolving(false)
+      }
     })()
 
     return () => { cancelled = true }
-  }, [item.id, item.mediaUrl, item.sourceUrl])
+  }, [item.id, item.mediaUrl, item.sourceUrl, item.localStored])
 
   useEffect(() => {
     viewCountedRef.current = false
@@ -307,6 +325,8 @@ function ClipSlide({
               }).catch(() => {})
             }}
           />
+        ) : resolving ? (
+          <div className="absolute inset-0 flex items-center justify-center text-zinc-500 text-sm">Loading…</div>
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-zinc-500 text-sm">No media</div>
         )}
@@ -439,9 +459,10 @@ export default function ShortsFeed({
   onOpenAuth, onOpenProfile, onOpenSound, onStitch, onNavigate, focusId,
 }) {
   const { user } = useAuth()
+  const syncTick = useContentSyncTick()
   const [tab, setTab] = useState('recommended')
-  const recommended = useMemo(() => getStableShortsFeed(user?.id || null), [user?.id])
-  const following = useMemo(() => getStableFollowingFeed(user?.id, { shortsOnly: true }), [user?.id])
+  const recommended = useMemo(() => getStableShortsFeed(user?.id || null), [user?.id, syncTick])
+  const following = useMemo(() => getStableFollowingFeed(user?.id, { shortsOnly: true }), [user?.id, syncTick])
   const items = useMemo(() => {
     const base = tab === 'following' ? following : recommended
     if (!focusId) return base
@@ -463,7 +484,7 @@ export default function ShortsFeed({
     const pool = creatorClips.length ? creatorClips : base
     const rest = pool.filter((i) => i.id !== focused.id)
     return [focused, ...rest]
-  }, [tab, following, recommended, focusId])
+  }, [tab, following, recommended, focusId, syncTick])
   // Ads only in the open player while scrolling — Recommended grid stays clean.
   const mixed = useMemo(() => {
     if (!focusId) return []
