@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Radio, Key, Copy, Check, Play, Square, MonitorUp } from 'lucide-react'
+import { Radio, Key, Copy, Check, Play, Square, MonitorUp, Circle } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { lsGet, lsSet } from '../lib/storage'
 import { getSubscriberCount } from '../lib/engagement'
@@ -15,6 +15,18 @@ import { canGoLive } from '../lib/trustSafety'
 import VideoInStreamAd from './VideoInStreamAd'
 import { useLiveStreamAds } from '../hooks/useLiveStreamAds'
 import { liveListingBlockedReason, liveIngestConnected } from '../lib/liveIngest'
+import {
+  MANUAL_AD_BREAKS,
+  LIVE_SNOOZE_SEC,
+  LIVE_HOURLY_AD_CAP_SEC,
+  cueLiveAd,
+  liveAdsSnoozed,
+  snoozeLiveAds,
+  manualAdCooldownRemaining,
+  manualAdCooldownSec,
+  liveAdTimeUsedInHour,
+} from '../lib/liveAds'
+import { getLivePreflight } from '../lib/creatorSetup'
 
 function formatElapsed(startedAt) {
   if (!startedAt) return ''
@@ -27,7 +39,7 @@ function formatElapsed(startedAt) {
   return `${hrs}h ${mins % 60}m ago`
 }
 
-export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream, onOpenAuth }) {
+export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream, onOpenAuth, onNavigate }) {
   const { user, isAuthenticated } = useAuth()
   const canHost = isAuthenticated && canGoLive(user)
 
@@ -100,6 +112,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
     try {
       await navigator.clipboard.writeText(text)
       setCopied(which)
+      if (which === 'key' && user?.id) lsSet(`stream_key_ack_${user.id}`, true)
       setTimeout(() => setCopied(''), 2000)
     } catch {}
   }
@@ -184,6 +197,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
   const snoozed = adStateId ? liveAdsSnoozed(adStateId) : false
   const manualWait = adStateId ? manualAdCooldownRemaining(adStateId) : 0
   const adUsedMin = adStateId ? Math.round(liveAdTimeUsedInHour(adStateId) / 60) : 0
+  const preflight = getLivePreflight(user, { title, category })
 
   const runManualAd = (breakSec) => {
     if (!adStateId) return
@@ -351,6 +365,36 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
           <h2 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
             <Key className="h-4 w-4 text-white" /> List me in the lobby
           </h2>
+          <div className="rounded-xl border border-[#272734] bg-[#0c0c10] p-3 space-y-2">
+            <p className="text-[11px] font-semibold text-zinc-300">Pre-live checklist</p>
+            <ul className="space-y-1.5">
+              {preflight.items.map((item) => (
+                <li key={item.id} className="flex items-start gap-2 text-[11px]">
+                  {item.ok ? (
+                    <Check className="h-3.5 w-3.5 shrink-0 text-emerald-400 mt-0.5" />
+                  ) : (
+                    <Circle className="h-3.5 w-3.5 shrink-0 text-zinc-600 mt-0.5" />
+                  )}
+                  <span>
+                    <span className={item.ok ? 'text-zinc-400' : 'text-zinc-200'}>{item.label}</span>
+                    <span className="block text-zinc-600 leading-snug">{item.detail}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {!preflight.readyToList ? (
+              <p className="text-[10px] text-amber-400/90">
+                Complete the checklist above. Listing stays disabled until video ingest is connected.
+              </p>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => onNavigate?.('settings', 'stream')}
+              className="text-[11px] text-zinc-400 underline underline-offset-2 hover:text-white"
+            >
+              Open stream settings
+            </button>
+          </div>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}

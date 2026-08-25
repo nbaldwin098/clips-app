@@ -477,6 +477,7 @@ function AppShell() {
             focusedStream={focusedLiveStream}
             onFocusStream={focusLiveStream}
             onOpenAuth={openAuth}
+            onNavigate={navigate}
           />
         )
       case 'dashboard':

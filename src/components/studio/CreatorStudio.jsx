@@ -28,6 +28,7 @@ import { cn } from '../../lib/utils'
 import { restoreLostUploads } from '../../lib/restoreUploads'
 import { useContentSyncTick } from '../../lib/useContentSync'
 import InteractionBubbleMap from './InteractionBubbleMap'
+import CreatorSetupHub from './CreatorSetupHub'
 import CreatorAnalyticsPanel from '../settings/CreatorAnalyticsPanel'
 import RevenueSettings from '../settings/RevenueSettings'
 import VerifyPage from '../VerifyPage'
@@ -35,12 +36,13 @@ import {
   getIdVerificationForUser,
   isVerifiedChannel,
 } from '../../lib/verification'
+import { applyStatusLabel } from '../../lib/creatorSetup'
 import { isOfficialCreator } from '../../lib/uiFormat'
 
 const NAV = [
   { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-  { id: 'wallet', label: 'Wallet', icon: Wallet },
+  { id: 'wallet', label: 'Earnings', icon: Wallet },
   { id: 'vods', label: 'VODs', icon: Video },
   { id: 'verify', label: 'Get verified', icon: BadgeCheck },
 ]
@@ -205,11 +207,17 @@ export default function CreatorStudio({
     setOnboardingDone(true)
   }
 
+  const reopenOnboarding = () => {
+    if (user?.id) lsSet(`calabi_onboarding_done_${user.id}`, false)
+    setOnboardingDone(false)
+  }
+
   const posts = useMemo(() => getCreatorContent(user?.id, user?.handle), [user?.id, user?.handle, syncTick])
   const showOnboarding = !onboardingDone && posts.length === 0
   const live = lsGet(`live_state_${user?.id}`, null)
   const views = posts.reduce((n, c) => n + (getViews(c.id) || c.views || 0), 0)
   const approved = user?.creatorStatus === 'approved'
+  const creatorApply = user?.creatorStatus || 'none'
   const balance = creatorBalance(user?.id, user?.handle)
   const vods = listVods(user?.id)
   const verified = isOfficialCreator(user?.id, user?.handle) || isVerifiedChannel(user?.id, user?.handle)
@@ -392,7 +400,7 @@ export default function CreatorStudio({
             <p className="text-sm font-semibold text-white">
               {section === 'overview' && 'Creator Studio'}
               {section === 'analytics' && 'Analytics'}
-              {section === 'wallet' && 'Revenue & wallet'}
+              {section === 'wallet' && 'Earnings'}
               {section === 'vods' && 'VOD library'}
               {section === 'verify' && 'Verification'}
             </p>
@@ -408,10 +416,22 @@ export default function CreatorStudio({
             <span className="h-7 px-2 inline-flex items-center text-[10px] font-semibold border border-zinc-800 text-zinc-400">
               {live?.isLive ? 'Lobby live' : 'Lobby off'}
             </span>
-            {approved ? (
+            {creatorApply === 'approved' ? (
               <span className="h-7 px-2 inline-flex items-center text-[10px] font-semibold bg-emerald-950/40 border border-emerald-900/50 text-emerald-200">
-                Earn approved
+                {applyStatusLabel('approved')}
               </span>
+            ) : creatorApply === 'pending' ? (
+              <span className="h-7 px-2 inline-flex items-center text-[10px] font-semibold bg-amber-950/40 border border-amber-900/50 text-amber-200">
+                {applyStatusLabel('pending')}
+              </span>
+            ) : creatorApply === 'rejected' ? (
+              <button
+                type="button"
+                onClick={() => onNavigate?.('creator-apply')}
+                className="h-7 px-2 text-[10px] font-semibold border border-red-900/50 bg-red-950/40 text-red-200"
+              >
+                {applyStatusLabel('rejected')} · Reapply
+              </button>
             ) : (
               <button
                 type="button"
@@ -434,6 +454,13 @@ export default function CreatorStudio({
                   onNavigate={onNavigate}
                 />
               ) : null}
+              <CreatorSetupHub
+                user={user}
+                onNavigate={onNavigate}
+                onOpenUpload={onOpenUpload}
+                onOpenImport={onOpenImport}
+                onReopenOnboarding={reopenOnboarding}
+              />
               <OverviewStats
                 posts={posts.length}
                 views={views}
