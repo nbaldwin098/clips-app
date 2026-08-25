@@ -60,3 +60,14 @@ export function queueExoClickServe() {
     }, 48)
   })
 }
+
+/** Re-queue and serve <ins> tags inside one container (e.g. when a reel ad slide becomes active). */
+export function resurfaceExoClickInContainer(container) {
+  if (typeof document === 'undefined') return Promise.resolve(false)
+  if (container) {
+    container.querySelectorAll('ins[data-zoneid]').forEach((ins) => {
+      delete ins.dataset.exoQueued
+    })
+  }
+  return queueExoClickServe()
+}

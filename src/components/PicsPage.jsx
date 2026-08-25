@@ -362,7 +362,11 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
             const row = visibleScrollRows[index]
             if (row?.kind === 'ad') {
               return (
-                <div className="h-full w-full max-w-md mx-auto bg-black flex flex-col items-center justify-center px-4">
+                <div
+                  className="h-full w-full max-w-md mx-auto bg-black flex flex-col items-center justify-center px-4 pointer-events-auto relative z-10 touch-manipulation"
+                  data-ad-slide=""
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
                   <p className="shrink-0 px-3 py-2 text-[11px] text-white/70">Sponsored · swipe for the next pic</p>
                   <InFeedAd ad={row.ad} variant="pic" active={active} onFill={(ok) => { if (!ok) skipAdSlide(index) }} />
                 </div>

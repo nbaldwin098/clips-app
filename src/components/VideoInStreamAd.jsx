@@ -56,11 +56,11 @@ export default function VideoInStreamAd({ creative, slot, onDone }) {
   }
 
   return (
-    <div className="absolute inset-0 z-30 bg-black">
+    <div className="absolute inset-0 z-30 bg-black pointer-events-auto">
       <video
         ref={videoRef}
         src={src}
-        className="absolute inset-0 h-full w-full object-contain bg-black"
+        className="absolute inset-0 h-full w-full object-contain bg-black cursor-pointer"
         playsInline
         autoPlay
         onClick={open}

@@ -73,7 +73,16 @@ export function InFeedAd({ ad, variant = 'clip', active = true, onFill }) {
     const shell = variant === 'pic'
       ? 'aspect-square w-full'
       : 'aspect-[9/16] w-full rounded-xl min-h-[250px]'
-    return <ExoClickDisplay active={active} className={shell} onFill={onFill} />
+    return (
+      <div
+        className="pointer-events-auto relative z-10 w-full max-w-full"
+        data-ad-slide=""
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <ExoClickDisplay active={active} className={shell} onFill={onFill} />
+      </div>
+    )
   }
   return <CampaignInFeedAd ad={ad} variant={variant} />
 }
