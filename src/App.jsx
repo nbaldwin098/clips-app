@@ -54,7 +54,7 @@ import {
 } from './components/legal/LegalPages'
 import { startSession } from './lib/algorithmEngine'
 import { lsGet, lsSet } from './lib/storage'
-import { syncContentFromCloud, notifyContentChanged } from './lib/contentSync'
+import { syncContentFromCloud, notifyContentChanged, subscribeCloudCatalog } from './lib/contentSync'
 import { setGraphActor, syncGraphFromCloud, syncPublicEngagementFromCloud } from './lib/graphSync'
 import { promoteDeviceUploadsToCloud } from './lib/promoteUploads'
 import { installRuntimeGuards } from './lib/selfHeal'
@@ -133,16 +133,19 @@ function AppShell() {
     }
     pull()
     if (isOwnerAccount(user)) pushLibraryCatalogToCloud().catch(() => {})
-    const intervalMs = user?.id ? 90_000 : 180_000
+    const intervalMs = user?.id ? 45_000 : 90_000
     const interval = setInterval(pull, intervalMs)
     const onFocus = () => pull()
     const onVis = () => { if (document.visibilityState === 'visible') pull() }
     window.addEventListener('focus', onFocus)
     document.addEventListener('visibilitychange', onVis)
+    let unsubLive = () => {}
+    subscribeCloudCatalog(() => {}).then((off) => { unsubLive = off || (() => {}) }).catch(() => {})
     return () => {
       clearInterval(interval)
       window.removeEventListener('focus', onFocus)
       document.removeEventListener('visibilitychange', onVis)
+      try { unsubLive() } catch {}
     }
   }, [user])
 

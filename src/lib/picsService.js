@@ -6,7 +6,7 @@ import {
   uploadFailedMessage,
   deleteHostedMedia,
 } from './mediaUpload'
-import { pushContentRecord, notifyContentChanged } from './contentSync'
+import { pushContentRecord, notifyContentChanged, syncContentFromCloud } from './contentSync'
 import { processImageFile } from './videoStorage'
 import { hasStableImage, hiddenBrokenIds } from './catalogHealth'
 import { isAccountHidden } from './trustSafety'
@@ -79,7 +79,13 @@ export async function publishPhoto(file, actor = null) {
   if (!actor?.id) return { ok: false, item: null, error: signInToUploadMessage() }
 
   const host = await resolveUploadHost(actor)
-  if (!host?.id) return { ok: false, item: null, error: signInToUploadMessage() }
+  if (!host?.id) {
+    return {
+      ok: false,
+      item: null,
+      error: actor?.id ? uploadFailedMessage() : signInToUploadMessage(),
+    }
+  }
 
   try {
     const processed = await processImageFile(file)
@@ -127,6 +133,7 @@ export async function publishPhoto(file, actor = null) {
 
     saveImport(record)
     notifyContentChanged()
+    syncContentFromCloud(host).catch(() => {})
     return { ok: true, item: record, error: null, hosted: true }
   } catch {
     return { ok: false, item: null, error: uploadFailedMessage() }

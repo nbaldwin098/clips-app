@@ -176,6 +176,38 @@ export async function syncContentFromCloud(actor = null) {
   return rows
 }
 
+let liveSub = null
+
+/** Live catalog updates so other people's uploads show up without a full reload. */
+export async function subscribeCloudCatalog(onChange) {
+  if (!isSupabaseConfigured() || typeof window === 'undefined') return () => {}
+  try {
+    const sb = await getSupabase()
+    if (!sb) return () => {}
+    if (liveSub) {
+      try { await sb.removeChannel(liveSub) } catch {}
+      liveSub = null
+    }
+    const channel = sb
+      .channel('clips-videos-catalog')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: TABLE },
+        () => {
+          syncContentFromCloud().then(() => onChange?.()).catch(() => onChange?.())
+        },
+      )
+      .subscribe()
+    liveSub = channel
+    return () => {
+      try { sb.removeChannel(channel) } catch {}
+      if (liveSub === channel) liveSub = null
+    }
+  } catch {
+    return () => {}
+  }
+}
+
 /** Subscribe to both cross-tab localStorage updates and same-tab sync events. */
 export function subscribeContentUpdates(onChange) {
   if (typeof window === 'undefined') return () => {}

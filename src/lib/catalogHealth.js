@@ -80,6 +80,11 @@ export function isRetiredCatalogItem(item) {
 export function isFeedable(item) {
   if (!item || isReferenceItem(item) || isRetiredCatalogItem(item)) return false
   if (item.type === 'pic') return hasStableImage(item)
+  // User uploads only belong in shared feeds when they have a public http URL.
+  // Device-only / empty-media rows made it look like "only my uploads exist".
+  if (isUserUploadRecord(item)) {
+    return isHttpUrl(item?.mediaUrl) || isHttpUrl(item?.sourceUrl)
+  }
   return hasPlayableVideo(item)
 }
 

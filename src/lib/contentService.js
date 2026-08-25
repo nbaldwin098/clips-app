@@ -10,7 +10,7 @@ import {
   uploadFailedMessage,
   deleteHostedMedia,
 } from './mediaUpload'
-import { pushContentRecord, deleteContentRecord, notifyContentChanged } from './contentSync'
+import { pushContentRecord, deleteContentRecord, notifyContentChanged, syncContentFromCloud } from './contentSync'
 import { newContentId } from './newContentId'
 import { getSubscriptionsForUser } from './engagement'
 import { getPicsFeed } from './picsService'
@@ -561,7 +561,11 @@ export async function publishLocalMedia(file, actor = null, {
   // Playable for everyone = public http URL. Never publish empty-media rows.
   const host = await resolveUploadHost(actor)
   if (!host?.id) {
-    return { ok: false, item: null, error: signInToUploadMessage() }
+    return {
+      ok: false,
+      item: null,
+      error: actor?.id ? uploadFailedMessage() : signInToUploadMessage(),
+    }
   }
 
   try {
@@ -649,6 +653,7 @@ export async function publishLocalMedia(file, actor = null, {
     if (cleanChapters.length) setChapters(id, cleanChapters)
     if (record.captionsText) setCaptions(id, [{ lang: 'en', text: record.captionsText }])
     notifyContentChanged()
+    syncContentFromCloud(host).catch(() => {})
 
     if (finalStatus === 'published') {
       notifyFollowersOfUpload({
