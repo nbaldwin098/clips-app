@@ -15,7 +15,6 @@ import ShortsStage, { ShortsCard } from './ShortsStage'
 import ShortsGrid from './ShortsGrid'
 import ExoClickDisplay, { clipBannerAllowed, EXOCLICK_BANNER_ZONE, EXOCLICK_BANNER_CLASS } from './ExoClickDisplay'
 import { mixFeedAds } from '../lib/adEngine'
-import { shuffleFeed } from '../lib/shuffleFeed'
 import { preloadPostedItems } from '../lib/preloadMedia'
 
 function resolvePlayUrl(item) {
@@ -457,11 +456,11 @@ export default function ShortsFeed({
     const rest = pool.filter((i) => i.id !== focused.id)
     return [focused, ...rest]
   }, [tab, following, recommended, focusId])
-  // In the player, keep the focused clip first — never reshuffle it away.
-  const mixed = useMemo(
-    () => mixFeedAds(focusId ? items : shuffleFeed(items), 'clip-feed'),
-    [items, focusId],
-  )
+  // Ads only in the open player while scrolling — Recommended grid stays clean.
+  const mixed = useMemo(() => {
+    if (!focusId) return []
+    return mixFeedAds(items, 'clip-feed')
+  }, [items, focusId])
   const [activeIdx, setActiveIdx] = useState(0)
   const [muted, setMuted] = useState(true)
   const [bannerSlide, setBannerSlide] = useState(null)

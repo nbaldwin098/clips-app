@@ -246,7 +246,8 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
     const rest = shuffleFeed(list.filter((p) => p.id !== initialPicId))
     return focused ? [focused, ...rest] : shuffleFeed(list)
   }, [items, initialPicId])
-  const mixed = useMemo(() => mixFeedAds(shuffled, 'pic-feed'), [shuffled])
+  // Ads only while scrolling the viewer — never in the recommended mosaic.
+  const scrollRows = useMemo(() => mixFeedAds(shuffled, 'pic-feed'), [shuffled])
   const skipAutoOpen = useRef(false)
   const refresh = useCallback(() => setItems(getPicsFeed()), [])
   const dropBroken = useCallback((id) => {
@@ -258,17 +259,17 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
 
   useEffect(() => {
     const from = viewerIndex == null ? 0 : viewerIndex + 1
-    preloadPostedItems(shuffled.slice(from), viewerIndex == null ? 6 : 3)
-  }, [shuffled, viewerIndex])
+    preloadPostedItems(scrollRows.slice(from), viewerIndex == null ? 6 : 3)
+  }, [scrollRows, viewerIndex])
 
   useEffect(() => {
     if (!initialPicId || skipAutoOpen.current) return
-    const idx = shuffled.findIndex((p) => p.id === initialPicId)
+    const idx = scrollRows.findIndex((row) => row.kind === 'item' && row.item?.id === initialPicId)
     if (idx >= 0) {
       setOpenedAt(idx)
       setViewerIndex(idx)
     }
-  }, [initialPicId, shuffled])
+  }, [initialPicId, scrollRows])
 
   const closeViewer = () => {
     skipAutoOpen.current = true
@@ -276,11 +277,12 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
     replaceHash('pics')
   }
 
-  const openAt = (mixedIndex) => {
-    setOpenedAt(mixedIndex)
-    setViewerIndex(mixedIndex)
-    const pic = shuffled[mixedIndex]
-    if (pic && typeof window !== 'undefined') {
+  const openPic = (pic) => {
+    const idx = scrollRows.findIndex((row) => row.kind === 'item' && row.item?.id === pic.id)
+    const at = idx >= 0 ? idx : 0
+    setOpenedAt(at)
+    setViewerIndex(at)
+    if (pic?.id && typeof window !== 'undefined') {
       replaceHash('pic', pic.id)
     }
   }
@@ -320,11 +322,11 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
       <div className="h-full min-h-0 flex flex-col bg-[#000000]">
         <ShortsStage
           key={`pic-reel-${openedAt}`}
-          count={shuffled.length}
+          count={scrollRows.length}
           activeIndex={viewerIndex}
           onActiveIndex={(i) => {
             setViewerIndex(i)
-            const pic = shuffled[i]
+            const pic = scrollRows[i]?.item
             if (pic && typeof window !== 'undefined') {
               replaceHash('pic', pic.id)
             }
@@ -335,11 +337,20 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
               <button type="button" onClick={closeViewer} className="h-9 px-3 rounded-full bg-white/10 text-white text-xs inline-flex items-center gap-1.5">
                 <X className="h-4 w-4" /> Back to pics
               </button>
-              <p className="text-[11px] text-white/50">{viewerIndex + 1}/{shuffled.length}</p>
+              <p className="text-[11px] text-white/50">{viewerIndex + 1}/{scrollRows.length}</p>
             </div>
           )}
           renderSlide={(index, active, warm) => {
-            const pic = shuffled[index]
+            const row = scrollRows[index]
+            if (row?.kind === 'ad') {
+              return (
+                <div className="h-full w-full max-w-md mx-auto bg-black flex flex-col items-center justify-center px-4">
+                  <p className="shrink-0 px-3 py-2 text-[11px] text-white/70">Sponsored · swipe for the next pic</p>
+                  <InFeedAd ad={row.ad} variant="pic" active={active} />
+                </div>
+              )
+            }
+            const pic = row?.item
             return pic ? (
               <PicSlide
                 pic={pic}
@@ -374,24 +385,15 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
         </div>
       ) : (
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1 p-1 pb-20">
-          {mixed.map((row) => {
-            if (row.kind === 'ad') {
-              return <InFeedAd key={row.key} ad={row.ad} variant="pic" />
-            }
-            const pic = row.item
-            return (
-              <MosaicPicTile
-                key={row.key || pic.id}
-                pic={pic}
-                onOpen={() => {
-                  const idx = shuffled.findIndex((p) => p.id === pic.id)
-                  if (idx >= 0) openAt(idx)
-                }}
-                onOpenAuth={onOpenAuth}
-                onUnplayable={dropBroken}
-              />
-            )
-          })}
+          {shuffled.map((pic) => (
+            <MosaicPicTile
+              key={pic.id}
+              pic={pic}
+              onOpen={() => openPic(pic)}
+              onOpenAuth={onOpenAuth}
+              onUnplayable={dropBroken}
+            />
+          ))}
         </div>
       )}
     </div>

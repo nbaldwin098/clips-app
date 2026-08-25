@@ -16,9 +16,9 @@ const AD_SETTINGS_KEY = 'clips_ad_settings'
 
 export const AD_PLACEMENTS = [
   { id: 'video', label: 'Videos', hint: 'In-stream VAST at 30 seconds, plus 8 minutes if the video is that long', setting: 'videoInStream' },
-  { id: 'clip-banner', label: 'Clips banner', hint: 'Small bar under the clip description (same scroll zone)', setting: 'clipBanner' },
-  { id: 'clip-feed', label: 'Clips in-feed', hint: 'Same scroll display zone as pics, between clips', setting: 'clipInFeed' },
-  { id: 'pic-feed', label: 'Pics in-feed', hint: 'Same scroll display zone as clips, between photos', setting: 'picInFeed' },
+  { id: 'clip-banner', label: 'Clips banner', hint: 'Small bar under the clip description while scrolling the player', setting: 'clipBanner' },
+  { id: 'clip-feed', label: 'Clips while scrolling', hint: 'Between clips only after you open one — not on Recommended', setting: 'clipInFeed' },
+  { id: 'pic-feed', label: 'Pics while scrolling', hint: 'Between pics only after you open one — not on the mosaic', setting: 'picInFeed' },
 ]
 
 export const ALL_PLACEMENTS = AD_PLACEMENTS.map((p) => p.id)

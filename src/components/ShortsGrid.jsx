@@ -1,10 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { MoreVertical, Share2 } from 'lucide-react'
 import { copyShareUrl } from '../lib/routes'
 import { isRecentShort } from '../lib/mediaMeta'
 import { safeMediaUrl } from '../lib/safeUrl'
-import { mixFeedAds } from '../lib/adEngine'
-import { InFeedAd } from './AdUnits'
 
 function GridThumb({ item }) {
   const src = safeMediaUrl(item.thumbUrl)
@@ -82,8 +80,9 @@ function ShortTile({ item, onOpen }) {
   )
 }
 
+/** Recommended / subscribed clip grid — content only. Ads belong in the player while scrolling. */
 export default function ShortsGrid({ items, onOpen, tab = 'recommended', onTab }) {
-  const mixed = useMemo(() => mixFeedAds(items, 'clip-feed'), [items])
+  const list = Array.isArray(items) ? items : []
   return (
     <div className="h-full overflow-y-auto bg-[#000000]">
       <div className="sticky top-0 z-10 bg-[#000000]/95 backdrop-blur px-4 py-3">
@@ -104,18 +103,14 @@ export default function ShortsGrid({ items, onOpen, tab = 'recommended', onTab }
           </div>
         ) : null}
       </div>
-      {items.length === 0 ? (
+      {list.length === 0 ? (
         <p className="px-4 pt-10 text-sm text-zinc-400 text-center">
           {tab === 'following' ? 'Subscribe to creators to fill this shelf.' : 'No clips yet'}
         </p>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 p-4 pb-16">
-          {mixed.map((row) => (
-            row.kind === 'ad' ? (
-              <InFeedAd key={row.key} ad={row.ad} variant="clip" active />
-            ) : (
-              <ShortTile key={row.key || row.item.id} item={row.item} onOpen={onOpen} />
-            )
+          {list.map((item) => (
+            <ShortTile key={item.id} item={item} onOpen={onOpen} />
           ))}
         </div>
       )}
