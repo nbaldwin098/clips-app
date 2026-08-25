@@ -6,6 +6,7 @@ import StreamSettings from './StreamSettings'
 import ChatSettings from './ChatSettings'
 import CommentSettings from './CommentSettings'
 import MonetizationSettings from './MonetizationSettings'
+import RevenueSettings from './RevenueSettings'
 import NotificationsSettings from './NotificationsSettings'
 import RolesSettings from './RolesSettings'
 import AnalyticsSettings from './AnalyticsSettings'
@@ -20,6 +21,7 @@ const PAGES = {
   chat: ChatSettings,
   comments: CommentSettings,
   monetization: MonetizationSettings,
+  revenue: RevenueSettings,
   notifications: NotificationsSettings,
   roles: RolesSettings,
   analytics: AnalyticsSettings,

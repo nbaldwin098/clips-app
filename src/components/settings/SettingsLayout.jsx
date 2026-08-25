@@ -1,7 +1,7 @@
 import { cn } from '../../lib/utils'
 import {
   User, Shield, Bell, Radio, MessageSquare, MessageCircle, Wallet,
-  BarChart3, Palette, Users, FileText, Scale,
+  BarChart3, Palette, Users, FileText, Scale, CircleDollarSign,
 } from 'lucide-react'
 
 const SECTIONS = [
@@ -12,6 +12,7 @@ const SECTIONS = [
   { id: 'chat', label: 'Chat & Moderation', icon: MessageSquare },
   { id: 'comments', label: 'Comments', icon: MessageCircle },
   { id: 'monetization', label: 'Monetization', icon: Wallet },
+  { id: 'revenue', label: 'Revenue', icon: CircleDollarSign },
   { id: 'notifications', label: 'Notifications', icon: Bell },
   { id: 'roles', label: 'Roles & Permissions', icon: Users },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
