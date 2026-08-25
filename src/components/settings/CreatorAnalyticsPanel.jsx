@@ -171,7 +171,7 @@ export default function CreatorAnalyticsPanel({ embedded = false, showBack = fal
               <div className="mt-6">
                 <SettingsStatList
                   items={[
-                    { label: 'Subscribers', value: formatCount(lifetime.subscribers) },
+                    { label: 'Followers', value: formatCount(lifetime.subscribers) },
                     { label: 'Premium paid', value: formatCount(lifetime.premiumSubs) },
                     { label: 'Past lives', value: String(vods.length) },
                     { label: 'Rank on this device', value: rank ? `#${rank}` : '—' },

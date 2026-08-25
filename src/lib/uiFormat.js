@@ -13,11 +13,16 @@ export function likesLabel(n) {
   return formatCount(Number(n) || 0)
 }
 
-export function subscribersLabel(n) {
+export function followersLabel(n) {
   const v = Number(n) || 0
   if (v <= 0) return ''
-  if (v === 1) return '1 subscriber'
-  return `${formatCount(v)} subscribers`
+  if (v === 1) return '1 follower'
+  return `${formatCount(v)} followers`
+}
+
+/** @deprecated Use followersLabel */
+export function subscribersLabel(n) {
+  return followersLabel(n)
 }
 
 export function creatorDisplayName(item) {

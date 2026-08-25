@@ -24,7 +24,7 @@ export default function MonetizationSettings({ onNavigate }) {
     <div className="space-y-8 pb-8">
       <SettingsPageHeader
         title="Monetization"
-        subtitle="Subscribe is free for anyone. To charge for a post, set a price when you upload. Stripe still has its own Payment Link amount. Views do not pay a dollar rate."
+        subtitle="Follow is free for anyone. The only price you set is premium membership for livestream. Stripe still has its own Payment Link amount. Views do not pay a dollar rate."
       />
 
       <SettingsSection title="Membership list price">

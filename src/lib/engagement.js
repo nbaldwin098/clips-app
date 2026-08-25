@@ -157,7 +157,7 @@ export function toggleSubscribe(userId, creatorId, { notify = true } = {}) {
           contentId: creatorId,
           type: 'subscribe',
           actorId: userId,
-          title: 'Channel subscribe',
+          title: 'Channel follow',
         })
       }).catch(() => {})
     })

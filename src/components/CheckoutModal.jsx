@@ -60,7 +60,7 @@ export default function CheckoutModal({ open, onClose, creatorId, creatorHandle 
           <p className="mt-4 text-sm text-white">You already have premium on this channel.</p>
         ) : (
           <button type="button" disabled={busy || !isAuthenticated} onClick={pay} className="mt-5 w-full h-11 rounded-xl bg-white text-black font-bold text-sm disabled:opacity-40 hover:bg-zinc-200 transition-all">
-            {!isAuthenticated ? 'Sign in to subscribe' : busy ? 'Working…' : hasLink ? `Pay $${price}/mo on Stripe` : `Subscribe $${price}/mo`}
+            {!isAuthenticated ? 'Sign in for premium' : busy ? 'Working…' : hasLink ? `Pay $${price}/mo on Stripe` : `Premium $${price}/mo`}
           </button>
         )}
         {status && <p className="mt-3 text-[11px] text-zinc-500">{status}</p>}

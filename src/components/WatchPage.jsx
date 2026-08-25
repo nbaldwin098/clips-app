@@ -27,7 +27,7 @@ import { downloadPostedMedia } from '../lib/mediaDownload'
 import PostedStamp from './PostedStamp'
 import ChannelAvatar from './ChannelAvatar'
 import VerifiedBadge from './VerifiedBadge'
-import SubscribeButton from './SubscribeButton'
+import FollowButton from './FollowButton'
 import { VideoPreroll } from './AdUnits'
 import VideoInStreamAd from './VideoInStreamAd'
 import { useVideoVastAds } from '../hooks/useVideoVastAds'
@@ -592,7 +592,7 @@ export default function WatchPage({
               <div className="absolute inset-0 z-40 bg-black/85 flex flex-col items-center justify-center p-6 text-center gap-3">
                 <p className="text-lg font-semibold text-white">Paid post</p>
                 <p className="text-sm text-zinc-400 max-w-sm">
-                  Subscribe is free. This post is listed at ${Number(item.priceUsd).toFixed(2)}. Stripe Checkout uses the site payment link, then this post unlocks when Stripe sends you back here.
+                  Following is free. This post is listed at ${Number(item.priceUsd).toFixed(2)}. Stripe Checkout uses the site payment link, then this post unlocks when Stripe sends you back here.
                 </p>
                 <button
                   type="button"
@@ -723,7 +723,7 @@ export default function WatchPage({
                     {(item.createdAt || item.publishedAt) ? <> · <PostedStamp item={item} /></> : null}
                   </p>
                 </div>
-                <SubscribeButton creatorId={item.creatorId || item.userId} handle={item.handle} onOpenAuth={onOpenAuth} className="ml-2" />
+                <FollowButton creatorId={item.creatorId || item.userId} handle={item.handle} onOpenAuth={onOpenAuth} className="ml-2" />
                 {getStripePaymentLink() ? (
                   <div className="ml-2 flex items-center gap-1 flex-wrap justify-end">
                     {TIP_AMOUNTS.map((n) => (

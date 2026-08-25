@@ -82,7 +82,7 @@ export const KICK_TWITCH_PARITY = [
   { feature: 'Chat moderation & ban list', kick: 'live', twitch: 'live', clips: 'live' },
   { feature: 'Mod roles & permissions', kick: 'live', twitch: 'live', clips: 'live' },
   { feature: 'Custom emotes', kick: 'live', twitch: 'live', clips: 'partial' },
-  { feature: 'Subscriptions / memberships', kick: 'live', twitch: 'live', clips: 'partial', note: 'Price and premium list; Stripe Payment Link amount is separate.' },
+  { feature: 'Premium memberships (livestream)', kick: 'live', twitch: 'live', clips: 'partial', note: 'Price and premium list; Stripe Payment Link amount is separate. Free follow is separate.' },
   { feature: 'Revenue dashboard', kick: 'live', twitch: 'live', clips: 'live', note: 'Manual payouts; no ad revenue share shown.' },
   { feature: 'Stripe / bank payouts', kick: 'live', twitch: 'live', clips: 'planned', note: 'PayPal/Venmo/Cash App contact only; owner sends by hand.' },
   { feature: 'Live analytics', kick: 'live', twitch: 'live', clips: 'partial', note: 'Post views, likes, subs; no concurrent viewer graph yet.' },

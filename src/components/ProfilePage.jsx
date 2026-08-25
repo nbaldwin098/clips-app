@@ -11,8 +11,8 @@ import { Pin } from 'lucide-react'
 import { cn } from '../lib/utils'
 import ChannelAvatar from './ChannelAvatar'
 import VerifiedBadge from './VerifiedBadge'
-import SubscribeButton from './SubscribeButton'
-import { subscribersLabel, isOfficialCreator } from '../lib/uiFormat'
+import FollowButton from './FollowButton'
+import { followersLabel, isOfficialCreator } from '../lib/uiFormat'
 import { isVerifiedChannel } from '../lib/verification'
 
 export default function ProfilePage({ onNavigate, profileHandle, profileUserId, onPlayItem, onOpenPic, onOpenProfile, onOpenAuth, onOpenCheckout }) {
@@ -85,7 +85,7 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
           </h1>
           <p className="text-sm text-[#aaa]">@{handle || found?.handle || 'user'}</p>
           <p className="text-xs text-[#aaa] mt-1">
-            {[subscribersLabel(subs), videos.length ? `${videos.length} videos` : '', clips.length ? `${clips.length} clips` : '', pics.length ? `${pics.length} pics` : ''].filter(Boolean).join(' · ')}
+            {[followersLabel(subs), videos.length ? `${videos.length} videos` : '', clips.length ? `${clips.length} clips` : '', pics.length ? `${pics.length} pics` : ''].filter(Boolean).join(' · ')}
           </p>
         </div>
         <div className="flex gap-2 pb-1">
@@ -93,7 +93,7 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
             <button type="button" onClick={() => onNavigate?.('channel')} className="h-9 px-4 rounded-full border border-zinc-700 text-xs text-zinc-200">Customize channel</button>
           ) : (
             <>
-              <SubscribeButton creatorId={resolvedId} handle={handle || found?.handle} onOpenAuth={onOpenAuth} />
+              <FollowButton creatorId={resolvedId} handle={handle || found?.handle} onOpenAuth={onOpenAuth} />
               {onOpenCheckout && resolvedId ? (
                 <button type="button" onClick={() => onOpenCheckout(resolvedId, handle || found?.handle)} className="h-9 px-4 rounded-full bg-white text-black text-xs font-semibold">
                   Premium

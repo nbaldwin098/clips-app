@@ -32,7 +32,7 @@ export default function RevenueSettings({ hideHeader = false, onNavigate }) {
   const kpis = [
     { label: 'Paid out', value: `$${b.paid.toFixed(2)}`, hint: 'Marked sent by hand' },
     { label: 'Post views', value: String(b.views), hint: 'Views do not pay a rate' },
-    { label: 'Membership', value: `$${membershipPrice.toFixed(2)}/mo`, hint: 'Listed subscribe price' },
+    { label: 'Membership', value: `$${membershipPrice.toFixed(2)}/mo`, hint: 'Listed premium membership price' },
     { label: 'Ad share', value: '—', hint: 'Site ads are not a creator share' },
   ]
 

@@ -44,20 +44,20 @@ export default function CheckoutPage({ onNavigate, creatorId, returnParams = {} 
       <div className="rounded-2xl border border-zinc-800 bg-[#121218] p-5 space-y-4">
         <p className="text-3xl font-semibold text-white">${price}<span className="text-sm text-zinc-500 font-normal">/mo</span></p>
         <ul className="text-xs text-zinc-400 space-y-1 list-disc list-inside">
-          <li>Subscriber badge in chat when live chat exists</li>
+          <li>Premium badge in chat when live chat exists</li>
           <li>Creator emotes the channel has added</li>
           <li>Payouts are not live — this does not invent a wallet balance</li>
         </ul>
         <p className="text-[11px] text-zinc-500">
           {configured
-            ? (hasLink ? 'Card checkout is ready.' : 'Card checkout is not set up yet. Subscribe will not charge until it is.')
+            ? (hasLink ? 'Card checkout is ready.' : 'Card checkout is not set up yet. Premium will not charge until it is.')
             : 'Card checkout is not set up on this site yet.'}
         </p>
         {already ? (
           <p className="text-sm text-white">You already have premium on this channel.</p>
         ) : (
           <button type="button" disabled={!isAuthenticated} onClick={pay} className="w-full h-11 rounded-lg bg-white text-black text-sm font-medium disabled:opacity-40">
-            {isAuthenticated ? (hasLink ? `Pay $${price}/mo on Stripe` : `Subscribe $${price}/mo`) : 'Sign in to subscribe'}
+            {isAuthenticated ? (hasLink ? `Pay $${price}/mo on Stripe` : `Premium $${price}/mo`) : 'Sign in for premium'}
           </button>
         )}
         {status && <p className="text-xs text-zinc-400">{status}</p>}

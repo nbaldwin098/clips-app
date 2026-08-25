@@ -83,7 +83,7 @@ export default function InteractionBubbleMap({
             Interaction map{postTitle ? ` · ${postTitle}` : ''}
           </p>
           <p className="text-[11px] text-zinc-500">
-            When people clicked, liked, subscribed, shared, commented, or skipped your posts
+            When people clicked, liked, followed, shared, commented, or skipped your posts
             {summary.nodes ? ` · ${summary.nodes} bubbles` : ''}
           </p>
         </div>
@@ -146,7 +146,7 @@ export default function InteractionBubbleMap({
             <div>
               <p className="text-sm text-zinc-300">No interactions in this range yet</p>
               <p className="text-xs text-zinc-500 mt-1 max-w-sm">
-                Bubbles appear as people watch, like, subscribe, share, comment, or skip your posts. Tallies from older traffic may show as larger seeded bubbles.
+                Bubbles appear as people watch, like, follow, share, comment, or skip your posts. Tallies from older traffic may show as larger seeded bubbles.
               </p>
             </div>
           </div>

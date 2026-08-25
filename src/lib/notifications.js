@@ -236,7 +236,7 @@ export function notifyNewSubscriber(creatorId, actorId) {
   createNotification({
     userId: creatorId,
     type: NOTIF_TYPES.subscriber,
-    title: `${labelFor(actorId, 'A viewer')} subscribed to you`,
+    title: `${labelFor(actorId, 'A viewer')} followed you`,
     actorId,
     view: 'analytics',
   })

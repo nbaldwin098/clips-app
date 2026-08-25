@@ -153,7 +153,7 @@ export default function ChannelPage({ onNavigate }) {
           </h2>
           <p className="text-sm text-zinc-500">@{handle || user?.handle}</p>
           <p className="text-xs text-zinc-500 mt-1">
-            {getSubscriberCount(user?.id)} subscribers
+            {getSubscriberCount(user?.id)} followers
             {rank ? ` · Rank #${rank}` : ''}
             {user?.creatorStatus === 'approved' ? ' · Creator' : ''}
           </p>
@@ -173,7 +173,7 @@ export default function ChannelPage({ onNavigate }) {
       </div>
 
       <div className="px-4 sm:px-6 mt-6 grid sm:grid-cols-4 gap-2 text-center text-xs">
-        {[['Views', a.views], ['Clips', a.clips], ['Watch hrs', a.watchHours], ['Subs', a.subscribers]].map(([label, val]) => (
+        {[['Views', a.views], ['Clips', a.clips], ['Watch hrs', a.watchHours], ['Followers', a.subscribers]].map(([label, val]) => (
           <div key={label} className="rounded-xl border border-zinc-800 bg-[#121218] p-3">
             <p className="text-white font-semibold text-lg">{val}</p>
             <p className="text-zinc-500">{label}</p>
@@ -213,7 +213,7 @@ export default function ChannelPage({ onNavigate }) {
         <p className="text-[11px] text-zinc-500">{busy ? 'Saving…' : 'Saved as you type.'}</p>
         {user?.creatorStatus === 'approved' && (
           <div className="rounded-xl border border-zinc-800 bg-[#121218] p-4">
-            <p className="text-xs text-white mb-2">Subscriber emotes</p>
+            <p className="text-xs text-white mb-2">Premium emotes</p>
             <form onSubmit={add} className="flex gap-2">
               <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="emoteCode" className="flex-1 h-9 rounded-lg border border-zinc-800 bg-[#000000] px-3 text-sm text-zinc-100" />
               <button type="submit" className="h-9 px-3 rounded-lg bg-white text-black text-xs">Add</button>

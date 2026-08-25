@@ -52,7 +52,7 @@ export default function NotificationsSettings() {
       <section className="rounded-xl border border-zinc-800 bg-[#121218] px-4">
         <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 pt-3 pb-1">Email</p>
         <Row id="emailLive" label="Live stream starts" hint="When channels you follow go live — after live is real" />
-        <Row id="emailSubs" label="New subscribers" />
+        <Row id="emailSubs" label="New followers" />
         <Row id="emailStrikes" label="Copyright strikes" hint="Keep on for policy mail" />
       </section>
       <section className="rounded-xl border border-zinc-800 bg-[#121218] px-4">
