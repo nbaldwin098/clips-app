@@ -20,7 +20,7 @@ export default function HelpPage() {
     },
     {
       q: 'Where is Studio, Wallet, and analytics?',
-      a: 'Open your profile picture in the top right. Creator Dashboard, analytics, wallet, VODs, and settings are in that menu. Create (upload and go live) is in the left menu, under Live.',
+      a: 'Open your profile picture in the top right → Creator dashboard. Analytics, wallet, VODs, and verify live inside the dashboard. Site settings is the other item in that menu. Create (upload and go live) is in the left menu, under Live.',
     },
     {
       q: 'Can I watch without an account?',
@@ -36,11 +36,11 @@ export default function HelpPage() {
     },
     {
       q: 'How do I get a checkmark?',
-      a: 'NASA and other library channels already have an official checkmark. Everyone else uploads photos of the front and back of a government ID from the profile menu → Get verified. Admin accepts or denies it.',
+      a: 'NASA and other library channels already have an official checkmark. Everyone else uploads photos of the front and back of a government ID from Creator dashboard → Get verified. Admin accepts or denies it.',
     },
     {
       q: 'How do creator payouts work?',
-      a: 'Anyone signed in can upload or go live from Create. To earn, apply from Wallet or the apply page. Admin sends payouts by hand after approval. Views are not worth $1 per 1,000. There is no automatic bank withdraw.',
+      a: 'Anyone signed in can upload or go live from Create. To earn, apply from Creator dashboard → Wallet or the apply page. Admin sends payouts by hand after approval. Views are not worth $1 per 1,000. There is no automatic bank withdraw.',
     },
     {
       q: 'How do I report copyright infringement?',
