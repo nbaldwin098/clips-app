@@ -7,7 +7,7 @@ import {
   percentLabel,
   pullWatchProgressFromCloud,
 } from '../lib/watchProgress'
-import { getById } from '../lib/contentService'
+import { getWatchItem } from '../lib/contentService'
 import { openSafeUrl } from '../lib/safeUrl'
 import PageHeader from './PageHeader'
 
@@ -30,7 +30,7 @@ export default function HistoryPage({ onNavigate, onPlayItem }) {
   }
 
   const handlePlay = (item) => {
-    const full = getById(item.contentId) || item
+    const full = getWatchItem(item.contentId) || item
     if (onPlayItem) {
       onPlayItem(full)
     } else if (full.sourceUrl) {

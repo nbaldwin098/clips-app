@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from 'react'
 import { Sparkles } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { getStableHomeFeed, getStableFollowingFeed, getById } from '../lib/contentService'
+import { getStableHomeFeed, getStableFollowingFeed, getWatchItem } from '../lib/contentService'
 import { listContinueWatching } from '../lib/watchProgress'
 import { hasPickedTopics } from '../lib/tasteOnboarding'
 import { getActivePromotion, recordPromoClick } from '../lib/promotions'
@@ -29,11 +29,11 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onNavigate }) {
   const promo = useMemo(() => getActivePromotion(), [])
   const featured = useMemo(() => {
     const id = promo?.featureContentId || (promo?.destView === 'watch' ? promo.destId : '')
-    return id ? getById(id) : null
+    return id ? getWatchItem(id) : null
   }, [promo])
   const continueItems = useMemo(() => {
     if (!user?.id) return []
-    return listContinueWatching(user.id).map((row) => getById(row.contentId)).filter((i) => i && i.type === 'video')
+    return listContinueWatching(user.id).map((row) => getWatchItem(row.contentId)).filter((i) => i && i.type === 'video')
   }, [user?.id])
 
   useEffect(() => {

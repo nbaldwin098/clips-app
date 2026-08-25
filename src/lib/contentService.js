@@ -88,7 +88,15 @@ export function getCreatorContent(creatorId, handle = null) {
 }
 
 export function getCreatorPublicContent(creatorId, handle = null) {
-  return getCreatorContent(creatorId, handle).filter((i) => isReleased(i))
+  return getCreatorContent(creatorId, handle).filter((i) => {
+    if (!isReleased(i)) return false
+    // Public channel grids must match what watch/clips can actually open.
+    // Showing reference, retired, or dead-media rows made profile cards look
+    // clickable and then fail — home already filters these with isFeedable.
+    if (!isFeedable(i)) return false
+    if (isAccountHidden(i.creatorId || i.userId, i.handle)) return false
+    return true
+  })
 }
 
 export function getCreatorUnreleased(creatorId, handle = null) {
@@ -463,9 +471,15 @@ export function listCatalogTags(limit = 24) {
 export function getById(id) {
   if (!id) return null
   const fromImport = getImports().find((i) => i.id === id)
-  if (!fromImport || isReferenceItem(fromImport) || isRetiredCatalogItem(fromImport)) return null
-  if (!isReleased(fromImport)) return null
-  return normalizeItem(withViewCounts([fromImport])[0])
+  if (fromImport && !isReferenceItem(fromImport) && !isRetiredCatalogItem(fromImport) && isReleased(fromImport)) {
+    return normalizeItem(withViewCounts([fromImport])[0])
+  }
+  // Legacy uploads lived in user_clips and still show on some channel merges.
+  const legacy = (lsGet('user_clips', []) || []).find((i) => i?.id === id)
+  if (legacy && !isReferenceItem(legacy) && !isRetiredCatalogItem(legacy) && isReleased(legacy)) {
+    return normalizeItem(withViewCounts([legacy])[0])
+  }
+  return null
 }
 
 const watchStash = new Map()
@@ -484,7 +498,7 @@ function peekWatchStash(id) {
   return watchStash.get(String(id)) || null
 }
 
-/** Resolve an item for playback — strict catalog first, then click stash, then raw import. */
+/** Resolve an item for playback — strict catalog first, then click stash, then raw import / legacy. */
 export function getWatchItem(id, fallback = null) {
   if (!id) return null
   const strict = getById(id)
@@ -493,6 +507,7 @@ export function getWatchItem(id, fallback = null) {
   const fb = fallback && String(fallback.id) === String(id) ? fallback : stashed
   if (fb) return normalizeItem(withViewCounts([fb])[0])
   const raw = getImports().find((i) => i.id === id)
+    || (lsGet('user_clips', []) || []).find((i) => i?.id === id)
   if (raw) return normalizeItem(withViewCounts([raw])[0])
   return null
 }
