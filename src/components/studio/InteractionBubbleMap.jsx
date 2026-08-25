@@ -67,12 +67,11 @@ export default function InteractionBubbleMap({
   const cx = size.w / 2
   const cy = size.h / 2
   const outerR = Math.max(90, Math.min(size.w, size.h) * 0.38)
-  const innerR = Math.max(48, outerR * 0.38)
+  const innerR = Math.max(48, outerR * 0.36)
 
   const userNodes = useMemo(() => {
     let list = graph.users || []
     if (activeUserIds) list = list.filter((u) => activeUserIds.has(u.id))
-    // Cap for readability; keep heaviest engagers + a sample of quiet platform users
     if (list.length > 48) {
       const engaged = list.filter((u) => u.engaged).slice(0, 36)
       const quiet = list.filter((u) => !u.engaged).slice(0, 12)
@@ -83,8 +82,8 @@ export default function InteractionBubbleMap({
       cx,
       cy,
       radius: outerR,
-      minR: 8,
-      maxR: mode === 'users' ? 42 : 28,
+      minR: 10,
+      maxR: mode === 'users' ? 44 : 32,
     })
   }, [graph.users, activeUserIds, mode, cx, cy, outerR])
 
@@ -95,8 +94,8 @@ export default function InteractionBubbleMap({
       cx,
       cy,
       radius: mode === 'videos' ? outerR * 0.72 : innerR,
-      minR: 16,
-      maxR: mode === 'videos' ? 40 : 30,
+      minR: 18,
+      maxR: mode === 'videos' ? 42 : 32,
     })
   }, [graph.videos, mode, cx, cy, outerR, innerR])
 
@@ -119,14 +118,26 @@ export default function InteractionBubbleMap({
         return { ...l, x1: u.x, y1: u.y, x2: v.x, y2: v.y }
       })
       .filter(Boolean)
-      .slice(0, 120)
+      .slice(0, 160)
   }, [filteredLinks, userById, videoById, showLinks, mode])
 
   const empty = !userNodes.length && !videoNodes.length
 
+  const linkedToHover = useMemo(() => {
+    if (!hover) return null
+    if (hover.kind === 'user') {
+      return new Set(filteredLinks.filter((l) => l.userId === hover.id).map((l) => l.contentId))
+    }
+    if (hover.kind === 'video') {
+      return new Set(filteredLinks.filter((l) => l.contentId === hover.id).map((l) => l.userId))
+    }
+    return null
+  }, [hover, filteredLinks])
+
   return (
-    <div className="h-full min-h-0 flex flex-col bg-white border border-zinc-200">
-      <div className="shrink-0 flex flex-wrap items-center gap-2 px-3 py-2.5 border-b border-zinc-200">
+    <div className="h-full min-h-0 flex flex-col bg-white border border-zinc-200 overflow-hidden">
+      {/* Light chrome — matches white Creator Studio */}
+      <div className="shrink-0 flex flex-wrap items-center gap-2 px-3 py-2.5 border-b border-zinc-200 bg-white">
         <button
           type="button"
           onClick={() => setShowInfo((v) => !v)}
@@ -136,21 +147,22 @@ export default function InteractionBubbleMap({
         >
           <Info className="h-4 w-4" />
         </button>
-        <div className="min-w-0 flex-1 text-center sm:text-left">
+        <div className="min-w-0 flex-1 text-center">
           <p className="text-sm font-semibold text-zinc-900 truncate">
-            Audience Bubble Map{postTitle ? ` · ${postTitle}` : ''}
+            Holders Bubble Map{postTitle ? ` · ${postTitle}` : ''}
           </p>
           <p className="text-[11px] text-zinc-500">
-            {graph.totals.platformUsers} anonymous viewers · {graph.totals.engagedUsers} engaged · {graph.totals.posts} posts
+            {graph.totals.platformUsers} anonymous · {graph.totals.engagedUsers} engaged · {graph.totals.posts} posts
+            {showLinks ? ' · white lines = interactions' : ''}
           </p>
         </div>
         <div className="flex items-center gap-1">
-          <div className="hidden sm:flex items-center gap-0.5 border border-zinc-200 p-0.5">
+          <div className="hidden sm:flex items-center gap-0.5 rounded-full border border-zinc-200 bg-zinc-50 p-0.5">
             <button
               type="button"
               onClick={() => setMode('graph')}
-              title="Users + videos"
-              className={cn('h-7 w-7 inline-flex items-center justify-center', mode === 'graph' ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-zinc-900')}
+              title="Users + videos + links"
+              className={cn('h-7 w-7 inline-flex items-center justify-center rounded-full', mode === 'graph' ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-zinc-900')}
             >
               <SlidersHorizontal className="h-3.5 w-3.5" />
             </button>
@@ -158,7 +170,7 @@ export default function InteractionBubbleMap({
               type="button"
               onClick={() => setMode('users')}
               title="All users"
-              className={cn('h-7 w-7 inline-flex items-center justify-center', mode === 'users' ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-zinc-900')}
+              className={cn('h-7 w-7 inline-flex items-center justify-center rounded-full', mode === 'users' ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-zinc-900')}
             >
               <Users className="h-3.5 w-3.5" />
             </button>
@@ -166,7 +178,7 @@ export default function InteractionBubbleMap({
               type="button"
               onClick={() => setMode('videos')}
               title="Your videos"
-              className={cn('h-7 w-7 inline-flex items-center justify-center', mode === 'videos' ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-zinc-900')}
+              className={cn('h-7 w-7 inline-flex items-center justify-center rounded-full', mode === 'videos' ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-zinc-900')}
             >
               <BarChart3 className="h-3.5 w-3.5" />
             </button>
@@ -174,10 +186,10 @@ export default function InteractionBubbleMap({
           <button
             type="button"
             onClick={() => setShowLinks((v) => !v)}
-            title={showLinks ? 'Hide links' : 'Show links'}
+            title={showLinks ? 'Hide interaction lines' : 'Show white interaction lines'}
             className={cn(
-              'h-8 w-8 inline-flex items-center justify-center border',
-              showLinks ? 'border-zinc-900 text-zinc-900' : 'border-zinc-200 text-zinc-400'
+              'h-8 w-8 inline-flex items-center justify-center rounded-full border',
+              showLinks ? 'border-zinc-900 bg-zinc-900 text-white' : 'border-zinc-200 text-zinc-400'
             )}
           >
             <Radio className="h-3.5 w-3.5" />
@@ -198,13 +210,13 @@ export default function InteractionBubbleMap({
 
       {showInfo ? (
         <div className="shrink-0 px-3 py-2 border-b border-zinc-200 bg-zinc-50 text-[11px] text-zinc-600">
-          Outer bubbles are every platform account, shown anonymously (no names or handles). Size grows with
-          likes, views, subs, comments, shares, and skips on your posts. Inner bubbles are your videos —
-          tap one to highlight who interacted with it.
+          Outer bubbles are every platform account, shown anonymously. Size grows with engagement on your posts.
+          Inner bubbles are your videos. <span className="font-semibold text-zinc-800">White lines</span> connect
+          a viewer to each post they interacted with (like, view, sub, share, comment, skip).
         </div>
       ) : null}
 
-      <div className="shrink-0 flex flex-wrap items-center gap-1.5 px-3 py-2 border-b border-zinc-100">
+      <div className="shrink-0 flex flex-wrap items-center gap-1.5 px-3 py-2 border-b border-zinc-100 bg-white">
         <div className="flex items-center gap-0.5 border border-zinc-200 p-0.5 mr-1">
           {RANGES.map((r) => (
             <button
@@ -265,13 +277,17 @@ export default function InteractionBubbleMap({
         </div>
       </div>
 
-      <div ref={wrapRef} className="relative flex-1 min-h-[280px] overflow-hidden bg-[radial-gradient(ellipse_at_center,_#f8fafc_0%,_#ffffff_55%,_#f1f5f9_100%)]">
+      {/* Dark holders-style canvas so white interaction lines read clearly */}
+      <div
+        ref={wrapRef}
+        className="relative flex-1 min-h-[280px] overflow-hidden bg-[#0c0c10]"
+      >
         {empty ? (
           <div className="absolute inset-0 flex items-center justify-center p-6 text-center">
             <div>
-              <p className="text-sm text-zinc-700">No audience bubbles yet</p>
+              <p className="text-sm text-zinc-200">No audience bubbles yet</p>
               <p className="text-xs text-zinc-500 mt-1 max-w-sm mx-auto">
-                Platform accounts appear as anonymous bubbles. They grow and connect to your videos as people watch, like, subscribe, share, comment, or skip.
+                Anonymous platform viewers appear as bubbles. White lines draw to your videos when they interact.
               </p>
             </div>
           </div>
@@ -282,30 +298,38 @@ export default function InteractionBubbleMap({
             viewBox={`0 0 ${size.w} ${size.h}`}
             className="absolute inset-0"
             role="img"
-            aria-label="Anonymous audience bubble map"
+            aria-label="Holders-style audience bubble map with white interaction lines"
           >
-            {/* Soft ring guides */}
-            {mode !== 'videos' ? (
-              <circle cx={cx} cy={cy} r={outerR} fill="none" stroke="#e4e4e7" strokeWidth="1" strokeDasharray="4 6" />
-            ) : null}
-            {mode === 'graph' ? (
-              <circle cx={cx} cy={cy} r={innerR} fill="none" stroke="#e4e4e7" strokeWidth="1" strokeDasharray="3 5" />
-            ) : null}
+            <defs>
+              <radialGradient id="holders-glow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#1a1a22" />
+                <stop offset="100%" stopColor="#0c0c10" />
+              </radialGradient>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#holders-glow)" />
 
-            {drawnLinks.map((l, i) => (
-              <path
-                key={`${l.userId}_${l.contentId}_${i}`}
-                d={`M ${l.x1} ${l.y1} Q ${cx} ${cy} ${l.x2} ${l.y2}`}
-                fill="none"
-                stroke={l.color || '#a1a1aa'}
-                strokeOpacity={hover && (hover.id === l.userId || hover.id === l.contentId) ? 0.85 : 0.28}
-                strokeWidth={Math.max(1, Math.min(3, l.strength / 3))}
-              />
-            ))}
+            {/* White interaction lines: viewer → post they touched */}
+            {drawnLinks.map((l, i) => {
+              const hot =
+                hover
+                && (hover.id === l.userId || hover.id === l.contentId)
+              return (
+                <path
+                  key={`${l.userId}_${l.contentId}_${i}`}
+                  d={`M ${l.x1} ${l.y1} Q ${cx} ${cy} ${l.x2} ${l.y2}`}
+                  fill="none"
+                  stroke="#ffffff"
+                  strokeOpacity={hot ? 0.95 : hover ? 0.12 : 0.45}
+                  strokeWidth={hot ? Math.max(1.5, Math.min(3.5, l.strength / 2.5)) : Math.max(1, Math.min(2.25, l.strength / 3.5))}
+                  strokeLinecap="round"
+                />
+              )
+            })}
 
             {userNodes.map((b) => {
               const active = hover?.id === b.id
-              const dim = hover && hover.kind === 'video' && !filteredLinks.some((l) => l.userId === b.id && l.contentId === hover.id)
+              const connected = linkedToHover?.has(b.id)
+              const dim = hover && hover.kind === 'video' && !connected
               return (
                 <g
                   key={b.id}
@@ -316,28 +340,19 @@ export default function InteractionBubbleMap({
                 >
                   <circle
                     r={b.r}
-                    fill={b.engaged ? '#e4e4e7' : '#f4f4f5'}
-                    fillOpacity={dim ? 0.35 : active ? 0.95 : 0.85}
-                    stroke={active ? '#18181b' : b.engaged ? '#a1a1aa' : '#d4d4d8'}
-                    strokeWidth={active ? 2 : 1}
+                    fill={b.engaged ? '#3f3f46' : '#27272a'}
+                    fillOpacity={dim ? 0.25 : active ? 0.95 : 0.7}
+                    stroke={active || connected ? '#ffffff' : '#52525b'}
+                    strokeWidth={active || connected ? 1.5 : 1}
+                    strokeOpacity={active || connected ? 0.9 : 0.55}
                   />
-                  {b.r > 14 ? (
-                    <text
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      fill="#52525b"
-                      fontSize={Math.min(9, b.r / 2.2)}
-                      fontWeight="600"
-                    >
-                      {b.r > 20 ? b.label.replace('Viewer ', '') : ''}
-                    </text>
-                  ) : null}
                 </g>
               )
             })}
 
             {videoNodes.map((b) => {
               const active = hover?.id === b.id || selectedPostId === b.id
+              const connected = linkedToHover?.has(b.id)
               return (
                 <g
                   key={b.id}
@@ -349,16 +364,17 @@ export default function InteractionBubbleMap({
                 >
                   <circle
                     r={b.r}
-                    fill={active ? '#18181b' : '#3f3f46'}
+                    fill={active ? '#fafafa' : '#a1a1aa'}
                     fillOpacity={0.92}
-                    stroke={active ? '#18181b' : '#27272a'}
-                    strokeWidth={2}
+                    stroke="#ffffff"
+                    strokeWidth={active || connected ? 2 : 1.25}
+                    strokeOpacity={0.95}
                   />
                   <text
                     textAnchor="middle"
                     dominantBaseline="middle"
-                    fill="#fafafa"
-                    fontSize={Math.min(10, b.r / 2.4)}
+                    fill={active ? '#18181b' : '#18181b'}
+                    fontSize={Math.min(11, b.r / 2.2)}
                     fontWeight="700"
                   >
                     {typeShort(b.type).slice(0, 1)}
@@ -371,7 +387,7 @@ export default function InteractionBubbleMap({
 
         {hover ? (
           <div
-            className="pointer-events-none absolute z-20 max-w-xs border border-zinc-200 bg-white px-3 py-2 shadow-lg"
+            className="pointer-events-none absolute z-20 max-w-xs border border-zinc-600 bg-[#121218] px-3 py-2 shadow-xl"
             style={{
               left: Math.min(size.w - 220, Math.max(8, hover.x - 80)),
               top: Math.max(8, hover.y - 72),
@@ -379,23 +395,23 @@ export default function InteractionBubbleMap({
           >
             {hover.kind === 'user' ? (
               <>
-                <p className="text-xs font-semibold text-zinc-900">{hover.label}</p>
-                <p className="text-[11px] text-zinc-500 mt-0.5">
+                <p className="text-xs font-semibold text-white">{hover.label}</p>
+                <p className="text-[11px] text-zinc-400 mt-0.5">
                   {hover.engaged
-                    ? `Engaged with ${hover.postIds?.length || 0} of your posts`
+                    ? `White lines to ${hover.postIds?.length || 0} of your posts`
                     : 'On the platform · no interactions with your posts yet'}
                 </p>
                 {hover.kinds?.length ? (
-                  <p className="text-[11px] text-zinc-400 mt-1 capitalize">{hover.kinds.join(' · ')}</p>
+                  <p className="text-[11px] text-zinc-500 mt-1 capitalize">{hover.kinds.join(' · ')}</p>
                 ) : null}
               </>
             ) : (
               <>
-                <p className="text-xs font-semibold text-zinc-900 truncate">{hover.title}</p>
-                <p className="text-[11px] text-zinc-500 mt-0.5">
+                <p className="text-xs font-semibold text-white truncate">{hover.title}</p>
+                <p className="text-[11px] text-zinc-400 mt-0.5">
                   {typeShort(hover.type)} · {hover.views || 0} views · {hover.likes || 0} likes · {hover.interactors || 0} linked viewers
                 </p>
-                <p className="text-[11px] text-zinc-400 mt-1">Click to filter the map to this post</p>
+                <p className="text-[11px] text-zinc-500 mt-1">Click to filter white lines to this post</p>
               </>
             )}
           </div>
