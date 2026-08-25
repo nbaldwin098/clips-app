@@ -12,11 +12,12 @@ import {
   ChevronLeft,
   Play,
   RotateCcw,
+  Trash2,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import CreatorOnboarding from '../CreatorOnboarding'
 import { lsGet, lsSet } from '../../lib/storage'
-import { getCreatorContent } from '../../lib/contentService'
+import { getCreatorContent, deleteCatalogItem } from '../../lib/contentService'
 import { getViews, getVotes } from '../../lib/engagement'
 import { creatorBalance } from '../../lib/payouts'
 import { listVods, setVodVisibility, getVodChannel } from '../../lib/vods'
@@ -50,7 +51,7 @@ function typeLabel(type) {
   return 'Clip'
 }
 
-function PostRow({ post, active, onSelect, onPlay }) {
+function PostRow({ post, active, deleting, onSelect, onPlay, onDelete }) {
   const views = getViews(post.id) || post.views || 0
   const likes = getVotes(post.id)?.up || 0
   return (
@@ -80,13 +81,23 @@ function PostRow({ post, active, onSelect, onPlay }) {
           </span>
         </div>
       </button>
-      <button
-        type="button"
-        onClick={() => onPlay(post)}
-        className="mt-2 h-8 w-full inline-flex items-center justify-center gap-1.5 border border-zinc-700 text-xs text-white hover:bg-white hover:text-black"
-      >
-        <Play className="h-3.5 w-3.5" /> Open
-      </button>
+      <div className="mt-2 grid grid-cols-2 gap-1">
+        <button
+          type="button"
+          onClick={() => onPlay(post)}
+          className="h-8 inline-flex items-center justify-center gap-1.5 border border-zinc-700 text-xs text-white hover:bg-white hover:text-black"
+        >
+          <Play className="h-3.5 w-3.5" /> Open
+        </button>
+        <button
+          type="button"
+          onClick={() => onDelete(post)}
+          disabled={deleting}
+          className="h-8 inline-flex items-center justify-center gap-1.5 border border-red-900/60 text-xs text-red-300 hover:bg-red-950 disabled:opacity-50"
+        >
+          <Trash2 className="h-3.5 w-3.5" /> {deleting ? 'Deleting…' : 'Delete'}
+        </button>
+      </div>
     </div>
   )
 }
@@ -179,6 +190,7 @@ export default function CreatorStudio({
   const [postFilter, setPostFilter] = useState('all')
   const [restoreBusy, setRestoreBusy] = useState(false)
   const [restoreNote, setRestoreNote] = useState('')
+  const [deletingId, setDeletingId] = useState(null)
 
   useEffect(() => {
     lsSet('calabi_studio_section', section)
@@ -223,6 +235,19 @@ export default function CreatorStudio({
     else if (c?.type === 'pic') onNavigate?.('pics', c.id)
     else if (c?.type === 'short') onNavigate?.('clips', c.id)
     else if (c?.id) onNavigate?.('watch', c.id)
+  }
+
+  const onDeletePost = async (post) => {
+    if (!post?.id || !user?.id || deletingId) return
+    const label = post.title?.trim() || 'Untitled'
+    if (!window.confirm(`Delete "${label}"? This removes it everywhere and cannot be undone.`)) return
+    setDeletingId(post.id)
+    try {
+      await deleteCatalogItem(post.id, user)
+      if (selectedPostId === post.id) setSelectedPostId(null)
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   const onRestore = async () => {
@@ -351,8 +376,10 @@ export default function CreatorStudio({
               key={post.id}
               post={post}
               active={selectedPostId === post.id}
+              deleting={deletingId === post.id}
               onSelect={setSelectedPostId}
               onPlay={openPost}
+              onDelete={onDeletePost}
             />
           ))}
         </div>

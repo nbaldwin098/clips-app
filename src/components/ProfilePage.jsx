@@ -1,13 +1,13 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
 import MediaShelves from './MediaShelves'
 import { useAuth } from '../context/AuthContext'
-import { getCreatorPublicContent, togglePin, isPinned, resolvePublicCreator } from '../lib/contentService'
+import { getCreatorPublicContent, togglePin, isPinned, resolvePublicCreator, deleteCatalogItem } from '../lib/contentService'
 import { listPlaylists } from '../lib/youtubeParity'
 import { lsGet } from '../lib/storage'
 import { getPicsFeed } from '../lib/picsService'
 import { getSubscriberCount } from '../lib/engagement'
 import { useContentSyncTick } from '../lib/useContentSync'
-import { Pin } from 'lucide-react'
+import { Pin, Trash2 } from 'lucide-react'
 import { cn } from '../lib/utils'
 import ChannelAvatar from './ChannelAvatar'
 import VerifiedBadge from './VerifiedBadge'
@@ -64,6 +64,14 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
   const onPin = (contentId) => {
     if (!isSelf || !creatorId) return
     togglePin(creatorId, contentId)
+    setTick((t) => t + 1)
+  }
+
+  const onDelete = async (contentId, title) => {
+    if (!isSelf || !creatorId || !contentId) return
+    const label = String(title || '').trim() || 'this post'
+    if (!window.confirm(`Delete "${label}"? This cannot be undone.`)) return
+    await deleteCatalogItem(contentId, user)
     setTick((t) => t + 1)
   }
 
@@ -172,14 +180,24 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
                   <span className="pointer-events-none absolute top-2 left-2 z-10 text-[10px] px-1.5 py-0.5 rounded bg-black/70 text-white flex items-center gap-0.5"><Pin className="h-3 w-3" /> Pinned</span>
                 )}
                 {isSelf && (
-                  <button
-                    type="button"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); onPin(item.id) }}
-                    className="absolute top-2 right-2 z-10 h-8 w-8 rounded-full bg-black/70 border border-zinc-700 flex items-center justify-center text-white"
-                    title="Pin / unpin"
-                  >
-                    <Pin className="h-3.5 w-3.5" />
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); onPin(item.id) }}
+                      className="absolute top-2 right-2 z-10 h-8 w-8 rounded-full bg-black/70 border border-zinc-700 flex items-center justify-center text-white"
+                      title="Pin / unpin"
+                    >
+                      <Pin className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(item.id, item.title) }}
+                      className="absolute top-2 right-12 z-10 h-8 w-8 rounded-full bg-black/70 border border-red-900/60 flex items-center justify-center text-red-300"
+                      title="Delete post"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </>
                 )}
               </>
             )}
