@@ -135,7 +135,7 @@ export default function AdminAds() {
               className={`${field} mt-1`}
             />
           </label>
-          <p className="text-[11px] text-zinc-500 sm:col-span-2">Shorts and pics share one ExoClick display zone. Ads only show after someone opens a clip or pic and scrolls — never on Recommended, home shelves, or the pics mosaic. Clip gaps are 4–6; banners under the description every 10 clips. Pic gaps are 6–10. Videos never get a display box under the player.</p>
+          <p className="text-[11px] text-zinc-500 sm:col-span-2">Shorts and pics share one ExoClick display zone. Ads only show after someone opens a clip or pic and scrolls — never on Recommended, home shelves, or the pics mosaic. Each ad slide fills the same frame as a clip or pic. Clip gaps are 4–6; pic gaps are 6–10. Videos never get a display box under the player.</p>
         </div>
       </div>
 
