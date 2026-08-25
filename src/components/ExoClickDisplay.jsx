@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AD_ZONES, AD_PROVIDER_SCRIPT, displayZone, isDisplayZone } from '../lib/adZones'
-import { queueExoClickServe } from '../lib/exoClickServe'
+import { queueExoClickServe, resurfaceExoClickInContainer } from '../lib/exoClickServe'
 
 export const EXOCLICK_AD_SCRIPT = AD_PROVIDER_SCRIPT
 export const EXOCLICK_BANNER_ZONE = AD_ZONES.banner.id
@@ -9,6 +9,7 @@ export const EXOCLICK_BANNER_CLASS = AD_ZONES.banner.insClass
 /** Poll for a fill, then give up and collapse the slot. */
 const FILL_POLL_MS = 400
 const FILL_TIMEOUT_MS = 8000
+const FILL_RETRY_MS = 3500
 
 export { ensureExoClickScript } from '../lib/exoClickServe'
 
@@ -22,11 +23,15 @@ function slotHasAd(container) {
   if (!container) return false
   for (const child of container.children) {
     if (child.tagName === 'INS' || child.dataset.adLabel === 'true') continue
-    if (child.querySelector('img, iframe, video')) return true
+    if (child.querySelector('img, iframe, video, a')) return true
     const rect = child.getBoundingClientRect()
     if (rect.width > 1 && rect.height > 1) return true
   }
   return false
+}
+
+function stopBubble(e) {
+  e.stopPropagation()
 }
 
 /**
@@ -50,38 +55,56 @@ export default function ExoClickDisplay({
     if (!active || badZone) return undefined
     let cancelled = false
     let poll = 0
+    let retryTimer = 0
     let started = 0
+
+    const markFilled = () => {
+      window.clearInterval(poll)
+      window.clearTimeout(retryTimer)
+      setState('filled')
+      onFill?.(true)
+    }
+
+    const markEmpty = () => {
+      window.clearInterval(poll)
+      window.clearTimeout(retryTimer)
+      setState('empty')
+      onFill?.(false)
+    }
+
+    const requestFill = () => resurfaceExoClickInContainer(containerRef.current)
 
     const ins = insRef.current
     if (ins) delete ins.dataset.exoQueued
 
-    queueExoClickServe().then((ok) => {
+    requestFill().then((ok) => {
       if (cancelled) return
       if (!ok) {
-        setState('empty')
-        onFill?.(false)
+        markEmpty()
         return
       }
       started = Date.now()
       poll = window.setInterval(() => {
         if (cancelled) return
         if (slotHasAd(containerRef.current)) {
-          window.clearInterval(poll)
-          setState('filled')
-          onFill?.(true)
+          markFilled()
           return
         }
         if (Date.now() - started >= FILL_TIMEOUT_MS) {
-          window.clearInterval(poll)
-          setState('empty')
-          onFill?.(false)
+          markEmpty()
         }
       }, FILL_POLL_MS)
+
+      retryTimer = window.setTimeout(() => {
+        if (cancelled || slotHasAd(containerRef.current)) return
+        requestFill()
+      }, FILL_RETRY_MS)
     })
 
     return () => {
       cancelled = true
       if (poll) window.clearInterval(poll)
+      if (retryTimer) window.clearTimeout(retryTimer)
     }
   }, [zone, active, badZone, onFill])
 
@@ -96,9 +119,11 @@ export default function ExoClickDisplay({
   return (
     <div
       ref={containerRef}
-      className={`exo-slot relative flex w-full items-center justify-center overflow-hidden ${
+      className={`exo-slot pointer-events-auto relative flex w-full items-center justify-center overflow-hidden touch-manipulation ${
         state === 'filled' ? 'bg-[#111]' : 'bg-transparent'
       } ${className}`}
+      onClick={stopBubble}
+      onPointerDown={stopBubble}
     >
       {state === 'filled' ? (
         <span
@@ -112,7 +137,7 @@ export default function ExoClickDisplay({
         ref={insRef}
         className={insClass || AD_ZONES.banner.insClass}
         data-zoneid={zone}
-        style={{ display: 'inline-block', maxWidth: '100%' }}
+        style={{ display: 'inline-block', maxWidth: '100%', pointerEvents: 'auto' }}
       />
     </div>
   )

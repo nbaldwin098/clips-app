@@ -120,10 +120,22 @@ body::before {
 }
 
 /* ExoClick zones have fixed IAB sizes. Never stretch them into clip/video frames. */
+.exo-slot {
+  pointer-events: auto;
+  touch-action: manipulation;
+}
 .exo-slot ins {
   display: inline-block !important;
   max-width: 100%;
+  pointer-events: auto !important;
 }
-.exo-slot ins iframe {
+.exo-slot ins iframe,
+.exo-slot a,
+.exo-slot iframe {
+  pointer-events: auto !important;
   max-width: 100% !important;
+}
+[data-ad-slide] {
+  pointer-events: auto;
+  touch-action: manipulation;
 }

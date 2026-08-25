@@ -239,7 +239,7 @@ function ClipSlide({
   return (
     <ShortsCard actions={actions(true)} fillMobile>
       <div
-        className="absolute inset-0"
+        className="absolute inset-x-0 top-12 bottom-44 md:bottom-48 z-[1]"
         onClick={onSurfaceClick}
         onPointerDown={holdStart}
         onPointerUp={holdEnd}
@@ -382,8 +382,12 @@ function ClipSlide({
             </button>
           ) : null}
           {showBanner ? (
-            <div className="mt-2 mr-16 md:mr-4 overflow-hidden" onClick={(e) => e.stopPropagation()}>
-              <ExoClickDisplay zoneId={EXOCLICK_BANNER_ZONE} insClass={EXOCLICK_BANNER_CLASS} className="min-h-[90px]" />
+            <div
+              className="mt-2 mr-16 md:mr-4 overflow-hidden pointer-events-auto relative z-20"
+              onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <ExoClickDisplay zoneId={EXOCLICK_BANNER_ZONE} insClass={EXOCLICK_BANNER_CLASS} className="min-h-[90px]" active={active} />
             </div>
           ) : null}
         </div>
@@ -415,7 +419,11 @@ function ClipSlide({
 
 function ClipFeedAdSlide({ active, ad, onEmpty }) {
   return (
-    <div className="h-full w-full max-w-md mx-auto bg-black flex flex-col items-center justify-center px-4">
+    <div
+      className="h-full w-full max-w-md mx-auto bg-black flex flex-col items-center justify-center px-4 pointer-events-auto relative z-10 touch-manipulation"
+      data-ad-slide=""
+      onPointerDown={(e) => e.stopPropagation()}
+    >
       <p className="shrink-0 px-3 py-2 text-[11px] text-white/70">Sponsored · swipe for the next clip</p>
       <InFeedAd
         ad={ad}
