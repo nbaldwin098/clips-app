@@ -142,7 +142,7 @@ export default function StreamingNavbar({
                       onClick={() => handleNav('dashboard')}
                       className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-zinc-200 hover:bg-[#1f1f2a] hover:text-white"
                     >
-                      <SlidersHorizontal className="h-4 w-4 text-zinc-400" /> Creator Dashboard
+                      <SlidersHorizontal className="h-4 w-4 text-zinc-400" /> Creator Studio
                     </button>
                     <button
                       type="button"
@@ -174,10 +174,13 @@ export default function StreamingNavbar({
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleNav('settings')}
+                      onClick={() => {
+                        setMenuOpen(false)
+                        onNavigate?.('settings', 'account')
+                      }}
                       className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-zinc-200 hover:bg-[#1f1f2a] hover:text-white"
                     >
-                      <Settings className="h-4 w-4 text-zinc-400" /> Settings
+                      <Settings className="h-4 w-4 text-zinc-400" /> Account settings
                     </button>
                     {isPlatformOwner(user) && (
                       <button

@@ -46,7 +46,21 @@ export function toggleVote(userId, contentId, direction) {
   else liked.delete(contentId)
   lsSet('liked', [...liked])
   pushVote(userId, contentId, mine[contentId] || null)
-  if (becameUp) notifyNewLike(contentId, userId)
+  if (becameUp) {
+    notifyNewLike(contentId, userId)
+    queueMicrotask(() => {
+      import('./creatorInteractions').then(({ logCreatorInteraction, creatorIdForContent }) => {
+        const creatorId = creatorIdForContent(contentId)
+        if (!creatorId) return
+        logCreatorInteraction({
+          creatorId,
+          contentId,
+          type: 'like',
+          actorId: userId,
+        })
+      }).catch(() => {})
+    })
+  }
   notifyContentChanged()
   return cur
 }
@@ -75,13 +89,26 @@ export function getUserUpvotedIds(userId) {
   return Object.entries(mine).filter(([, dir]) => dir === 'up').map(([id]) => id)
 }
 
-export function recordView(contentId) {
+export function recordView(contentId, meta = {}) {
   if (!contentId) return 0
   const all = lsGet(VIEWS, {}) || {}
   const map = all && typeof all === 'object' && !Array.isArray(all) ? all : {}
   map[contentId] = (map[contentId] || 0) + 1
   lsSet(VIEWS, map)
   recordHourView(contentId)
+  queueMicrotask(() => {
+    import('./creatorInteractions').then(({ logCreatorInteraction, creatorIdForContent }) => {
+      const creatorId = meta.creatorId || creatorIdForContent(contentId)
+      if (!creatorId) return
+      logCreatorInteraction({
+        creatorId,
+        contentId,
+        type: 'view',
+        actorId: meta.actorId || null,
+        title: meta.title || '',
+      })
+    }).catch(() => {})
+  })
   return map[contentId]
 }
 
@@ -122,6 +149,19 @@ export function toggleSubscribe(userId, creatorId, { notify = true } = {}) {
   const subscribed = list.includes(userId)
   pushFollow(userId, creatorId, subscribed)
   if (notify && subscribed) notifyNewSubscriber(creatorId, userId)
+  if (subscribed) {
+    queueMicrotask(() => {
+      import('./creatorInteractions').then(({ logCreatorInteraction }) => {
+        logCreatorInteraction({
+          creatorId,
+          contentId: creatorId,
+          type: 'subscribe',
+          actorId: userId,
+          title: 'Channel subscribe',
+        })
+      }).catch(() => {})
+    })
+  }
   return subscribed
 }
 

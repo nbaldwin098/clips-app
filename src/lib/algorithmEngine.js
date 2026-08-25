@@ -28,6 +28,7 @@
  *    Weights and affinities dynamically update on every swipe, complete, like, share, and skip.
  */
 import { lsGet, lsSet } from './storage'
+import { logCreatorInteraction } from './creatorInteractions'
 import { getVotes, getViews } from './engagement'
 
 export const PRIOR_WEIGHTS = {
@@ -196,6 +197,16 @@ export function recordInteraction(userId, event) {
     title: event.title,
     at: new Date().toISOString(),
   })
+
+  if (event.creatorId) {
+    logCreatorInteraction({
+      creatorId: event.creatorId,
+      contentId: event.contentId,
+      type: event.type,
+      actorId: userId,
+      title: event.title || '',
+    })
+  }
 
   return taste
 }

@@ -1,4 +1,4 @@
-import SettingsLayout from './SettingsLayout'
+import SettingsLayout, { settingsModeForSection } from './SettingsLayout'
 import AccountSettings from './AccountSettings'
 import SecuritySettings from './SecuritySettings'
 import ChannelSettings from './ChannelSettings'
@@ -32,8 +32,9 @@ const PAGES = {
 export default function SettingsHub({ section, onNavigate }) {
   const id = PAGES[section] ? section : 'account'
   const Page = PAGES[id]
+  const mode = settingsModeForSection(id)
   return (
-    <SettingsLayout section={id} onSection={(next) => onNavigate?.('settings', next)}>
+    <SettingsLayout section={id} mode={mode} onSection={(next) => onNavigate?.('settings', next)}>
       <Page onNavigate={onNavigate} />
     </SettingsLayout>
   )
