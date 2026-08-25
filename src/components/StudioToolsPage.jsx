@@ -14,8 +14,13 @@ export default function StudioToolsPage({ onNavigate }) {
   const drafts = useMemo(() => (user?.id ? listDrafts(user.id) : []), [user?.id, tick])
   const scheduled = useMemo(() => (user?.id ? listScheduled(user.id) : []), [user?.id, tick])
 
-  const publish = (id) => {
-    publishDraftItem(id)
+  const publish = async (id) => {
+    await publishDraftItem(id, user)
+    setTick((n) => n + 1)
+  }
+
+  const remove = async (id) => {
+    await deleteCatalogItem(id, user)
     setTick((n) => n + 1)
   }
 
@@ -23,7 +28,7 @@ export default function StudioToolsPage({ onNavigate }) {
     <div className="p-4 md:p-6 max-w-lg mx-auto space-y-5">
       <PageHeader title="Studio tools" onBack={() => onNavigate?.('dashboard')} />
       <p className="text-xs text-zinc-500">
-        Drafts and scheduled posts on this account. There is no cloud editor, auto-captions, or Content ID. Scheduled items go live on this device when the time hits.
+        Drafts and scheduled posts on this account. Uploaded files are hosted in the cloud as links — they stay until you delete them. Scheduled items go live when the time hits.
       </p>
 
       <section className="rounded-xl border border-zinc-800 bg-[#121218] p-4 space-y-2">
@@ -38,7 +43,7 @@ export default function StudioToolsPage({ onNavigate }) {
             </div>
             <div className="flex gap-1 shrink-0">
               <button type="button" onClick={() => publish(item.id)} className="h-8 px-2 rounded-lg bg-white text-black font-bold">Publish</button>
-              <button type="button" onClick={() => { deleteCatalogItem(item.id); setTick((n) => n + 1) }} className="h-8 px-2 rounded-lg border border-zinc-700">Delete</button>
+              <button type="button" onClick={() => remove(item.id)} className="h-8 px-2 rounded-lg border border-zinc-700">Delete</button>
             </div>
           </div>
         ))}

@@ -53,7 +53,7 @@ function healCampaigns(list) {
   }).filter(Boolean)
 }
 
-/** Clear dead blob: URLs and keep user uploads marked for IndexedDB recovery. */
+/** Clear dead blob: URLs. Only mark localStored for legacy rows still without an http link. */
 export function healUploadCatalog() {
   const imports = lsGet('imports', []) || []
   if (!Array.isArray(imports) || !imports.length) return 0
@@ -73,7 +73,16 @@ export function healUploadCatalog() {
         dirty = true
       }
     }
-    if (isUserUploadRecord(r) && Number(r.storedBytes) > 0 && r.localStored !== true) {
+    const hasHttp = ['mediaUrl', 'sourceUrl'].some((k) => {
+      const u = String(r[k] || '')
+      return u.startsWith('https://') || u.startsWith('http://')
+    })
+    if (hasHttp && r.hosted !== true && isUserUploadRecord(r)) {
+      r.hosted = true
+      r.localStored = false
+      dirty = true
+    } else if (!hasHttp && isUserUploadRecord(r) && Number(r.storedBytes) > 0 && r.localStored !== true) {
+      // Legacy device-only row awaiting promoteDeviceUploadsToCloud.
       r.localStored = true
       dirty = true
     }

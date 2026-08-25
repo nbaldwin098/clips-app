@@ -1,11 +1,13 @@
 /**
- * Upload video/image to Supabase Storage → public URL.
+ * Upload video/image to Supabase Storage → durable public URL.
+ * Device IndexedDB is not the source of truth for published media.
  */
 import { getSupabase, isSupabaseConfigured } from './supabaseClient'
 
 const BUCKET = 'clips'
 const MAX_VIDEO = 80 * 1024 * 1024
 const MAX_IMAGE = 12 * 1024 * 1024
+const PUBLIC_MARKER = `/storage/v1/object/public/${BUCKET}/`
 
 function extFromFile(file, fallback = 'bin') {
   const n = String(file?.name || '')
@@ -17,6 +19,28 @@ function extFromFile(file, fallback = 'bin') {
   if (file?.type?.includes('jpeg') || file?.type?.includes('jpg')) return 'jpg'
   if (file?.type?.includes('mp4')) return 'mp4'
   return fallback
+}
+
+/** True when this signed-in user can write to the clips storage bucket + videos table. */
+export function canHostUploads(actor) {
+  return !!(
+    isSupabaseConfigured()
+    && actor?.id
+    && actor.provider === 'supabase'
+  )
+}
+
+export function cloudHostRequiredMessage(actor) {
+  if (!isSupabaseConfigured()) {
+    return 'Cloud storage is not connected. Uploads must be hosted as links — they are not saved on this device.'
+  }
+  if (!actor?.id) {
+    return 'Sign in to upload. Files are hosted in the cloud, not on this device.'
+  }
+  if (actor.provider !== 'supabase') {
+    return 'Sign in with your Clips cloud account to upload. Local-only sessions cannot host media.'
+  }
+  return 'Could not host this upload in the cloud.'
 }
 
 async function uploadToBucket(file, userId, { maxBytes, kind }) {
@@ -62,4 +86,43 @@ export async function uploadVideoToSupabase(file, userId) {
 
 export async function uploadImageToSupabase(file, userId) {
   return uploadToBucket(file, userId, { maxBytes: MAX_IMAGE, kind: 'pics' })
+}
+
+/** Host a data:image thumbnail as a durable public URL. */
+export async function uploadDataUrlToSupabase(dataUrl, userId, name = 'thumb.jpg') {
+  const raw = String(dataUrl || '')
+  if (!raw.startsWith('data:image/')) return { ok: false, error: 'Not an image data URL.' }
+  try {
+    const res = await fetch(raw)
+    const blob = await res.blob()
+    const file = new File([blob], name, { type: blob.type || 'image/jpeg' })
+    return uploadImageToSupabase(file, userId)
+  } catch (e) {
+    return { ok: false, error: e?.message || 'Thumb upload failed.' }
+  }
+}
+
+export function storagePathFromPublicUrl(url) {
+  const u = String(url || '')
+  const i = u.indexOf(PUBLIC_MARKER)
+  if (i < 0) return null
+  try {
+    return decodeURIComponent(u.slice(i + PUBLIC_MARKER.length).split('?')[0])
+  } catch {
+    return u.slice(i + PUBLIC_MARKER.length).split('?')[0] || null
+  }
+}
+
+/** Remove a hosted file from the clips bucket (best-effort). */
+export async function deleteHostedMedia(publicUrl) {
+  const path = storagePathFromPublicUrl(publicUrl)
+  if (!path || !isSupabaseConfigured()) return false
+  try {
+    const sb = await getSupabase()
+    if (!sb) return false
+    const { error } = await sb.storage.from(BUCKET).remove([path])
+    return !error
+  } catch {
+    return false
+  }
 }

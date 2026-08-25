@@ -4,8 +4,9 @@ import { useAuth } from '../context/AuthContext'
 import { getPicsFeed, publishPhoto, pickImmediatePhotoSrc, isHttpUrl, isDataImageUrl } from '../lib/picsService'
 import { isPicHearted, togglePicHeart } from '../lib/picHearts'
 import { useContentSyncTick } from '../lib/useContentSync'
-import { subscribeContentUpdates, deleteContentRecord } from '../lib/contentSync'
+import { subscribeContentUpdates } from '../lib/contentSync'
 import { hideBrokenMedia } from '../lib/catalogHealth'
+import { deleteCatalogItem } from '../lib/contentService'
 import { getMediaBlobUrl } from '../lib/videoStorage'
 import { copyShareUrl, replaceHash } from '../lib/routes'
 import ShortsStage, { ShortsCard } from './ShortsStage'
@@ -269,7 +270,7 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
   const refresh = useCallback(() => setItems(getPicsFeed()), [])
   const dropBroken = useCallback((id) => {
     hideBrokenMedia(id)
-    deleteContentRecord(id, user)
+    deleteCatalogItem(id, user).catch(() => {})
     refresh()
   }, [user, refresh])
   useEffect(() => subscribeContentUpdates(refresh), [refresh])
@@ -300,7 +301,7 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
     setOpenedAt(at)
     setViewerIndex(at)
     if (pic?.id && typeof window !== 'undefined') {
-      replaceHash('pic', pic.id)
+      replaceHash('content', pic.id)
     }
   }
 
@@ -347,7 +348,7 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
             setViewerIndex(i)
             const pic = visibleScrollRows[i]?.item
             if (pic && typeof window !== 'undefined') {
-              replaceHash('pic', pic.id)
+              replaceHash('content', pic.id)
             }
           }}
           initialIndex={openedAt}

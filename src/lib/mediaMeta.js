@@ -41,6 +41,8 @@ export function isUserUploadRecord(rec) {
   if (origin === 'upload' || origin === 'upload-local') return true
   if (origin === 'pic-upload' || origin === 'pic-local') return true
   if (String(rec.id).startsWith('up_') || String(rec.id).startsWith('pic_')) return true
+  // Cloud-hosted user posts use opaque public ids (no up_/pic_ prefix).
+  if (rec.hosted && (origin === 'upload' || origin === 'pic-upload')) return true
   return false
 }
 

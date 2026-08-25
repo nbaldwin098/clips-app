@@ -84,6 +84,24 @@ export async function getMediaBlobUrl(id) {
   }
 }
 
+/** Drop a device-side blob after it has been promoted to a cloud link. */
+export async function deleteMediaBlob(id) {
+  if (!id) return false
+  try {
+    const db = await openDB()
+    if (!db) return false
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite')
+      const store = tx.objectStore(STORE_NAME)
+      store.delete(id)
+      tx.oncomplete = () => resolve(true)
+      tx.onerror = () => resolve(false)
+    })
+  } catch {
+    return false
+  }
+}
+
 /** List every media id still held in IndexedDB (used to restore wiped catalog rows). */
 export async function listMediaBlobIds() {
   try {

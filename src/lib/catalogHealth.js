@@ -112,8 +112,8 @@ export function purgeDeadCatalog() {
   }
   const next = list.filter((row) => {
     if (!row?.id || hidden.has(row.id)) return false
-    // User uploads survive purge even with temporarily empty/blob media —
-    // playback recovers from IndexedDB on this device.
+    // User uploads survive purge — cloud-hosted links are the source of truth;
+    // legacy device-only rows may still recover from IndexedDB until promoted.
     if (isUserUploadRecord(row)) return true
     if (isReferenceItem(row)) return false
     if (isRetiredCatalogItem(row)) return false

@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
 import { extractHashtags, mergeTags, parseClock, parseCaptionCues, isReleased, filterExploreItems, formatPostedAt, olderIso, postedAtOf } from '../src/lib/mediaMeta.js'
 import { parseRoute, buildHash } from '../src/lib/routes.js'
+import { makePublicId, isShortPublicId, looksLikeContentId, allocatePublicId } from '../src/lib/publicId.js'
 import { sanitizeAuthError, normalizePhone } from '../src/lib/authBrand.js'
 import { findOwnerLogin, isLocalOwnerLogin, isOwnerAccount, OWNER_LOGIN } from '../src/data/ownerLogin.js'
 import { parseVastXml, parseVastClock, videoInStreamBreaks, EXOCLICK_VAST_URL, EXOCLICK_LIVE_CREATOR_VAST_URL, YT_MIDROLL_MIN_SEC, VIDEO_FIRST_AD_SEC, VIDEO_PREROLL_BREAK } from '../src/lib/vastAds.js'
@@ -42,11 +43,30 @@ assert(isReleased({ status: 'scheduled', scheduledFor: new Date(Date.now() + 864
 
 const { kind, id, params } = parseRoute('#/watch/abc?t=12')
 assert(kind === 'watch' && id === 'abc' && params.t === '12', 'watch timestamp route')
-assert(buildHash('watch', 'abc', { t: 12 }) === '/watch/abc?t=12', 'path route with t')
+assert(buildHash('watch', 'abc', { t: 12 }) === '/abc?t=12', 'watch share is bare /id with t')
+assert(buildHash('watch', 'abc') === '/abc', 'video share is calabi.us/id style')
+assert(buildHash('clips', 'xyzClip99aa') === '/xyzClip99aa', 'clip share is bare /id')
+assert(buildHash('pic', 'photoIdHere1') === '/photoIdHere1', 'pic share is bare /id')
+assert(buildHash('clips') === '/clips', 'clips feed path unchanged')
 assert(!buildHash('watch', 'abc').includes('#'), 'share paths do not use hash')
 const pathParsed = parseRoute('/watch/abc?t=12')
 assert(pathParsed.kind === 'watch' && pathParsed.id === 'abc' && pathParsed.params.t === '12', 'pathname watch route')
+const bare = parseRoute('/fnf48rth348')
+assert(bare.kind === 'content' && bare.id === 'fnf48rth348', 'bare /id is a content share link')
 assert(buildHash('home') === '/', 'home is slash')
+{
+  const pid = makePublicId(11)
+  assert(pid.length === 11 && isShortPublicId(pid), 'public ids are 11 letter/number chars')
+  assert(looksLikeContentId(pid), 'public ids look like content')
+  assert(!looksLikeContentId('clips'), 'reserved paths are not content ids')
+  assert(allocatePublicId(() => false).length >= 11, 'allocatePublicId returns an id')
+}
+const publishIdSrc = readFileSync(new URL('../src/lib/contentService.js', import.meta.url), 'utf8')
+assert(publishIdSrc.includes('newContentId'), 'video publish uses opaque public ids')
+assert(!publishIdSrc.includes('`up_${Date.now()'), 'video publish no longer uses up_ timestamp ids')
+const picsIdSrc = readFileSync(new URL('../src/lib/picsService.js', import.meta.url), 'utf8')
+assert(picsIdSrc.includes('newContentId'), 'photo publish uses opaque public ids')
+
 assert(parseVastClock('00:00:05.0') === 5, 'vast skipoffset clock')
 assert(videoInStreamBreaks(VIDEO_FIRST_AD_SEC).length === 0, 'videos 30 seconds or shorter get no in-stream ad')
 assert(videoInStreamBreaks(120).join(',') === String(VIDEO_FIRST_AD_SEC), 'a 2 minute video gets one ad at 30 seconds')
@@ -293,9 +313,19 @@ assert(healthSrcUpload.includes('User uploads survive purge'), 'purgeDeadCatalog
 const cardProtect = readFileSync(new URL('../src/components/ContentCard.jsx', import.meta.url), 'utf8')
 assert(cardProtect.includes('isUserUploadRecord'), 'cards do not delete user uploads on thumb error')
 const publishSrc = readFileSync(new URL('../src/lib/contentService.js', import.meta.url), 'utf8')
-assert(publishSrc.includes('Never persist ephemeral blob'), 'uploads never persist blob: URLs')
-assert(publishSrc.includes('localStored'), 'uploads mark IndexedDB storage')
+assert(publishSrc.includes('canHostUploads'), 'video publish requires cloud host gate')
+assert(publishSrc.includes('pushContentRecord'), 'video publish waits on cloud catalog')
+assert(publishSrc.includes('deleteHostedMedia'), 'delete removes hosted storage objects')
+assert(!publishSrc.includes('storeMediaBlob'), 'video publish does not keep device IndexedDB as source of truth')
+const picsPublishSrc = readFileSync(new URL('../src/lib/picsService.js', import.meta.url), 'utf8')
+assert(picsPublishSrc.includes('canHostUploads'), 'photo publish requires cloud host gate')
+assert(!picsPublishSrc.includes('storeMediaBlob'), 'photo publish does not keep device IndexedDB as source of truth')
+const mediaUpSrc = readFileSync(new URL('../src/lib/mediaUpload.js', import.meta.url), 'utf8')
+assert(mediaUpSrc.includes('export function canHostUploads'), 'canHostUploads helper exists')
+assert(mediaUpSrc.includes('deleteHostedMedia'), 'hosted media can be deleted from the bucket')
 const uploadSrcEarly = readFileSync(new URL('../src/components/UploadModal.jsx', import.meta.url), 'utf8')
+assert(uploadSrcEarly.includes('canHostUploads'), 'upload modal checks cloud hosting')
+assert(!uploadSrcEarly.includes('storeMediaBlob'), 'upload modal does not stash files in IndexedDB')
 assert(uploadSrcEarly.includes("'Uploaded'") || uploadSrcEarly.includes('"Uploaded"'), 'upload success says Uploaded')
 assert(!uploadSrcEarly.includes('Live shared link'), 'upload popup does not say Live shared link')
 const restoreSrc = readFileSync(new URL('../src/lib/restoreUploads.js', import.meta.url), 'utf8')
@@ -310,6 +340,11 @@ assert(studioSrc.includes('restoreLostUploads'), 'Creator Studio calls restoreLo
 assert(studioSrc.includes('listMediaBlobIds') === false, 'studio uses restore helper not raw IDB')
 const videoStoreSrc = readFileSync(new URL('../src/lib/videoStorage.js', import.meta.url), 'utf8')
 assert(videoStoreSrc.includes('export async function listMediaBlobIds'), 'IndexedDB can list media ids for restore')
+assert(videoStoreSrc.includes('export async function deleteMediaBlob'), 'device blobs can be removed after cloud promote')
+const promoteSrc = readFileSync(new URL('../src/lib/promoteUploads.js', import.meta.url), 'utf8')
+assert(promoteSrc.includes('promoteDeviceUploadsToCloud'), 'legacy device uploads can be promoted to cloud links')
+const appPromoteSrc = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8')
+assert(appPromoteSrc.includes('promoteDeviceUploadsToCloud'), 'signed-in sessions promote device uploads to cloud')
 
 assert(!storageSrc.includes('next.createdAt = now'), 'library merge does not bump timestamps to now')
 const preloadSrc = readFileSync(new URL('../src/lib/preloadMedia.js', import.meta.url), 'utf8')
