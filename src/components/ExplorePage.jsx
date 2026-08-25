@@ -9,7 +9,7 @@ import MediaShelves from './MediaShelves'
 const KINDS = [
   { id: 'all', label: 'All' },
   { id: 'video', label: 'Videos' },
-  { id: 'clip', label: 'Clips' },
+  { id: 'clip', label: 'Shorts' },
   { id: 'pic', label: 'Pics' },
 ]
 

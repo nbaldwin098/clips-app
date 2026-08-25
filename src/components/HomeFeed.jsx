@@ -16,7 +16,7 @@ import { preloadPostedItem, preloadPostedItems } from '../lib/preloadMedia'
 const FILTERS = [
   { id: 'all', label: 'All' },
   { id: 'video', label: 'Videos' },
-  { id: 'clip', label: 'Clips' },
+  { id: 'clip', label: 'Shorts' },
   { id: 'pic', label: 'Pics' },
 ]
 

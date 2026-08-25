@@ -15,6 +15,7 @@ import { resolvePlayback, PLAYBACK_SPEEDS, formatClock, isHttp } from '../lib/pl
 import { parseEmbedUrl } from '../lib/videoEmbed'
 import { redirectSafeUrl, safeIframeSrc, safeMediaUrl } from '../lib/safeUrl'
 import { copyShareUrl } from '../lib/routes'
+import { setPageMeta } from '../lib/pageMeta'
 import { useContentSyncTick } from '../lib/useContentSync'
 import { toggleSaved, getSaved } from '../lib/storage'
 import { getWatchPrefs, setWatchPrefs, getChapters, getCaptions } from '../lib/youtubeParity'
@@ -152,14 +153,7 @@ export default function WatchPage({
   const showingAdRef = useRef(false)
   const viewCountedRef = useRef(false)
   const iframeViewTimerRef = useRef(null)
-  const skipPreroll = useMemo(() => {
-    const fromHash = Number(startAt) || 0
-    if (fromHash > 2) return true
-    const progress = user?.id && item?.id ? getWatchProgress(user.id, item.id) : null
-    if (!progress || progress.completed) return false
-    return (progress.positionSec || 0) > 2
-  }, [startAt, user?.id, item?.id])
-  const vast = useVideoVastAds(item, { embed: mode === 'iframe', skipPreroll })
+  const vast = useVideoVastAds(item, { embed: mode === 'iframe' })
 
   const [descOpen, setDescOpen] = useState(false)
   const chapters = useMemo(() => {
@@ -211,7 +205,14 @@ export default function WatchPage({
       return undefined
     }
     if (typeof document !== 'undefined' && item.title) {
-      document.title = `${item.title} · calabi`
+      const origin = typeof window !== 'undefined' ? window.location.origin : 'https://calabi.us'
+      setPageMeta({
+        title: item.title,
+        description: item.description || `Watch ${item.title} on calabi`,
+        image: item.thumbnailUrl || item.thumbUrl || '',
+        url: `${origin}/${encodeURIComponent(item.id)}`,
+        type: 'video.other',
+      })
     }
     let cancelled = false
     setViews(getViews(item.id))

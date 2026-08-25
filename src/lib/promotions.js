@@ -15,7 +15,7 @@ export const PROMO_PRESETS = [
   {
     id: 'launch',
     name: 'Launch week',
-    headline: 'Clips is live',
+    headline: 'calabi is live',
     body: 'Watch videos, clips, and pics. Upload from Create in the menu.',
     ctaLabel: 'Open Recommended',
     destView: 'home',
@@ -37,7 +37,7 @@ export const PROMO_PRESETS = [
   {
     id: 'go-live',
     name: 'Go live',
-    headline: 'Go live on Clips',
+    headline: 'Go live on calabi',
     body: 'Approved creators can start a listing from + → Go live.',
     ctaLabel: 'Open Live',
     destView: 'live',
@@ -48,7 +48,7 @@ export const PROMO_PRESETS = [
   {
     id: 'advertise',
     name: 'Advertise',
-    headline: 'Advertise on Clips',
+    headline: 'Advertise on calabi',
     body: 'Apply to run a real campaign. Empty inventory never shows sample ads.',
     ctaLabel: 'Advertise',
     destView: 'advertise',
@@ -59,7 +59,7 @@ export const PROMO_PRESETS = [
   {
     id: 'clips-pics',
     name: 'Clips + Pics',
-    headline: 'Clips and Pics',
+    headline: 'calabi and Pics',
     body: 'Vertical clips and a quiet photo mosaic — no grid likes or DMs.',
     ctaLabel: 'Watch clips',
     destView: 'clips',
@@ -125,7 +125,7 @@ export const PROMO_PRESETS = [
   {
     id: 'maintenance',
     name: 'Status',
-    headline: 'We are working on Clips',
+    headline: 'We are working on calabi',
     body: 'Playback and uploads still work. Check Help if something looks off.',
     ctaLabel: 'Help',
     destView: 'help',

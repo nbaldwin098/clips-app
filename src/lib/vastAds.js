@@ -8,14 +8,19 @@ import { vastUrlFor } from './adZones.js'
 export const EXOCLICK_VAST_URL = vastUrlFor('video')
 export const EXOCLICK_LIVE_CREATOR_VAST_URL = vastUrlFor('liveCreator')
 export const YT_SKIP_AFTER_SEC = 5
-/** Skippable preroll before the video starts. */
 export const VIDEO_PREROLL_BREAK = 0
-/** First mid-roll after the preroll: 30 seconds into the video. */
 export const VIDEO_FIRST_AD_SEC = 30
-/** Second in-stream ad, and later breaks, only if the video is 8 minutes or longer. */
 export const YT_MIDROLL_MIN_SEC = 8 * 60
 
+let viewerShowAds = true
+
+/** Called from AuthContext when the signed-in viewer changes ad preference. */
+export function setVastViewerShowAds(show) {
+  viewerShowAds = show !== false
+}
+
 export function videoVastAdsEnabled() {
+  if (!viewerShowAds) return false
   if (typeof localStorage === 'undefined') return true
   try {
     const stored = JSON.parse(localStorage.getItem('clips_ad_settings') || '{}') || {}

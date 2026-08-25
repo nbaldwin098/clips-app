@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowUpRight, SkipForward } from 'lucide-react'
 import { getActiveAd, getVideoAdDurationSec, getVideoSkipAfterSec, placementAdsAllowed, recordAdClick, recordAdImpression } from '../lib/adEngine'
+import { getAdViewerId } from '../lib/adPrefs'
 import { openSafeUrl, safeHttpUrl } from '../lib/safeUrl'
 import ExoClickDisplay from './ExoClickDisplay'
 
 export function PlacementBanner({ placement, itemId }) {
-  const campaign = useMemo(() => getActiveAd(placement), [placement, itemId])
+  const viewerId = getAdViewerId()
+  const campaign = useMemo(() => getActiveAd(placement, viewerId), [placement, itemId, viewerId])
   if (campaign) return <AdBanner ad={campaign} />
-  if (!placementAdsAllowed(placement)) return null
+  if (!placementAdsAllowed(placement, viewerId)) return null
   return (
     <div className="pointer-events-auto w-full" onClick={(e) => e.stopPropagation()}>
       <ExoClickDisplay className="min-h-[90px]" />
@@ -63,82 +65,7 @@ export default function AdBanner({ ad }) {
   )
 }
 
-/**
- * One in-feed scroll slot. Clips and pics share the same ExoClick display
- * zone — letterboxed at its native IAB size inside the card, never stretched
- * into 9:16 or square. VAST video zones are for watch/live only.
- */
-export function InFeedAd({ ad, variant = 'clip', active = true, onFill }) {
-  if (ad?.provider === 'exoclick') {
-    const shell = variant === 'pic'
-      ? 'aspect-square w-full'
-      : 'aspect-[9/16] w-full rounded-xl min-h-[250px]'
-    return (
-      <div
-        className="pointer-events-auto relative z-10 w-full max-w-full touch-pan-y"
-        data-ad-slide=""
-        onClick={(e) => e.stopPropagation()}
-      >
-        <ExoClickDisplay active={active} className={shell} onFill={onFill} />
-      </div>
-    )
-  }
-  return <CampaignInFeedAd ad={ad} variant={variant} />
-}
-
-function CampaignInFeedAd({ ad, variant = 'clip' }) {
-  useEffect(() => {
-    if (ad?.id) recordAdImpression(ad.id)
-  }, [ad?.id])
-
-  if (!ad) return null
-  const href = safeHttpUrl(ad.targetUrl)
-  const img = creativeImage(ad)
-  const open = (e) => {
-    e?.stopPropagation?.()
-    recordAdClick(ad.id)
-    if (href) openSafeUrl(href)
-  }
-
-  if (variant === 'pic') {
-    return (
-      <button type="button" onClick={open} className="relative block w-full aspect-square overflow-hidden bg-[#1a1a1a] text-left">
-        {img ? (
-          <img src={img} alt="" className="absolute inset-0 h-full w-full object-cover" />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-[#2a2a2a] to-[#111]" />
-        )}
-        <span className="absolute top-1.5 left-1.5 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-black/70 text-white">Ad</span>
-        <span className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
-          <span className="block text-[11px] font-semibold text-white line-clamp-2">{ad.headline || 'Sponsored'}</span>
-        </span>
-      </button>
-    )
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={open}
-      className="relative block w-full aspect-[9/16] overflow-hidden rounded-xl bg-[#1a1a1a] text-left"
-    >
-      {img ? (
-        <img src={img} alt="" className="absolute inset-0 h-full w-full object-cover" />
-      ) : (
-        <div className="absolute inset-0 bg-gradient-to-br from-[#2a2a2a] to-[#111]" />
-      )}
-      <span className="absolute top-2 left-2 rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-black/70 text-white">Ad</span>
-      <span className="absolute inset-x-0 bottom-0 p-2.5 bg-gradient-to-t from-black/85 to-transparent">
-        <span className="block text-[13px] font-semibold text-white line-clamp-2">{ad.headline || 'Sponsored'}</span>
-        <span className="mt-1 inline-flex items-center gap-1 text-[11px] text-white/80">
-          {ad.ctaText || 'Open'} <ArrowUpRight className="h-3 w-3" />
-        </span>
-      </span>
-    </button>
-  )
-}
-
-/** YouTube-style skippable preroll covering the video until skip or the ad ends. */
+/** Skippable preroll covering the video until skip or the ad ends. */
 export function VideoPreroll({ ad, onSkip, onComplete }) {
   const skipAfter = getVideoSkipAfterSec(ad)
   const duration = getVideoAdDurationSec(ad)

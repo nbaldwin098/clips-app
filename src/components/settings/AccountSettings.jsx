@@ -142,6 +142,34 @@ export default function AccountSettings({ onNavigate }) {
         <p className="text-[11px] text-zinc-500">{busy ? 'Saving…' : 'Saved as you type.'}</p>
       </section>
 
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold text-white">Ads</h2>
+        <p className="text-xs text-zinc-500">calabi runs ads by default. Turn this off to hide ads on this account — saved to your profile, not this browser only.</p>
+        <label className="flex items-center justify-between rounded-xl border border-zinc-800 bg-[#121218] px-4 py-3 cursor-pointer">
+          <span className="text-sm text-zinc-200">Show ads while I browse</span>
+          <input
+            type="checkbox"
+            checked={user?.showAds !== false}
+            disabled={busy || user?.provider !== 'supabase'}
+            onChange={async (e) => {
+              setErr('')
+              setBusy(true)
+              try {
+                await saveProfile({ showAds: e.target.checked })
+              } catch (ex) {
+                setErr(ex.message || 'Could not save ad preference.')
+              } finally {
+                setBusy(false)
+              }
+            }}
+            className="rounded bg-[#1a1a24] border-zinc-700 text-white focus:ring-0"
+          />
+        </label>
+        {user?.provider !== 'supabase' ? (
+          <p className="text-[11px] text-zinc-600">Sign in with a calabi account to sync this preference.</p>
+        ) : null}
+      </section>
+
       <button type="button" onClick={() => onNavigate?.('channel')} className="text-xs text-white underline">Open Channel page</button>
     </div>
   )

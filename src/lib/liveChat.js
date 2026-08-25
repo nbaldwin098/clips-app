@@ -1,6 +1,7 @@
 import { getLiveChat, postLiveChat, isPremiumSub, isSubscribed } from './engagement'
+import { removeLiveChatMessageCloud } from './liveChatSync'
 import { getStreamSettings } from './streamSettings'
-import { getUserSettings, lsSet } from './storage'
+import { getUserSettings } from './storage'
 import { getChannelStaff, isChannelMod } from './channelStaff'
 import { applyAdSlash, parseAdSlash } from './liveAds'
 
@@ -18,9 +19,8 @@ function blockedPhrases(channelId) {
 }
 
 export function removeLiveChatMessage(streamUserId, messageId) {
-  const list = getLiveChat(streamUserId).filter((m) => m.id !== messageId)
-  lsSet(`live_chat_${streamUserId}`, list)
-  return list
+  removeLiveChatMessageCloud(streamUserId, messageId)
+  return getLiveChat(streamUserId)
 }
 
 export function trySendLiveChat(streamUserId, message, { actor } = {}) {

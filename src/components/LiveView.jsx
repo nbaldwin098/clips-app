@@ -14,7 +14,7 @@ import { archiveEndedLive } from '../lib/vods'
 import { canGoLive } from '../lib/trustSafety'
 import VideoInStreamAd from './VideoInStreamAd'
 import { useLiveStreamAds } from '../hooks/useLiveStreamAds'
-import { cueLiveAd, snoozeLiveAds, MANUAL_AD_BREAKS, manualAdCooldownSec, liveAdsSnoozed, manualAdCooldownRemaining, liveAdTimeUsedInHour, LIVE_HOURLY_AD_CAP_SEC, LIVE_SNOOZE_SEC } from '../lib/liveAds'
+import { liveListingBlockedReason, liveIngestConnected } from '../lib/liveIngest'
 
 function formatElapsed(startedAt) {
   if (!startedAt) return ''
@@ -39,6 +39,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
   const [, setTick] = useState(0)
   const [sharing, setSharing] = useState(false)
   const [screenError, setScreenError] = useState('')
+  const [goLiveError, setGoLiveError] = useState('')
   const [adNote, setAdNote] = useState('')
   const [, bumpAdUi] = useState(0)
   const refreshAdUi = () => bumpAdUi((n) => n + 1)
@@ -105,9 +106,14 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
 
   const goLive = () => {
     if (!canHost || !user?.id) return
+    if (!liveIngestConnected()) {
+      setGoLiveError(liveListingBlockedReason())
+      return
+    }
+    setGoLiveError('')
     const payload = {
       isLive: true,
-      title: title.trim() || 'Live on Clips',
+      title: title.trim() || 'Live on calabi',
       category,
       startedAt: new Date().toISOString(),
       userId: user.id,
@@ -374,9 +380,17 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
             </button>
           </div>
           {!isLive ? (
-            <button type="button" onClick={goLive} className="inline-flex items-center gap-2 h-11 px-5 rounded-lg bg-red-600 text-white text-sm font-medium">
-              <Play className="h-4 w-4" /> List me
-            </button>
+            <>
+              {goLiveError ? <p className="text-xs text-amber-400">{goLiveError}</p> : null}
+              <button
+                type="button"
+                onClick={goLive}
+                disabled={!liveIngestConnected()}
+                className="inline-flex items-center gap-2 h-11 px-5 rounded-lg bg-red-600 text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Play className="h-4 w-4" /> {liveIngestConnected() ? 'List me' : 'Ingest not connected'}
+              </button>
+            </>
           ) : (
             <button type="button" onClick={endLive} className="inline-flex items-center gap-2 h-11 px-5 rounded-lg border border-zinc-600 text-zinc-200 text-sm">
               <Square className="h-4 w-4" /> End stream
