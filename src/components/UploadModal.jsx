@@ -23,7 +23,6 @@ export default function UploadModal({
   const [status, setStatus] = useState('idle')
   const [meta, setMeta] = useState(null)
   const [error, setError] = useState('')
-  const [hosted, setHosted] = useState(false)
   const [chapters, setChapters] = useState([{ t: '0:00', title: '' }])
   const [captionsText, setCaptionsText] = useState('')
   const [scheduledFor, setScheduledFor] = useState('')
@@ -45,7 +44,6 @@ export default function UploadModal({
     setStatus('idle')
     setMeta(null)
     setError('')
-    setHosted(false)
     setChapters([{ t: '0:00', title: '' }])
     setCaptionsText('')
     setScheduledFor('')
@@ -106,7 +104,6 @@ export default function UploadModal({
         setStatus('error')
         return
       }
-      setHosted(!!published.hosted)
       setMeta({
         name: published.item?.title || title,
         sizeMb: Math.round((file.size / (1024 * 1024)) * 10) / 10,
@@ -278,8 +275,8 @@ export default function UploadModal({
             <div className="rounded-lg border border-zinc-700 bg-[#18181b] p-3 text-sm space-y-1">
               <div className="flex items-center gap-2 font-medium text-white"><Film className="h-4 w-4" />{meta.name}</div>
               <p className="text-xs text-zinc-400">{meta.sizeMb ? `${meta.sizeMb} MB · ` : ''}{meta.type}{meta.soundTitle ? ` · ${meta.soundTitle}` : ''}</p>
-              <p className={`text-xs ${hosted ? 'text-green-400' : 'text-amber-400'}`}>
-                {meta.status === 'draft' ? 'Saved as a draft' : meta.status === 'scheduled' ? 'Scheduled on this device' : hosted ? 'Live shared link' : 'Saved on this device only'}
+              <p className={`text-xs ${meta.status === 'draft' || meta.status === 'scheduled' ? 'text-amber-400' : 'text-green-400'}`}>
+                {meta.status === 'draft' ? 'Saved as a draft' : meta.status === 'scheduled' ? 'Scheduled' : 'Uploaded'}
               </p>
             </div>
           )}

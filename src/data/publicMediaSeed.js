@@ -3,7 +3,7 @@
  * BBC and National Geographic catalogues are copyrighted — not used.
  * NASA / NOAA / ESA / USFWS works used here are US government PD or Commons CC.
  */
-import { getImports, saveImport, lsGet, lsSet } from '../lib/storage'
+import { getImports, mergeImports, lsGet, lsSet } from '../lib/storage'
 import { hiddenBrokenIds, isHttpUrl, isKnownDeadUrl } from '../lib/catalogHealth'
 import { indexUser } from '../lib/moderation'
 
@@ -527,6 +527,7 @@ export function seedOfficialCatalog() {
   const hidden = hiddenBrokenIds()
   const current = getImports()
   const byId = Object.fromEntries(current.map((row) => [row.id, row]))
+  const batch = []
   for (const next of OFFICIAL_MEDIA) {
     if (hidden.has(next.id)) continue
     if (!isHttpUrl(next.mediaUrl) || isKnownDeadUrl(next.mediaUrl)) continue
@@ -546,8 +547,11 @@ export function seedOfficialCatalog() {
       && prev.creatorId === record.creatorId
       && prev.createdAt === record.createdAt
     if (same) continue
-    saveImport(record)
+    batch.push(record)
   }
+  // One protected merge — never call saveImport in a loop (that used to
+  // slice(0, 200) on every library row and push user uploads off the list).
+  if (batch.length) mergeImports(batch)
 }
 
 export async function pushLibraryCatalogToCloud() {

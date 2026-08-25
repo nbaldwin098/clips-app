@@ -39,8 +39,8 @@ export function isUserUploadRecord(rec) {
   if (!rec?.id) return false
   const origin = String(rec.origin || '')
   if (origin === 'upload' || origin === 'upload-local') return true
-  if (String(rec.id).startsWith('up_')) return true
-  if (rec.hosted) return true
+  if (origin === 'pic-upload' || origin === 'pic-local') return true
+  if (String(rec.id).startsWith('up_') || String(rec.id).startsWith('pic_')) return true
   return false
 }
 

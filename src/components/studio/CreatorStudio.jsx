@@ -11,6 +11,7 @@ import {
   Radio,
   ChevronLeft,
   Play,
+  RotateCcw,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { lsGet } from '../../lib/storage'
@@ -22,6 +23,8 @@ import { buildInteractionBubbles } from '../../lib/creatorInteractions'
 import { formatCount } from '../../lib/uiFormat'
 import { formatPostedAt } from '../../lib/mediaMeta'
 import { cn } from '../../lib/utils'
+import { restoreLostUploads } from '../../lib/restoreUploads'
+import { useContentSyncTick } from '../../lib/useContentSync'
 import InteractionBubbleMap from './InteractionBubbleMap'
 import CreatorAnalyticsPanel from '../settings/CreatorAnalyticsPanel'
 import RevenueSettings from '../settings/RevenueSettings'
@@ -167,12 +170,15 @@ export default function CreatorStudio({
   initialSection = 'overview',
 }) {
   const { user } = useAuth()
+  const syncTick = useContentSyncTick()
   const [section, setSection] = useState(initialSection)
   const [selectedPostId, setSelectedPostId] = useState(null)
   const [range, setRange] = useState('7d')
   const [postFilter, setPostFilter] = useState('all')
+  const [restoreBusy, setRestoreBusy] = useState(false)
+  const [restoreNote, setRestoreNote] = useState('')
 
-  const posts = useMemo(() => getCreatorContent(user?.id, user?.handle), [user?.id, user?.handle])
+  const posts = useMemo(() => getCreatorContent(user?.id, user?.handle), [user?.id, user?.handle, syncTick])
   const live = lsGet(`live_state_${user?.id}`, null)
   const views = posts.reduce((n, c) => n + (getViews(c.id) || c.views || 0), 0)
   const approved = user?.creatorStatus === 'approved'
@@ -201,6 +207,20 @@ export default function CreatorStudio({
     else if (c?.type === 'pic') onNavigate?.('pics', c.id)
     else if (c?.type === 'short') onNavigate?.('clips', c.id)
     else if (c?.id) onNavigate?.('watch', c.id)
+  }
+
+  const onRestore = async () => {
+    setRestoreBusy(true)
+    setRestoreNote('')
+    try {
+      const res = await restoreLostUploads(user)
+      const n = Number(res?.total) || 0
+      setRestoreNote(n ? `Restored ${n} post${n === 1 ? '' : 's'} from this device / cloud.` : 'No missing uploads found on this device.')
+    } catch {
+      setRestoreNote('Could not restore right now.')
+    } finally {
+      setRestoreBusy(false)
+    }
   }
 
   return (
@@ -270,7 +290,7 @@ export default function CreatorStudio({
               </button>
             ))}
           </div>
-          <div className="mt-2 grid grid-cols-3 gap-1">
+          <div className="mt-2 grid grid-cols-2 gap-1">
             <button type="button" onClick={onOpenUpload} className="h-8 inline-flex items-center justify-center gap-1 bg-white text-black text-[11px] font-semibold">
               <Upload className="h-3.5 w-3.5" /> Upload
             </button>
@@ -280,11 +300,34 @@ export default function CreatorStudio({
             <button type="button" onClick={() => onNavigate?.('live')} className="h-8 inline-flex items-center justify-center gap-1 border border-zinc-700 text-[11px] text-white">
               <Radio className="h-3.5 w-3.5" /> Live
             </button>
+            <button
+              type="button"
+              onClick={onRestore}
+              disabled={restoreBusy}
+              className="h-8 inline-flex items-center justify-center gap-1 border border-zinc-700 text-[11px] text-white disabled:opacity-50"
+              title="Bring back uploads still saved on this device or in the cloud"
+            >
+              <RotateCcw className={cn('h-3.5 w-3.5', restoreBusy && 'animate-spin')} />
+              {restoreBusy ? 'Restoring…' : 'Restore'}
+            </button>
           </div>
+          {restoreNote ? (
+            <p className="mt-2 text-[10px] text-zinc-400 leading-snug">{restoreNote}</p>
+          ) : null}
         </div>
         <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-2">
           {filteredPosts.length === 0 ? (
-            <p className="text-xs text-zinc-500 p-3">No posts yet. Upload a video, clip, or pic.</p>
+            <div className="p-3 space-y-2">
+              <p className="text-xs text-zinc-500">No posts yet. Upload a video, clip, or pic.</p>
+              <button
+                type="button"
+                onClick={onRestore}
+                disabled={restoreBusy}
+                className="text-[11px] text-zinc-300 underline underline-offset-2 disabled:opacity-50"
+              >
+                Restore old uploads from this device…
+              </button>
+            </div>
           ) : filteredPosts.map((post) => (
             <PostRow
               key={post.id}

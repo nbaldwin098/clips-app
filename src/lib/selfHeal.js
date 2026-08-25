@@ -5,10 +5,11 @@
 import { isOwnerAccount } from '../data/ownerLogin'
 import { lsGet, lsSet, lsRemove } from './storage'
 import { safeHttpUrl } from './safeUrl'
-import { purgeDeadCatalog } from './catalogHealth'
+import { purgeDeadCatalog, isBlobUrl } from './catalogHealth'
 import { normalizeTaste } from './algorithmEngine'
 import { seedOfficialCatalog } from '../data/publicMediaSeed'
 import { seedNamedAccounts } from '../data/namedAccountsSeed'
+import { isUserUploadRecord } from './mediaMeta'
 
 function isRecord(v) {
   return !!v && typeof v === 'object' && !Array.isArray(v)
@@ -52,6 +53,37 @@ function healCampaigns(list) {
   }).filter(Boolean)
 }
 
+/** Clear dead blob: URLs and keep user uploads marked for IndexedDB recovery. */
+export function healUploadCatalog() {
+  const imports = lsGet('imports', []) || []
+  if (!Array.isArray(imports) || !imports.length) return 0
+  let changed = 0
+  const next = imports.map((row) => {
+    if (!row || typeof row !== 'object') return row
+    let dirty = false
+    const r = { ...row }
+    if (Number(r.priceUsd) > 0) {
+      r.priceUsd = 0
+      dirty = true
+    }
+    for (const key of ['mediaUrl', 'sourceUrl', 'thumbUrl', 'mosaicThumb']) {
+      const u = String(r[key] || '')
+      if (isBlobUrl(u)) {
+        r[key] = ''
+        dirty = true
+      }
+    }
+    if (isUserUploadRecord(r) && Number(r.storedBytes) > 0 && r.localStored !== true) {
+      r.localStored = true
+      dirty = true
+    }
+    if (dirty) changed += 1
+    return r
+  })
+  if (changed) lsSet('imports', next)
+  return changed
+}
+
 export function healLocalState() {
   try {
     const user = lsGet('user', null)
@@ -81,7 +113,10 @@ export function healLocalState() {
   try {
     const imports = lsGet('imports', [])
     if (!Array.isArray(imports)) lsSet('imports', [])
-    else purgeDeadCatalog()
+    else {
+      healUploadCatalog()
+      purgeDeadCatalog()
+    }
   } catch {
     try { lsSet('imports', []) } catch {}
   }

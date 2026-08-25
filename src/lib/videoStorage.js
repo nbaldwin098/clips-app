@@ -84,6 +84,53 @@ export async function getMediaBlobUrl(id) {
   }
 }
 
+/** List every media id still held in IndexedDB (used to restore wiped catalog rows). */
+export async function listMediaBlobIds() {
+  try {
+    const db = await openDB()
+    if (!db) return []
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE_NAME, 'readonly')
+      const store = tx.objectStore(STORE_NAME)
+      const req = store.getAllKeys()
+      req.onsuccess = () => resolve((req.result || []).map(String).filter(Boolean))
+      req.onerror = () => resolve([])
+    })
+  } catch {
+    return []
+  }
+}
+
+export async function getMediaBlobMeta(id) {
+  try {
+    const db = await openDB()
+    if (!db) return null
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE_NAME, 'readonly')
+      const store = tx.objectStore(STORE_NAME)
+      const req = store.get(id)
+      req.onsuccess = () => {
+        const row = req.result
+        if (!row?.file) {
+          resolve(null)
+          return
+        }
+        const file = row.file
+        resolve({
+          id: String(row.id || id),
+          size: Number(file.size) || 0,
+          type: String(file.type || ''),
+          name: String(file.name || ''),
+          storedAt: row.storedAt || 0,
+        })
+      }
+      req.onerror = () => resolve(null)
+    })
+  } catch {
+    return null
+  }
+}
+
 function canvasToBlob(canvas, type, quality) {
   return new Promise((resolve) => {
     if (!canvas.toBlob) {
