@@ -65,6 +65,11 @@ import { membershipReturnPaid } from './lib/stripeConfig'
 import { addPremiumSub } from './lib/engagement'
 import { isOwnerAccount } from './data/ownerLogin'
 
+const CreatorStudio = lazy(() => import('./components/studio/CreatorStudio'))
+const WatchPage = lazy(() => import('./components/WatchPage'))
+const AdminPortal = lazy(() => import('./components/AdminPortal'))
+const AdvertiserPortal = lazy(() => import('./components/AdvertiserPortal'))
+
 const KNOWN_VIEWS = new Set([
   'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
   'explore', 'history', 'watch-again', 'hearts', 'liked', 'watch-later', 'library', 'stats', 'help', 'about',
