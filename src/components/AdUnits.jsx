@@ -3,7 +3,6 @@ import { ArrowUpRight, SkipForward } from 'lucide-react'
 import { getActiveAd, getVideoAdDurationSec, getVideoSkipAfterSec, placementAdsAllowed, recordAdClick, recordAdImpression } from '../lib/adEngine'
 import { openSafeUrl, safeHttpUrl } from '../lib/safeUrl'
 import ExoClickDisplay from './ExoClickDisplay'
-import FeedVideoAd from './FeedVideoAd'
 
 export function PlacementBanner({ placement, itemId }) {
   const campaign = useMemo(() => getActiveAd(placement), [placement, itemId])
@@ -65,16 +64,16 @@ export default function AdBanner({ ad }) {
 }
 
 /**
- * One in-feed slot. `ad.format` comes from src/lib/feedAdCadence.js and must
- * match the zone type: a clip slot plays a VAST video, a pic tile fills a
- * display <ins>. Both collapse to nothing when the network has no fill.
+ * One in-feed scroll slot. Clips and pics share the same ExoClick display
+ * zone — letterboxed at its native IAB size inside the card, never stretched
+ * into 9:16 or square. VAST video zones are for watch/live only.
  */
 export function InFeedAd({ ad, variant = 'clip', active = true }) {
   if (ad?.provider === 'exoclick') {
-    if (ad.format === 'video' || variant === 'clip') {
-      return <FeedVideoAd active={active} className="aspect-[9/16] w-full rounded-xl" />
-    }
-    return <ExoClickDisplay active={active} className="aspect-square w-full" />
+    const shell = variant === 'pic'
+      ? 'aspect-square w-full'
+      : 'aspect-[9/16] w-full rounded-xl'
+    return <ExoClickDisplay active={active} className={shell} />
   }
   return <CampaignInFeedAd ad={ad} variant={variant} />
 }

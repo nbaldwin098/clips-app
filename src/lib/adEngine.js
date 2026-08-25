@@ -15,10 +15,10 @@ const AD_METRICS_KEY = 'clips_ad_metrics'
 const AD_SETTINGS_KEY = 'clips_ad_settings'
 
 export const AD_PLACEMENTS = [
-  { id: 'video', label: 'Videos', hint: 'In-stream at 30 seconds, plus 8 minutes if the video is that long', setting: 'videoInStream' },
-  { id: 'clip-banner', label: 'Clips banner', hint: 'Small bar under the clip description', setting: 'clipBanner' },
-  { id: 'clip-feed', label: 'Clips in-feed', hint: 'Video ad between clips as you scroll', setting: 'clipInFeed' },
-  { id: 'pic-feed', label: 'Pics in-feed', hint: 'Banner tile the size of a photo, between photos', setting: 'picInFeed' },
+  { id: 'video', label: 'Videos', hint: 'In-stream VAST at 30 seconds, plus 8 minutes if the video is that long', setting: 'videoInStream' },
+  { id: 'clip-banner', label: 'Clips banner', hint: 'Small bar under the clip description (same scroll zone)', setting: 'clipBanner' },
+  { id: 'clip-feed', label: 'Clips in-feed', hint: 'Same scroll display zone as pics, between clips', setting: 'clipInFeed' },
+  { id: 'pic-feed', label: 'Pics in-feed', hint: 'Same scroll display zone as clips, between photos', setting: 'picInFeed' },
 ]
 
 export const ALL_PLACEMENTS = AD_PLACEMENTS.map((p) => p.id)

@@ -90,9 +90,9 @@ export async function runAdHealthChecks() {
 
   const rows = [
     { name: 'Ad script (ad-provider.js)', ...script },
-    { name: `Video zone ${AD_ZONES.video.id} — watch, clips, live viewers`, ...video },
-    { name: `Live creator zone ${AD_ZONES.liveCreator.id} — creator breaks`, ...liveCreator },
-    { name: `Banner zone ${AD_ZONES.banner.id} — pic tiles, clip banner`, ...banner },
+    { name: `Video VAST ${AD_ZONES.video.id} — watch + live viewers only`, ...video },
+    { name: `Live creator VAST ${AD_ZONES.liveCreator.id} — creator breaks only`, ...liveCreator },
+    { name: `Scroll display ${AD_ZONES.scroll.id} — clips + pics feeds (shared)`, ...banner },
   ]
 
   for (const [id, why] of Object.entries(UNRENDERABLE_ZONES)) {

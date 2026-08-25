@@ -93,7 +93,7 @@ export default function AdminAds() {
         <div>
           <p className="text-sm font-medium text-white">Site ads</p>
           <p className="text-xs text-zinc-500 mt-0.5">
-            Ads always run. There is no site-wide off switch — use the placement switches below to choose where they show. Videos play an in-stream ad 30 seconds in, then another at 8 minutes if the video is that long — never a box under the player. Clips get a video ad between clips as you scroll, plus a small banner under the description. Pic ads are a banner tile the size of a photo, between photos in the mosaic — never on a photo and never in the viewer after you tap one. Live viewers get an ad 30 seconds after they open a stream; after that the creator sets ads. If a tag has no fill the slot disappears — we never leave an empty box and never invent a fake ad.
+            Ads always run. There is no site-wide off switch — use the placement switches below to choose where they show. Each ExoClick zone has a fixed size and only belongs in its slot: the scroll display zone is shared by clips and pics (both are feeds), the small clip bar under the description uses that same display zone, videos and live viewers use the video VAST zone in-stream only, and creator live breaks use the live-creator VAST zone. Never a box under the watch player. If a tag has no fill the slot disappears — we never leave an empty box and never invent a fake ad.
           </p>
         </div>
         <Pill on>Always on</Pill>
@@ -105,10 +105,10 @@ export default function AdminAds() {
         <p className="text-sm font-medium text-white">Where ads show</p>
         <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-2">
           {[
-            ['videoInStream', 'Videos', 'In-stream at 30s, plus 8 minutes if the video is that long'],
-            ['clipBanner', 'Clips banner', 'Small bar under the clip description'],
-            ['clipInFeed', 'Clips in-feed', 'Video ad between clips as you scroll'],
-            ['picInFeed', 'Pics in-feed', 'Banner tile the size of a photo'],
+            ['videoInStream', 'Videos', 'In-stream VAST at 30s, plus 8 minutes if that long'],
+            ['clipBanner', 'Clips banner', 'Small bar under the clip description (scroll zone)'],
+            ['clipInFeed', 'Clips in-feed', 'Same scroll display zone as pics, between clips'],
+            ['picInFeed', 'Pics in-feed', 'Same scroll display zone as clips, between photos'],
           ].map(([key, label, hint]) => (
             <button
               key={key}
@@ -135,7 +135,7 @@ export default function AdminAds() {
               className={`${field} mt-1`}
             />
           </label>
-          <p className="text-[11px] text-zinc-500 sm:col-span-2">Clip full ads pick a random gap of 4, 5, or 6 items. Banners under the description are every 10 clips. Pic mosaic ads pick a random gap of 6–10 photos and match the photo tile size. Videos never get a display box under the player.</p>
+          <p className="text-[11px] text-zinc-500 sm:col-span-2">Clips and pics share one ExoClick display zone because both are scroll feeds — the creative letterboxes at its native size inside the card. Clip full ads pick a random gap of 4–6 items; banners under the description are every 10 clips. Pic mosaic ads pick a random gap of 6–10 photos. Videos never get a display box under the player.</p>
         </div>
       </div>
 

@@ -14,7 +14,6 @@ import CommentsPanel from './CommentsPanel'
 import ShortsStage, { ShortsCard } from './ShortsStage'
 import ShortsGrid from './ShortsGrid'
 import ExoClickDisplay, { clipBannerAllowed, EXOCLICK_BANNER_ZONE, EXOCLICK_BANNER_CLASS } from './ExoClickDisplay'
-import FeedVideoAd from './FeedVideoAd'
 import { mixFeedAds } from '../lib/adEngine'
 import { shuffleFeed } from '../lib/shuffleFeed'
 import { preloadPostedItems } from '../lib/preloadMedia'
@@ -418,7 +417,13 @@ function ClipFeedAdSlide({ active }) {
   return (
     <div className="h-full w-full max-w-md mx-auto bg-black flex flex-col items-center justify-center px-4">
       <p className="shrink-0 px-3 py-2 text-[11px] text-white/70">Sponsored · swipe for the next clip</p>
-      <FeedVideoAd active={active} className="max-h-[70vh] w-full rounded-xl" onEmpty={() => setEmpty(true)} />
+      <ExoClickDisplay
+        active={active}
+        zoneId={EXOCLICK_BANNER_ZONE}
+        insClass={EXOCLICK_BANNER_CLASS}
+        className="max-h-[70vh] w-full rounded-xl min-h-[250px]"
+        onFill={(ok) => { if (!ok) setEmpty(true) }}
+      />
     </div>
   )
 }
