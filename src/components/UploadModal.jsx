@@ -23,7 +23,6 @@ export default function UploadModal({
   const [status, setStatus] = useState('idle')
   const [meta, setMeta] = useState(null)
   const [error, setError] = useState('')
-  const [hosted, setHosted] = useState(false)
   const [chapters, setChapters] = useState([{ t: '0:00', title: '' }])
   const [captionsText, setCaptionsText] = useState('')
   const [scheduledFor, setScheduledFor] = useState('')
@@ -45,7 +44,6 @@ export default function UploadModal({
     setStatus('idle')
     setMeta(null)
     setError('')
-    setHosted(false)
     setChapters([{ t: '0:00', title: '' }])
     setCaptionsText('')
     setScheduledFor('')
@@ -106,7 +104,6 @@ export default function UploadModal({
         setStatus('error')
         return
       }
-      setHosted(!!published.hosted)
       setMeta({
         name: published.item?.title || title,
         sizeMb: Math.round((file.size / (1024 * 1024)) * 10) / 10,
