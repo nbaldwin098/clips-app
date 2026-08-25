@@ -13,7 +13,7 @@ import { copyShareUrl } from '../lib/routes'
 import CommentsPanel from './CommentsPanel'
 import ShortsStage, { ShortsCard } from './ShortsStage'
 import ShortsGrid from './ShortsGrid'
-import ExoClickDisplay, { clipBannerAllowed, EXOCLICK_BANNER_ZONE, EXOCLICK_BANNER_CLASS } from './ExoClickDisplay'
+import ExoClickDisplay, { clipBannerAllowed, EXOCLICK_BANNER_ZONE, EXOCLICK_BANNER_CLASS, BANNER_FILL_TIMEOUT_MS } from './ExoClickDisplay'
 import { InFeedAd } from './AdUnits'
 import { mixFeedAds } from '../lib/adEngine'
 import { preloadPostedItems } from '../lib/preloadMedia'
@@ -403,11 +403,16 @@ function ClipSlide({
           ) : null}
           {showBanner ? (
             <div
-              className="mt-2 mr-16 md:mr-4 overflow-hidden pointer-events-auto relative z-20"
+              className="mt-2 mr-16 md:mr-4 overflow-hidden pointer-events-auto relative z-20 touch-pan-y"
               onClick={(e) => e.stopPropagation()}
-              onPointerDown={(e) => e.stopPropagation()}
             >
-              <ExoClickDisplay zoneId={EXOCLICK_BANNER_ZONE} insClass={EXOCLICK_BANNER_CLASS} className="min-h-[90px]" active={active} />
+              <ExoClickDisplay
+                zoneId={EXOCLICK_BANNER_ZONE}
+                insClass={EXOCLICK_BANNER_CLASS}
+                className="min-h-[90px] rounded-md"
+                active={active}
+                fillTimeoutMs={BANNER_FILL_TIMEOUT_MS}
+              />
             </div>
           ) : null}
         </div>
@@ -437,19 +442,25 @@ function ClipSlide({
   )
 }
 
-function ClipFeedAdSlide({ active, ad, onEmpty }) {
+function ClipFeedAdSlide({ active, warm = false, ad, onEmpty }) {
+  const emptyRef = useRef(false)
+  useEffect(() => {
+    if (active && emptyRef.current) onEmpty?.()
+  }, [active, onEmpty])
   return (
     <div
-      className="h-full w-full max-w-md mx-auto bg-black flex flex-col items-center justify-center px-4 pointer-events-auto relative z-10 touch-manipulation"
+      className="h-full w-full max-w-md mx-auto bg-black flex flex-col items-center justify-center px-4 pointer-events-auto relative z-10 touch-pan-y touch-manipulation"
       data-ad-slide=""
-      onPointerDown={(e) => e.stopPropagation()}
     >
       <p className="shrink-0 px-3 py-2 text-[11px] text-white/70">Sponsored · swipe for the next clip</p>
       <InFeedAd
         ad={ad}
         variant="clip"
-        active={active}
-        onFill={(ok) => { if (!ok) onEmpty?.() }}
+        active={active || warm}
+        onFill={(ok) => {
+          emptyRef.current = !ok
+          if (!ok && active) onEmpty?.()
+        }}
       />
     </div>
   )
@@ -497,6 +508,10 @@ export default function ShortsFeed({
   )
   const goToRef = useRef(null)
   const [activeIdx, setActiveIdx] = useState(0)
+  const visibleMixedRef = useRef(visibleMixed)
+  visibleMixedRef.current = visibleMixed
+  const activeIdxRef = useRef(0)
+  activeIdxRef.current = activeIdx
   const [muted, setMuted] = useState(true)
   const [bannerSlide, setBannerSlide] = useState(null)
   const sinceBanner = useRef(0)
@@ -518,16 +533,19 @@ export default function ShortsFeed({
   }, [visibleMixed, activeIdx, inPlayer])
 
   const skipAdSlide = useCallback((index) => {
-    const row = visibleMixed[index]
+    const row = visibleMixedRef.current[index]
     if (!row || row.kind !== 'ad') return
     setSkippedAdKeys((prev) => {
+      if (prev.has(row.key)) return prev
       const next = new Set(prev)
       next.add(row.key)
       return next
     })
-    // Stay on this index — the next clip slides into the same slot.
-    window.setTimeout(() => goToRef.current?.(index, 'auto'), 80)
-  }, [visibleMixed])
+    // Only snap if this ad is the current slide — never rewind while swiping past it.
+    if (activeIdxRef.current === index) {
+      window.setTimeout(() => goToRef.current?.(index, 'auto'), 40)
+    }
+  }, [])
 
   const openClip = (item) => onNavigate?.('clips', item.id)
   const backToGrid = () => {
@@ -548,7 +566,7 @@ export default function ShortsFeed({
 
   return (
     <ShortsStage
-      key={`clips-player-${tab}`}
+      key={`clips-player-${tab}-${focusId}`}
       count={visibleMixed.length}
       activeIndex={activeIdx}
       goToRef={goToRef}
@@ -586,7 +604,7 @@ export default function ShortsFeed({
         const row = visibleMixed[index]
         if (row?.kind === 'ad') {
           return (
-            <ClipFeedAdSlide active={active} ad={row.ad} onEmpty={() => skipAdSlide(index)} />
+            <ClipFeedAdSlide active={active} warm={warm} ad={row.ad} onEmpty={() => skipAdSlide(index)} />
           )
         }
         return row?.item ? (
@@ -603,7 +621,7 @@ export default function ShortsFeed({
             onStitch={onStitch}
             onBack={backToGrid}
             onSearch={() => onNavigate?.('explore')}
-            showBanner={active && (bannerSlide === index || clipBannerAllowed(visibleMixed, index))}
+            showBanner={active && (row.banner || bannerSlide === index || clipBannerAllowed(visibleMixed, index, sinceBanner.current))}
           />
         ) : null
       }}

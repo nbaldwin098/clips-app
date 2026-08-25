@@ -75,10 +75,9 @@ export function InFeedAd({ ad, variant = 'clip', active = true, onFill }) {
       : 'aspect-[9/16] w-full rounded-xl min-h-[250px]'
     return (
       <div
-        className="pointer-events-auto relative z-10 w-full max-w-full"
+        className="pointer-events-auto relative z-10 w-full max-w-full touch-pan-y"
         data-ad-slide=""
         onClick={(e) => e.stopPropagation()}
-        onPointerDown={(e) => e.stopPropagation()}
       >
         <ExoClickDisplay active={active} className={shell} onFill={onFill} />
       </div>

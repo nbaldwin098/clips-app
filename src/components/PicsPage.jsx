@@ -255,17 +255,24 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
     [scrollRows, skippedAdKeys],
   )
   const goToRef = useRef(null)
+  const visibleRowsRef = useRef(visibleScrollRows)
+  visibleRowsRef.current = visibleScrollRows
+  const viewerIndexRef = useRef(viewerIndex)
+  viewerIndexRef.current = viewerIndex
   useEffect(() => { setSkippedAdKeys(new Set()) }, [initialPicId])
   const skipAdSlide = useCallback((index) => {
-    const row = visibleScrollRows[index]
+    const row = visibleRowsRef.current[index]
     if (!row || row.kind !== 'ad') return
     setSkippedAdKeys((prev) => {
+      if (prev.has(row.key)) return prev
       const next = new Set(prev)
       next.add(row.key)
       return next
     })
-    window.setTimeout(() => goToRef.current?.(index, 'auto'), 150)
-  }, [visibleScrollRows])
+    if (viewerIndexRef.current === index) {
+      window.setTimeout(() => goToRef.current?.(index, 'auto'), 40)
+    }
+  }, [])
   const skipAutoOpen = useRef(false)
   const refresh = useCallback(() => setItems(getPicsFeed()), [])
   const dropBroken = useCallback((id) => {
@@ -365,12 +372,11 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
             if (row?.kind === 'ad') {
               return (
                 <div
-                  className="h-full w-full max-w-md mx-auto bg-black flex flex-col items-center justify-center px-4 pointer-events-auto relative z-10 touch-manipulation"
+                  className="h-full w-full max-w-md mx-auto bg-black flex flex-col items-center justify-center px-4 pointer-events-auto relative z-10 touch-pan-y touch-manipulation"
                   data-ad-slide=""
-                  onPointerDown={(e) => e.stopPropagation()}
                 >
                   <p className="shrink-0 px-3 py-2 text-[11px] text-white/70">Sponsored · swipe for the next pic</p>
-                  <InFeedAd ad={row.ad} variant="pic" active={active} onFill={(ok) => { if (!ok) skipAdSlide(index) }} />
+                  <InFeedAd ad={row.ad} variant="pic" active={active || warm} onFill={(ok) => { if (!ok && active) skipAdSlide(index) }} />
                 </div>
               )
             }

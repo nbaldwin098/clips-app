@@ -7,36 +7,44 @@ export const EXOCLICK_BANNER_ZONE = AD_ZONES.banner.id
 export const EXOCLICK_BANNER_CLASS = AD_ZONES.banner.insClass
 
 /** Poll for a fill, then give up and collapse the slot. */
-const FILL_POLL_MS = 400
-const FILL_TIMEOUT_MS = 12000
-const FILL_RETRY_MS = 3500
+const FILL_POLL_MS = 300
+const FILL_TIMEOUT_MS = 2500
+const FILL_RETRY_MS = 900
+const BANNER_FILL_TIMEOUT_MS = 6000
 
 export { ensureExoClickScript } from '../lib/exoClickServe'
 
 /**
- * ExoClick does not fill the <ins>. It injects a sibling <div> next to it
- * inside the same parent and leaves the <ins> empty at 0x17. Checking the
- * <ins> for children therefore reports "no ad" even when an ad is on screen,
- * so look at the container for injected markup instead.
+ * ExoClick usually injects a sibling <div> next to <ins>, but some creatives
+ * land inside the <ins>. Treat either as a fill — missing that is why ads
+ * were skipped as "empty" even when they were on screen.
  */
-function slotHasAd(container) {
+export function slotHasAd(container) {
   if (!container) return false
+  if (container.querySelector('iframe, img, video, a[href], canvas, object, embed')) return true
   for (const child of container.children) {
-    if (child.tagName === 'INS' || child.dataset.adLabel === 'true') continue
-    if (child.querySelector('img, iframe, video, a')) return true
+    if (child.dataset?.adLabel === 'true') continue
+    if (child.tagName === 'INS') {
+      if (child.children.length > 0) return true
+      if (child.offsetWidth > 8 && child.offsetHeight > 20) return true
+      continue
+    }
     const rect = child.getBoundingClientRect()
-    if (rect.width > 1 && rect.height > 1) return true
+    if (rect.width > 8 && rect.height > 8) return true
   }
   return false
 }
 
-function stopBubble(e) {
+function stopClick(e) {
   e.stopPropagation()
 }
 
 /**
  * One ExoClick display unit at its native size. The parent letterboxes
  * around it — we never stretch an <ins> into a 9:16 or 16:9 frame.
+ *
+ * `touch-pan-y` so a clip/pic reel can keep scrolling through the slot.
+ * Clicks still hit the creative; we only stop click bubbling, not pointerdown.
  */
 export default function ExoClickDisplay({
   zoneId,
@@ -44,11 +52,15 @@ export default function ExoClickDisplay({
   className = '',
   active = true,
   onFill,
+  fillTimeoutMs,
 }) {
   const zone = zoneId && isDisplayZone(zoneId) ? String(zoneId) : displayZone().id
   const badZone = Boolean(zoneId && !isDisplayZone(zoneId))
   const containerRef = useRef(null)
   const insRef = useRef(null)
+  const onFillRef = useRef(onFill)
+  onFillRef.current = onFill
+  const timeoutMs = Number(fillTimeoutMs) > 0 ? Number(fillTimeoutMs) : FILL_TIMEOUT_MS
   const [state, setState] = useState('pending') // pending | filled | empty
 
   useEffect(() => {
@@ -62,20 +74,21 @@ export default function ExoClickDisplay({
       window.clearInterval(poll)
       window.clearTimeout(retryTimer)
       setState('filled')
-      onFill?.(true)
+      onFillRef.current?.(true)
     }
 
     const markEmpty = () => {
       window.clearInterval(poll)
       window.clearTimeout(retryTimer)
       setState('empty')
-      onFill?.(false)
+      onFillRef.current?.(false)
     }
 
     const requestFill = () => resurfaceExoClickInContainer(containerRef.current)
 
     const ins = insRef.current
     if (ins) delete ins.dataset.exoQueued
+    setState('pending')
 
     requestFill().then((ok) => {
       if (cancelled) return
@@ -90,7 +103,7 @@ export default function ExoClickDisplay({
           markFilled()
           return
         }
-        if (Date.now() - started >= FILL_TIMEOUT_MS) {
+        if (Date.now() - started >= timeoutMs) {
           markEmpty()
         }
       }, FILL_POLL_MS)
@@ -106,7 +119,7 @@ export default function ExoClickDisplay({
       if (poll) window.clearInterval(poll)
       if (retryTimer) window.clearTimeout(retryTimer)
     }
-  }, [zone, active, badZone, onFill])
+  }, [zone, active, badZone, timeoutMs])
 
   if (badZone) {
     if (import.meta.env?.DEV) {
@@ -119,11 +132,10 @@ export default function ExoClickDisplay({
   return (
     <div
       ref={containerRef}
-      className={`exo-slot pointer-events-auto relative flex w-full items-center justify-center overflow-hidden touch-manipulation ${
+      className={`exo-slot pointer-events-auto relative flex w-full items-center justify-center overflow-hidden touch-pan-y touch-manipulation ${
         state === 'filled' ? 'bg-[#111]' : 'bg-transparent'
       } ${className}`}
-      onClick={stopBubble}
-      onPointerDown={stopBubble}
+      onClick={stopClick}
     >
       {state === 'filled' ? (
         <span
@@ -144,3 +156,4 @@ export default function ExoClickDisplay({
 }
 
 export { clipBannerAllowed } from '../lib/adEngine'
+export { BANNER_FILL_TIMEOUT_MS, FILL_TIMEOUT_MS, FILL_RETRY_MS }

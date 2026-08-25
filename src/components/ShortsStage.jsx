@@ -71,7 +71,8 @@ export default function ShortsStage({
   useEffect(() => {
     if (!n) return
     const start = Math.max(0, Math.min(n - 1, Number(initialIndex) || 0))
-    const token = `${n}:${start}:${loop}`
+    // Do not include `n` — skipping an empty ad must not rewind to the first clip.
+    const token = `${start}:${loop}`
     if (lastStart.current === token) return
     lastStart.current = token
     const startReel = middleReel(start)
@@ -84,14 +85,22 @@ export default function ShortsStage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [n, initialIndex, loop])
 
-  // When slides are removed (empty ads) or added, re-align scroll so we never
-  // sit between two half-visible clips.
+  // When slides are removed (empty ads) or added, re-align only if we would
+  // otherwise sit between two clips. Never freeze the scroller if the user
+  // is already moving past the slot.
   useEffect(() => {
     if (!n || lastCount.current === n) return
     lastCount.current = n
     const idx = Math.max(0, Math.min(n - 1, Number(activeIndex) || 0))
-    jumping.current = true
+    const el = scrollerRef.current
+    const h = pageHeight()
     const target = middleReel(idx)
+    const expected = target * h
+    if (el && Math.abs(el.scrollTop - expected) < h * 0.35) {
+      setReelPos(target)
+      return
+    }
+    jumping.current = true
     requestAnimationFrame(() => {
       scrollToReel(target, 'auto')
       setReelPos(target)
