@@ -1,18 +1,17 @@
 import { useState } from 'react'
 import { Check, Copy, Link2, DollarSign, Upload, ArrowRight } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { lsGet, lsSet } from '../lib/storage'
+import { setMembershipPrice } from '../lib/engagement'
 import { buildCheckout } from '../lib/financialLedger'
 
 const TIERS = [4.99, 9.99, 14.99]
 
 export default function CreatorOnboarding({ onOpenImport, onDone, onNavigate }) {
-  const { user, updateProfile, enableCreatorMode, switchMode } = useAuth()
+  const { user, saveProfile, enableCreatorMode, switchMode } = useAuth()
   const [step, setStep] = useState(1)
-  const [price, setPrice] = useState(
-    () => lsGet('creator_sub_price', null)?.amount || 4.99
-  )
+  const [price, setPrice] = useState(4.99)
   const [copied, setCopied] = useState(false)
+  const [busy, setBusy] = useState(false)
 
   const handle = user?.handle || 'creator'
   const shareUrl =
@@ -22,16 +21,17 @@ export default function CreatorOnboarding({ onOpenImport, onDone, onNavigate }) 
 
   const checkout = buildCheckout(price)
 
-  const savePrice = () => {
-    lsSet('creator_sub_price', {
-      amount: Number(price),
-      currency: 'usd',
-      updatedAt: new Date().toISOString(),
-    })
-    enableCreatorMode()
-    switchMode('creator')
-    updateProfile?.({ isCreator: true, subPrice: Number(price) })
-    setStep(2)
+  const savePrice = async () => {
+    setBusy(true)
+    try {
+      if (user?.id) setMembershipPrice(user.id, Number(price))
+      enableCreatorMode()
+      switchMode('creator')
+      await saveProfile?.({})
+      setStep(2)
+    } finally {
+      setBusy(false)
+    }
   }
 
   const copyLink = async () => {
@@ -43,17 +43,17 @@ export default function CreatorOnboarding({ onOpenImport, onDone, onNavigate }) 
   }
 
   return (
-    <div className="rounded-2xl border border-[#000000]/25 bg-white p-5 md:p-6 shadow-sm mb-8">
+    <div className="rounded-2xl border border-zinc-800 bg-[#121218] p-5 md:p-6 mb-8">
       <div className="flex items-center justify-between gap-3 mb-4">
         <div>
-          <h2 className="text-base font-semibold text-slate-900">Creator setup</h2>
-          <p className="text-xs text-slate-500 mt-0.5">About 60 seconds · payouts are not live yet</p>
+          <h2 className="text-base font-semibold text-white">Welcome to calabi</h2>
+          <p className="text-xs text-zinc-500 mt-0.5">Creator setup · about 60 seconds</p>
         </div>
         <div className="flex gap-1.5">
           {[1, 2, 3].map((n) => (
             <div
               key={n}
-              className={`h-1.5 w-8 rounded-full ${step >= n ? 'bg-[#000000]' : 'bg-slate-200'}`}
+              className={`h-1.5 w-8 rounded-full ${step >= n ? 'bg-white' : 'bg-zinc-800'}`}
             />
           ))}
         </div>
@@ -61,12 +61,12 @@ export default function CreatorOnboarding({ onOpenImport, onDone, onNavigate }) 
 
       {step === 1 && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
-            <DollarSign className="h-4 w-4 text-[#000000]" />
+          <div className="flex items-center gap-2 text-sm font-medium text-white">
+            <DollarSign className="h-4 w-4 text-white" />
             Set monthly membership price
           </div>
-          <p className="text-xs text-slate-500 leading-relaxed">
-            Fans pay this amount to you. Processing fee is added on top for them — not taken from your price.
+          <p className="text-xs text-zinc-500 leading-relaxed">
+            Fans pay this for premium on your live chat. Processing fee is added on top for them — not taken from your price.
           </p>
           <div className="flex flex-wrap gap-2">
             {TIERS.map((t) => (
@@ -76,32 +76,33 @@ export default function CreatorOnboarding({ onOpenImport, onDone, onNavigate }) 
                 onClick={() => setPrice(t)}
                 className={`h-10 px-4 rounded-xl text-sm font-medium border transition-colors ${
                   Number(price) === t
-                    ? 'bg-[#000000] text-white border-[#000000]'
-                    : 'bg-white text-slate-700 border-slate-200 hover:border-[#000000]/40'
+                    ? 'bg-white text-black border-white'
+                    : 'bg-[#0c0c10] text-zinc-300 border-zinc-800 hover:border-zinc-600'
                 }`}
               >
                 ${t.toFixed(2)}
               </button>
             ))}
           </div>
-          <div className="rounded-lg bg-slate-50 border border-slate-100 p-3 text-xs text-slate-600 space-y-1">
+          <div className="rounded-lg bg-[#0c0c10] border border-zinc-800 p-3 text-xs text-zinc-400 space-y-1">
             <div className="flex justify-between">
               <span>You receive</span>
-              <span className="font-semibold text-slate-900">${checkout.creatorReceives.toFixed(2)}</span>
+              <span className="font-semibold text-white">${checkout.creatorReceives.toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
               <span>Buyer fee (approx)</span>
               <span>${checkout.buyerFee.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between border-t border-slate-200 pt-1 mt-1">
+            <div className="flex justify-between border-t border-zinc-800 pt-1 mt-1">
               <span>Buyer pays total</span>
-              <span className="font-medium">${checkout.totalCharged.toFixed(2)}</span>
+              <span className="font-medium text-white">${checkout.totalCharged.toFixed(2)}</span>
             </div>
           </div>
           <button
             type="button"
+            disabled={busy}
             onClick={savePrice}
-            className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-[#000000] text-white text-sm font-medium hover:bg-[#27272a]"
+            className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-white text-black text-sm font-medium hover:bg-zinc-200 disabled:opacity-50"
           >
             Save price <ArrowRight className="h-4 w-4" />
           </button>
@@ -110,32 +111,32 @@ export default function CreatorOnboarding({ onOpenImport, onDone, onNavigate }) 
 
       {step === 2 && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
-            <Link2 className="h-4 w-4 text-[#000000]" />
+          <div className="flex items-center gap-2 text-sm font-medium text-white">
+            <Link2 className="h-4 w-4 text-white" />
             Your share link
           </div>
-          <p className="text-xs text-slate-500">
-            Send this to fans. When accounts are on a real backend, it opens your channel.
+          <p className="text-xs text-zinc-500">
+            Send this to fans. It opens your calabi profile.
           </p>
           <div className="flex gap-2">
             <input
               readOnly
               value={shareUrl}
-              className="flex-1 h-10 rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs text-slate-700"
+              className="flex-1 h-10 rounded-lg border border-zinc-800 bg-black px-3 text-xs text-zinc-300"
             />
             <button
               type="button"
               onClick={copyLink}
-              className="inline-flex items-center gap-1.5 h-10 px-3 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex items-center gap-1.5 h-10 px-3 rounded-lg border border-zinc-700 text-sm font-medium text-white hover:bg-[#18181f]"
             >
-              {copied ? <Check className="h-4 w-4 text-black" /> : <Copy className="h-4 w-4" />}
+              {copied ? <Check className="h-4 w-4 text-white" /> : <Copy className="h-4 w-4" />}
               {copied ? 'Copied' : 'Copy'}
             </button>
           </div>
           <button
             type="button"
             onClick={() => setStep(3)}
-            className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-[#000000] text-white text-sm font-medium hover:bg-[#27272a]"
+            className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-white text-black text-sm font-medium hover:bg-zinc-200"
           >
             Next <ArrowRight className="h-4 w-4" />
           </button>
@@ -144,12 +145,12 @@ export default function CreatorOnboarding({ onOpenImport, onDone, onNavigate }) 
 
       {step === 3 && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
-            <Upload className="h-4 w-4 text-[#000000]" />
-            Add your first clip
+          <div className="flex items-center gap-2 text-sm font-medium text-white">
+            <Upload className="h-4 w-4 text-white" />
+            Add your first post
           </div>
-          <p className="text-xs text-slate-500 leading-relaxed">
-            Prefer Import: paste a TikTok / Shorts / Reels link. We store only the link + metadata.
+          <p className="text-xs text-zinc-500 leading-relaxed">
+            Upload a clip, video, or pic — or import a link from another platform.
           </p>
           <div className="flex flex-wrap gap-2">
             <button
@@ -158,21 +159,21 @@ export default function CreatorOnboarding({ onOpenImport, onDone, onNavigate }) 
                 onOpenImport?.()
                 onDone?.()
               }}
-              className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-[#000000] text-white text-sm font-medium hover:bg-[#27272a]"
+              className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-white text-black text-sm font-medium hover:bg-zinc-200"
             >
-              Import first clip
+              Import first post
             </button>
             <button
               type="button"
               onClick={() => {
                 onDone?.()
-                onNavigate?.('settings')
+                onNavigate?.('settings', 'stream')
               }}
-              className="h-10 px-4 rounded-xl border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="h-10 px-4 rounded-xl border border-zinc-700 text-sm font-medium text-white hover:bg-[#18181f]"
             >
               Stream settings
             </button>
-            <button type="button" onClick={() => onDone?.()} className="h-10 px-4 rounded-xl text-sm text-slate-500">
+            <button type="button" onClick={() => onDone?.()} className="h-10 px-4 rounded-xl text-sm text-zinc-500 hover:text-white">
               Skip for now
             </button>
           </div>

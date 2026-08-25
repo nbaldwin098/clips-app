@@ -118,7 +118,7 @@ function AppShell() {
     if (typeof document === 'undefined') return
     const titles = {
       home: 'Recommended',
-      clips: 'Clips',
+      clips: 'Shorts',
       pics: 'Pics',
       live: 'Live',
       explore: 'Explore',

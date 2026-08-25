@@ -4,7 +4,9 @@ import { indexUser, validateHandle, normalizeHandle, isPlatformOwner } from '../
 import { getSupabase, isSupabaseConfigured } from '../lib/supabaseClient'
 import { pullWatchProgressFromCloud } from '../lib/watchProgress'
 import { setGraphActor, syncGraphFromCloud } from '../lib/graphSync'
-import { ensureOwnProfile, privilegesFromProfile } from '../lib/profiles'
+import { ensureOwnProfile, privilegesFromProfile, updateOwnProfileFields } from '../lib/profiles'
+import { setAdViewer, fetchViewerShowAds } from '../lib/adPrefs'
+import { setVastViewerShowAds } from '../lib/vastAds'
 import { hashSecret, verifySecret } from '../lib/secrets'
 import { persistableMediaUrl, restoreProfilePictures, persistProfilePicture } from '../lib/profileMedia'
 import { findOfficialLogin } from '../data/publicMediaSeed'
@@ -130,6 +132,7 @@ async function hydratePrivileges(mapped) {
       bio: profile?.bio || mapped.bio || local?.bio || '',
       avatarUrl: persistableMediaUrl(profile?.avatar_url) || persistableMediaUrl(local?.avatarUrl) || mapped.avatarUrl || '',
       bannerUrl: persistableMediaUrl(local?.bannerUrl) || mapped.bannerUrl || '',
+      showAds: profile?.show_ads !== false,
     }
   } catch {
     const owner = isPlatformOwner(mapped)
@@ -179,6 +182,23 @@ export function AuthProvider({ children }) {
     })
     return () => { alive = false }
   }, [user?.id])
+
+  useEffect(() => {
+    setAdViewer(user)
+    setVastViewerShowAds(user?.showAds !== false)
+    if (!user?.id || user.provider !== 'supabase') return undefined
+    let alive = true
+    fetchViewerShowAds(user.id).then((show) => {
+      if (!alive) return
+      setUser((prev) => {
+        if (!prev || prev.id !== user.id || prev.showAds === show) return prev
+        return { ...prev, showAds: show }
+      })
+      setAdViewer({ ...user, showAds: show })
+      setVastViewerShowAds(show)
+    })
+    return () => { alive = false }
+  }, [user?.id, user?.provider])
 
   useEffect(() => {
     let unsub = () => {}
@@ -529,7 +549,7 @@ export function AuthProvider({ children }) {
       throw new Error('cs1 signs in with the site password. Email reset is not used for that account.')
     }
     if (!isSupabaseConfigured()) {
-      throw new Error('Password reset needs a Clips account on this site.')
+      throw new Error('Password reset needs a calabi account on this site.')
     }
     const sb = await getSupabase()
     if (!sb) throw new Error('Could not send a reset email right now.')
@@ -623,7 +643,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   const startMfaEnroll = useCallback(async () => {
-    if (!isSupabaseConfigured()) throw new Error('2FA is only for a signed-in Clips account.')
+    if (!isSupabaseConfigured()) throw new Error('2FA is only for a signed-in calabi account.')
     const sb = await getSupabase()
     if (!sb) throw new Error('Could not start 2FA.')
     const { data, error } = await sb.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Clips' })
@@ -703,6 +723,12 @@ export function AuthProvider({ children }) {
       bio: merged.bio,
       avatarUrl: urls.avatarUrl,
       bannerUrl: urls.bannerUrl,
+    }
+    if (partial.showAds != null && cur?.provider === 'supabase' && cur?.id) {
+      nextPartial.showAds = partial.showAds !== false
+      await updateOwnProfileFields({ showAds: nextPartial.showAds })
+      setAdViewer({ ...cur, ...nextPartial, provider: 'supabase' })
+      setVastViewerShowAds(nextPartial.showAds)
     }
     updateProfile(nextPartial)
     return nextPartial

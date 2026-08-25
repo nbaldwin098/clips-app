@@ -476,8 +476,8 @@ export default function ShortsFeed({
   // Ads only in the open player while scrolling — Recommended grid stays clean.
   const mixed = useMemo(() => {
     if (!focusId) return []
-    return mixFeedAds(items, 'clip-feed')
-  }, [items, focusId])
+    return mixFeedAds(items, 'clip-feed', user?.id)
+  }, [items, focusId, user?.id])
   const goToRef = useRef(null)
   const [activeIdx, setActiveIdx] = useState(0)
   const [muted, setMuted] = useState(true)
@@ -552,7 +552,7 @@ export default function ShortsFeed({
         }
         if (i !== prevIdx.current && mixed[i]?.kind === 'item') {
           sinceBanner.current += 1
-          if (clipBannerAllowed(mixed, i, sinceBanner.current)) {
+          if (clipBannerAllowed(mixed, i, sinceBanner.current, user?.id)) {
             sinceBanner.current = 0
             setBannerSlide(i)
           } else {
@@ -584,7 +584,7 @@ export default function ShortsFeed({
             onStitch={onStitch}
             onBack={backToGrid}
             onSearch={() => onNavigate?.('explore')}
-            showBanner={active && (row.banner || bannerSlide === index || clipBannerAllowed(mixed, index, sinceBanner.current))}
+            showBanner={active && (row.banner || bannerSlide === index || clipBannerAllowed(mixed, index, sinceBanner.current, user?.id))}
           />
         ) : null
       }}

@@ -14,7 +14,7 @@ export async function fetchOwnProfile() {
     if (!uid) return null
     const { data, error } = await sb
       .from('profiles')
-      .select('id, handle, display_name, role, creator_status, avatar_url, bio')
+      .select('id, handle, display_name, role, creator_status, avatar_url, bio, show_ads')
       .eq('id', uid)
       .maybeSingle()
     if (error || !data) return null
@@ -54,6 +54,27 @@ export async function setCreatorStatus(targetUserId, status) {
       .from('profiles')
       .update({ creator_status: status, updated_at: new Date().toISOString() })
       .eq('id', targetUserId)
+    return !error
+  } catch {
+    return false
+  }
+}
+
+export async function updateOwnProfileFields(partial = {}) {
+  if (!isSupabaseConfigured()) return false
+  try {
+    const sb = await getSupabase()
+    if (!sb) return false
+    const { data: sessionData } = await sb.auth.getSession()
+    const uid = sessionData?.session?.user?.id
+    if (!uid) return false
+    const row = { updated_at: new Date().toISOString() }
+    if (partial.showAds != null) row.show_ads = partial.showAds !== false
+    if (partial.displayName != null) row.display_name = partial.displayName
+    if (partial.handle != null) row.handle = partial.handle
+    if (partial.bio != null) row.bio = partial.bio
+    if (partial.avatarUrl != null) row.avatar_url = partial.avatarUrl
+    const { error } = await sb.from('profiles').update(row).eq('id', uid)
     return !error
   } catch {
     return false

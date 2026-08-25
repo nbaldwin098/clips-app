@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { loadExoClickVast, videoVastAdsEnabled, videoInStreamBreaks, VIDEO_FIRST_AD_SEC, VIDEO_PREROLL_BREAK } from '../lib/vastAds'
 
-export function useVideoVastAds(item, { embed = false, skipPreroll = false } = {}) {
+export function useVideoVastAds(item, { embed = false } = {}) {
   const [creative, setCreative] = useState(null)
   const [slot, setSlot] = useState(null)
   const [campaignBreak, setCampaignBreak] = useState(0)
@@ -33,9 +33,9 @@ export function useVideoVastAds(item, { embed = false, skipPreroll = false } = {
     setSlot(null)
     setCampaignBreak(0)
     if (!enabled) return undefined
-    if (!skipPreroll) triggerBreak(VIDEO_PREROLL_BREAK)
+    triggerBreak(VIDEO_PREROLL_BREAK)
     return undefined
-  }, [item?.id, enabled, skipPreroll, triggerBreak])
+  }, [item?.id, enabled, triggerBreak])
 
   useEffect(() => {
     if (!enabled || !embed) return undefined

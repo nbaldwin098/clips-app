@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Send,
   Smile,
@@ -7,18 +7,45 @@ import {
   ChevronRight,
   MessageSquare,
   X,
+  Image,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { cn } from '../lib/utils'
-import { getLiveChat } from '../lib/engagement'
 import { trySendLiveChat, removeLiveChatMessage } from '../lib/liveChat'
+import { subscribeLiveChat } from '../lib/liveChatSync'
 import { isChannelMod, timeoutChatUser, banChatUser } from '../lib/channelStaff'
 import { startTipCheckout, TIP_AMOUNTS, TIP_AMOUNT_MIN, TIP_AMOUNT_MAX } from '../lib/tips'
 import { redirectSafeUrl } from '../lib/safeUrl'
 import { getStripePaymentLink } from '../lib/stripeConfig'
 
-// Small set of neutral text emotes — a decorative input helper only, not user/content data.
-const QUICK_EMOTES = ['🔥', '👏', '😂', '❤️', '🎉', '👀', '💯', '🙌']
+const QUICK_EMOTES = [
+  '😀', '😂', '❤️', '🔥', '👏', '🎉', '👀', '💯', '🙌', '😮', '😢', '🤔',
+  '👍', '👎', '💀', '✨', '🫡', '🎮', '⚡', '🏆',
+]
+
+const QUICK_GIFS = [
+  { label: 'Clap', url: 'https://media.giphy.com/media/111rbok8Ohclq/giphy.gif' },
+  { label: 'Wow', url: 'https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif' },
+  { label: 'GG', url: 'https://media.giphy.com/media/26BRuo6sOlfd6fa92/giphy.gif' },
+  { label: 'Hype', url: 'https://media.giphy.com/media/3o7aCTPPm4OHfRLSH6/giphy.gif' },
+  { label: 'LOL', url: 'https://media.giphy.com/media/13CoXDiaIcGvhu/giphy.gif' },
+  { label: 'Heart', url: 'https://media.giphy.com/media/26BRBK7GdjwoC5lqE/giphy.gif' },
+]
+
+const GIF_RE = /\[gif\](https?:\/\/[^\s]+)\[\/gif\]/i
+
+function ChatBody({ text }) {
+  const raw = String(text || '')
+  const gifMatch = raw.match(GIF_RE)
+  if (gifMatch) {
+    return (
+      <span className="inline-block align-middle">
+        <img src={gifMatch[1]} alt="" className="max-h-24 rounded-md border border-zinc-700 mt-0.5" loading="lazy" />
+      </span>
+    )
+  }
+  return <span className="text-zinc-200 select-text">{raw}</span>
+}
 
 export default function LiveChatPanel({
   channel,
@@ -30,14 +57,15 @@ export default function LiveChatPanel({
 }) {
   const { user, isAuthenticated } = useAuth()
 
-  const [messages, setMessages] = useState(() => (channel?.userId ? getLiveChat(channel.userId) : []))
+  const [messages, setMessages] = useState([])
   const [inputText, setInputText] = useState('')
-  const [showEmotes, setShowEmotes] = useState(false)
+  const [picker, setPicker] = useState('')
   const [chatError, setChatError] = useState('')
   const [tipBusy, setTipBusy] = useState('')
   const [customTip, setCustomTip] = useState('')
   const [timestampsEnabled, setTimestampsEnabled] = useState(false)
   const [chatSettingsOpen, setChatSettingsOpen] = useState(false)
+  const [liveRegion, setLiveRegion] = useState('')
 
   const messagesEndRef = useRef(null)
   const chatContainerRef = useRef(null)
@@ -45,24 +73,17 @@ export default function LiveChatPanel({
 
   const streamUserId = channel?.userId || null
 
-  const refreshMessages = useCallback(() => {
+  useEffect(() => {
     if (!streamUserId) {
       setMessages([])
-      return
+      return undefined
     }
-    setMessages(getLiveChat(streamUserId))
+    return subscribeLiveChat(streamUserId, (list) => {
+      setMessages(list)
+      const last = list[list.length - 1]
+      if (last?.text) setLiveRegion(`${last.handle || 'viewer'}: ${last.text}`)
+    })
   }, [streamUserId])
-
-  useEffect(() => {
-    refreshMessages()
-  }, [refreshMessages])
-
-  // Real-data poll: picks up messages posted from other tabs/sessions on this device.
-  useEffect(() => {
-    if (!streamUserId) return
-    const interval = setInterval(refreshMessages, 4000)
-    return () => clearInterval(interval)
-  }, [streamUserId, refreshMessages])
 
   const scrollToBottom = () => {
     if (isScrolledToBottomRef.current) {
@@ -98,9 +119,8 @@ export default function LiveChatPanel({
     }
     setChatError('')
     setInputText('')
-    setShowEmotes(false)
+    setPicker('')
     isScrolledToBottomRef.current = true
-    refreshMessages()
     scrollToBottom()
   }
 
@@ -124,6 +144,11 @@ export default function LiveChatPanel({
 
   const handleAddEmote = (symbol) => {
     setInputText((prev) => (prev ? `${prev} ${symbol}` : symbol))
+  }
+
+  const handleAddGif = (url) => {
+    setInputText(`[gif]${url}[/gif]`)
+    setPicker('')
   }
 
   const chatContent = (
@@ -151,6 +176,7 @@ export default function LiveChatPanel({
             onClick={() => setChatSettingsOpen((o) => !o)}
             className="h-7 w-7 flex items-center justify-center rounded text-zinc-400 hover:text-white hover:bg-[#1e1e27] transition-colors"
             title="Chat settings"
+            aria-label="Chat settings"
           >
             <Settings className="h-4 w-4" />
           </button>
@@ -159,6 +185,7 @@ export default function LiveChatPanel({
               type="button"
               onClick={onMobileClose}
               className="lg:hidden h-7 w-7 flex items-center justify-center rounded text-zinc-400 hover:text-white hover:bg-[#1e1e27]"
+              aria-label="Close chat"
             >
               <X className="h-4 w-4" />
             </button>
@@ -167,10 +194,10 @@ export default function LiveChatPanel({
       </div>
 
       {chatSettingsOpen && (
-        <div className="absolute top-12 left-3 right-3 z-30 p-3 rounded-xl border border-[#2d2d3c] bg-[#14141d] shadow-2xl space-y-2 animate-in fade-in zoom-in-95">
+        <div className="absolute top-12 left-3 right-3 z-30 p-3 rounded-xl border border-[#2d2d3c] bg-[#14141d] shadow-2xl space-y-2 animate-in fade-in zoom-in-95" role="dialog" aria-label="Chat preferences">
           <div className="flex items-center justify-between pb-1 border-b border-[#23232c]">
             <span className="text-xs font-bold uppercase tracking-wider text-zinc-200">Chat preferences</span>
-            <button type="button" onClick={() => setChatSettingsOpen(false)} className="text-zinc-400 hover:text-white">
+            <button type="button" onClick={() => setChatSettingsOpen(false)} className="text-zinc-400 hover:text-white" aria-label="Close chat preferences">
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
@@ -192,86 +219,107 @@ export default function LiveChatPanel({
           <p className="text-xs text-zinc-500">Select a live channel to view its chat.</p>
         </div>
       ) : (
-        <div ref={chatContainerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto px-3 py-2 space-y-2.5 text-xs">
-          {messages.length === 0 ? (
-            <div className="p-3 rounded-lg bg-[#181824] border border-[#252536] text-[11px] text-zinc-400 flex items-center gap-1.5">
-              <Shield className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
-              <span>No messages yet. Be the first to say something!</span>
-            </div>
-          ) : (
-            messages.map((m) => {
-              const isHost = m.userId === channel.userId
-              const isSelf = isAuthenticated && m.userId === user?.id
-              const isGift = m.kind === 'donation'
-              const isBot = m.kind === 'bot'
-              return (
-                <div
-                  key={m.id}
-                  className={cn(
-                    'chat-message-text leading-relaxed hover:bg-[#161622] rounded px-1.5 py-0.5 -mx-1.5 transition-colors',
-                    isSelf && 'bg-[#181826]',
-                    isGift && 'bg-white/10 border border-white/20 py-1.5'
-                  )}
-                >
-                  {timestampsEnabled && (
-                    <span className="text-[10px] text-zinc-500 font-mono mr-1.5">
-                      {new Date(m.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        <>
+          <div aria-live="polite" aria-atomic="true" className="sr-only">{liveRegion}</div>
+          <div ref={chatContainerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto px-3 py-2 space-y-2.5 text-xs" role="log" aria-label="Live chat messages">
+            {messages.length === 0 ? (
+              <div className="p-3 rounded-lg bg-[#181824] border border-[#252536] text-[11px] text-zinc-400 flex items-center gap-1.5">
+                <Shield className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
+                <span>No messages yet. Be the first to say something!</span>
+              </div>
+            ) : (
+              messages.map((m) => {
+                const isHost = m.userId === channel.userId
+                const isSelf = isAuthenticated && m.userId === user?.id
+                const isGift = m.kind === 'donation'
+                const isBot = m.kind === 'bot'
+                return (
+                  <div
+                    key={m.id}
+                    className={cn(
+                      'chat-message-text leading-relaxed hover:bg-[#161622] rounded px-1.5 py-0.5 -mx-1.5 transition-colors',
+                      isSelf && 'bg-[#181826]',
+                      isGift && 'bg-white/10 border border-white/20 py-1.5'
+                    )}
+                  >
+                    {timestampsEnabled && (
+                      <span className="text-[10px] text-zinc-500 font-mono mr-1.5">
+                        {new Date(m.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    )}
+                    {isHost && (
+                      <span className="px-1 py-0.5 rounded text-[9px] font-bold uppercase mr-1.5 align-middle bg-white/10 text-white border border-white/25">
+                        Host
+                      </span>
+                    )}
+                    {isBot && (
+                      <span className="px-1 py-0.5 rounded text-[9px] font-bold uppercase mr-1.5 align-middle bg-white/10 text-zinc-200">
+                        Bot
+                      </span>
+                    )}
+                    {isGift && (
+                      <span className="px-1 py-0.5 rounded text-[9px] font-bold uppercase mr-1.5 align-middle bg-white text-black">
+                        ${Number(m.amount || 0).toFixed(2)}
+                      </span>
+                    )}
+                    <span className={cn('font-bold mr-1.5', isSelf ? 'text-white' : 'text-zinc-300')}>
+                      {m.handle || 'viewer'}:
                     </span>
-                  )}
-                  {isHost && (
-                    <span className="px-1 py-0.5 rounded text-[9px] font-bold uppercase mr-1.5 align-middle bg-white/10 text-white border border-white/25">
-                      Host
-                    </span>
-                  )}
-                  {isBot && (
-                    <span className="px-1 py-0.5 rounded text-[9px] font-bold uppercase mr-1.5 align-middle bg-white/10 text-zinc-200">
-                      Bot
-                    </span>
-                  )}
-                  {isGift && (
-                    <span className="px-1 py-0.5 rounded text-[9px] font-bold uppercase mr-1.5 align-middle bg-white text-black">
-                      ${Number(m.amount || 0).toFixed(2)}
-                    </span>
-                  )}
-                  <span className={cn('font-bold mr-1.5', isSelf ? 'text-white' : 'text-zinc-300')}>
-                    {m.handle || 'viewer'}:
-                  </span>
-                  <span className="text-zinc-200 select-text">{m.text}</span>
-                  {canMod && m.kind !== 'bot' && m.userId !== channel.userId && (
-                    <span className="ml-2 inline-flex gap-1">
-                      <button type="button" className="text-[10px] text-zinc-500 hover:text-white" onClick={() => { timeoutChatUser(streamUserId, m.userId, 60); setChatError('Timed out 60s.') }}>Timeout</button>
-                      <button type="button" className="text-[10px] text-zinc-500 hover:text-white" onClick={() => { banChatUser(streamUserId, m.userId, true); setChatError('Banned.') }}>Ban</button>
-                      <button type="button" className="text-[10px] text-zinc-500 hover:text-white" onClick={() => { removeLiveChatMessage(streamUserId, m.id); refreshMessages() }}>Delete</button>
-                    </span>
-                  )}
-                </div>
-              )
-            })
-          )}
-          <div ref={messagesEndRef} />
-        </div>
+                    <ChatBody text={m.text} />
+                    {canMod && m.kind !== 'bot' && m.userId !== channel.userId && (
+                      <span className="ml-2 inline-flex gap-1">
+                        <button type="button" className="text-[10px] text-zinc-500 hover:text-white" onClick={() => { timeoutChatUser(streamUserId, m.userId, 60); setChatError('Timed out 60s.') }}>Timeout</button>
+                        <button type="button" className="text-[10px] text-zinc-500 hover:text-white" onClick={() => { banChatUser(streamUserId, m.userId, true); setChatError('Banned.') }}>Ban</button>
+                        <button type="button" className="text-[10px] text-zinc-500 hover:text-white" onClick={() => { removeLiveChatMessage(streamUserId, m.id) }}>Delete</button>
+                      </span>
+                    )}
+                  </div>
+                )
+              })
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+        </>
       )}
 
-      {showEmotes && channel && (
+      {picker && channel && (
         <div className="p-2 border-t border-[#23232c] bg-[#161620] animate-in slide-in-from-bottom-2">
           <div className="flex items-center justify-between pb-1.5 px-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Quick reactions</span>
-            <button type="button" onClick={() => setShowEmotes(false)} className="text-zinc-500 hover:text-zinc-200">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+              {picker === 'gif' ? 'GIF reactions' : 'Emoji reactions'}
+            </span>
+            <button type="button" onClick={() => setPicker('')} className="text-zinc-500 hover:text-zinc-200" aria-label="Close picker">
               <X className="h-3 w-3" />
             </button>
           </div>
-          <div className="grid grid-cols-8 gap-1.5 pt-1">
-            {QUICK_EMOTES.map((symbol) => (
-              <button
-                key={symbol}
-                type="button"
-                onClick={() => handleAddEmote(symbol)}
-                className="flex items-center justify-center p-1.5 rounded-lg bg-[#1c1c27] hover:bg-[#252535] hover:scale-105 transition-all text-base"
-              >
-                {symbol}
-              </button>
-            ))}
-          </div>
+          {picker === 'gif' ? (
+            <div className="grid grid-cols-3 gap-1.5 pt-1">
+              {QUICK_GIFS.map((gif) => (
+                <button
+                  key={gif.url}
+                  type="button"
+                  onClick={() => handleAddGif(gif.url)}
+                  className="rounded-lg overflow-hidden border border-zinc-800 hover:border-zinc-500"
+                  title={gif.label}
+                >
+                  <img src={gif.url} alt={gif.label} className="h-16 w-full object-cover" loading="lazy" />
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-8 gap-1.5 pt-1">
+              {QUICK_EMOTES.map((symbol) => (
+                <button
+                  key={symbol}
+                  type="button"
+                  onClick={() => handleAddEmote(symbol)}
+                  className="flex items-center justify-center p-1.5 rounded-lg bg-[#1c1c27] hover:bg-[#252535] hover:scale-105 transition-all text-base"
+                >
+                  {symbol}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -326,22 +374,32 @@ export default function LiveChatPanel({
               <p className="text-[10px] text-zinc-600">Live donate needs a Stripe Payment Link on this deploy.</p>
             )}
             {chatError ? <p className="text-[11px] text-red-400">{chatError}</p> : null}
-            <div className="relative flex items-center">
+            <div className="relative flex items-center gap-1">
               <input
                 type="text"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder="Send a message..."
                 maxLength={500}
-                className="w-full h-10 rounded-lg border border-[#272734] bg-[#181822] pl-3 pr-10 text-xs text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-white"
+                className="w-full h-10 rounded-lg border border-[#272734] bg-[#181822] pl-3 pr-20 text-xs text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-white"
               />
               <button
                 type="button"
-                onClick={() => setShowEmotes((v) => !v)}
-                className={cn('absolute right-2 h-7 w-7 flex items-center justify-center rounded text-zinc-400 hover:text-zinc-100 transition-colors', showEmotes && 'text-white')}
-                title="Quick reactions"
+                onClick={() => setPicker((v) => (v === 'emoji' ? '' : 'emoji'))}
+                className={cn('absolute right-10 h-7 w-7 flex items-center justify-center rounded text-zinc-400 hover:text-zinc-100 transition-colors', picker === 'emoji' && 'text-white')}
+                title="Emoji"
+                aria-label="Insert emoji"
               >
                 <Smile className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setPicker((v) => (v === 'gif' ? '' : 'gif'))}
+                className={cn('absolute right-2 h-7 w-7 flex items-center justify-center rounded text-zinc-400 hover:text-zinc-100 transition-colors', picker === 'gif' && 'text-white')}
+                title="GIF"
+                aria-label="Insert GIF"
+              >
+                <Image className="h-4 w-4" />
               </button>
             </div>
             <div className="flex items-center justify-end">

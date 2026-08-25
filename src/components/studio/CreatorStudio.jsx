@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import {
   LayoutDashboard,
   BarChart3,
@@ -14,7 +14,8 @@ import {
   RotateCcw,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
-import { lsGet } from '../../lib/storage'
+import CreatorOnboarding from '../CreatorOnboarding'
+import { lsGet, lsSet } from '../../lib/storage'
 import { getCreatorContent } from '../../lib/contentService'
 import { getViews, getVotes } from '../../lib/engagement'
 import { creatorBalance } from '../../lib/payouts'
@@ -171,14 +172,29 @@ export default function CreatorStudio({
 }) {
   const { user } = useAuth()
   const syncTick = useContentSyncTick()
-  const [section, setSection] = useState(initialSection)
+  const [section, setSection] = useState(() => lsGet('calabi_studio_section', initialSection) || initialSection)
+  const [onboardingDone, setOnboardingDone] = useState(() => lsGet(`calabi_onboarding_done_${user?.id}`, false))
   const [selectedPostId, setSelectedPostId] = useState(null)
   const [range, setRange] = useState('7d')
   const [postFilter, setPostFilter] = useState('all')
   const [restoreBusy, setRestoreBusy] = useState(false)
   const [restoreNote, setRestoreNote] = useState('')
 
+  useEffect(() => {
+    lsSet('calabi_studio_section', section)
+  }, [section])
+
+  useEffect(() => {
+    if (user?.id) setOnboardingDone(lsGet(`calabi_onboarding_done_${user.id}`, false))
+  }, [user?.id])
+
+  const finishOnboarding = () => {
+    if (user?.id) lsSet(`calabi_onboarding_done_${user.id}`, true)
+    setOnboardingDone(true)
+  }
+
   const posts = useMemo(() => getCreatorContent(user?.id, user?.handle), [user?.id, user?.handle, syncTick])
+  const showOnboarding = !onboardingDone && posts.length === 0
   const live = lsGet(`live_state_${user?.id}`, null)
   const views = posts.reduce((n, c) => n + (getViews(c.id) || c.views || 0), 0)
   const approved = user?.creatorStatus === 'approved'
@@ -383,7 +399,14 @@ export default function CreatorStudio({
 
         <div className="flex-1 min-h-0 overflow-hidden p-3">
           {section === 'overview' ? (
-            <div className="h-full min-h-0 flex flex-col gap-3">
+            <div className="h-full min-h-0 flex flex-col gap-3 overflow-y-auto">
+              {showOnboarding ? (
+                <CreatorOnboarding
+                  onOpenImport={onOpenImport}
+                  onDone={finishOnboarding}
+                  onNavigate={onNavigate}
+                />
+              ) : null}
               <OverviewStats
                 posts={posts.length}
                 views={views}

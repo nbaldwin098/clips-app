@@ -311,7 +311,7 @@ export function notifyFollowersWentLive({ creatorId, handle, title }) {
   notifyMany(getSubscriberIds(creatorId), {
     type: NOTIF_TYPES.live,
     title: `${name} is live`,
-    body: title || 'Live on Clips',
+    body: title || 'Live on calabi',
     actorId: creatorId,
     view: 'live',
     meta: { streamUserId: creatorId },

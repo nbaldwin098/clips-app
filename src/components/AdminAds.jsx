@@ -106,8 +106,8 @@ export default function AdminAds() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-2">
           {[
             ['videoInStream', 'Videos', 'Skippable preroll at start, then VAST at 30s and every 8 min'],
-            ['clipBanner', 'Clips banner', 'Under the description while scrolling the player'],
-            ['clipInFeed', 'Clips while scrolling', 'Between clips after you open one — not on Recommended'],
+            ['clipBanner', 'Clip banner', 'Under the description while scrolling the player'],
+            ['clipInFeed', 'Shorts while scrolling', 'Between clips after you open one — not on Recommended'],
             ['picInFeed', 'Pics while scrolling', 'Between pics after you open one — not on the mosaic'],
           ].map(([key, label, hint]) => (
             <button
@@ -135,7 +135,7 @@ export default function AdminAds() {
               className={`${field} mt-1`}
             />
           </label>
-          <p className="text-[11px] text-zinc-500 sm:col-span-2">Clips and pics share one ExoClick display zone. Ads only show after someone opens a clip or pic and scrolls — never on Recommended, home shelves, or the pics mosaic. Clip gaps are 4–6; banners under the description every 10 clips. Pic gaps are 6–10. Videos never get a display box under the player.</p>
+          <p className="text-[11px] text-zinc-500 sm:col-span-2">Shorts and pics share one ExoClick display zone. Ads only show after someone opens a clip or pic and scrolls — never on Recommended, home shelves, or the pics mosaic. Clip gaps are 4–6; banners under the description every 10 clips. Pic gaps are 6–10. Videos never get a display box under the player.</p>
         </div>
       </div>
 

@@ -47,7 +47,7 @@ export default function RevenueSettings({ hideHeader = false, onNavigate }) {
       {!hideHeader ? (
         <SettingsPageHeader
           title="Revenue"
-          subtitle="Kick and Twitch-style earnings overview. Payouts are sent by hand after approval — Stripe Connect is not connected."
+          subtitle="Kick-style earnings overview. Payouts are sent by hand after approval — Stripe Connect is not connected."
         />
       ) : null}
 
@@ -111,7 +111,7 @@ export default function RevenueSettings({ hideHeader = false, onNavigate }) {
         </div>
       </SettingsSection>
 
-      <SettingsSection title="Kick & Twitch parity" description="What Clips has today vs the big platforms." divider>
+      <SettingsSection title="Platform parity" description="What calabi has today vs the big streaming platforms." divider>
         <SettingsCard>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
@@ -120,7 +120,7 @@ export default function RevenueSettings({ hideHeader = false, onNavigate }) {
                   <th className="font-medium px-2 py-2">Feature</th>
                   <th className="font-medium px-2 py-2">Kick</th>
                   <th className="font-medium px-2 py-2">Twitch</th>
-                  <th className="font-medium px-2 py-2">Clips</th>
+                  <th className="font-medium px-2 py-2">calabi</th>
                 </tr>
               </thead>
               <tbody>

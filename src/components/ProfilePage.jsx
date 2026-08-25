@@ -107,9 +107,9 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
       <div className="px-4 mt-6 flex gap-6 border-b border-[#272727]">
         {[
           { id: 'videos', label: 'Videos' },
-          { id: 'clips', label: 'Clips' },
+          { id: 'clips', label: 'Shorts' },
           { id: 'pics', label: 'Pics' },
-          { id: 'live', label: liveEntry ? 'Live' : 'Live' },
+          { id: 'live', label: liveEntry ? '● Live' : 'Live' },
           { id: 'playlists', label: 'Playlists' },
         ].map((t) => (
           <button
@@ -118,7 +118,8 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
             onClick={() => setTab(t.id)}
             className={cn(
               'h-10 text-sm font-medium border-b-2 -mb-px',
-              tab === t.id ? 'text-white border-white' : 'text-[#aaa] border-transparent hover:text-white'
+              tab === t.id ? 'text-white border-white' : 'text-[#aaa] border-transparent hover:text-white',
+              t.id === 'live' && liveEntry && tab !== 'live' && 'text-red-400'
             )}
           >
             {t.label}

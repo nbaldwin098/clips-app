@@ -1,5 +1,6 @@
 import { lsGet, lsSet } from './storage'
 import { clearFrozenFeeds } from './frozenFeeds'
+import { pushLiveChatMessage, readLocalLiveChat } from './liveChatSync'
 import { notifyNewLike, notifyNewSubscriber, notifyPremium, notifyMentions } from './notifications'
 import { notifyContentChanged } from './contentSync'
 import { pushFollow, pushVote } from './graphSync'
@@ -367,18 +368,16 @@ export function createUserSound(payload) {
 }
 
 export function getLiveChat(streamUserId) {
-  return lsGet(`live_chat_${streamUserId}`, [])
+  return readLocalLiveChat(streamUserId)
 }
 
 export function postLiveChat(streamUserId, message) {
-  const list = getLiveChat(streamUserId)
-  list.push({ id: `msg_${Date.now()}`, ...message, at: new Date().toISOString() })
-  lsSet(`live_chat_${streamUserId}`, list.slice(-200))
+  const row = pushLiveChatMessage(streamUserId, message)
   notifyMentions({
     text: message?.text,
     actorId: message?.userId,
   })
-  return list
+  return readLocalLiveChat(streamUserId)
 }
 
 export function getDonations(creatorId) {

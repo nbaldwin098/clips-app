@@ -1,35 +1,30 @@
 /**
- * Clips Advertisement Engine
+ * calabi Advertisement Engine
  * Real campaigns only — no default sample ads blocking playback on empty inventory.
  */
 import { lsGet, lsSet } from './storage'
+import { viewerWantsAds } from './adPrefs'
 import { safeHttpUrl } from './safeUrl'
 import { hashSecret, verifySecret, isHashedSecret } from './secrets'
 import { mixClipFeedRows, mixPicFeedRows, clipBannerAllowedOnMixed } from './feedAdCadence'
+import { getAdSettings, setAdSettings } from './adSettings'
+
+export { getAdSettings, setAdSettings } from './adSettings'
 
 const AD_APPS_KEY = 'clips_ad_applications'
 const ADVERTISERS_KEY = 'clips_advertisers'
 const AD_CAMPAIGNS_KEY = 'clips_ad_campaigns'
 const AD_SESSION_KEY = 'clips_advertiser_session'
 const AD_METRICS_KEY = 'clips_ad_metrics'
-const AD_SETTINGS_KEY = 'clips_ad_settings'
 
 export const AD_PLACEMENTS = [
   { id: 'video', label: 'Videos', hint: 'Skippable preroll at start, then VAST at 30s and every 8 minutes if that long', setting: 'videoInStream' },
-  { id: 'clip-banner', label: 'Clips banner', hint: 'Small bar under the clip description while scrolling the player', setting: 'clipBanner' },
+  { id: 'clip-banner', label: 'Clip banner', hint: 'Small bar under the clip description while scrolling the player', setting: 'clipBanner' },
   { id: 'clip-feed', label: 'Clips while scrolling', hint: 'Banner under the description only — never a full-screen stop in the reel', setting: 'clipInFeed' },
   { id: 'pic-feed', label: 'Pics while scrolling', hint: 'Reserved — pic reel scrolls content only (no full-screen ad stops)', setting: 'picInFeed' },
 ]
 
 export const ALL_PLACEMENTS = AD_PLACEMENTS.map((p) => p.id)
-
-const DEFAULT_AD_SETTINGS = {
-  videoInStream: true,
-  clipBanner: true,
-  clipInFeed: true,
-  picInFeed: true,
-  videoSkipAfterSec: 5,
-}
 
 export function listAdApplications() {
   return lsGet(AD_APPS_KEY, []) || []
@@ -221,30 +216,10 @@ export function saveAdvertiserCampaign(campaign) {
   return all
 }
 
-/** Ads always run. Admins choose placements, not whether the site earns. */
-export function adsAreRunning() {
+/** Site ads always run unless the signed-in viewer opted out in Account settings. */
+export function adsAreRunning(viewerId = null) {
+  if (viewerId && !viewerWantsAds(viewerId)) return false
   return true
-}
-
-export function getAdSettings() {
-  const stored = lsGet(AD_SETTINGS_KEY, {}) || {}
-  const skip = Math.max(3, Math.min(30, Number(stored.videoSkipAfterSec) || DEFAULT_AD_SETTINGS.videoSkipAfterSec))
-  // A stale browser could still hold placements that no longer exist, or an
-  // accidental "off" that silently zeroes income. Only the four live
-  // placements are readable, and each one defaults back on.
-  return {
-    videoInStream: stored.videoInStream !== false && stored.videoPreroll !== false,
-    clipBanner: stored.clipBanner !== false,
-    clipInFeed: stored.clipInFeed !== false,
-    picInFeed: stored.picInFeed !== false,
-    videoSkipAfterSec: skip,
-  }
-}
-
-export function setAdSettings(partial) {
-  const next = { ...getAdSettings(), ...(partial || {}) }
-  lsSet(AD_SETTINGS_KEY, next)
-  return next
 }
 
 export function listAllCampaigns() {
@@ -279,8 +254,8 @@ function settingAllows(placement, settings = getAdSettings()) {
   return false
 }
 
-export function listActiveAds(placement) {
-  if (!adsAreRunning()) return []
+export function listActiveAds(placement, viewerId = null) {
+  if (!adsAreRunning(viewerId)) return []
   if (!settingAllows(placement)) return []
   return (lsGet(AD_CAMPAIGNS_KEY, []) || []).filter((c) => {
     if (c.status !== 'active') return false
@@ -290,17 +265,17 @@ export function listActiveAds(placement) {
   })
 }
 
-export function getActiveAd(placement) {
-  if (!adsAreRunning()) return null
-  const custom = listActiveAds(placement)
+export function getActiveAd(placement, viewerId = null) {
+  if (!adsAreRunning(viewerId)) return null
+  const custom = listActiveAds(placement, viewerId)
   if (custom.length === 0) return null
   return custom[Math.floor(Math.random() * custom.length)]
 }
 
 /** Only real active campaigns, and only when admin has turned ads on. */
-export function getActiveAdForVideo(_contentId) {
-  if (!adsAreRunning()) return null
-  return getActiveAd('video')
+export function getActiveAdForVideo(_contentId, viewerId = null) {
+  if (!adsAreRunning(viewerId)) return null
+  return getActiveAd('video', viewerId)
 }
 
 export function getVideoSkipAfterSec(ad) {
@@ -317,10 +292,10 @@ export function getVideoAdDurationSec(ad) {
   return Math.max(skip, 15)
 }
 
-export function mixFeedAds(items, placement) {
+export function mixFeedAds(items, placement, viewerId = null) {
   const list = Array.isArray(items) ? items : []
   const mapped = list.map((item) => ({ kind: 'item', item, key: item?.id }))
-  if (!adsAreRunning()) return mapped
+  if (!adsAreRunning(viewerId)) return mapped
   const settings = getAdSettings()
   if (!settingAllows(placement, settings)) return mapped
   if (placement === 'clip-feed') {
@@ -332,14 +307,14 @@ export function mixFeedAds(items, placement) {
   return mapped
 }
 
-export function placementAdsAllowed(placement) {
-  return adsAreRunning() && settingAllows(placement)
+export function placementAdsAllowed(placement, viewerId = null) {
+  return adsAreRunning(viewerId) && settingAllows(placement)
 }
 
 
 /** Banner under a clip every 10 clips scrolled. */
-export function clipBannerAllowed(mixed, index, sinceBanner = 0) {
-  if (!adsAreRunning()) return false
+export function clipBannerAllowed(mixed, index, sinceBanner = 0, viewerId = null) {
+  if (!adsAreRunning(viewerId)) return false
   if (!settingAllows('clip-banner')) return false
   return clipBannerAllowedOnMixed(mixed, index, sinceBanner)
 }
