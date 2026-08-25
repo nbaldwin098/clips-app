@@ -59,7 +59,7 @@ export async function promoteDeviceUploadsToCloud(actor = null) {
         handle: row.handle || host.handle || actor?.handle,
       }
       const pushed = await pushContentRecord(next, host)
-      if (!pushed) {
+      if (!pushed.ok) {
         failed += 1
         continue
       }

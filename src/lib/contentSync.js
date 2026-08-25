@@ -90,6 +90,18 @@ function fromRow(row) {
   }
 }
 
+const LEAKED_DB_ERROR = /row-level security|violates|password/i
+
+function catalogSyncErrorMessage(error) {
+  const msg = String(error?.message || error || '').trim()
+  if (!msg) return "Couldn't save to the catalog."
+  if (/Could not find the .* column/i.test(msg)) {
+    return 'Site database is out of date — run the latest Supabase migration (0012_videos_publish_columns.sql).'
+  }
+  if (LEAKED_DB_ERROR.test(msg)) return "Couldn't publish — sign in with the account that owns this upload."
+  return msg
+}
+
 /**
  * Publish a record's metadata to the shared catalog. Only attempted for a
  * real Supabase-authenticated actor (actor.provider === 'supabase'), since
@@ -99,22 +111,22 @@ function fromRow(row) {
  */
 export async function pushContentRecord(record, actor) {
   if (!record?.id || !actor?.id || actor.provider !== 'supabase' || !isSupabaseConfigured()) {
-    return false
+    return { ok: false, error: 'Catalog sync unavailable.' }
   }
   const media = cloudUrl(record.mediaUrl) || cloudUrl(record.sourceUrl)
-  if (!media) return false
+  if (!media) return { ok: false, error: 'Missing media URL for catalog sync.' }
   try {
     const sb = await getSupabase()
-    if (!sb) return false
+    if (!sb) return { ok: false, error: 'Catalog sync unavailable.' }
     const { error } = await sb.from(TABLE).upsert(toRow(record, actor), { onConflict: 'id' })
     if (error) {
       console.warn('[Clips] Cloud content sync (push) failed:', error.message)
-      return false
+      return { ok: false, error: catalogSyncErrorMessage(error) }
     }
-    return true
+    return { ok: true, error: null }
   } catch (err) {
     console.warn('[Clips] Cloud content sync (push) failed:', err?.message)
-    return false
+    return { ok: false, error: catalogSyncErrorMessage(err) }
   }
 }
 
