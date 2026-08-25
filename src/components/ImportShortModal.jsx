@@ -33,17 +33,23 @@ export default function ImportShortModal({ open, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="presentation">
       <div
         className="absolute inset-0 bg-black/70"
+        aria-hidden="true"
         onClick={() => {
           reset()
           onClose()
         }}
       />
-      <div className="relative w-full max-w-md rounded-2xl bg-[#1f1f23] shadow-2xl border border-[#2f2f37]">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="import-modal-title"
+        className="relative w-full max-w-md rounded-2xl bg-[#1f1f23] shadow-2xl border border-[#2f2f37]"
+      >
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#2f2f37]">
-          <h2 className="text-base font-semibold text-[#efeff1]">Import clip</h2>
+          <h2 id="import-modal-title" className="text-base font-semibold text-[#efeff1]">Import clip</h2>
           <button
             type="button"
             onClick={() => {

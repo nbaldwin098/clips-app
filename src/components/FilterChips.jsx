@@ -7,6 +7,7 @@ export default function FilterChips({ value, onChange, options }) {
         <button
           key={o.id}
           type="button"
+          aria-pressed={value === o.id}
           onClick={() => onChange?.(o.id)}
           className={cn(
             'h-8 px-3.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors',

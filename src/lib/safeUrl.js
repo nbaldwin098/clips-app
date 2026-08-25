@@ -33,7 +33,8 @@ export function safeMediaUrl(raw) {
   const s = String(raw || '').trim()
   if (!s) return ''
   if (SAFE_BLOB.test(s) || SAFE_DATA_MEDIA.test(s)) return s
-  return safeHttpUrl(s, { allowHttp: true })
+  const allowHttp = typeof import.meta !== 'undefined' && !import.meta.env?.PROD
+  return safeHttpUrl(s, { allowHttp })
 }
 
 /** window.open / <a target=_blank> — https only, no javascript: phishing. */

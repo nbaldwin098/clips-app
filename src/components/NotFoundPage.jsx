@@ -7,7 +7,7 @@ export default function NotFoundPage({ onNavigate }) {
         <p className="text-6xl font-semibold text-zinc-800 tracking-tight">404</p>
         <h1 className="mt-4 text-lg font-semibold text-zinc-100">Page not found</h1>
         <p className="mt-2 text-sm text-zinc-500 leading-relaxed">
-          That screen does not exist or the link is broken. Head back to Recommended.
+          That screen does not exist or the link is broken. Go back to Recommended on the home feed.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <button

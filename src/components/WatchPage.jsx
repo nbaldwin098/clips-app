@@ -210,6 +210,9 @@ export default function WatchPage({
       setPhase('failed')
       return undefined
     }
+    if (typeof document !== 'undefined' && item.title) {
+      document.title = `${item.title} · calabi`
+    }
     let cancelled = false
     setViews(getViews(item.id))
     setPhase('loading')
@@ -242,6 +245,9 @@ export default function WatchPage({
   const showingAd = vast.showingVast || showingCampaignAd
   showingAdRef.current = showingAd
   const locked = useMemo(() => !canAccessPaidPost(user, item), [user, item, syncTick])
+  const purchasePending = useMemo(() => {
+    try { return sessionStorage.getItem('clips_pending_purchase') === itemId } catch { return false }
+  }, [itemId, syncTick])
   const watchProgress = useMemo(
     () => (user?.id && item?.id ? getWatchProgress(user.id, item.id) : null),
     [user?.id, item?.id, syncTick],
@@ -594,6 +600,9 @@ export default function WatchPage({
                 <p className="text-sm text-zinc-400 max-w-sm">
                   Following is free. This post is listed at ${Number(item.priceUsd).toFixed(2)}. Stripe Checkout uses the site payment link, then this post unlocks when Stripe sends you back here.
                 </p>
+                {purchasePending ? (
+                  <p className="text-xs text-amber-400">Payment pending — complete checkout in the other tab, then return here.</p>
+                ) : null}
                 <button
                   type="button"
                   disabled={payBusy}
@@ -864,6 +873,9 @@ export default function WatchPage({
                       <button type="button" onClick={() => { setMoreOpen(false); setReportOpen(true) }} className="w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 inline-flex items-center gap-3">
                         <Flag className="h-4 w-4 text-zinc-400" /> Report
                       </button>
+                      <p className="px-4 py-2 text-[10px] text-zinc-500 leading-relaxed">
+                        Shortcuts: Space play · ←/→ seek · F fullscreen · M mute · T theater · N next
+                      </p>
                     </div>
                   ) : null}
                 </div>

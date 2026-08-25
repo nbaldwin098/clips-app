@@ -54,6 +54,10 @@ function toRow(record, actor) {
     engagement: record.engagement || {},
     views: record.views || 0,
     created_at: record.createdAt || new Date().toISOString(),
+    published_at: record.publishedAt || record.createdAt || null,
+    status: record.status || 'published',
+    scheduled_for: record.scheduledFor || null,
+    price_usd: Number(record.priceUsd) > 0 ? Number(record.priceUsd) : 0,
   }
 }
 
@@ -80,6 +84,9 @@ function fromRow(row) {
     views: row.views || 0,
     createdAt: row.created_at,
     publishedAt: row.published_at || row.created_at,
+    status: row.status || 'published',
+    scheduledFor: row.scheduled_for || null,
+    priceUsd: Number(row.price_usd) > 0 ? Number(row.price_usd) : 0,
   }
 }
 

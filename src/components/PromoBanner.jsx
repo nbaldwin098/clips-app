@@ -10,6 +10,13 @@ export default function PromoBanner({ onNavigate, onOpenWatch }) {
 
   useEffect(() => subscribePromos(() => setTick((n) => n + 1)), [])
   useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key && e.key.includes('promo')) setTick((n) => n + 1)
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
+  useEffect(() => {
     setPromo(getActivePromotion())
   }, [tick])
 

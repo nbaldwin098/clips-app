@@ -55,16 +55,25 @@ export default function ExplorePage({ onPlayItem, onOpenPic, onOpenTag, initialQ
       <FilterChips value={kind} onChange={setKind} options={KINDS} />
 
       <div className="flex flex-wrap gap-2">
-        <select value={date} onChange={(e) => setDate(e.target.value)} className="h-8 rounded-lg border border-zinc-800 bg-[#000000] px-2 text-xs text-zinc-200">
-          {DATES.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
-        </select>
-        <select value={duration} onChange={(e) => setDuration(e.target.value)} className="h-8 rounded-lg border border-zinc-800 bg-[#000000] px-2 text-xs text-zinc-200">
-          {DURS.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
-        </select>
-        <select value={sort} onChange={(e) => setSort(e.target.value)} className="h-8 rounded-lg border border-zinc-800 bg-[#000000] px-2 text-xs text-zinc-200">
-          <option value="newest">Newest</option>
-          <option value="recommended">Most watched here</option>
-        </select>
+        <label className="flex items-center gap-2 text-[11px] text-zinc-500">
+          Date
+          <select id="explore-date" aria-label="Filter by date" value={date} onChange={(e) => setDate(e.target.value)} className="h-8 rounded-lg border border-zinc-800 bg-[#000000] px-2 text-xs text-zinc-200">
+            {DATES.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
+          </select>
+        </label>
+        <label className="flex items-center gap-2 text-[11px] text-zinc-500">
+          Length
+          <select id="explore-duration" aria-label="Filter by length" value={duration} onChange={(e) => setDuration(e.target.value)} className="h-8 rounded-lg border border-zinc-800 bg-[#000000] px-2 text-xs text-zinc-200">
+            {DURS.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
+          </select>
+        </label>
+        <label className="flex items-center gap-2 text-[11px] text-zinc-500">
+          Sort
+          <select id="explore-sort" aria-label="Sort results" value={sort} onChange={(e) => setSort(e.target.value)} className="h-8 rounded-lg border border-zinc-800 bg-[#000000] px-2 text-xs text-zinc-200">
+            <option value="newest">Newest</option>
+            <option value="recommended">Most watched here</option>
+          </select>
+        </label>
       </div>
 
       {!q && history.length > 0 && (
