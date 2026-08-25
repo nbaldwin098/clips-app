@@ -7,16 +7,11 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-<<<<<<< HEAD
     "test": "node scripts/live-smoke.mjs && npx --yes vite-node scripts/test-upload-retention.mjs && npx --yes vite-node scripts/test-restore-uploads.mjs && npx --yes vite-node scripts/test-named-activity.mjs",
-    "preview": "vite preview"
-=======
-    "test": "node scripts/live-smoke.mjs && npx --yes vite-node scripts/test-named-activity.mjs",
     "knip": "npx --yes knip --reporter compact",
     "audit:deps": "npx --yes knip --reporter compact && npx --yes depcheck",
     "preview": "vite preview",
     "ad:check": "node scripts/ad-browser-check.mjs"
->>>>>>> 419da72 (Audit deps with knip: cut dead packages and twin components)
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
