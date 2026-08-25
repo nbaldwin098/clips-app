@@ -139,11 +139,16 @@ await surface(browser, 'CLIPS grid', '/clips')
 await surface(browser, 'CLIPS player', '/clips/clip-0', { wait: 8000 })
 await surface(browser, 'HOME', '/')
 
-// Watch: seek near the 30s break and confirm an in-stream ad starts.
+// Watch: skip preroll, seek near the 30s break and confirm a mid-roll ad starts.
 await surface(browser, 'WATCH video (30s break)', '/watch/vid-0', {
   wait: 12000,
   before: async (page) => {
-    await new Promise((r) => setTimeout(r, 3500))
+    await new Promise((r) => setTimeout(r, 4500))
+    await page.evaluate(() => {
+      const skip = [...document.querySelectorAll('button')].find((b) => /skip ad/i.test(b.textContent || ''))
+      skip?.click()
+    }).catch(() => {})
+    await new Promise((r) => setTimeout(r, 800))
     await page.evaluate(() => {
       const v = document.querySelector('video')
       if (v) { v.muted = true; v.currentTime = 27; v.play?.() }
