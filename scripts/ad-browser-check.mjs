@@ -16,7 +16,9 @@ const CHROME = process.env.CHROME_PATH || '/usr/local/bin/google-chrome'
 
 const seedScript = (origin) => {
   const now = new Date().toISOString()
-  const video = `${origin}/test-video.mp4`
+  // Use a publicly reachable sample so watch/clips actually mount a <video>.
+  // A missing /test-video.mp4 makes WatchPage show "Couldn't play" and skip ads.
+  const video = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4'
   const mk = (id, type, extra = {}) => ({
     id,
     type,

@@ -159,20 +159,31 @@ export async function loadExoClickVast({ depth = 0, kind = 'video', attempts = 2
 
   for (let i = 0; i < tries; i += 1) {
     const parsed = await fetchVastOnce(fetchKind)
-    if (!parsed) continue
+    if (!parsed) {
+      if (i < tries - 1) await new Promise((r) => setTimeout(r, 350 + i * 250))
+      continue
+    }
     if (parsed.wrapper) {
-      if (!parsed.wrapperUrl) continue
+      if (!parsed.wrapperUrl) {
+        if (i < tries - 1) await new Promise((r) => setTimeout(r, 350 + i * 250))
+        continue
+      }
       try {
         const res = await fetch(parsed.wrapperUrl, { credentials: 'omit', cache: 'no-store' })
-        if (!res.ok) continue
+        if (!res.ok) {
+          if (i < tries - 1) await new Promise((r) => setTimeout(r, 350 + i * 250))
+          continue
+        }
         const inner = parseVastXml(await res.text())
         if (inner?.mediaUrl) return inner
       } catch {
         /* try again */
       }
+      if (i < tries - 1) await new Promise((r) => setTimeout(r, 350 + i * 250))
       continue
     }
     if (parsed.mediaUrl) return parsed
+    if (i < tries - 1) await new Promise((r) => setTimeout(r, 350 + i * 250))
   }
   return null
 }
