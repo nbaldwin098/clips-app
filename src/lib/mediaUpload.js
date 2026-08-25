@@ -3,6 +3,7 @@
  * Device IndexedDB is not the source of truth for published media.
  */
 import { getSupabase, isSupabaseConfigured } from './supabaseClient'
+import { isOwnerAccount } from '../data/ownerLogin'
 
 const BUCKET = 'clips'
 const MAX_VIDEO = 80 * 1024 * 1024
@@ -38,7 +39,10 @@ export function cloudHostRequiredMessage(actor) {
     return 'Sign in to upload. Files are hosted in the cloud, not on this device.'
   }
   if (actor.provider !== 'supabase') {
-    return 'Sign in with your Clips cloud account to upload. Local-only sessions cannot host media.'
+    if (isOwnerAccount(actor) || actor.provider === 'local') {
+      return 'You are on a local login (like cs1). Sign out, then sign in with a cloud email or Apple/Microsoft/X so uploads get a calabi.us link.'
+    }
+    return 'Sign in with a cloud Clips account to upload. Local-only sessions cannot host media.'
   }
   return 'Could not host this upload in the cloud.'
 }
