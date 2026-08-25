@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "test": "node scripts/live-smoke.mjs && node scripts/followup-smoke.mjs && npx --yes vite-node scripts/test-upload-retention.mjs && npx --yes vite-node scripts/test-restore-uploads.mjs && npx --yes vite-node scripts/test-clip-local-play.mjs && npx --yes vite-node scripts/test-named-activity.mjs",
+    "test": "node scripts/live-smoke.mjs && node scripts/followup-smoke.mjs && node scripts/test-upload-catalog-sync.mjs && npx --yes vite-node scripts/test-upload-retention.mjs && npx --yes vite-node scripts/test-restore-uploads.mjs && npx --yes vite-node scripts/test-clip-local-play.mjs && npx --yes vite-node scripts/test-named-activity.mjs",
     "knip": "npx --yes knip --reporter compact",
     "audit:deps": "npx --yes knip --reporter compact && npx --yes depcheck",
     "preview": "vite preview",
