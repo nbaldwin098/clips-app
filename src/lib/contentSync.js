@@ -11,6 +11,7 @@ import { mergeImports } from './storage'
 import { isUserUploadRecord } from './mediaMeta'
 import { getSupabase, isSupabaseConfigured } from './supabaseClient'
 import { isFeedable, isReferenceItem, hasStableImage, purgeDeadCatalog } from './catalogHealth'
+import { clearFrozenFeeds } from './frozenFeeds'
 
 const TABLE = 'videos'
 const SYNC_EVENT = 'clips-content-sync'
@@ -18,6 +19,7 @@ const PULL_LIMIT = 400
 
 /** Notify any mounted page (this tab) that the local content cache changed. */
 export function notifyContentChanged() {
+  try { clearFrozenFeeds() } catch {}
   if (typeof window === 'undefined') return
   window.dispatchEvent(new CustomEvent(SYNC_EVENT))
 }

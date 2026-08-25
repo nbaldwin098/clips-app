@@ -43,7 +43,6 @@ export function hasStableImage(item) {
 
 export function hasLocalMediaHint(item) {
   if (!item?.id) return false
-  // Only treat as locally playable when this device likely has IndexedDB bytes.
   if (item.localStored === true) return true
   if (isUserUploadRecord(item) && Number(item.storedBytes) > 0) {
     const media = String(item.mediaUrl || '')
@@ -51,6 +50,10 @@ export function hasLocalMediaHint(item) {
     if (!media && !source) return true
     if (isBlobUrl(media) || isBlobUrl(source)) return true
     if (isHttpUrl(media) || isHttpUrl(source)) return true
+    return true
+  }
+  // Opaque public ids with empty media still play from IndexedDB after upload.
+  if (isUserUploadRecord(item) && !isHttpUrl(item.mediaUrl) && !isHttpUrl(item.sourceUrl)) {
     return true
   }
   return false

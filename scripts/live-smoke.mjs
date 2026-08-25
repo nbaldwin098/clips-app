@@ -329,6 +329,8 @@ assert(publishSrc.includes('canHostUploads'), 'video publish prefers hosted uplo
 assert(publishSrc.includes('pushContentRecord'), 'video publish waits on catalog when hosted')
 assert(publishSrc.includes('deleteHostedMedia'), 'delete removes hosted storage objects')
 assert(publishSrc.includes('storeMediaBlob'), 'video publish can finish upload if host is unavailable')
+assert(publishSrc.includes('localStored: raw.localStored === true'), 'normalize keeps localStored for playback')
+
 assert(publishSrc.includes('signInToUploadMessage') || publishSrc.includes('Sign in to upload'), 'upload asks to sign in plainly')
 const picsPublishSrc = readFileSync(new URL('../src/lib/picsService.js', import.meta.url), 'utf8')
 assert(picsPublishSrc.includes('canHostUploads'), 'photo publish prefers hosted upload when available')

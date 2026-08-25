@@ -29,7 +29,8 @@ export async function resolvePlayback(item) {
   try {
     const idbUrl = await getMediaBlobUrl(item?.id)
     if (idbUrl && !candidates.includes(idbUrl)) {
-      if (!candidates.some(isHttp)) candidates.unshift(idbUrl)
+      // Local-only uploads: IndexedDB is the real file.
+      if (item?.localStored === true || !candidates.some(isHttp)) candidates.unshift(idbUrl)
       else candidates.push(idbUrl)
     }
   } catch {}
