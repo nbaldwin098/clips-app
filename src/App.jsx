@@ -504,7 +504,9 @@ function AppShell() {
   }
 
   const isLiveView = view === 'live'
-  const lockStage = view === 'clips' || view === 'shorts' || view === 'pics' || view === 'dashboard' || view === 'analytics' || view === 'wallet' || view === 'vods' || view === 'verify'
+  const isCreatorStudio =
+    view === 'dashboard' || view === 'analytics' || view === 'wallet' || view === 'vods' || view === 'verify'
+  const lockStage = view === 'clips' || view === 'shorts' || view === 'pics' || isCreatorStudio
 
   return (
     <div className={`${lockStage ? 'h-dvh overflow-hidden' : 'min-h-screen'} bg-[#000000] text-zinc-100 flex flex-col selection:bg-white selection:text-black`}>
@@ -532,7 +534,7 @@ function AppShell() {
           focusedStreamUserId={focusedLiveStream?.userId}
         />
 
-        <main className={`flex-1 min-h-0 min-w-0 bg-[#000000] ${lockStage ? 'overflow-hidden' : 'overflow-y-auto'}`}>{renderMain()}</main>
+        <main className={`flex-1 min-h-0 min-w-0 ${isCreatorStudio ? 'bg-white' : 'bg-[#000000]'} ${lockStage ? 'overflow-hidden' : 'overflow-y-auto'}`}>{renderMain()}</main>
 
         {isLiveView && (
           <LiveChatPanel

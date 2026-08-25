@@ -18,7 +18,6 @@ import { getCreatorContent } from '../../lib/contentService'
 import { getViews, getVotes } from '../../lib/engagement'
 import { creatorBalance } from '../../lib/payouts'
 import { listVods, setVodVisibility, getVodChannel } from '../../lib/vods'
-import { buildInteractionBubbles } from '../../lib/creatorInteractions'
 import { formatCount } from '../../lib/uiFormat'
 import { formatPostedAt } from '../../lib/mediaMeta'
 import { cn } from '../../lib/utils'
@@ -52,26 +51,26 @@ function PostRow({ post, active, onSelect, onPlay }) {
   return (
     <div
       className={cn(
-        'border border-zinc-800 bg-[#0c0c10] p-3 text-left transition-colors',
-        active ? 'border-white' : 'hover:border-zinc-600'
+        'border border-zinc-200 bg-white p-3 text-left transition-colors',
+        active ? 'border-zinc-900 ring-1 ring-zinc-900' : 'hover:border-zinc-400'
       )}
     >
       <button type="button" onClick={() => onSelect(post.id)} className="w-full text-left">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <p className="text-[10px] uppercase tracking-wider text-zinc-500">{typeLabel(post.type)}</p>
-            <p className="text-sm font-semibold text-white truncate mt-0.5">{post.title || 'Untitled'}</p>
+            <p className="text-sm font-semibold text-zinc-900 truncate mt-0.5">{post.title || 'Untitled'}</p>
           </div>
           <span className="shrink-0 text-[10px] text-zinc-500">{formatPostedAt(post.createdAt) || '—'}</span>
         </div>
         <div className="mt-2 flex flex-wrap gap-1.5">
-          <span className="h-6 px-2 inline-flex items-center text-[10px] font-semibold bg-[#18181f] text-zinc-300 border border-zinc-800">
+          <span className="h-6 px-2 inline-flex items-center text-[10px] font-semibold bg-zinc-100 text-zinc-700 border border-zinc-200">
             {formatCount(views)} views
           </span>
-          <span className="h-6 px-2 inline-flex items-center text-[10px] font-semibold bg-[#18181f] text-zinc-300 border border-zinc-800">
+          <span className="h-6 px-2 inline-flex items-center text-[10px] font-semibold bg-zinc-100 text-zinc-700 border border-zinc-200">
             {formatCount(likes)} likes
           </span>
-          <span className="h-6 px-2 inline-flex items-center text-[10px] font-semibold bg-[#18181f] text-zinc-300 border border-zinc-800">
+          <span className="h-6 px-2 inline-flex items-center text-[10px] font-semibold bg-zinc-100 text-zinc-700 border border-zinc-200">
             {post.status || 'live'}
           </span>
         </div>
@@ -79,7 +78,7 @@ function PostRow({ post, active, onSelect, onPlay }) {
       <button
         type="button"
         onClick={() => onPlay(post)}
-        className="mt-2 h-8 w-full inline-flex items-center justify-center gap-1.5 border border-zinc-700 text-xs text-white hover:bg-white hover:text-black"
+        className="mt-2 h-8 w-full inline-flex items-center justify-center gap-1.5 border border-zinc-300 text-xs text-zinc-800 hover:bg-zinc-900 hover:text-white hover:border-zinc-900"
       >
         <Play className="h-3.5 w-3.5" /> Open
       </button>
@@ -96,9 +95,9 @@ function OverviewStats({ posts, views, vods, live, approved, paid }) {
         { label: 'VODs', value: String(vods) },
         { label: 'Lobby', value: live ? 'Live' : 'Off' },
       ].map((s) => (
-        <div key={s.label} className="border border-zinc-800 bg-[#0c0c10] p-3">
+        <div key={s.label} className="border border-zinc-200 bg-white p-3">
           <p className="text-[10px] uppercase tracking-wider text-zinc-500">{s.label}</p>
-          <p className="mt-1 text-xl font-semibold text-white tabular-nums">{s.value}</p>
+          <p className="mt-1 text-xl font-semibold text-zinc-900 tabular-nums">{s.value}</p>
         </div>
       ))}
       {approved ? (
@@ -122,16 +121,16 @@ function VodsPanel({ user, onNavigate }) {
       <button
         type="button"
         onClick={() => onNavigate?.('settings', 'stream')}
-        className="h-9 px-3 border border-zinc-700 text-xs text-white"
+        className="h-9 px-3 border border-zinc-300 text-xs text-zinc-800 hover:border-zinc-900"
       >
         VOD & stream settings
       </button>
       {vods.length === 0 ? (
         <p className="text-sm text-zinc-500">No lives ended on this device yet.</p>
       ) : vods.map((v) => (
-        <div key={v.id} className="border border-zinc-800 bg-[#0c0c10] p-3 flex flex-wrap items-center justify-between gap-2">
+        <div key={v.id} className="border border-zinc-200 bg-white p-3 flex flex-wrap items-center justify-between gap-2">
           <div>
-            <p className="text-sm text-white">{v.title}</p>
+            <p className="text-sm text-zinc-900">{v.title}</p>
             <p className="text-[11px] text-zinc-500">
               {v.endedAt?.slice(0, 16).replace('T', ' ')} · {Math.round((v.durationSec || 0) / 60)} min
             </p>
@@ -139,7 +138,7 @@ function VodsPanel({ user, onNavigate }) {
           <select
             value={v.visibility}
             onChange={(e) => setVodVisibility(v.id, e.target.value)}
-            className="h-9 border border-zinc-800 bg-black px-2 text-xs text-white"
+            className="h-9 border border-zinc-300 bg-white px-2 text-xs text-zinc-900"
           >
             <option value="private">Private</option>
             <option value="public">Public</option>
@@ -191,11 +190,6 @@ export default function CreatorStudio({
 
   const selectedPost = posts.find((p) => p.id === selectedPostId) || null
 
-  const bubbles = useMemo(
-    () => buildInteractionBubbles(user?.id, posts, { contentId: selectedPostId, range }),
-    [user?.id, posts, selectedPostId, range]
-  )
-
   const openPost = (c) => {
     if (onPlayItem) onPlayItem(c)
     else if (c?.type === 'pic') onNavigate?.('pics', c.id)
@@ -204,18 +198,18 @@ export default function CreatorStudio({
   }
 
   return (
-    <div className="h-[calc(100dvh-3.5rem)] min-h-[480px] flex bg-[#000000] text-zinc-100 overflow-hidden">
+    <div className="h-[calc(100dvh-3.5rem)] min-h-[480px] flex bg-white text-zinc-900 overflow-hidden">
       {/* Icon rail — creator pages only */}
-      <aside className="w-14 shrink-0 border-r border-zinc-800 bg-[#050506] flex flex-col items-center py-3 gap-1">
+      <aside className="w-14 shrink-0 border-r border-zinc-200 bg-zinc-50 flex flex-col items-center py-3 gap-1">
         <button
           type="button"
           onClick={() => onNavigate?.('home')}
-          className="h-10 w-10 flex items-center justify-center text-zinc-500 hover:text-white"
+          className="h-10 w-10 flex items-center justify-center text-zinc-500 hover:text-zinc-900"
           title="Back to site"
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
-        <div className="w-8 border-t border-zinc-800 my-1" />
+        <div className="w-8 border-t border-zinc-200 my-1" />
         {NAV.map((item) => {
           const Icon = item.icon
           const active = section === item.id
@@ -227,7 +221,7 @@ export default function CreatorStudio({
               title={item.label}
               className={cn(
                 'h-10 w-10 flex items-center justify-center',
-                active ? 'bg-white text-black' : 'text-zinc-400 hover:text-white hover:bg-[#18181f]'
+                active ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'
               )}
             >
               <Icon className="h-5 w-5" />
@@ -239,17 +233,17 @@ export default function CreatorStudio({
           type="button"
           onClick={() => onNavigate?.('settings', 'channel')}
           title="Creator settings"
-          className="h-10 w-10 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-[#18181f]"
+          className="h-10 w-10 flex items-center justify-center text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100"
         >
           <Settings className="h-5 w-5" />
         </button>
       </aside>
 
       {/* Posts column */}
-      <section className="w-[300px] max-w-[42vw] shrink-0 border-r border-zinc-800 flex flex-col min-h-0 bg-[#07070a]">
-        <div className="shrink-0 px-3 py-3 border-b border-zinc-800">
-          <p className="text-sm font-semibold text-white">Your posts</p>
-          <p className="text-[11px] text-zinc-500 mt-0.5">Select a post to filter the interaction map</p>
+      <section className="w-[300px] max-w-[42vw] shrink-0 border-r border-zinc-200 flex flex-col min-h-0 bg-zinc-50/80">
+        <div className="shrink-0 px-3 py-3 border-b border-zinc-200">
+          <p className="text-sm font-semibold text-zinc-900">Your posts</p>
+          <p className="text-[11px] text-zinc-500 mt-0.5">Select a post to highlight who interacted with it</p>
           <div className="mt-2 flex gap-1">
             {[
               { id: 'all', label: 'All' },
@@ -263,7 +257,7 @@ export default function CreatorStudio({
                 onClick={() => setPostFilter(t.id)}
                 className={cn(
                   'h-7 px-2 text-[11px] font-semibold',
-                  postFilter === t.id ? 'bg-white text-black' : 'bg-[#18181f] text-zinc-400'
+                  postFilter === t.id ? 'bg-zinc-900 text-white' : 'bg-white text-zinc-500 border border-zinc-200'
                 )}
               >
                 {t.label}
@@ -271,13 +265,13 @@ export default function CreatorStudio({
             ))}
           </div>
           <div className="mt-2 grid grid-cols-3 gap-1">
-            <button type="button" onClick={onOpenUpload} className="h-8 inline-flex items-center justify-center gap-1 bg-white text-black text-[11px] font-semibold">
+            <button type="button" onClick={onOpenUpload} className="h-8 inline-flex items-center justify-center gap-1 bg-zinc-900 text-white text-[11px] font-semibold">
               <Upload className="h-3.5 w-3.5" /> Upload
             </button>
-            <button type="button" onClick={onOpenImport} className="h-8 inline-flex items-center justify-center gap-1 border border-zinc-700 text-[11px] text-white">
+            <button type="button" onClick={onOpenImport} className="h-8 inline-flex items-center justify-center gap-1 border border-zinc-300 text-[11px] text-zinc-800 bg-white">
               <Link2 className="h-3.5 w-3.5" /> Import
             </button>
-            <button type="button" onClick={() => onNavigate?.('live')} className="h-8 inline-flex items-center justify-center gap-1 border border-zinc-700 text-[11px] text-white">
+            <button type="button" onClick={() => onNavigate?.('live')} className="h-8 inline-flex items-center justify-center gap-1 border border-zinc-300 text-[11px] text-zinc-800 bg-white">
               <Radio className="h-3.5 w-3.5" /> Live
             </button>
           </div>
@@ -298,10 +292,10 @@ export default function CreatorStudio({
       </section>
 
       {/* Main workspace */}
-      <main className="flex-1 min-w-0 min-h-0 flex flex-col">
-        <header className="shrink-0 flex flex-wrap items-center gap-2 px-4 py-2.5 border-b border-zinc-800 bg-[#050506]">
+      <main className="flex-1 min-w-0 min-h-0 flex flex-col bg-white">
+        <header className="shrink-0 flex flex-wrap items-center gap-2 px-4 py-2.5 border-b border-zinc-200 bg-white">
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-white">
+            <p className="text-sm font-semibold text-zinc-900">
               {section === 'overview' && 'Creator Studio'}
               {section === 'analytics' && 'Analytics'}
               {section === 'wallet' && 'Revenue & wallet'}
@@ -314,21 +308,21 @@ export default function CreatorStudio({
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="h-7 px-2 inline-flex items-center text-[10px] font-semibold border border-zinc-800 text-zinc-400">
+            <span className="h-7 px-2 inline-flex items-center text-[10px] font-semibold border border-zinc-200 text-zinc-500 bg-zinc-50">
               {vods.length} VODs
             </span>
-            <span className="h-7 px-2 inline-flex items-center text-[10px] font-semibold border border-zinc-800 text-zinc-400">
+            <span className="h-7 px-2 inline-flex items-center text-[10px] font-semibold border border-zinc-200 text-zinc-500 bg-zinc-50">
               {live?.isLive ? 'Lobby live' : 'Lobby off'}
             </span>
             {approved ? (
-              <span className="h-7 px-2 inline-flex items-center text-[10px] font-semibold bg-emerald-950/40 border border-emerald-900/50 text-emerald-200">
+              <span className="h-7 px-2 inline-flex items-center text-[10px] font-semibold bg-emerald-50 border border-emerald-200 text-emerald-800">
                 Earn approved
               </span>
             ) : (
               <button
                 type="button"
                 onClick={() => onNavigate?.('creator-apply')}
-                className="h-7 px-2 text-[10px] font-semibold border border-zinc-700 text-zinc-300"
+                className="h-7 px-2 text-[10px] font-semibold border border-zinc-300 text-zinc-700 bg-white"
               >
                 Apply to earn
               </button>
@@ -336,7 +330,7 @@ export default function CreatorStudio({
           </div>
         </header>
 
-        <div className="flex-1 min-h-0 overflow-hidden p-3">
+        <div className="flex-1 min-h-0 overflow-hidden p-3 bg-zinc-50/50">
           {section === 'overview' ? (
             <div className="h-full min-h-0 flex flex-col gap-3">
               <OverviewStats
@@ -349,7 +343,8 @@ export default function CreatorStudio({
               />
               <div className="flex-1 min-h-0">
                 <InteractionBubbleMap
-                  nodes={bubbles}
+                  creatorId={user?.id}
+                  creatorHandle={user?.handle}
                   range={range}
                   onRangeChange={setRange}
                   selectedPostId={selectedPostId}
