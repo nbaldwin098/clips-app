@@ -4,12 +4,20 @@
  * ad, and whether that ad actually rendered. Run against `vite preview`:
  *
  *   npx vite preview --port 4173 &
+ *   npm i -D puppeteer-core   # optional, not in default install
  *   node scripts/ad-browser-check.mjs
  *
  * This is a diagnostic, not part of `npm test` — it needs network access
- * to the ad network and a Chrome binary.
+ * to the ad network and a Chrome binary. puppeteer-core is intentionally
+ * not a default dependency (it pulls ~20MB+ of browser tooling).
  */
-import puppeteer from 'puppeteer-core'
+let puppeteer
+try {
+  puppeteer = (await import('puppeteer-core')).default
+} catch {
+  console.error('Missing optional dep. Install with: npm i -D puppeteer-core')
+  process.exit(1)
+}
 
 const BASE = process.env.AD_CHECK_BASE || 'http://127.0.0.1:4173'
 const CHROME = process.env.CHROME_PATH || '/usr/local/bin/google-chrome'

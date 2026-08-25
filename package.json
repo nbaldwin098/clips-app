@@ -7,13 +7,20 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
+<<<<<<< HEAD
     "test": "node scripts/live-smoke.mjs && npx --yes vite-node scripts/test-upload-retention.mjs && npx --yes vite-node scripts/test-restore-uploads.mjs && npx --yes vite-node scripts/test-named-activity.mjs",
     "preview": "vite preview"
+=======
+    "test": "node scripts/live-smoke.mjs && npx --yes vite-node scripts/test-named-activity.mjs",
+    "knip": "npx --yes knip --reporter compact",
+    "audit:deps": "npx --yes knip --reporter compact && npx --yes depcheck",
+    "preview": "vite preview",
+    "ad:check": "node scripts/ad-browser-check.mjs"
+>>>>>>> 419da72 (Audit deps with knip: cut dead packages and twin components)
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
     "@tailwindcss/vite": "^4.3.3",
-    "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
     "lucide-react": "^1.33.0",
     "react": "^19.2.8",
@@ -26,7 +33,6 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.4",
     "oxlint": "^1.75.0",
-    "puppeteer-core": "^25.8.0",
     "vite": "^8.2.0"
   }
 }
