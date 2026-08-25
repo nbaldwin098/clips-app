@@ -55,6 +55,7 @@ function ClipSlide({
   const [commentsOpen, setCommentsOpen] = useState(false)
   const [progress, setProgress] = useState(0)
   const [following, setFollowing] = useState(() => isSubscribed(user?.id, item.creatorId || item.userId))
+  const [shareCopied, setShareCopied] = useState(false)
   const lastTap = useRef(0)
   const lastTime = useRef(0)
   const looped = useRef(false)
@@ -204,6 +205,8 @@ function ClipSlide({
     e?.stopPropagation?.()
     try {
       await copyShareUrl('clips', item.id)
+      setShareCopied(true)
+      setTimeout(() => setShareCopied(false), 1800)
       if (user?.id) {
         recordInteraction(user.id, {
           contentId: item.id,
@@ -233,7 +236,7 @@ function ClipSlide({
       <RailBtn circled={circled} onClick={() => setCommentsOpen(true)} label={commentCount}>
         <MessageCircle className="h-7 w-7" />
       </RailBtn>
-      <RailBtn circled={circled} onClick={share} label="Share">
+      <RailBtn circled={circled} onClick={share} label={shareCopied ? 'Copied' : 'Share'}>
         <Share2 className="h-7 w-7" />
       </RailBtn>
       <RailBtn
@@ -508,6 +511,8 @@ export default function ShortsFeed({
         onOpen={openClip}
         tab={tab}
         onTab={setTab}
+        onOpenAuth={onOpenAuth}
+        isAuthenticated={Boolean(user?.id)}
       />
     )
   }
@@ -533,7 +538,7 @@ export default function ShortsFeed({
       count={mixed.length}
       activeIndex={activeIdx}
       goToRef={goToRef}
-      loop={mixed.length >= 4}
+      loop={mixed.length >= 2}
       onActiveIndex={(i) => {
         const prev = mixed[prevIdx.current]?.item
         const waited = Date.now() - shownAt.current

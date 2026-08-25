@@ -329,7 +329,7 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
           count={scrollRows.length}
           activeIndex={viewerIndex}
           goToRef={goToRef}
-          loop={scrollRows.length >= 4}
+          loop={scrollRows.length >= 2}
           onActiveIndex={(i) => {
             setViewerIndex(i)
             const pic = scrollRows[i]?.item

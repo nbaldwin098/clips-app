@@ -1,4 +1,5 @@
 import { lsGet, lsSet } from './storage'
+import { clearFrozenFeeds } from './frozenFeeds'
 import { notifyNewLike, notifyNewSubscriber, notifyPremium, notifyMentions } from './notifications'
 import { notifyContentChanged } from './contentSync'
 import { pushFollow, pushVote } from './graphSync'
@@ -146,6 +147,7 @@ export function toggleSubscribe(userId, creatorId, { notify = true } = {}) {
   else list.push(userId)
   all[creatorId] = list
   lsSet(SUBS, all)
+  clearFrozenFeeds()
   const subscribed = list.includes(userId)
   pushFollow(userId, creatorId, subscribed)
   if (notify && subscribed) notifyNewSubscriber(creatorId, userId)
