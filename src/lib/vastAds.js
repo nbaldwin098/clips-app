@@ -8,7 +8,9 @@ import { vastUrlFor } from './adZones.js'
 export const EXOCLICK_VAST_URL = vastUrlFor('video')
 export const EXOCLICK_LIVE_CREATOR_VAST_URL = vastUrlFor('liveCreator')
 export const YT_SKIP_AFTER_SEC = 5
-/** First in-stream ad: 30 seconds into the video. Never a preroll at 0:00. */
+/** Skippable preroll before the video starts. */
+export const VIDEO_PREROLL_BREAK = 0
+/** First mid-roll after the preroll: 30 seconds into the video. */
 export const VIDEO_FIRST_AD_SEC = 30
 /** Second in-stream ad, and later breaks, only if the video is 8 minutes or longer. */
 export const YT_MIDROLL_MIN_SEC = 8 * 60
@@ -189,9 +191,9 @@ export async function loadExoClickVast({ depth = 0, kind = 'video', attempts = 2
 }
 
 /**
- * Long-form videos: first ad 30 seconds in, then another at 8 minutes
- * if the video is that long, then every 8 minutes after that.
- * No preroll at 0:00. Videos shorter than 30 seconds get no in-stream ad.
+ * Long-form videos: preroll at 0:00 (handled separately), then mid-roll at 30s,
+ * another at 8 minutes if the video is that long, then every 8 minutes after.
+ * Videos shorter than 30 seconds still get the preroll but no mid-roll break.
  */
 export function videoInStreamBreaks(durationSec) {
   const d = Number(durationSec)

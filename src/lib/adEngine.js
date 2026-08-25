@@ -15,7 +15,7 @@ const AD_METRICS_KEY = 'clips_ad_metrics'
 const AD_SETTINGS_KEY = 'clips_ad_settings'
 
 export const AD_PLACEMENTS = [
-  { id: 'video', label: 'Videos', hint: 'In-stream VAST at 30 seconds, plus 8 minutes if the video is that long', setting: 'videoInStream' },
+  { id: 'video', label: 'Videos', hint: 'Skippable preroll at start, then VAST at 30s and every 8 minutes if that long', setting: 'videoInStream' },
   { id: 'clip-banner', label: 'Clips banner', hint: 'Small bar under the clip description while scrolling the player', setting: 'clipBanner' },
   { id: 'clip-feed', label: 'Clips while scrolling', hint: 'Between clips only after you open one — not on Recommended', setting: 'clipInFeed' },
   { id: 'pic-feed', label: 'Pics while scrolling', hint: 'Between pics only after you open one — not on the mosaic', setting: 'picInFeed' },

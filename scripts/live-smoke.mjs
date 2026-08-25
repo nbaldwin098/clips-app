@@ -6,7 +6,7 @@ import { extractHashtags, mergeTags, parseClock, parseCaptionCues, isReleased, f
 import { parseRoute, buildHash } from '../src/lib/routes.js'
 import { sanitizeAuthError, normalizePhone } from '../src/lib/authBrand.js'
 import { findOwnerLogin, isLocalOwnerLogin, isOwnerAccount, OWNER_LOGIN } from '../src/data/ownerLogin.js'
-import { parseVastXml, parseVastClock, videoInStreamBreaks, EXOCLICK_VAST_URL, EXOCLICK_LIVE_CREATOR_VAST_URL, YT_MIDROLL_MIN_SEC, VIDEO_FIRST_AD_SEC } from '../src/lib/vastAds.js'
+import { parseVastXml, parseVastClock, videoInStreamBreaks, EXOCLICK_VAST_URL, EXOCLICK_LIVE_CREATOR_VAST_URL, YT_MIDROLL_MIN_SEC, VIDEO_FIRST_AD_SEC, VIDEO_PREROLL_BREAK } from '../src/lib/vastAds.js'
 import { mixClipFeedRows, mixPicFeedRows, clipBannerAllowedOnMixed, CLIP_BANNER_EVERY, PIC_AD_GAPS } from '../src/lib/feedAdCadence.js'
 import { featuredWindowStart, nextFeaturedRefreshAt, lastHourRange, interleaveHourlyHits, HOURLY_PATTERN, HOURLY_VIDEO_COUNT, HOURLY_CLIP_COUNT, HOURLY_PIC_COUNT } from '../src/lib/hourWindow.js'
 
@@ -55,8 +55,10 @@ assert(videoInStreamBreaks(YT_MIDROLL_MIN_SEC).join(',') === `${VIDEO_FIRST_AD_S
 assert(videoInStreamBreaks(YT_MIDROLL_MIN_SEC - 1).filter((t) => t >= YT_MIDROLL_MIN_SEC).length === 0, 'no 8-minute break under 8 minutes')
 assert(videoInStreamBreaks(16 * 60 + 30).join(',') === `${VIDEO_FIRST_AD_SEC},${YT_MIDROLL_MIN_SEC},${YT_MIDROLL_MIN_SEC * 2}`, 'a video past 16 minutes gets 30s, 8 min, and 16 min')
 const vastHookSrc = readFileSync(new URL('../src/hooks/useVideoVastAds.js', import.meta.url), 'utf8')
-assert(vastHookSrc.includes('VIDEO_FIRST_AD_SEC'), 'watch waits 30 seconds into the video before the first ad')
-assert(!vastHookSrc.includes('preroll') && !vastHookSrc.includes('setAwaitingPreroll'), 'watch does not play a preroll at 0:00')
+assert(vastHookSrc.includes('VIDEO_PREROLL_BREAK'), 'watch triggers a preroll before the video')
+assert(vastHookSrc.includes("'preroll'"), 'preroll slot is labeled separately from mid-roll')
+assert(vastHookSrc.includes('skipPreroll'), 'preroll is skipped when resuming mid-video')
+assert(vastHookSrc.includes('VIDEO_FIRST_AD_SEC'), 'watch still mid-rolls at 30 seconds')
 assert(vastHookSrc.includes('videoInStreamBreaks'), 'watch uses 30s then 8-minute in-stream breaks')
 assert(EXOCLICK_VAST_URL.includes('idz=6010924'), 'exoClick zone is wired')
 assert(EXOCLICK_LIVE_CREATOR_VAST_URL.includes('idz=6010934'), 'creator live vast zone is wired')
