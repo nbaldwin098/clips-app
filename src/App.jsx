@@ -368,7 +368,7 @@ function AppShell() {
       return <AdminPortal onNavigate={navigate} />
 
     switch (view) {
-      case 'home': return <HomeFeed onPlayItem={openWatch} onOpenPic={openPic} onNavigate={navigate} />
+      case 'home': return <HomeFeed onPlayItem={openWatch} onOpenPic={openPic} onOpenProfile={openProfile} onNavigate={navigate} />
       case 'creators': return <CreatorsPage />
       case 'clips':
       case 'shorts':
@@ -421,7 +421,7 @@ function AppShell() {
       case 'wallet': return <CreatorWallet onNavigate={navigate} />
       case 'analytics': return <AnalyticsPage onNavigate={navigate} />
       case 'channel': return <ChannelPage onNavigate={navigate} />
-      case 'profile': return <ProfilePage onNavigate={navigate} profileHandle={profileTarget.handle} profileUserId={profileTarget.userId} onPlayItem={openWatch} onOpenPic={openPic} onOpenAuth={openAuth} onOpenCheckout={openCheckout} />
+      case 'profile': return <ProfilePage onNavigate={navigate} profileHandle={profileTarget.handle} profileUserId={profileTarget.userId} onPlayItem={openWatch} onOpenPic={openPic} onOpenProfile={openProfile} onOpenAuth={openAuth} onOpenCheckout={openCheckout} />
       case 'subscriptions': return <SubscriptionsPage onNavigate={navigate} onOpenAuth={openAuth} onPlayItem={openWatch} onOpenPic={openPic} onOpenProfile={openProfile} />
       case 'playlists': return <PlaylistsPage onNavigate={navigate} onOpenAuth={openAuth} onPlayItem={openWatch} onOpenPic={openPic} playlistId={routeId} />
       case 'community': return <CommunityPage onNavigate={navigate} onOpenAuth={openAuth} />

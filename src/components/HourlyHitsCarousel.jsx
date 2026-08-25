@@ -24,7 +24,7 @@ function Peek({ item, side, onClick }) {
   )
 }
 
-export default function HourlyHitsCarousel({ onPlayItem, onOpenPic }) {
+export default function HourlyHitsCarousel({ onPlayItem, onOpenPic, onOpenProfile }) {
   const [now, setNow] = useState(() => Date.now())
   const [index, setIndex] = useState(0)
   const pack = useMemo(() => getHourlyHits(now), [now])
@@ -59,6 +59,14 @@ export default function HourlyHitsCarousel({ onPlayItem, onOpenPic }) {
     else onPlayItem?.(item)
   }
 
+  const openProfile = (e) => {
+    e?.stopPropagation?.()
+    e?.preventDefault?.()
+    const creatorId = current?.creatorId || current?.userId
+    if (onOpenProfile) onOpenProfile(current?.handle, creatorId)
+    else window.__clipsOpenProfile?.(current?.handle, creatorId)
+  }
+
   const go = (dir) => {
     setIndex((n) => (n + dir + items.length) % items.length)
   }
@@ -86,24 +94,31 @@ export default function HourlyHitsCarousel({ onPlayItem, onOpenPic }) {
 
           <Peek item={prev} side="left" onClick={() => go(-1)} />
 
-          <button
-            type="button"
-            onClick={() => open(current)}
-            className="relative z-10 flex-1 max-w-[920px] aspect-video overflow-hidden bg-black text-left group shadow-[0_20px_80px_rgba(0,0,0,0.55)]"
-          >
-            <Thumb item={current} className="absolute inset-0 h-full w-full group-hover:scale-[1.02] transition-transform duration-500" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
-            <div className="absolute bottom-0 inset-x-0 p-4 sm:p-5">
-              <p className="text-lg sm:text-2xl font-semibold text-white leading-tight line-clamp-2">{current.title || 'Untitled'}</p>
-              <div className="mt-2 flex items-center gap-2 min-w-0">
-                <ChannelAvatar src={current.avatarUrl} name={creatorDisplayName(current)} size={28} />
-                <p className="text-sm text-zinc-200 truncate">{creatorDisplayName(current)}</p>
-                {current.views > 0 ? (
-                  <p className="text-sm text-zinc-400 shrink-0">{viewsLabel(current.views)}</p>
-                ) : null}
+          <div className="relative z-10 flex-1 max-w-[920px] aspect-video overflow-hidden bg-black shadow-[0_20px_80px_rgba(0,0,0,0.55)]">
+            <button
+              type="button"
+              onClick={() => open(current)}
+              className="absolute inset-0 w-full h-full text-left group"
+              aria-label={current.title || 'Play featured'}
+            >
+              <Thumb item={current} className="absolute inset-0 h-full w-full group-hover:scale-[1.02] transition-transform duration-500" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent pointer-events-none" />
+              <div className="absolute bottom-0 inset-x-0 p-4 sm:p-5 pointer-events-none">
+                <p className="text-lg sm:text-2xl font-semibold text-white leading-tight line-clamp-2">{current.title || 'Untitled'}</p>
               </div>
+            </button>
+            <div className="absolute bottom-0 inset-x-0 p-4 sm:p-5 pt-16 flex items-center gap-2 min-w-0 z-10">
+              <button type="button" onClick={openProfile} className="shrink-0" aria-label={`Open ${creatorDisplayName(current)}'s channel`}>
+                <ChannelAvatar src={current.avatarUrl} name={creatorDisplayName(current)} size={28} />
+              </button>
+              <button type="button" onClick={openProfile} className="text-sm text-zinc-200 truncate hover:text-white min-w-0">
+                {creatorDisplayName(current)}
+              </button>
+              {current.views > 0 ? (
+                <p className="text-sm text-zinc-400 shrink-0 pointer-events-none">{viewsLabel(current.views)}</p>
+              ) : null}
             </div>
-          </button>
+          </div>
 
           <Peek item={next} side="right" onClick={() => go(1)} />
         </div>

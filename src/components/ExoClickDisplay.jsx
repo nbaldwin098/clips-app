@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { AD_ZONES, AD_PROVIDER_SCRIPT, isDisplayZone, displayZone } from '../lib/adZones'
+import { AD_ZONES, AD_PROVIDER_SCRIPT, displayZone, isDisplayZone } from '../lib/adZones'
+import { queueExoClickServe } from '../lib/exoClickServe'
 
 export const EXOCLICK_AD_SCRIPT = AD_PROVIDER_SCRIPT
 export const EXOCLICK_BANNER_ZONE = AD_ZONES.banner.id
@@ -7,31 +8,9 @@ export const EXOCLICK_BANNER_CLASS = AD_ZONES.banner.insClass
 
 /** Poll for a fill, then give up and collapse the slot. */
 const FILL_POLL_MS = 400
-const FILL_TIMEOUT_MS = 6000
+const FILL_TIMEOUT_MS = 8000
 
-let scriptPromise = null
-
-export function ensureExoClickScript() {
-  if (typeof document === 'undefined') return Promise.resolve(false)
-  if (scriptPromise) return scriptPromise
-  const existing = document.querySelector(`script[src="${AD_PROVIDER_SCRIPT}"]`)
-  if (existing) {
-    scriptPromise = Promise.resolve(true)
-    return scriptPromise
-  }
-  scriptPromise = new Promise((resolve) => {
-    const s = document.createElement('script')
-    s.async = true
-    s.type = 'application/javascript'
-    s.src = AD_PROVIDER_SCRIPT
-    // An ad blocker (or a dead CDN) makes this fail. Resolve false so every
-    // waiting slot collapses instead of holding an empty gray box open.
-    s.onload = () => resolve(true)
-    s.onerror = () => resolve(false)
-    document.head.appendChild(s)
-  })
-  return scriptPromise
-}
+export { ensureExoClickScript } from '../lib/exoClickServe'
 
 /**
  * ExoClick does not fill the <ins>. It injects a sibling <div> next to it
@@ -53,9 +32,6 @@ function slotHasAd(container) {
 /**
  * One ExoClick display unit at its native size. The parent letterboxes
  * around it — we never stretch an <ins> into a 9:16 or 16:9 frame.
- *
- * Only display zones are accepted. Passing a VAST zone here used to render
- * a permanently blank box, so it now renders nothing and says why in dev.
  */
 export default function ExoClickDisplay({
   zoneId,
@@ -67,30 +43,23 @@ export default function ExoClickDisplay({
   const zone = zoneId && isDisplayZone(zoneId) ? String(zoneId) : displayZone().id
   const badZone = Boolean(zoneId && !isDisplayZone(zoneId))
   const containerRef = useRef(null)
-  const servedRef = useRef(false)
+  const insRef = useRef(null)
   const [state, setState] = useState('pending') // pending | filled | empty
 
   useEffect(() => {
-    if (!active || badZone || servedRef.current) return undefined
+    if (!active || badZone) return undefined
     let cancelled = false
     let poll = 0
     let started = 0
 
-    ensureExoClickScript().then((ok) => {
+    const ins = insRef.current
+    if (ins) delete ins.dataset.exoQueued
+
+    queueExoClickServe().then((ok) => {
       if (cancelled) return
       if (!ok) {
         setState('empty')
-        return
-      }
-      const w = window
-      w.AdProvider = w.AdProvider || []
-      try {
-        // One serve per slot. A second push would draw a second ad into
-        // this container or steal the next slot's ad.
-        servedRef.current = true
-        w.AdProvider.push({ serve: {} })
-      } catch {
-        setState('empty')
+        onFill?.(false)
         return
       }
       started = Date.now()
@@ -122,7 +91,6 @@ export default function ExoClickDisplay({
     }
     return null
   }
-  // No fill: take up no space at all rather than leaving a dead box in the feed.
   if (state === 'empty') return null
 
   return (
@@ -141,6 +109,7 @@ export default function ExoClickDisplay({
         </span>
       ) : null}
       <ins
+        ref={insRef}
         className={insClass || AD_ZONES.banner.insClass}
         data-zoneid={zone}
         style={{ display: 'inline-block', maxWidth: '100%' }}

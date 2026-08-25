@@ -23,7 +23,7 @@ import {
 import { isVerifiedChannel } from '../lib/verification'
 
 /** video = YouTube row card; short = Shorts-style vertical */
-export default function ContentCard({ item, onOpen, variant }) {
+export default function ContentCard({ item, onOpen, onOpenProfile, variant }) {
   const { user } = useAuth()
   const [views, setViews] = useState(() => getViews(item?.id))
   const [isSaved, setIsSaved] = useState(() => (getSaved() || []).includes(item?.id))
@@ -69,9 +69,19 @@ export default function ContentCard({ item, onOpen, variant }) {
     setGone(true)
   }
 
-  const open = () => {
+  const open = (e) => {
+    e?.stopPropagation?.()
+    e?.preventDefault?.()
     if (onOpen) onOpen(item)
     else if (item.sourceUrl) openSafeUrl(item.sourceUrl)
+  }
+
+  const openProfile = (e) => {
+    e?.stopPropagation?.()
+    e?.preventDefault?.()
+    const creatorId = item.creatorId || item.userId
+    if (onOpenProfile) onOpenProfile(item.handle, creatorId)
+    else window.__clipsOpenProfile?.(item.handle, creatorId)
   }
 
   const handleShare = async (e) => {
@@ -146,7 +156,7 @@ export default function ContentCard({ item, onOpen, variant }) {
   if (mode === 'video') {
     return (
       <div className="group w-full">
-        <button type="button" onClick={open} className="w-full text-left">
+        <button type="button" onClick={open} className="w-full text-left block">
           <div className="relative aspect-video w-full bg-[#272727] overflow-hidden rounded-xl">
             {thumb ? (
               <img
@@ -180,20 +190,23 @@ export default function ContentCard({ item, onOpen, variant }) {
         <div className="flex gap-3 pt-3">
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); window.__clipsOpenProfile?.(item.handle, item.creatorId || item.userId) }}
+            onClick={openProfile}
             className="shrink-0 mt-0.5"
+            aria-label={`Open ${name}'s channel`}
           >
             <ChannelAvatar src={item.avatarUrl} name={name} size={36} />
           </button>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-zinc-100 line-clamp-2 leading-snug cursor-pointer" onClick={open}>{item.title || 'Untitled'}</p>
+            <button type="button" onClick={open} className="w-full text-left">
+              <p className="text-sm font-medium text-zinc-100 line-clamp-2 leading-snug hover:text-white">{item.title || 'Untitled'}</p>
+            </button>
             <p className="text-xs text-[#aaa] mt-1 inline-flex items-center gap-1 min-w-0">
-              <button type="button" onClick={(e) => { e.stopPropagation(); window.__clipsOpenProfile?.(item.handle, item.creatorId || item.userId) }} className="hover:text-white truncate">
+              <button type="button" onClick={openProfile} className="hover:text-white truncate">
                 {name}
               </button>
               {official ? <VerifiedBadge /> : null}
             </p>
-            <p className="text-xs text-[#aaa]">
+            <p className="text-xs text-[#aaa] pointer-events-none">
               {viewsLabel(views)}
               {item.createdAt || item.publishedAt ? <> · <PostedStamp item={item} /></> : ''}
               {followLine ? ` · ${followLine}` : ''}
@@ -213,7 +226,7 @@ export default function ContentCard({ item, onOpen, variant }) {
 
   return (
     <div className="group w-full">
-      <button type="button" onClick={open} className="w-full text-left">
+      <button type="button" onClick={open} className="w-full text-left block">
         <div className="relative aspect-[9/16] w-full bg-[#272727] overflow-hidden rounded-xl">
           {thumb ? (
             <img
@@ -227,7 +240,7 @@ export default function ContentCard({ item, onOpen, variant }) {
           ) : (
             <div className="absolute inset-0 flex items-center justify-center text-zinc-600 text-xs">No thumb</div>
           )}
-          <div className="absolute inset-x-0 bottom-0 pt-10 pb-2 px-2 bg-gradient-to-t from-black/80 to-transparent">
+          <div className="absolute inset-x-0 bottom-0 pt-10 pb-2 px-2 bg-gradient-to-t from-black/80 to-transparent pointer-events-none">
             <p className="text-[13px] font-medium text-white leading-snug line-clamp-2">{item.title || 'Untitled'}</p>
           </div>
           {item.durationSec > 0 && (
@@ -250,7 +263,7 @@ export default function ContentCard({ item, onOpen, variant }) {
       <div className="pt-2 flex gap-1">
         <div className="min-w-0 flex-1">
           <p className="text-xs text-[#aaa] mt-0.5 inline-flex items-center gap-1">
-            <button type="button" onClick={(e) => { e.stopPropagation(); window.__clipsOpenProfile?.(item.handle, item.creatorId || item.userId) }} className="hover:text-white truncate">{handle || name}</button>
+            <button type="button" onClick={openProfile} className="hover:text-white truncate">{handle || name}</button>
             {' · '}{viewsLabel(views)}
             {item.createdAt || item.publishedAt ? <> · <PostedStamp item={item} /></> : ''}
           </p>

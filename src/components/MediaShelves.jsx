@@ -6,7 +6,7 @@ import { getViews } from '../lib/engagement'
  * No ads here — recommended / home / profile grids are content only.
  * Clip and pic ads show while scrolling the player or pic viewer.
  */
-export default function MediaShelves({ items, onPlayItem, onOpenPic, pinOverlay, filter = 'all' }) {
+export default function MediaShelves({ items, onPlayItem, onOpenPic, onOpenProfile, pinOverlay, filter = 'all' }) {
   const videos = (items || []).filter((i) => i && i.type === 'video')
   const shorts = (items || []).filter((i) => i && i.type === 'short')
   const pics = (items || []).filter((i) => i && i.type === 'pic')
@@ -27,7 +27,7 @@ export default function MediaShelves({ items, onPlayItem, onOpenPic, pinOverlay,
             {videos.map((item) => (
               <div key={item.id} className="relative">
                 {pinOverlay?.(item)}
-                <ContentCard item={item} onOpen={onPlayItem} variant="video" />
+                <ContentCard item={item} onOpen={onPlayItem} onOpenProfile={onOpenProfile} variant="video" />
               </div>
             ))}
           </div>
@@ -40,7 +40,7 @@ export default function MediaShelves({ items, onPlayItem, onOpenPic, pinOverlay,
             {shorts.map((item) => (
               <div key={item.id} className="relative w-[168px] sm:w-[180px] shrink-0">
                 {pinOverlay?.(item)}
-                <ContentCard item={item} onOpen={onPlayItem} variant="short" />
+                <ContentCard item={item} onOpen={onPlayItem} onOpenProfile={onOpenProfile} variant="short" />
               </div>
             ))}
           </div>

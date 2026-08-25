@@ -31,6 +31,7 @@ export default function ShortsStage({
   empty = null,
   bleedMobile = false,
   loop = true,
+  goToRef = null,
 }) {
   const scrollerRef = useRef(null)
   const n = Math.max(0, Number(count) || 0)
@@ -88,12 +89,22 @@ export default function ShortsStage({
     return () => el.removeEventListener('scroll', onScroll)
   }, [onScroll])
 
+  const goTo = useCallback((logical, behavior = 'smooth') => {
+    if (!n) return
+    const idx = Math.max(0, Math.min(n - 1, Number(logical) || 0))
+    scrollToReel(middleReel(idx), behavior)
+    onActiveIndex?.(idx)
+  }, [n, loop, onActiveIndex])
+
+  useEffect(() => {
+    if (goToRef) goToRef.current = goTo
+    return () => { if (goToRef) goToRef.current = null }
+  }, [goTo, goToRef])
+
   const step = useCallback((dir) => {
     if (!n) return
-    const next = (activeIndex + dir + n) % n
-    scrollToReel(middleReel(next), 'smooth')
-    onActiveIndex?.(next)
-  }, [activeIndex, n, loop, onActiveIndex])
+    goTo((activeIndex + dir + n) % n)
+  }, [activeIndex, n, goTo])
 
   useEffect(() => {
     const onKey = (e) => {

@@ -68,12 +68,12 @@ export default function AdBanner({ ad }) {
  * zone — letterboxed at its native IAB size inside the card, never stretched
  * into 9:16 or square. VAST video zones are for watch/live only.
  */
-export function InFeedAd({ ad, variant = 'clip', active = true }) {
+export function InFeedAd({ ad, variant = 'clip', active = true, onFill }) {
   if (ad?.provider === 'exoclick') {
     const shell = variant === 'pic'
       ? 'aspect-square w-full'
-      : 'aspect-[9/16] w-full rounded-xl'
-    return <ExoClickDisplay active={active} className={shell} />
+      : 'aspect-[9/16] w-full rounded-xl min-h-[250px]'
+    return <ExoClickDisplay active={active} className={shell} onFill={onFill} />
   }
   return <CampaignInFeedAd ad={ad} variant={variant} />
 }
