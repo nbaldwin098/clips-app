@@ -78,7 +78,7 @@ export default function ContentCard({ item, onOpen, variant }) {
     e.stopPropagation()
     setMenuOpen(false)
     try {
-      await copyShareUrl('watch', item.id)
+      await copyShareUrl(item.type === 'short' ? 'clips' : item.type === 'pic' ? 'pic' : 'watch', item.id)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
       if (user?.id) {

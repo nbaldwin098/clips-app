@@ -161,15 +161,23 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
         ) : (
           <MediaShelves
             items={tabItems}
+            filter={tab === 'clips' ? 'clip' : tab === 'pics' ? 'pic' : 'video'}
             onPlayItem={onPlayItem}
             onOpenPic={onOpenPic}
             pinOverlay={(item) => (
               <>
                 {(item.pinned || isPinned(creatorId, item.id)) && (
-                  <span className="absolute top-2 left-2 z-10 text-[10px] px-1.5 py-0.5 rounded bg-black/70 text-white flex items-center gap-0.5"><Pin className="h-3 w-3" /> Pinned</span>
+                  <span className="pointer-events-none absolute top-2 left-2 z-10 text-[10px] px-1.5 py-0.5 rounded bg-black/70 text-white flex items-center gap-0.5"><Pin className="h-3 w-3" /> Pinned</span>
                 )}
                 {isSelf && (
-                  <button type="button" onClick={() => onPin(item.id)} className="absolute top-2 right-2 z-10 h-8 w-8 rounded-full bg-black/70 border border-zinc-700 flex items-center justify-center text-white" title="Pin / unpin"><Pin className="h-3.5 w-3.5" /></button>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); onPin(item.id) }}
+                    className="absolute top-2 right-2 z-10 h-8 w-8 rounded-full bg-black/70 border border-zinc-700 flex items-center justify-center text-white"
+                    title="Pin / unpin"
+                  >
+                    <Pin className="h-3.5 w-3.5" />
+                  </button>
                 )}
               </>
             )}

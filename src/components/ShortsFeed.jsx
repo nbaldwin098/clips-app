@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useState, useRef } from 'react'
 import { ChevronLeft, Clapperboard, Heart, MessageCircle, Search, Share2, Volume2, VolumeX, X, RotateCcw } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { getStableShortsFeed, getStableFollowingFeed, getById } from '../lib/contentService'
+import { getStableShortsFeed, getStableFollowingFeed, getWatchItem, getCreatorPublicContent } from '../lib/contentService'
 import { getMediaBlobUrl } from '../lib/videoStorage'
 import { parseEmbedUrl } from '../lib/videoEmbed'
 import { safeIframeSrc, safeMediaUrl } from '../lib/safeUrl'
@@ -438,11 +438,30 @@ export default function ShortsFeed({
   const items = useMemo(() => {
     const base = tab === 'following' ? following : recommended
     if (!focusId) return base
-    if (base.some((i) => i.id === focusId)) return base
-    const extra = getById(focusId)
-    return extra?.type === 'short' ? [extra, ...base] : base
+
+    // Click stash / catalog — same resolver watch uses. Profile and "Also on"
+    // open clips that are often missing from the frozen home shorts feed.
+    const focused = getWatchItem(focusId)
+    if (!focused || focused.type !== 'short') {
+      // Still try to keep the player usable if the id is already in the feed.
+      if (base.some((i) => i.id === focusId)) return base
+      return base
+    }
+
+    // Prefer that creator's clips so a channel-page tap stays on their reel
+    // instead of dumping into a random global shuffle.
+    const creatorId = focused.creatorId || focused.userId
+    const creatorClips = getCreatorPublicContent(creatorId, focused.handle)
+      .filter((i) => i.type === 'short')
+    const pool = creatorClips.length ? creatorClips : base
+    const rest = pool.filter((i) => i.id !== focused.id)
+    return [focused, ...rest]
   }, [tab, following, recommended, focusId])
-  const mixed = useMemo(() => mixFeedAds(shuffleFeed(items), 'clip-feed'), [items])
+  // In the player, keep the focused clip first — never reshuffle it away.
+  const mixed = useMemo(
+    () => mixFeedAds(focusId ? items : shuffleFeed(items), 'clip-feed'),
+    [items, focusId],
+  )
   const [activeIdx, setActiveIdx] = useState(0)
   const [muted, setMuted] = useState(true)
   const [bannerSlide, setBannerSlide] = useState(null)
@@ -453,6 +472,9 @@ export default function ShortsFeed({
   const startIdx = useMemo(() => {
     if (!focusId || !mixed.length) return 0
     const idx = mixed.findIndex((row) => row.item?.id === focusId)
+    // Focused clip is prepended before ads are mixed; if an ad landed first,
+    // still land on the clip. Never fall back to 0 when the id is missing —
+    // that used to open a random sponsored slide.
     return idx >= 0 ? idx : 0
   }, [focusId, mixed])
 

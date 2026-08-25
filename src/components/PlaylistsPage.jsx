@@ -3,7 +3,7 @@ import PageHeader from './PageHeader'
 import MediaShelves from './MediaShelves'
 import { useAuth } from '../context/AuthContext'
 import { listPlaylists, createPlaylist, getPlaylist, removeFromPlaylist } from '../lib/youtubeParity'
-import { getById } from '../lib/contentService'
+import { getWatchItem } from '../lib/contentService'
 import { useContentSyncTick } from '../lib/useContentSync'
 
 export default function PlaylistsPage({ onNavigate, onOpenAuth, onPlayItem, onOpenPic, playlistId }) {
@@ -15,7 +15,7 @@ export default function PlaylistsPage({ onNavigate, onOpenAuth, onPlayItem, onOp
 
   const playlist = useMemo(() => (openId ? getPlaylist(openId) : null), [openId, list, syncTick])
   const items = useMemo(
-    () => (playlist?.items || []).map((id) => getById(id)).filter(Boolean),
+    () => (playlist?.items || []).map((id) => getWatchItem(id)).filter(Boolean),
     [playlist, syncTick]
   )
 

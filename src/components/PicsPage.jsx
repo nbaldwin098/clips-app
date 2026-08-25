@@ -234,18 +234,18 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
   const [items, setItems] = useState(() => getPicsFeed())
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [viewerIndex, setViewerIndex] = useState(() => {
-    if (!initialPicId) return null
-    const idx = getPicsFeed().findIndex((p) => p.id === initialPicId)
-    return idx >= 0 ? idx : null
-  })
-  const [openedAt, setOpenedAt] = useState(() => {
-    if (!initialPicId) return 0
-    const idx = getPicsFeed().findIndex((p) => p.id === initialPicId)
-    return idx >= 0 ? idx : 0
-  })
+  const [viewerIndex, setViewerIndex] = useState(() => (initialPicId ? 0 : null))
+  const [openedAt, setOpenedAt] = useState(0)
 
-  const shuffled = useMemo(() => shuffleFeed(items), [items])
+  const shuffled = useMemo(() => {
+    const list = items || []
+    if (!initialPicId) return shuffleFeed(list)
+    // Deep-link / profile tap: keep that pic first so the viewer does not
+    // open a random neighbor from the unshuffled index.
+    const focused = list.find((p) => p.id === initialPicId)
+    const rest = shuffleFeed(list.filter((p) => p.id !== initialPicId))
+    return focused ? [focused, ...rest] : shuffleFeed(list)
+  }, [items, initialPicId])
   const mixed = useMemo(() => mixFeedAds(shuffled, 'pic-feed'), [shuffled])
   const skipAutoOpen = useRef(false)
   const refresh = useCallback(() => setItems(getPicsFeed()), [])

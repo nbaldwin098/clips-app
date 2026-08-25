@@ -10,7 +10,7 @@ import { ensureStreamKey } from '../lib/streamKeys'
 import { listVods } from '../lib/vods'
 import PageHeader from './PageHeader'
 
-export default function CreatorDashboard({ onOpenImport, onOpenUpload, onNavigate }) {
+export default function CreatorDashboard({ onOpenImport, onOpenUpload, onNavigate, onPlayItem }) {
   const { user } = useAuth()
   const clips = getCreatorContent(user?.id, user?.handle)
   const live = lsGet(`live_state_${user?.id}`, null)
@@ -20,6 +20,13 @@ export default function CreatorDashboard({ onOpenImport, onOpenUpload, onNavigat
   const b = creatorBalance(user?.id, user?.handle)
   const key = user?.id ? ensureStreamKey(user.id) : ''
   const vods = listVods(user?.id)
+
+  const openPost = (c) => {
+    if (onPlayItem) onPlayItem(c)
+    else if (c?.type === 'pic') onNavigate?.('pics', c.id)
+    else if (c?.type === 'short') onNavigate?.('clips', c.id)
+    else if (c?.id) onNavigate?.('watch', c.id)
+  }
 
   const copy = async (text, which) => {
     try {
@@ -85,7 +92,17 @@ export default function CreatorDashboard({ onOpenImport, onOpenUpload, onNavigat
         <p className="mt-3 text-[11px] text-zinc-500 break-all">Stream key {key}. Live ingest is not connected — keep the key for when OBS can connect.</p>
       </div>
       <h2 className="text-sm font-medium text-white mb-2">Your posts</h2>
-      {clips.length === 0 ? <p className="text-xs text-zinc-500">No posts yet.</p> : clips.map((c) => <div key={c.id} className="rounded-lg border border-zinc-800 bg-[#121218] px-3 py-2 text-sm text-zinc-300 mb-1">{c.title}</div>)}
+      {clips.length === 0 ? <p className="text-xs text-zinc-500">No posts yet.</p> : clips.map((c) => (
+        <button
+          key={c.id}
+          type="button"
+          onClick={() => openPost(c)}
+          className="w-full text-left rounded-lg border border-zinc-800 bg-[#121218] px-3 py-2 text-sm text-zinc-300 mb-1 hover:border-white hover:text-white"
+        >
+          <span className="text-[10px] uppercase tracking-wider text-zinc-500 mr-2">{c.type === 'short' ? 'Clip' : c.type === 'pic' ? 'Pic' : 'Video'}</span>
+          {c.title}
+        </button>
+      ))}
     </div>
   )
 }

@@ -199,7 +199,7 @@ function AppShell() {
 
   const dockWatchIfNeeded = (leavingWatch) => {
     if (!leavingWatch) return
-    const current = getById(routeId)
+    const current = getWatchItem(routeId)
     if (current?.type === 'video') setMiniItem(current)
   }
 
@@ -416,7 +416,7 @@ function AppShell() {
             onOpenAuth={openAuth}
           />
         )
-      case 'dashboard': return <CreatorDashboard onOpenImport={openImport} onOpenUpload={openUpload} onNavigate={navigate} />
+      case 'dashboard': return <CreatorDashboard onOpenImport={openImport} onOpenUpload={openUpload} onNavigate={navigate} onPlayItem={openWatch} />
       case 'vods': return <VodsPage onNavigate={navigate} />
       case 'wallet': return <CreatorWallet onNavigate={navigate} />
       case 'analytics': return <AnalyticsPage onNavigate={navigate} />
