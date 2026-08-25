@@ -63,7 +63,7 @@ export default function Sidebar({ currentView, onNavigate, open, onClose }) {
 
       <div className="mx-3 border-t border-zinc-800" />
       <div className="p-2 space-y-0.5">
-        <NavBtn active={currentView === 'subscriptions'} onClick={() => go('subscriptions')} icon={Users} label="Subscribed" />
+        <NavBtn active={currentView === 'subscriptions'} onClick={() => go('subscriptions')} icon={Users} label="Following" />
       </div>
 
       <div className="mx-3 border-t border-zinc-800" />

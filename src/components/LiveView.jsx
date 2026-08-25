@@ -3,7 +3,7 @@ import { Radio, Key, Copy, Check, Play, Square, MonitorUp } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { lsGet, lsSet } from '../lib/storage'
 import { getSubscriberCount } from '../lib/engagement'
-import SubscribeButton from './SubscribeButton'
+import FollowButton from './FollowButton'
 import { notifyFollowersWentLive } from '../lib/notifications'
 import { pushLiveLobby, endLiveLobby } from '../lib/graphSync'
 import { cn } from '../lib/utils'
@@ -233,7 +233,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
           <div className="p-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#23232c]">
             <div className="text-sm text-zinc-400">
               <span className="text-zinc-200 font-semibold">@{focusedStream.handle}</span>
-              {subCount > 0 && <span> · {subCount} subscribers</span>}
+              {subCount > 0 && <span> · {subCount} followers</span>}
             </div>
             <div className="flex items-center gap-2 flex-wrap justify-end">
               {isAuthenticated && user?.id === focusedStream.userId && (
@@ -269,7 +269,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
                 </button>
                 </>
               )}
-              <SubscribeButton creatorId={focusedStream.userId} handle={focusedStream.handle} onOpenAuth={onOpenAuth} />
+              <FollowButton creatorId={focusedStream.userId} handle={focusedStream.handle} onOpenAuth={onOpenAuth} />
             </div>
             {isAuthenticated && user?.id === focusedStream.userId ? (
               <p className="w-full text-[11px] text-zinc-600">

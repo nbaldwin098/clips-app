@@ -1,6 +1,6 @@
 /**
  * Creator-facing interaction timeline for the studio bubble map.
- * Records when viewers click (open), like, subscribe, share, comment, or skip/kick past a post.
+ * Records when viewers click (open), like, follow, share, comment, or skip/kick past a post.
  */
 import { lsGet, lsSet } from './storage'
 import { getViews, getVotes, getSubscriberCount } from './engagement'
@@ -13,7 +13,7 @@ const MAX = 2500
 export const INTERACTION_TYPES = [
   { id: 'view', label: 'Clicked / viewed', color: '#60a5fa', short: 'View' },
   { id: 'like', label: 'Liked', color: '#f472b6', short: 'Like' },
-  { id: 'subscribe', label: 'Subscribed', color: '#34d399', short: 'Sub' },
+  { id: 'subscribe', label: 'Followed', color: '#34d399', short: 'Fol' },
   { id: 'share', label: 'Shared', color: '#a78bfa', short: 'Share' },
   { id: 'comment', label: 'Commented', color: '#fbbf24', short: 'Comment' },
   { id: 'skip', label: 'Skipped / kicked', color: '#fb7185', short: 'Skip' },

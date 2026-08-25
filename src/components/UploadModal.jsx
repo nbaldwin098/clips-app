@@ -191,7 +191,7 @@ export default function UploadModal({
               value={priceUsd}
               onChange={(e) => setPriceUsd(e.target.value)}
               className="mt-1 w-full h-10 rounded-lg border border-zinc-700 bg-[#000000] px-3 text-sm text-white"
-              placeholder="0 = free. Subscribe is always free."
+              placeholder="0 = free. Following is always free."
             />
           </label>
 

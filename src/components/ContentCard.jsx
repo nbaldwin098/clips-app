@@ -16,7 +16,7 @@ import VerifiedBadge from './VerifiedBadge'
 import { downloadPostedMedia } from '../lib/mediaDownload'
 import {
   creatorDisplayName,
-  subscribersLabel,
+  followersLabel,
   formatDuration,
   viewsLabel,
 } from '../lib/uiFormat'
@@ -114,7 +114,7 @@ export default function ContentCard({ item, onOpen, onOpenProfile, variant }) {
   const name = creatorDisplayName(item)
   const official = isVerifiedChannel(item.creatorId || item.userId, item.handle)
   const handle = item.handle ? `@${String(item.handle).replace(/^@/, '')}` : ''
-  const followLine = subscribersLabel(subs)
+  const followLine = followersLabel(subs)
 
   const menu = (
     <div className="relative shrink-0" ref={menuRef}>

@@ -209,7 +209,7 @@ export default function CollapsibleSidebar({
         </div>
 
         <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
-          <NavBtn collapsed={collapsed} active={currentView === 'subscriptions'} onClick={() => go('subscriptions')} icon={Users} label="Subscribed" />
+          <NavBtn collapsed={collapsed} active={currentView === 'subscriptions'} onClick={() => go('subscriptions')} icon={Users} label="Following" />
         </div>
 
         <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">

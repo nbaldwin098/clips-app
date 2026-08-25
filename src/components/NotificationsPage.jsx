@@ -79,7 +79,7 @@ export default function NotificationsPage({ onNavigate, onOpenWatch }) {
   return (
     <div className="p-4 md:p-6 max-w-2xl mx-auto">
       <h1 className="text-xl font-semibold text-zinc-100 mb-2">Notifications</h1>
-      <p className="text-xs text-zinc-500 mb-6">Subscribers, comments, likes, live, applications, and reports.</p>
+      <p className="text-xs text-zinc-500 mb-6">Followers, comments, likes, live, applications, and reports.</p>
       {items.length === 0 ? (
         <div className="rounded-2xl border border-zinc-800/80 bg-[#121218] px-6 py-16 text-center">
           <div className="mx-auto h-12 w-12 rounded-full bg-white/10 flex items-center justify-center">
@@ -87,7 +87,7 @@ export default function NotificationsPage({ onNavigate, onOpenWatch }) {
           </div>
           <p className="mt-4 text-sm font-medium text-zinc-200">You are all caught up</p>
           <p className="mt-1.5 text-xs text-zinc-500">
-            Creators get notified for new subscribers, comments, likes, premium, and application reviews.
+            Creators get notified for new followers, comments, likes, premium, and application reviews.
           </p>
         </div>
       ) : (

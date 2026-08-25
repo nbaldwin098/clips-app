@@ -40,7 +40,7 @@ export function trySendLiveChat(streamUserId, message, { actor } = {}) {
 
   if (settings.subscriberOnlyChat && userId !== streamUserId) {
     const ok = isPremiumSub(userId, streamUserId) || isSubscribed(userId, streamUserId)
-    if (!ok) return { ok: false, error: 'Subscribers only.' }
+    if (!ok) return { ok: false, error: 'Followers or premium only.' }
   }
 
   const slow = Number(settings.slowModeSeconds || 0)
