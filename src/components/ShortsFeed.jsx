@@ -374,8 +374,8 @@ function ClipSlide({
             </button>
           ) : null}
           {showBanner ? (
-            <div className="mt-2 mr-16 md:mr-4 min-h-[90px] rounded-lg overflow-hidden bg-black/40" onClick={(e) => e.stopPropagation()}>
-              <ExoClickDisplay format="banner" zoneId={EXOCLICK_BANNER_ZONE} insClass={EXOCLICK_BANNER_CLASS} />
+            <div className="mt-2 mr-16 md:mr-4 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+              <ExoClickDisplay zoneId={EXOCLICK_BANNER_ZONE} insClass={EXOCLICK_BANNER_CLASS} className="min-h-[90px]" />
             </div>
           ) : null}
         </div>
@@ -402,6 +402,29 @@ function ClipSlide({
         </div>
       )}
     </ShortsCard>
+  )
+}
+
+function ClipFeedAdSlide({ active }) {
+  const [empty, setEmpty] = useState(false)
+  if (empty) {
+    return (
+      <div className="h-full w-full max-w-md mx-auto bg-black flex items-center justify-center px-4">
+        <p className="text-[11px] text-white/50">Swipe for the next clip</p>
+      </div>
+    )
+  }
+  return (
+    <div className="h-full w-full max-w-md mx-auto bg-black flex flex-col items-center justify-center px-4">
+      <p className="shrink-0 px-3 py-2 text-[11px] text-white/70">Sponsored · swipe for the next clip</p>
+      <ExoClickDisplay
+        active={active}
+        zoneId={EXOCLICK_BANNER_ZONE}
+        insClass={EXOCLICK_BANNER_CLASS}
+        className="max-h-[70vh] w-full rounded-xl min-h-[250px]"
+        onFill={(ok) => { if (!ok) setEmpty(true) }}
+      />
+    </div>
   )
 }
 
@@ -494,12 +517,7 @@ export default function ShortsFeed({
         const row = mixed[index]
         if (row?.kind === 'ad') {
           return (
-            <div className="h-full w-full max-w-md mx-auto bg-black flex flex-col items-center justify-center px-4">
-              <p className="shrink-0 px-3 py-2 text-[11px] text-white/70">Sponsored · swipe for the next clip</p>
-              <div className="w-full flex items-center justify-center">
-                <ExoClickDisplay zoneId={row.ad?.zoneId} format="display" active={active} />
-              </div>
-            </div>
+            <ClipFeedAdSlide active={active} />
           )
         }
         return row?.item ? (
