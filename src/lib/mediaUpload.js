@@ -30,17 +30,19 @@ export function canHostUploads(actor) {
   )
 }
 
+/** Plain user-facing copy — no infrastructure jargon. */
+export function signInToUploadMessage() {
+  return 'Sign in to upload.'
+}
+
+export function uploadFailedMessage() {
+  return "Couldn't upload. Try again."
+}
+
+/** @deprecated use signInToUploadMessage / uploadFailedMessage */
 export function cloudHostRequiredMessage(actor) {
-  if (!isSupabaseConfigured()) {
-    return 'Cloud storage is not connected. Uploads must be hosted as links — they are not saved on this device.'
-  }
-  if (!actor?.id) {
-    return 'Sign in to upload. Files are hosted in the cloud, not on this device.'
-  }
-  if (actor.provider !== 'supabase') {
-    return 'Sign in with your Clips cloud account to upload. Local-only sessions cannot host media.'
-  }
-  return 'Could not host this upload in the cloud.'
+  if (!actor?.id) return signInToUploadMessage()
+  return uploadFailedMessage()
 }
 
 async function uploadToBucket(file, userId, { maxBytes, kind }) {

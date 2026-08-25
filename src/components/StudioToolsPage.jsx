@@ -28,7 +28,7 @@ export default function StudioToolsPage({ onNavigate }) {
     <div className="p-4 md:p-6 max-w-lg mx-auto space-y-5">
       <PageHeader title="Studio tools" onBack={() => onNavigate?.('dashboard')} />
       <p className="text-xs text-zinc-500">
-        Drafts and scheduled posts on this account. Uploaded files are hosted in the cloud as links — they stay until you delete them. Scheduled items go live when the time hits.
+        Drafts and scheduled posts. Scheduled items go live when the time hits.
       </p>
 
       <section className="rounded-xl border border-zinc-800 bg-[#121218] p-4 space-y-2">
