@@ -114,6 +114,22 @@ function AppShell() {
   useEffect(() => installRuntimeGuards(), [])
 
   useEffect(() => {
+    if (typeof document === 'undefined') return
+    const titles = {
+      home: 'Recommended',
+      clips: 'Clips',
+      pics: 'Pics',
+      live: 'Live',
+      explore: 'Explore',
+      watch: routeId ? 'Watch' : 'Watch',
+      profile: profileTarget.handle ? `@${profileTarget.handle}` : 'Profile',
+      checkout: 'Premium',
+      dashboard: 'Creator Studio',
+    }
+    document.title = titles[view] ? `${titles[view]} · calabi` : 'calabi'
+  }, [view, routeId, profileTarget.handle])
+
+  useEffect(() => {
     if (!user?.id || typeof window === 'undefined') return
     if (!membershipReturnPaid(routeParams, window.location.search)) return
     const claimed = claimStripeReturn(user, routeParams, window.location.search)
