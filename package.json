@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "test": "node scripts/live-smoke.mjs && npx --yes vite-node scripts/test-upload-retention.mjs && npx --yes vite-node scripts/test-named-activity.mjs",
+    "test": "node scripts/live-smoke.mjs && npx --yes vite-node scripts/test-upload-retention.mjs && npx --yes vite-node scripts/test-restore-uploads.mjs && npx --yes vite-node scripts/test-named-activity.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
