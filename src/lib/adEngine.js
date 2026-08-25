@@ -17,8 +17,8 @@ const AD_SETTINGS_KEY = 'clips_ad_settings'
 export const AD_PLACEMENTS = [
   { id: 'video', label: 'Videos', hint: 'Skippable preroll at start, then VAST at 30s and every 8 minutes if that long', setting: 'videoInStream' },
   { id: 'clip-banner', label: 'Clips banner', hint: 'Small bar under the clip description while scrolling the player', setting: 'clipBanner' },
-  { id: 'clip-feed', label: 'Clips while scrolling', hint: 'Between clips only after you open one — not on Recommended', setting: 'clipInFeed' },
-  { id: 'pic-feed', label: 'Pics while scrolling', hint: 'Between pics only after you open one — not on the mosaic', setting: 'picInFeed' },
+  { id: 'clip-feed', label: 'Clips while scrolling', hint: 'Banner under the description only — never a full-screen stop in the reel', setting: 'clipInFeed' },
+  { id: 'pic-feed', label: 'Pics while scrolling', hint: 'Reserved — pic reel scrolls content only (no full-screen ad stops)', setting: 'picInFeed' },
 ]
 
 export const ALL_PLACEMENTS = AD_PLACEMENTS.map((p) => p.id)
@@ -337,7 +337,7 @@ export function placementAdsAllowed(placement) {
 }
 
 
-/** Banner under a clip every 10 clips scrolled, never on or next to a full in-feed ad. */
+/** Banner under a clip every 10 clips scrolled. */
 export function clipBannerAllowed(mixed, index, sinceBanner = 0) {
   if (!adsAreRunning()) return false
   if (!settingAllows('clip-banner')) return false

@@ -8,7 +8,7 @@ import { makePublicId, isShortPublicId, looksLikeContentId, allocatePublicId } f
 import { sanitizeAuthError, normalizePhone } from '../src/lib/authBrand.js'
 import { findOwnerLogin, isLocalOwnerLogin, isOwnerAccount, OWNER_LOGIN } from '../src/data/ownerLogin.js'
 import { parseVastXml, parseVastClock, videoInStreamBreaks, EXOCLICK_VAST_URL, EXOCLICK_LIVE_CREATOR_VAST_URL, YT_MIDROLL_MIN_SEC, VIDEO_FIRST_AD_SEC, VIDEO_PREROLL_BREAK } from '../src/lib/vastAds.js'
-import { mixClipFeedRows, mixPicFeedRows, clipBannerAllowedOnMixed, CLIP_BANNER_EVERY, PIC_AD_GAPS } from '../src/lib/feedAdCadence.js'
+import { mixClipFeedRows, mixPicFeedRows, clipBannerAllowedOnMixed, CLIP_BANNER_EVERY } from '../src/lib/feedAdCadence.js'
 import { featuredWindowStart, nextFeaturedRefreshAt, lastHourRange, interleaveHourlyHits, HOURLY_PATTERN, HOURLY_VIDEO_COUNT, HOURLY_CLIP_COUNT, HOURLY_PIC_COUNT } from '../src/lib/hourWindow.js'
 
 let failed = 0
@@ -91,34 +91,20 @@ assert(!parseVastXml('<VAST version="3.0"></VAST>'), 'empty vast is not a fake a
 {
   const fake = Array.from({ length: 40 }, (_, i) => ({ id: `c${i}` }))
   const mixed = mixClipFeedRows(fake, { banners: true })
-  const kinds = mixed.map((r) => r.kind)
-  assert(!kinds.join(',').includes('ad,ad'), 'clip full ads are never twice in a row')
+  assert(mixed.every((r) => r.kind === 'item'), 'clip reel is content-only — no full-screen ad stops')
+  assert(mixed.length === fake.length, 'clip reel keeps one row per clip')
   const bannerIdx = mixed.findIndex((_, i) => clipBannerAllowedOnMixed(mixed, i))
   assert(bannerIdx >= 0 && mixed[bannerIdx].kind === 'item', 'every 10th clip can show a banner')
-  assert(mixed[bannerIdx - 1]?.kind !== 'ad' && mixed[bannerIdx + 1]?.kind !== 'ad', 'clip banner is not next to a full ad')
   const itemCountAtBanner = mixed.slice(0, bannerIdx + 1).filter((r) => r.kind === 'item').length
   assert(itemCountAtBanner === CLIP_BANNER_EVERY, 'first banner is on clip 10')
-  for (let i = 0; i < mixed.length; i += 1) {
-    if (mixed[i].kind !== 'ad') continue
-    assert(mixed[i - 1]?.kind === 'item' && mixed[i + 1]?.kind !== 'ad', 'full ads sit between clips')
-    assert(!clipBannerAllowedOnMixed(mixed, i - 1) && !clipBannerAllowedOnMixed(mixed, i + 1), 'full ads are not next to a banner')
-  }
+  assert(mixed[9].banner === true, 'banner flag is set on the 10th clip')
 }
 {
   const fake = Array.from({ length: 50 }, (_, i) => ({ id: `p${i}` }))
   const mixed = mixPicFeedRows(fake)
-  const gaps = []
-  let since = 0
-  mixed.forEach((row) => {
-    if (row.kind === 'item') {
-      since += 1
-      return
-    }
-    gaps.push(since)
-    since = 0
-  })
-  assert(gaps.length >= 4, 'pic feed gets several random ad breaks')
-  assert(gaps.every((g) => PIC_AD_GAPS.includes(g)), 'pic gaps stay between 6 and 10')
+  assert(mixed.every((r) => r.kind === 'item'), 'pic reel is content-only — no full-screen ad stops')
+  assert(mixed.length === fake.length, 'pic reel keeps one row per photo')
+  assert(!mixed.some((r) => r.kind === 'ad'), 'pic reel never inserts ad slides')
 }
 assert(existsSync(new URL('../public/_redirects', import.meta.url)), 'static host rewrites unknown paths to the app')
 assert(readFileSync(new URL('../public/_redirects', import.meta.url), 'utf8').includes('/index.html'), 'redirects file serves index.html')
@@ -395,13 +381,11 @@ assert(cardSrc.includes('openProfile') && cardSrc.includes('onClick={open}'), 'v
 const exoServeSrc = readFileSync(new URL('../src/lib/exoClickServe.js', import.meta.url), 'utf8')
 assert(exoServeSrc.includes('queueExoClickServe'), 'exoClick serve is debounced for every new ins tag')
 assert(exoServeSrc.includes('resurfaceExoClickInContainer'), 'exoClick can re-serve an active reel slot')
-assert(shortsFeedSrc.includes('skipAdSlide'), 'empty clip ad slides auto-skip so playback does not stall')
-assert(shortsFeedSrc.includes('Sponsored · swipe for the next clip'), 'clip in-feed ads stay swipeable')
-assert(shortsFeedSrc.includes('2800'), 'empty clip ads skip after a short wait, not instantly')
-assert(shortsFeedSrc.includes('filledRef.current = true'), 'filled clip ads are not auto-skipped')
-assert(shortsFeedSrc.includes('activeIdxRef.current === index'), 'skipping an empty ad does not rewind while the user is scrolling past it')
-assert(shortsFeedSrc.includes('touch-pan-y'), 'clip ads and banners allow vertical swipe')
-assert(!/ClipFeedAdSlide[\s\S]{0,400}onPointerDown/.test(shortsFeedSrc), 'clip ad slides do not capture pointerdown and freeze the reel')
+assert(shortsFeedSrc.includes('mixFeedAds'), 'clip player marks banner slots while scrolling')
+assert(!shortsFeedSrc.includes('ClipFeedAdSlide'), 'clip reel has no full-screen ad slides')
+assert(!shortsFeedSrc.includes('skipAdSlide'), 'clip reel does not stall on ad slides')
+assert(!shortsFeedSrc.includes("kind === 'ad'"), 'clip reel render path is content-only')
+assert(shortsFeedSrc.includes('touch-pan-y'), 'clip banners allow vertical swipe')
 assert(shortsFeedSrc.includes('bindVideoRef') || shortsFeedSrc.includes('syncPlayback'), 'clip player re-syncs video when a slide becomes active')
 const vastHook = readFileSync(new URL('../src/hooks/useVideoVastAds.js', import.meta.url), 'utf8')
 assert(vastHook.includes('showingVast: Boolean(creative)'), 'vast wait does not block the player')
@@ -415,9 +399,9 @@ const adEng = readFileSync(new URL('../src/lib/adEngine.js', import.meta.url), '
 assert(!adEng.includes('clips_ads_running'), 'ads have no site-wide off switch')
 assert(!adEng.includes('setAdsRunning'), 'admins cannot turn site ads off')
 assert(/export function adsAreRunning\(\)\s*\{\s*return true/.test(adEng), 'ads always run')
-assert(adEng.includes('mixFeedAds'), 'clip and pic feeds can insert ads between items')
-assert(adEng.includes('mixClipFeedRows'), 'clip ads use the 4-6 cadence')
-assert(adEng.includes('mixPicFeedRows'), 'pic ads use the 6-10 cadence')
+assert(adEng.includes('mixFeedAds'), 'clip feed can mark banner slots')
+assert(adEng.includes('mixClipFeedRows'), 'clip feed uses banner cadence helper')
+assert(adEng.includes('mixPicFeedRows'), 'pic feed uses content-only rows')
 const dashSrc2 = readFileSync(new URL('../src/components/studio/CreatorStudio.jsx', import.meta.url), 'utf8')
 assert(dashSrc2.includes('Apply to earn'), 'creator studio offers apply to earn')
 assert(dashSrc2.includes('Earn approved') || dashSrc2.includes('approved'), 'creator studio shows earn status')
@@ -428,7 +412,8 @@ assert(!ledgerSrc.includes('estimatedAdRevenue'), 'wallets do not estimate ad re
 const monSrc = readFileSync(new URL('../src/components/settings/MonetizationSettings.jsx', import.meta.url), 'utf8')
 assert(monSrc.includes('not a creator share'), 'monetization says ads are not a creator share')
 const cadenceSrc = readFileSync(new URL('../src/lib/feedAdCadence.js', import.meta.url), 'utf8')
-assert(cadenceSrc.includes('exo-clip-feed-fallback'), 'short feeds still get an ad with few clips')
+assert(cadenceSrc.includes('never full-screen scroll stops'), 'feed cadence docs say reels do not stop on ads')
+assert(!cadenceSrc.includes('exo-clip-feed-fallback'), 'clip reel does not insert full-screen ad slides')
 assert(!cadenceSrc.includes('exo-video-feed-'), 'home video grid does not insert display ads between cards')
 assert(!adEng.includes("placement === 'video-feed'"), 'video-feed placement is gone — videos are in-stream only')
 assert(!adEng.includes('watchBannerAllowed'), 'watch banner helper is gone — never a box under the player')
@@ -439,15 +424,11 @@ assert(!watchSrc3.includes('watchBannerAllowed'), 'watch page does not render a 
 assert(!watchSrc3.includes('ExoClickDisplay'), 'watch page has no display unit under the video')
 assert(watchSrc3.includes('useVideoVastAds'), 'watch loads ExoClick VAST for videos')
 assert(watchSrc3.includes('campaignBreak'), 'watch can fall back to a campaign at the same 30s/8min breaks')
-assert(cadenceSrc.includes("provider: 'exoclick'"), 'clip and pic feeds use the ExoClick display zone')
-assert(cadenceSrc.includes("format: 'banner'"), 'clip and pic scroll ads share the display banner format')
-assert(!cadenceSrc.includes("format: 'video'"), 'scroll feeds never use the VAST video zone')
-assert(cadenceSrc.includes('CLIP_AD_GAPS = [4, 5, 6]'), 'clip ads sit every 4-6 items')
-assert(cadenceSrc.includes('PIC_AD_GAPS = [6, 7, 8, 9, 10]'), 'pic ads sit every 6-10 items')
-assert(cadenceSrc.includes('randomGap'), 'ad gaps are random not fixed')
 assert(cadenceSrc.includes('CLIP_BANNER_EVERY = 10'), 'clip banners sit every 10 clips')
 assert(cadenceSrc.includes('sinceBanner >= CLIP_BANNER_EVERY'), 'banners count clips scrolled so a short catalog still reaches one')
-assert(shortsFeedSrc.includes('mixFeedAds'), 'clip player inserts ads between clips while scrolling')
+assert(!cadenceSrc.includes('CLIP_AD_GAPS'), 'clip reel no longer inserts full-screen ad gaps')
+assert(!cadenceSrc.includes('PIC_AD_GAPS'), 'pic reel no longer inserts full-screen ad gaps')
+assert(shortsFeedSrc.includes('mixFeedAds'), 'clip player uses banner cadence while scrolling')
 assert(adEng.includes('clip-banner') && adEng.includes('pic-feed'), 'clip and pic placements exist')
 const adUnitsSrc = readFileSync(new URL('../src/components/AdUnits.jsx', import.meta.url), 'utf8')
 assert(adUnitsSrc.includes("variant === 'pic'"), 'pic scroll ads use a square photo tile')
@@ -459,11 +440,13 @@ assert(adUnitsSrc.includes('placementAdsAllowed'), 'banners fall back to ExoClic
 assert(!shelvesSrc2.includes('col-span-full'), 'video shelf has no full-width ad strip')
 assert(!shelvesSrc2.includes('mixFeedAds') && !shelvesSrc2.includes('InFeedAd'), 'home and profile shelves have no recommended-grid ads')
 const picsPageSrc = readFileSync(new URL('../src/components/PicsPage.jsx', import.meta.url), 'utf8')
-assert(picsPageSrc.includes('scrollRows'), 'pic viewer mixes ads while scrolling')
-assert(picsPageSrc.includes('variant="pic"'), 'pic viewer scroll ads use square tiles')
+assert(picsPageSrc.includes('scrollRows'), 'pic viewer builds a scroll reel')
+assert(picsPageSrc.includes('content-only'), 'pic reel is content-only')
+assert(!picsPageSrc.includes('PicFeedAdSlide'), 'pic reel has no full-screen ad slides')
+assert(!picsPageSrc.includes('InFeedAd'), 'pic reel does not mount in-feed ad slides')
 assert(!picsPageSrc.includes('pic-banner'), 'pic viewer does not put a banner on the photo')
 assert(!picsPageSrc.includes('PlacementBanner'), 'pic viewer does not overlay an ad on a photo')
-assert(picsPageSrc.includes('Sponsored · swipe for the next pic'), 'pic ads only appear in the open viewer reel')
+assert(!picsPageSrc.includes('Sponsored · swipe for the next pic'), 'pic reel has no sponsored stop slides')
 assert(picsPageSrc.includes('shuffled.map((pic)'), 'pics mosaic is content only — no ad tiles on recommended')
 const paySrc = readFileSync(new URL('../src/lib/payouts.js', import.meta.url), 'utf8')
 assert(!paySrc.includes('rpmPerThousand'), 'payouts are not a per-1000-views rate')
@@ -493,7 +476,7 @@ const shortsGridSrc = readFileSync(new URL('../src/components/ShortsGrid.jsx', i
 assert(!shortsGridSrc.includes('mixFeedAds') && !shortsGridSrc.includes('InFeedAd'), 'clip Recommended grid has no ads')
 assert(shortsFeedSrc.includes('clipBannerAllowed'), 'clip player has banners under the description')
 assert(shortsFeedSrc.includes('EXOCLICK_BANNER_ZONE'), 'clip banners use the ExoClick banner zone')
-assert(shortsFeedSrc.includes('ExoClickDisplay'), 'clip player scroll ads use the shared display zone')
+assert(shortsFeedSrc.includes('ExoClickDisplay'), 'clip banners use the display component under the description')
 assert(!shortsFeedSrc.includes('bottom-44'), 'clip tap layer covers full video again')
 assert(shortsFeedSrc.includes("if (!focusId) return []"), 'clip ads only mix after a clip is opened')
 assert(!shortsFeedSrc.includes('FeedVideoAd'), 'clip player does not mount VAST between clips')
@@ -521,8 +504,8 @@ assert(shortsFeedSrc.includes('EXOCLICK_BANNER_ZONE'), 'clip banners use the ban
 assert(!watchSrc3.includes('format="banner"'), 'watch page has no display banner under the video')
 assert(!watchSrc3.includes('ExoClickDisplay'), 'watch page never mounts a display unit')
 const picsSrc = readFileSync(new URL('../src/components/PicsPage.jsx', import.meta.url), 'utf8')
-assert(picsSrc.includes('mixFeedAds'), 'pic viewer inserts ads while scrolling')
-assert(picsSrc.includes('scrollRows'), 'pic scroll ads are separate from the mosaic')
+assert(picsSrc.includes('content-only'), 'pic reel scrolls content only')
+assert(picsSrc.includes('scrollRows'), 'pic scroll reel is separate from the mosaic')
 assert(!picsSrc.includes('mixed.map'), 'pic mosaic does not render ad tiles')
 assert(picsSrc.includes('togglePicHeart'), 'pics can be hearted')
 assert(picsSrc.includes('PicHeartBtn'), 'pic viewer shows heart only on the active slide')
