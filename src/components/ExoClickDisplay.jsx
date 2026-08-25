@@ -127,7 +127,14 @@ export default function ExoClickDisplay({
     }
     return null
   }
-  if (state === 'empty') return null
+  if (state === 'empty') {
+    return (
+      <div
+        className={`exo-slot pointer-events-none min-h-[90px] w-full rounded-md bg-[#141414] ${className}`}
+        aria-hidden="true"
+      />
+    )
+  }
 
   return (
     <div

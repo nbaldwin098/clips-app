@@ -80,11 +80,8 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
     }
     const users = listIndexedUsers()
     const match = users.find((u) => String(u.email || '').toLowerCase() === mail)
-    if (match?.handle) {
-      setInfo(`Your username is @${match.handle}`)
-    } else {
-      setInfo('No username found on this device for that email. Sign in with email or phone — your @username is on your profile after you log in.')
-    }
+    void match
+    setInfo('If that email is on Clips, your @username is on your profile after you sign in. Check inbox if you forgot your password.')
   }
 
   const submit = async (e) => {
