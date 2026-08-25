@@ -133,11 +133,11 @@ export default function ExoClickDisplay({
     <div
       ref={containerRef}
       className={`exo-slot pointer-events-auto relative flex w-full items-center justify-center overflow-hidden touch-pan-y touch-manipulation ${
-        state === 'filled' ? 'bg-[#111]' : 'bg-transparent'
+        state === 'filled' ? 'bg-[#111]' : 'bg-[#1a1a1a]'
       } ${className}`}
       onClick={stopClick}
     >
-      {state === 'filled' ? (
+      {state === 'filled' || state === 'pending' ? (
         <span
           data-ad-label="true"
           className="pointer-events-none absolute left-1.5 top-1.5 z-10 rounded bg-black/70 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white"

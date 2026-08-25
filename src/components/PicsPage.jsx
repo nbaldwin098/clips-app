@@ -228,6 +228,31 @@ function MosaicPicTile({ pic, onOpen, onOpenAuth, onUnplayable }) {
   )
 }
 
+function PicFeedAdSlide({ active, warm = false, ad, onEmpty }) {
+  const filledRef = useRef(false)
+  useEffect(() => {
+    if (!active || filledRef.current) return undefined
+    const t = window.setTimeout(() => {
+      if (!filledRef.current) onEmpty?.()
+    }, 2800)
+    return () => window.clearTimeout(t)
+  }, [active, onEmpty])
+  return (
+    <div
+      className="h-full w-full max-w-md mx-auto bg-black flex flex-col items-center justify-center px-4 pointer-events-auto relative z-10 touch-pan-y touch-manipulation"
+      data-ad-slide=""
+    >
+      <p className="shrink-0 px-3 py-2 text-[11px] text-white/70">Sponsored · swipe for the next pic</p>
+      <InFeedAd
+        ad={ad}
+        variant="pic"
+        active={active || warm}
+        onFill={(ok) => { if (ok) filledRef.current = true }}
+      />
+    </div>
+  )
+}
+
 /** Mosaic of every real pic · tap opens a Shorts-style roll · X returns to the mosaic */
 export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
   const { user, isAuthenticated } = useAuth()
@@ -371,13 +396,7 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
             const row = visibleScrollRows[index]
             if (row?.kind === 'ad') {
               return (
-                <div
-                  className="h-full w-full max-w-md mx-auto bg-black flex flex-col items-center justify-center px-4 pointer-events-auto relative z-10 touch-pan-y touch-manipulation"
-                  data-ad-slide=""
-                >
-                  <p className="shrink-0 px-3 py-2 text-[11px] text-white/70">Sponsored · swipe for the next pic</p>
-                  <InFeedAd ad={row.ad} variant="pic" active={active || warm} onFill={(ok) => { if (!ok && active) skipAdSlide(index) }} />
-                </div>
+                <PicFeedAdSlide active={active} warm={warm} ad={row.ad} onEmpty={() => skipAdSlide(index)} />
               )
             }
             const pic = row?.item

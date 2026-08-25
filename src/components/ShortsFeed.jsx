@@ -443,9 +443,13 @@ function ClipSlide({
 }
 
 function ClipFeedAdSlide({ active, warm = false, ad, onEmpty }) {
-  const emptyRef = useRef(false)
+  const filledRef = useRef(false)
   useEffect(() => {
-    if (active && emptyRef.current) onEmpty?.()
+    if (!active || filledRef.current) return undefined
+    const t = window.setTimeout(() => {
+      if (!filledRef.current) onEmpty?.()
+    }, 2800)
+    return () => window.clearTimeout(t)
   }, [active, onEmpty])
   return (
     <div
@@ -457,10 +461,7 @@ function ClipFeedAdSlide({ active, warm = false, ad, onEmpty }) {
         ad={ad}
         variant="clip"
         active={active || warm}
-        onFill={(ok) => {
-          emptyRef.current = !ok
-          if (!ok && active) onEmpty?.()
-        }}
+        onFill={(ok) => { if (ok) filledRef.current = true }}
       />
     </div>
   )
