@@ -8,6 +8,7 @@ import { notifyContentChanged } from '../lib/contentSync'
 import { getWatchProgress } from '../lib/watchProgress'
 import { copyShareUrl } from '../lib/routes'
 import { hideBrokenMedia } from '../lib/catalogHealth'
+import { isUserUploadRecord } from '../lib/mediaMeta'
 import { openSafeUrl } from '../lib/safeUrl'
 import ReportModal from './ReportModal'
 import PostedStamp from './PostedStamp'
@@ -30,6 +31,7 @@ export default function ContentCard({ item, onOpen, onOpenProfile, variant }) {
   const [copied, setCopied] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
   const [gone, setGone] = useState(false)
+  const [thumbBroken, setThumbBroken] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
   const progress = user?.id ? getWatchProgress(user.id, item?.id) : null
@@ -65,6 +67,10 @@ export default function ContentCard({ item, onOpen, onOpenProfile, variant }) {
   if (!item || gone) return null
 
   const drop = () => {
+    if (isUserUploadRecord(item)) {
+      setThumbBroken(true)
+      return
+    }
     hideBrokenMedia(item.id)
     setGone(true)
   }
@@ -109,7 +115,11 @@ export default function ContentCard({ item, onOpen, onOpenProfile, variant }) {
     }
   }
 
-  const thumb = item.thumbUrl || item.mediaUrl
+  const thumb = thumbBroken
+    ? ''
+    : (item.thumbUrl && !String(item.thumbUrl).startsWith('blob:')
+      ? item.thumbUrl
+      : (item.mediaUrl && String(item.mediaUrl).startsWith('http') ? item.mediaUrl : ''))
   const subs = item.creatorId ? getSubscriberCount(item.creatorId) : 0
   const name = creatorDisplayName(item)
   const official = isVerifiedChannel(item.creatorId || item.userId, item.handle)

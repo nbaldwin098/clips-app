@@ -278,8 +278,8 @@ export default function UploadModal({
             <div className="rounded-lg border border-zinc-700 bg-[#18181b] p-3 text-sm space-y-1">
               <div className="flex items-center gap-2 font-medium text-white"><Film className="h-4 w-4" />{meta.name}</div>
               <p className="text-xs text-zinc-400">{meta.sizeMb ? `${meta.sizeMb} MB · ` : ''}{meta.type}{meta.soundTitle ? ` · ${meta.soundTitle}` : ''}</p>
-              <p className={`text-xs ${hosted ? 'text-green-400' : 'text-amber-400'}`}>
-                {meta.status === 'draft' ? 'Saved as a draft' : meta.status === 'scheduled' ? 'Scheduled on this device' : hosted ? 'Live shared link' : 'Saved on this device only'}
+              <p className={`text-xs ${meta.status === 'draft' || meta.status === 'scheduled' ? 'text-amber-400' : 'text-green-400'}`}>
+                {meta.status === 'draft' ? 'Saved as a draft' : meta.status === 'scheduled' ? 'Scheduled' : 'Uploaded'}
               </p>
             </div>
           )}

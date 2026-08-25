@@ -99,10 +99,21 @@ export function parseExternalShort(url) {
 
 /**
  * Persist an imported reference into the local library.
+ * User uploads are never dropped by the size cap — that was wiping clips
+ * whenever seedOfficialCatalog / another saveImport rewrote the list.
  */
 export function saveImport(record) {
-  const list = lsGet('imports', [])
-  const next = [record, ...list.filter((r) => r.id !== record.id)].slice(0, 200)
+  if (!record?.id) return getImports()
+  const list = getImports()
+  const without = list.filter((r) => r.id !== record.id)
+  const nextAll = [record, ...without]
+  const IMPORT_CAP = 500
+  const protectedRows = nextAll.filter(isUserUploadRecord)
+  const protectedIds = new Set(protectedRows.map((r) => r.id))
+  const rest = nextAll.filter((r) => !protectedIds.has(r.id))
+  const slots = Math.max(0, IMPORT_CAP - protectedRows.length)
+  const keepRest = new Set(rest.slice(0, slots).map((r) => r.id))
+  const next = nextAll.filter((r) => protectedIds.has(r.id) || keepRest.has(r.id))
   lsSet('imports', next)
   return next
 }

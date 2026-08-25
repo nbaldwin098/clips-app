@@ -78,8 +78,11 @@ export async function publishPhoto(file, actor = null) {
     const id = `pic_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
     const uploadFile = processed.displayFile || file
 
-    let mediaUrl = processed.rawUrl
+    // Never persist ephemeral blob: object URLs — refresh kills them and
+    // cloud sync would publish empty stubs to other viewers.
+    let mediaUrl = ''
     let hosted = false
+    let localStored = false
 
     // Never surface raw storage/database errors to viewers — log internally and
     // fall back to the local IndexedDB copy. Cloud writes require a signed-in actor.
@@ -94,8 +97,18 @@ export async function publishPhoto(file, actor = null) {
     }
 
     try {
-      await storeMediaBlob(id, processed.displayFile || file)
-    } catch {}
+      localStored = !!(await storeMediaBlob(id, processed.displayFile || file))
+    } catch {
+      localStored = false
+    }
+
+    if (!mediaUrl && !localStored && !processed.thumbUrl) {
+      return { ok: false, item: null, error: 'Could not save this photo on this device.' }
+    }
+
+    const thumbUrl = String(processed.thumbUrl || '').startsWith('data:image/')
+      ? processed.thumbUrl
+      : (mediaUrl || '')
 
     const record = {
       id,
@@ -104,14 +117,16 @@ export async function publishPhoto(file, actor = null) {
       description: '',
       sourceUrl: mediaUrl,
       mediaUrl,
-      thumbUrl: processed.thumbUrl || mediaUrl,
-      mosaicThumb: processed.thumbUrl || '',
+      thumbUrl,
+      mosaicThumb: thumbUrl,
       origin: hosted ? 'pic-upload' : 'pic-local',
       hosted,
+      localStored,
       storedBytes: (processed.displayFile || file).size || 0,
       width: processed.width,
       height: processed.height,
       createdAt: new Date().toISOString(),
+      priceUsd: 0,
     }
     if (actor?.id) {
       record.creatorId = actor.id
