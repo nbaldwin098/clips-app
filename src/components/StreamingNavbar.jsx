@@ -4,13 +4,8 @@ import {
   Menu,
   Settings,
   LogOut,
-  Tv,
   SlidersHorizontal,
-  Clapperboard,
   CircleUserRound,
-  BarChart3,
-  Wallet,
-  BadgeCheck,
   ShieldCheck,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
@@ -132,45 +127,10 @@ export default function StreamingNavbar({
                     </div>
                     <button
                       type="button"
-                      onClick={() => handleNav('channel')}
-                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-zinc-200 hover:bg-[#1f1f2a] hover:text-white"
-                    >
-                      <Tv className="h-4 w-4 text-white" /> Channel
-                    </button>
-                    <button
-                      type="button"
                       onClick={() => handleNav('dashboard')}
                       className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-zinc-200 hover:bg-[#1f1f2a] hover:text-white"
                     >
-                      <SlidersHorizontal className="h-4 w-4 text-zinc-400" /> Creator Studio
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleNav('analytics')}
-                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-zinc-200 hover:bg-[#1f1f2a] hover:text-white"
-                    >
-                      <BarChart3 className="h-4 w-4 text-zinc-400" /> Analytics
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleNav('wallet')}
-                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-zinc-200 hover:bg-[#1f1f2a] hover:text-white"
-                    >
-                      <Wallet className="h-4 w-4 text-zinc-400" /> Wallet
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleNav('vods')}
-                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-zinc-200 hover:bg-[#1f1f2a] hover:text-white"
-                    >
-                      <Clapperboard className="h-4 w-4 text-zinc-400" /> VODs
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleNav('verify')}
-                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-zinc-200 hover:bg-[#1f1f2a] hover:text-white"
-                    >
-                      <BadgeCheck className="h-4 w-4 text-zinc-400" /> Get verified
+                      <SlidersHorizontal className="h-4 w-4 text-zinc-400" /> Creator dashboard
                     </button>
                     <button
                       type="button"
@@ -180,7 +140,7 @@ export default function StreamingNavbar({
                       }}
                       className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-zinc-200 hover:bg-[#1f1f2a] hover:text-white"
                     >
-                      <Settings className="h-4 w-4 text-zinc-400" /> Account settings
+                      <Settings className="h-4 w-4 text-zinc-400" /> Site settings
                     </button>
                     {isPlatformOwner(user) && (
                       <button
