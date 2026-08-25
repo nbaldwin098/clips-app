@@ -53,6 +53,7 @@ export default function ExoClickDisplay({
   active = true,
   onFill,
   fillTimeoutMs,
+  fillFrame = false,
 }) {
   const zone = zoneId && isDisplayZone(zoneId) ? String(zoneId) : displayZone().id
   const badZone = Boolean(zoneId && !isDisplayZone(zoneId))
@@ -128,6 +129,7 @@ export default function ExoClickDisplay({
     return null
   }
   if (state === 'empty') {
+    if (fillFrame) return null
     return (
       <div
         className={`exo-slot pointer-events-none min-h-[90px] w-full rounded-md bg-[#141414] ${className}`}
@@ -139,7 +141,10 @@ export default function ExoClickDisplay({
   return (
     <div
       ref={containerRef}
+      data-fill-frame={fillFrame ? 'true' : undefined}
       className={`exo-slot pointer-events-auto relative flex w-full items-center justify-center overflow-hidden touch-pan-y touch-manipulation ${
+        fillFrame ? 'h-full min-h-0 [&_iframe]:max-h-full [&_iframe]:max-w-full [&_img]:max-h-full [&_img]:max-w-full [&_a]:max-h-full [&_a]:max-w-full' : ''
+      } ${
         state === 'filled' ? 'bg-[#111]' : 'bg-[#1a1a1a]'
       } ${className}`}
       onClick={stopClick}
@@ -156,7 +161,12 @@ export default function ExoClickDisplay({
         ref={insRef}
         className={insClass || AD_ZONES.banner.insClass}
         data-zoneid={zone}
-        style={{ display: 'inline-block', maxWidth: '100%', pointerEvents: 'auto' }}
+        style={{
+          display: 'inline-block',
+          maxWidth: '100%',
+          pointerEvents: 'auto',
+          ...(fillFrame ? { width: '100%', height: '100%', maxHeight: '100%' } : {}),
+        }}
       />
     </div>
   )
