@@ -1,7 +1,7 @@
 /**
- * Where in-feed ads land. Clips and pics share one scroll display zone —
- * both are endless feeds, so ExoClick's sized banner unit goes in both.
- * Videos get no in-feed box; video ads are in-stream VAST only.
+ * Where scroll ads land — only after someone opens a clip or pic.
+ * Recommended grids, home shelves, and the pics mosaic stay ad-free.
+ * Clips and pics share one display zone because both are scroll reels.
  *
  * `format: 'banner'` always — never put the VAST video zone between posts.
  */
