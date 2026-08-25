@@ -51,23 +51,25 @@ export default function MediaShelves({ items, onPlayItem, onOpenPic, onOpenProfi
           {filter === 'all' ? <h2 className="text-lg font-semibold text-white mb-4">Pics</h2> : null}
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1">
             {pics.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => (onOpenPic || onPlayItem)?.(item)}
-                className="relative block w-full aspect-square overflow-hidden rounded-lg bg-[#272727] group"
-              >
-                {(item.thumbUrl || item.mediaUrl) ? (
-                  <img src={item.thumbUrl || item.mediaUrl} alt="" className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" decoding="async" />
-                ) : null}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <span className="absolute bottom-1.5 left-1.5 right-1.5 text-[11px] text-white line-clamp-2 opacity-0 group-hover:opacity-100">
-                  {item.title || viewsLabel(getViews(item.id))}
-                </span>
-                {item.durationSec > 0 ? (
-                  <span className="absolute top-1.5 right-1.5 text-[10px] bg-black/80 text-white rounded px-1">{formatDuration(item.durationSec)}</span>
-                ) : null}
-              </button>
+              <div key={item.id} className="relative aspect-square">
+                {pinOverlay?.(item)}
+                <button
+                  type="button"
+                  onClick={() => (onOpenPic || onPlayItem)?.(item)}
+                  className="relative block w-full h-full overflow-hidden rounded-lg bg-[#272727] group"
+                >
+                  {(item.thumbUrl || item.mediaUrl) ? (
+                    <img src={item.thumbUrl || item.mediaUrl} alt="" className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" decoding="async" />
+                  ) : null}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <span className="absolute bottom-1.5 left-1.5 right-1.5 text-[11px] text-white line-clamp-2 opacity-0 group-hover:opacity-100">
+                    {item.title || viewsLabel(getViews(item.id))}
+                  </span>
+                  {item.durationSec > 0 ? (
+                    <span className="absolute top-1.5 right-1.5 text-[10px] bg-black/80 text-white rounded px-1">{formatDuration(item.durationSec)}</span>
+                  ) : null}
+                </button>
+              </div>
             ))}
           </div>
         </section>
