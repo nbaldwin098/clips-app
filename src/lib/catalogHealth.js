@@ -43,18 +43,13 @@ export function hasStableImage(item) {
 
 export function hasLocalMediaHint(item) {
   if (!item?.id) return false
+  // Only rows explicitly marked localStored may play from IndexedDB.
+  // Empty-media "uploads" used to stay feedable and never played for anyone.
   if (item.localStored === true) return true
   if (isUserUploadRecord(item) && Number(item.storedBytes) > 0) {
     const media = String(item.mediaUrl || '')
     const source = String(item.sourceUrl || '')
-    if (!media && !source) return true
     if (isBlobUrl(media) || isBlobUrl(source)) return true
-    if (isHttpUrl(media) || isHttpUrl(source)) return true
-    return true
-  }
-  // Opaque public ids with empty media still play from IndexedDB after upload.
-  if (isUserUploadRecord(item) && !isHttpUrl(item.mediaUrl) && !isHttpUrl(item.sourceUrl)) {
-    return true
   }
   return false
 }
@@ -85,6 +80,11 @@ export function isRetiredCatalogItem(item) {
 export function isFeedable(item) {
   if (!item || isReferenceItem(item) || isRetiredCatalogItem(item)) return false
   if (item.type === 'pic') return hasStableImage(item)
+  // User uploads only belong in shared feeds when they have a public http URL.
+  // Device-only / empty-media rows made it look like "only my uploads exist".
+  if (isUserUploadRecord(item)) {
+    return isHttpUrl(item?.mediaUrl) || isHttpUrl(item?.sourceUrl)
+  }
   return hasPlayableVideo(item)
 }
 

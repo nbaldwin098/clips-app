@@ -257,7 +257,7 @@ function ClipSlide({
   return (
     <ShortsCard actions={actions(true)} fillMobile>
       <div
-        className="absolute inset-0 z-[1]"
+        className="absolute inset-0 z-[1] touch-pan-y"
         onClick={onSurfaceClick}
         onPointerDown={holdStart}
         onPointerUp={holdEnd}
@@ -548,7 +548,7 @@ export default function ShortsFeed({
 
   return (
     <ShortsStage
-      key={`clips-player-${tab}-${visibleMixed.length}`}
+      key={`clips-player-${tab}`}
       count={visibleMixed.length}
       activeIndex={activeIdx}
       goToRef={goToRef}

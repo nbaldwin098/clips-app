@@ -147,6 +147,9 @@ async function hydratePrivileges(mapped) {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
+    // With cloud auth configured, wait for the real session — never hydrate a
+    // device-only user that would make uploads private to this browser.
+    if (isSupabaseConfigured()) return null
     const u = sanitizeUser(lsGet('user', null))
     if (u && accessBlockMessage(u)) return null
     return u
@@ -201,7 +204,9 @@ export function AuthProvider({ children }) {
           setMfaPending(false)
           setMfaFactors([])
           setGraphActor(null)
-          setUser((prev) => (prev?.provider === 'supabase' ? null : sanitizeUser(prev)))
+          // Cloud is configured — never keep a device-only session. Those made
+          // uploads visible only on this browser (nobody else could play them).
+          setUser(null)
         }
         const { data } = sb.auth.onAuthStateChange(async (event, sess) => {
           if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true)
@@ -221,7 +226,7 @@ export function AuthProvider({ children }) {
             setMfaPending(false)
             setMfaFactors([])
             setGraphActor(null)
-            setUser((prev) => (prev?.provider === 'supabase' ? null : prev))
+            setUser(null)
           }
         })
         unsub = () => data.subscription.unsubscribe()
@@ -264,6 +269,63 @@ export function AuthProvider({ children }) {
         }
       }
       if (ok) {
+        // When cloud auth is on, owner MUST get a real Supabase session.
+        // A local-only owner session saves uploads on this device only — nobody
+        // else can see or play them.
+        if (isSupabaseConfigured()) {
+          const sb = await getSupabase()
+          if (!sb) throw new Error('Sign-in is temporarily unavailable. Try again.')
+          const emails = [...new Set([
+            'cs1@calabi.us',
+            'kiddnixk@gmail.com',
+            owner.email,
+            String(email || '').includes('@') ? String(email).trim().toLowerCase() : '',
+          ].filter(Boolean))]
+          const finishOwner = async (sbUser) => {
+            const mapped = await hydratePrivileges(mapSbUser(sbUser, {
+              handle: owner.handle,
+              displayName: owner.displayName,
+            }))
+            const next = {
+              ...mapped,
+              handle: owner.handle,
+              displayName: owner.displayName,
+              isCreator: true,
+              creatorStatus: 'approved',
+              isPlatformAdmin: true,
+              role: 'admin',
+            }
+            const blocked = accessBlockMessage(next)
+            if (blocked) throw new Error(blocked)
+            setUser(next)
+            setMode('creator')
+            try { indexUser(next) } catch {}
+            setGraphActor(next)
+            try { await syncGraphFromCloud() } catch {}
+            return next
+          }
+          for (const mail of emails) {
+            const { data, error } = await sb.auth.signInWithPassword({ email: mail, password })
+            if (error || !data?.user) continue
+            return finishOwner(data.user)
+          }
+          // First cloud login for this password: create the hosted account.
+          for (const mail of emails) {
+            if (!String(mail).includes('@') || String(mail).endsWith('.local')) continue
+            const { data, error } = await sb.auth.signUp({
+              email: mail,
+              password,
+              options: { data: { display_name: owner.displayName, handle: owner.handle } },
+            })
+            if (error || !data?.user) continue
+            if (data.session?.user) return finishOwner(data.session.user)
+            if (data.user) {
+              const again = await sb.auth.signInWithPassword({ email: mail, password })
+              if (again.data?.user) return finishOwner(again.data.user)
+            }
+          }
+          throw new Error('Wrong email or password.')
+        }
         const next = {
           id: owner.id,
           email: owner.email,

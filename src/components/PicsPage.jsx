@@ -339,7 +339,7 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
     return (
       <div className="h-full min-h-0 flex flex-col bg-[#000000]">
         <ShortsStage
-          key={`pic-reel-${openedAt}-${visibleScrollRows.length}`}
+          key={`pic-reel-${openedAt}`}
           count={visibleScrollRows.length}
           activeIndex={viewerIndex}
           goToRef={goToRef}

@@ -1,6 +1,6 @@
 /**
  * Upload video/image to Supabase Storage → durable public URL.
- * Device IndexedDB is not the source of truth for published media.
+ * Published posts must have an http(s) mediaUrl so anyone can play them.
  */
 import { getSupabase, isSupabaseConfigured } from './supabaseClient'
 
@@ -21,16 +21,43 @@ function extFromFile(file, fallback = 'bin') {
   return fallback
 }
 
-/** True when this signed-in user can write to the clips storage bucket + videos table. */
-export function canHostUploads(actor) {
-  return !!(
-    isSupabaseConfigured()
-    && actor?.id
-    && actor.provider === 'supabase'
-  )
+/** Active Supabase auth user (needed for storage RLS + catalog upsert). */
+export async function getHostSessionUser() {
+  if (!isSupabaseConfigured()) return null
+  try {
+    const sb = await getSupabase()
+    if (!sb) return null
+    const { data } = await sb.auth.getSession()
+    return data?.session?.user || null
+  } catch {
+    return null
+  }
 }
 
-/** Plain user-facing copy — no infrastructure jargon. */
+/** True when uploads can be hosted as playable public links. */
+export function canHostUploads(actor) {
+  return !!(isSupabaseConfigured() && actor?.id && actor.provider === 'supabase')
+}
+
+/**
+ * Resolve who can write to storage right now.
+ * Prefers the live Supabase session (so a linked owner login can upload).
+ */
+export async function resolveUploadHost(actor = null) {
+  const sessionUser = await getHostSessionUser()
+  if (sessionUser?.id) {
+    return {
+      id: sessionUser.id,
+      handle: actor?.handle || sessionUser.user_metadata?.handle || '',
+      displayName: actor?.displayName || sessionUser.user_metadata?.display_name || '',
+      provider: 'supabase',
+      email: sessionUser.email || actor?.email || '',
+    }
+  }
+  if (canHostUploads(actor)) return actor
+  return null
+}
+
 export function signInToUploadMessage() {
   return 'Sign in to upload.'
 }
@@ -39,7 +66,7 @@ export function uploadFailedMessage() {
   return "Couldn't upload. Try again."
 }
 
-/** @deprecated use signInToUploadMessage / uploadFailedMessage */
+/** @deprecated */
 export function cloudHostRequiredMessage(actor) {
   if (!actor?.id) return signInToUploadMessage()
   return uploadFailedMessage()
@@ -48,7 +75,7 @@ export function cloudHostRequiredMessage(actor) {
 async function uploadToBucket(file, userId, { maxBytes, kind }) {
   if (!file) return { ok: false, error: 'No file' }
   if (!isSupabaseConfigured()) {
-    return { ok: false, error: 'Storage not connected (Supabase env missing).' }
+    return { ok: false, error: 'Storage not connected.' }
   }
   if (file.size > maxBytes) {
     return {
@@ -58,9 +85,12 @@ async function uploadToBucket(file, userId, { maxBytes, kind }) {
   }
   try {
     const sb = await getSupabase()
-    if (!sb) return { ok: false, error: 'Supabase client unavailable.' }
+    if (!sb) return { ok: false, error: 'Storage unavailable.' }
     const { data: sessionData } = await sb.auth.getSession()
-    const uid = userId || sessionData?.session?.user?.id || 'anon'
+    const uid = sessionData?.session?.user?.id || userId
+    if (!uid || uid === 'anon') {
+      return { ok: false, error: 'Sign in to upload.' }
+    }
     const id = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
     const path = `${kind}/${uid}/${id}.${extFromFile(file, kind === 'pics' ? 'jpg' : 'mp4')}`
     const { error: upErr } = await sb.storage.from(BUCKET).upload(path, file, {
@@ -69,10 +99,7 @@ async function uploadToBucket(file, userId, { maxBytes, kind }) {
       contentType: file.type || (kind === 'pics' ? 'image/jpeg' : 'video/mp4'),
     })
     if (upErr) {
-      return {
-        ok: false,
-        error: upErr.message || 'Upload failed. Create public Storage bucket "clips".',
-      }
+      return { ok: false, error: upErr.message || 'Upload failed.' }
     }
     const { data } = sb.storage.from(BUCKET).getPublicUrl(path)
     if (!data?.publicUrl) return { ok: false, error: 'No public URL returned.' }

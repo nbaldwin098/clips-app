@@ -135,7 +135,11 @@ export default function ShortsStage({
     jumping.current = true
     scrollToReel(middleReel(idx), behavior)
     onActiveIndex?.(idx)
-    requestAnimationFrame(() => { jumping.current = false })
+    if (behavior === 'auto') {
+      requestAnimationFrame(() => { jumping.current = false })
+      return
+    }
+    window.setTimeout(() => { jumping.current = false }, 320)
   }, [n, loop, onActiveIndex])
 
   useEffect(() => {
@@ -174,8 +178,8 @@ export default function ShortsStage({
   }
 
   const slideShell = bleedMobile
-    ? 'h-full w-full min-h-full snap-start snap-always shrink-0 overflow-hidden flex items-center justify-center px-0 py-0 md:px-10 md:py-8'
-    : 'h-full w-full min-h-full snap-start snap-always shrink-0 overflow-hidden flex items-center justify-center px-3 py-4 sm:px-10 sm:py-8'
+    ? 'w-full snap-start snap-always shrink-0 overflow-hidden flex items-center justify-center px-0 py-0 md:px-10 md:py-8'
+    : 'w-full snap-start snap-always shrink-0 overflow-hidden flex items-center justify-center px-3 py-4 sm:px-10 sm:py-8'
 
   return (
     <div className="h-full min-h-0 w-full bg-[#000000] flex flex-col relative">
@@ -183,11 +187,15 @@ export default function ShortsStage({
       <div className="flex-1 min-h-0 relative">
         <div
           ref={scrollerRef}
-          className="h-full w-full overflow-y-scroll snap-y snap-mandatory overscroll-y-contain [&::-webkit-scrollbar]:hidden"
+          className="h-full w-full overflow-y-scroll snap-y snap-mandatory overscroll-y-contain touch-pan-y flex flex-col [&::-webkit-scrollbar]:hidden"
           style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
         >
           {reel.map((row) => (
-            <div key={row.key} className={slideShell}>
+            <div
+              key={row.key}
+              className={slideShell}
+              style={{ height: '100%', minHeight: '100%' }}
+            >
               {Math.abs(row.reelIdx - reelPos) <= PRELOAD_NEAR
                 ? renderSlide(row.index, row.reelIdx === reelPos, Math.abs(row.reelIdx - reelPos) === 1)
                 : null}

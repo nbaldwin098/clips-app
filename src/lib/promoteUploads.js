@@ -7,7 +7,7 @@ import { getMediaFile, deleteMediaBlob } from './videoStorage'
 import {
   uploadVideoToSupabase,
   uploadImageToSupabase,
-  canHostUploads,
+  resolveUploadHost,
 } from './mediaUpload'
 import { pushContentRecord, notifyContentChanged } from './contentSync'
 
@@ -21,7 +21,8 @@ function isHttp(url) {
  * the catalog row to a public URL, push cloud metadata, then drop the device blob.
  */
 export async function promoteDeviceUploadsToCloud(actor = null) {
-  if (!canHostUploads(actor)) return { promoted: 0, failed: 0 }
+  const host = await resolveUploadHost(actor)
+  if (!host?.id) return { promoted: 0, failed: 0 }
   let promoted = 0
   let failed = 0
   const rows = getImports().filter((r) => {
@@ -38,8 +39,8 @@ export async function promoteDeviceUploadsToCloud(actor = null) {
       }
       const isPic = row.type === 'pic' || String(row.id).startsWith('pic_')
       const up = isPic
-        ? await uploadImageToSupabase(file, actor.id)
-        : await uploadVideoToSupabase(file, actor.id)
+        ? await uploadImageToSupabase(file, host.id)
+        : await uploadVideoToSupabase(file, host.id)
       if (!up.ok || !up.publicUrl) {
         failed += 1
         continue
@@ -53,11 +54,11 @@ export async function promoteDeviceUploadsToCloud(actor = null) {
         hosted: true,
         localStored: false,
         storagePath: up.path || '',
-        creatorId: row.creatorId || actor.id,
-        userId: row.userId || actor.id,
-        handle: row.handle || actor.handle,
+        creatorId: host.id,
+        userId: host.id,
+        handle: row.handle || host.handle || actor?.handle,
       }
-      const pushed = await pushContentRecord(next, actor)
+      const pushed = await pushContentRecord(next, host)
       if (!pushed) {
         failed += 1
         continue
