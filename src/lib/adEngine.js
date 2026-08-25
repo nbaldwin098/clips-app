@@ -15,21 +15,18 @@ const AD_METRICS_KEY = 'clips_ad_metrics'
 const AD_SETTINGS_KEY = 'clips_ad_settings'
 
 export const AD_PLACEMENTS = [
-  { id: 'video', label: 'Videos', hint: 'In-stream at 30 seconds, plus 8 minutes if the video is that long' },
-  { id: 'clip-banner', label: 'Clips banner', hint: 'Small bar under the clip description' },
-  { id: 'clip-feed', label: 'Clips in-feed', hint: 'Between clips as you scroll' },
-  { id: 'pic-feed', label: 'Pics in-feed', hint: 'Same size as photos, between photos' },
+  { id: 'video', label: 'Videos', hint: 'In-stream at 30 seconds, plus 8 minutes if the video is that long', setting: 'videoInStream' },
+  { id: 'clip-banner', label: 'Clips banner', hint: 'Small bar under the clip description', setting: 'clipBanner' },
+  { id: 'clip-feed', label: 'Clips in-feed', hint: 'Video ad between clips as you scroll', setting: 'clipInFeed' },
+  { id: 'pic-feed', label: 'Pics in-feed', hint: 'Banner tile the size of a photo, between photos', setting: 'picInFeed' },
 ]
 
 export const ALL_PLACEMENTS = AD_PLACEMENTS.map((p) => p.id)
 
 const DEFAULT_AD_SETTINGS = {
-  videoPreroll: true,
-  videoInFeed: false,
-  watchBanner: false,
+  videoInStream: true,
   clipBanner: true,
   clipInFeed: true,
-  picBanner: false,
   picInFeed: true,
   videoSkipAfterSec: 5,
 }
@@ -232,13 +229,15 @@ export function adsAreRunning() {
 export function getAdSettings() {
   const stored = lsGet(AD_SETTINGS_KEY, {}) || {}
   const skip = Math.max(3, Math.min(30, Number(stored.videoSkipAfterSec) || DEFAULT_AD_SETTINGS.videoSkipAfterSec))
+  // A stale browser could still hold placements that no longer exist, or an
+  // accidental "off" that silently zeroes income. Only the four live
+  // placements are readable, and each one defaults back on.
   return {
-    ...DEFAULT_AD_SETTINGS,
-    ...stored,
+    videoInStream: stored.videoInStream !== false && stored.videoPreroll !== false,
+    clipBanner: stored.clipBanner !== false,
+    clipInFeed: stored.clipInFeed !== false,
+    picInFeed: stored.picInFeed !== false,
     videoSkipAfterSec: skip,
-    videoInFeed: false,
-    watchBanner: false,
-    picBanner: false,
   }
 }
 
@@ -273,12 +272,9 @@ export function campaignPlacements(c) {
 }
 
 function settingAllows(placement, settings = getAdSettings()) {
-  if (placement === 'video') return settings.videoPreroll !== false
-  if (placement === 'video-feed') return false
-  if (placement === 'watch-banner') return false
+  if (placement === 'video') return settings.videoInStream !== false
   if (placement === 'clip-banner') return settings.clipBanner !== false
   if (placement === 'clip-feed') return settings.clipInFeed !== false
-  if (placement === 'pic-banner') return false
   if (placement === 'pic-feed') return settings.picInFeed !== false
   return false
 }
@@ -340,10 +336,6 @@ export function placementAdsAllowed(placement) {
   return adsAreRunning() && settingAllows(placement)
 }
 
-/** Never render a display box under the watch player. Video ads are in-stream only. */
-export function watchBannerAllowed() {
-  return false
-}
 
 /** Banner under a clip every 10 clips scrolled, never on or next to a full in-feed ad. */
 export function clipBannerAllowed(mixed, index, sinceBanner = 0) {

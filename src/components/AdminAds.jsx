@@ -4,6 +4,59 @@ import {
   listAdApplications, approveAdApplication, rejectAdApplication,
   listAllCampaigns, saveAdvertiserCampaign, AD_PLACEMENTS, campaignPlacements,
 } from '../lib/adEngine'
+import { runAdHealthChecks } from '../lib/adHealth'
+
+function AdHealth() {
+  const [rows, setRows] = useState(null)
+  const [busy, setBusy] = useState(false)
+
+  const run = async () => {
+    setBusy(true)
+    try {
+      setRows(await runAdHealthChecks())
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="rounded-2xl border border-zinc-800 bg-[#121218] p-4 space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-white">Are ads actually working?</p>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Asks each ExoClick zone for a real ad right now. A zone whose type does not match its slot answers
+            every request and still renders nothing, which is invisible on the page — this is how you catch that.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={run}
+          disabled={busy}
+          className="h-9 px-4 rounded-lg bg-white text-black text-xs font-bold disabled:opacity-50"
+        >
+          {busy ? 'Checking…' : 'Check now'}
+        </button>
+      </div>
+      {rows ? (
+        <div className="space-y-1.5">
+          {rows.map((r) => (
+            <div key={r.name} className="flex items-start gap-2 rounded-lg border border-zinc-800 bg-black p-2.5">
+              <span className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${r.ok ? 'bg-emerald-400' : 'bg-red-500'}`} />
+              <div className="min-w-0">
+                <p className="text-xs text-white">{r.name}</p>
+                <p className="text-[11px] text-zinc-500">{r.detail}</p>
+              </div>
+            </div>
+          ))}
+          <p className="text-[11px] text-zinc-600">
+            Run this in a normal window, not with an ad blocker on. A blocker makes every row fail.
+          </p>
+        </div>
+      ) : null}
+    </div>
+  )
+}
 
 function Pill({ on, children }) {
   return (
@@ -40,20 +93,22 @@ export default function AdminAds() {
         <div>
           <p className="text-sm font-medium text-white">Site ads</p>
           <p className="text-xs text-zinc-500 mt-0.5">
-            Ads always run. There is no site-wide off switch — use the placement switches below to choose where they show. Videos play an in-stream ad 30 seconds in, then another at 8 minutes if the video is that long — never a box under the player. Clip ads sit between clips as you scroll, plus a small banner under the description. Pic ads are the same size as photos and sit between them in the mosaic, never on a photo and never in the viewer after you tap one. Live viewers get an ad 30 seconds after they open a stream; after that the creator sets ads. If a tag has no fill, we do not invent a fake ad.
+            Ads always run. There is no site-wide off switch — use the placement switches below to choose where they show. Videos play an in-stream ad 30 seconds in, then another at 8 minutes if the video is that long — never a box under the player. Clips get a video ad between clips as you scroll, plus a small banner under the description. Pic ads are a banner tile the size of a photo, between photos in the mosaic — never on a photo and never in the viewer after you tap one. Live viewers get an ad 30 seconds after they open a stream; after that the creator sets ads. If a tag has no fill the slot disappears — we never leave an empty box and never invent a fake ad.
           </p>
         </div>
         <Pill on>Always on</Pill>
       </div>
 
+      <AdHealth />
+
       <div className="rounded-2xl border border-zinc-800 bg-[#121218] p-4 space-y-4">
         <p className="text-sm font-medium text-white">Where ads show</p>
         <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-2">
           {[
-            ['videoPreroll', 'Videos', 'In-stream at 30s, plus 8 minutes if the video is that long'],
+            ['videoInStream', 'Videos', 'In-stream at 30s, plus 8 minutes if the video is that long'],
             ['clipBanner', 'Clips banner', 'Small bar under the clip description'],
-            ['clipInFeed', 'Clips in-feed', 'Between clips as you scroll'],
-            ['picInFeed', 'Pics in-feed', 'Same size as photos, between photos'],
+            ['clipInFeed', 'Clips in-feed', 'Video ad between clips as you scroll'],
+            ['picInFeed', 'Pics in-feed', 'Banner tile the size of a photo'],
           ].map(([key, label, hint]) => (
             <button
               key={key}

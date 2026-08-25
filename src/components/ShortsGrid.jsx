@@ -112,7 +112,7 @@ export default function ShortsGrid({ items, onOpen, tab = 'recommended', onTab }
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 p-4 pb-16">
           {mixed.map((row) => (
             row.kind === 'ad' ? (
-              <InFeedAd key={row.key} ad={row.ad} variant="clip" />
+              <InFeedAd key={row.key} ad={row.ad} variant="clip" active />
             ) : (
               <ShortTile key={row.key || row.item.id} item={row.item} onOpen={onOpen} />
             )

@@ -3,9 +3,10 @@
  * Empty or failed tags do not invent a placeholder ad.
  */
 import { safeHttpUrl, safeMediaUrl } from './safeUrl.js'
+import { vastUrlFor } from './adZones.js'
 
-export const EXOCLICK_VAST_URL = 'https://s.magsrv.com/v1/vast.php?idz=6010924'
-export const EXOCLICK_LIVE_CREATOR_VAST_URL = 'https://s.magsrv.com/v1/vast.php?idz=6010934'
+export const EXOCLICK_VAST_URL = vastUrlFor('video')
+export const EXOCLICK_LIVE_CREATOR_VAST_URL = vastUrlFor('liveCreator')
 export const YT_SKIP_AFTER_SEC = 5
 /** First in-stream ad: 30 seconds into the video. Never a preroll at 0:00. */
 export const VIDEO_FIRST_AD_SEC = 30
@@ -16,7 +17,7 @@ export function videoVastAdsEnabled() {
   if (typeof localStorage === 'undefined') return true
   try {
     const stored = JSON.parse(localStorage.getItem('clips_ad_settings') || '{}') || {}
-    return stored.videoPreroll !== false
+    return stored.videoInStream !== false && stored.videoPreroll !== false
   } catch {
     return true
   }
@@ -131,31 +132,49 @@ export function fireVastPixel(url) {
   } catch { /* tracking is best-effort */ }
 }
 
-export async function loadExoClickVast({ depth = 0, kind = 'video' } = {}) {
-  if (depth > 3) return null
-  if (kind === 'video' && !videoVastAdsEnabled()) return null
-  const fetchKind = kind === 'live-creator' ? 'live-creator' : 'video'
+async function fetchVastOnce(fetchKind) {
   let xml = ''
   try {
-    const res = await fetch(vastFetchUrl(fetchKind), { credentials: 'omit' })
+    // Bust ExoClick frequency-cap cookies that sometimes return an empty
+    // ~157-byte VAST after a few hits in the same browser session.
+    const base = vastFetchUrl(fetchKind)
+    const sep = base.includes('?') ? '&' : '?'
+    const res = await fetch(`${base}${sep}r=${Date.now()}${Math.random().toString(36).slice(2, 6)}`, {
+      credentials: 'omit',
+      cache: 'no-store',
+    })
     if (!res.ok) return null
     xml = await res.text()
   } catch {
     return null
   }
-  const parsed = parseVastXml(xml)
-  if (!parsed) return null
-  if (parsed.wrapper) {
-    if (!parsed.wrapperUrl) return null
-    try {
-      const res = await fetch(parsed.wrapperUrl, { credentials: 'omit' })
-      if (!res.ok) return null
-      return parseVastXml(await res.text())
-    } catch {
-      return null
+  return parseVastXml(xml)
+}
+
+export async function loadExoClickVast({ depth = 0, kind = 'video', attempts = 2 } = {}) {
+  if (depth > 3) return null
+  if (kind === 'video' && !videoVastAdsEnabled()) return null
+  const fetchKind = kind === 'live-creator' ? 'live-creator' : 'video'
+  const tries = Math.max(1, Number(attempts) || 1)
+
+  for (let i = 0; i < tries; i += 1) {
+    const parsed = await fetchVastOnce(fetchKind)
+    if (!parsed) continue
+    if (parsed.wrapper) {
+      if (!parsed.wrapperUrl) continue
+      try {
+        const res = await fetch(parsed.wrapperUrl, { credentials: 'omit', cache: 'no-store' })
+        if (!res.ok) continue
+        const inner = parseVastXml(await res.text())
+        if (inner?.mediaUrl) return inner
+      } catch {
+        /* try again */
+      }
+      continue
     }
+    if (parsed.mediaUrl) return parsed
   }
-  return parsed
+  return null
 }
 
 /**
@@ -177,7 +196,3 @@ export function videoInStreamBreaks(durationSec) {
   return points
 }
 
-/** @deprecated use videoInStreamBreaks — kept so older tests/imports keep working */
-export function youtubeMidrollBreaks(durationSec) {
-  return videoInStreamBreaks(durationSec).filter((t) => t >= YT_MIDROLL_MIN_SEC)
-}

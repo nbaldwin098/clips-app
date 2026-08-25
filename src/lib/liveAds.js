@@ -4,6 +4,7 @@
  */
 import { lsGet, lsSet } from './storage'
 import { isChannelMod } from './channelStaff'
+import { AD_ZONES, vastUrlFor } from './adZones.js'
 
 export const LIVE_VIEWER_AD_DELAY_SEC = 30
 export const LIVE_SNOOZE_SEC = 300
@@ -11,8 +12,8 @@ export const LIVE_HOURLY_AD_CAP_SEC = 6 * 60
 export const LIVE_ADS_PER_HOUR_MIN = 1
 export const LIVE_ADS_PER_HOUR_MAX = 5
 export const MANUAL_AD_BREAKS = [60, 90, 180]
-export const EXOCLICK_LIVE_CREATOR_ZONE = '6010934'
-export const EXOCLICK_LIVE_CREATOR_VAST_URL = 'https://s.magsrv.com/v1/vast.php?idz=6010934'
+export const EXOCLICK_LIVE_CREATOR_ZONE = AD_ZONES.liveCreator.id
+export const EXOCLICK_LIVE_CREATOR_VAST_URL = vastUrlFor('liveCreator')
 
 /** @deprecated manual ads use manualAdCooldownSec */
 export const LIVE_AD_COOLDOWN_SEC = 300

@@ -1,13 +1,22 @@
-/** Clip in-feed ads every 4–6 items (random). Banners every 10. Pic ads every 6–10 (random), same size as photos. Videos do not get in-feed boxes. */
+/**
+ * Where in-feed ads land. Clips get a video ad every 4–6 items and a small
+ * banner every 10; pics get a banner tile every 6–10 photos. Videos get no
+ * in-feed box at all — video ads are in-stream only.
+ *
+ * `format` decides the renderer, and it must match the zone type in
+ * src/lib/adZones.js: 'video' plays a VAST creative, 'banner' fills an <ins>.
+ */
+import { AD_ZONES } from './adZones.js'
 
 export const CLIP_AD_GAPS = [4, 5, 6]
 export const PIC_AD_GAPS = [6, 7, 8, 9, 10]
-export const VIDEO_AD_GAPS = [6, 7, 8, 9, 10]
 export const CLIP_BANNER_EVERY = 10
-/** Medium-rectangle display zone — clip/pic interstitials, never stretched. */
-export const EXOCLICK_FEED_ZONE = '6010926'
-/** Horizontal banner zone — small clip banners under the description. */
-export const EXOCLICK_BANNER_ZONE = '6010930'
+
+export const EXOCLICK_BANNER_ZONE = AD_ZONES.banner.id
+export const EXOCLICK_VIDEO_ZONE = AD_ZONES.video.id
+
+const clipAd = (key) => ({ id: key, provider: 'exoclick', zoneId: EXOCLICK_VIDEO_ZONE, format: 'video' })
+const picAd = (key) => ({ id: key, provider: 'exoclick', zoneId: EXOCLICK_BANNER_ZONE, format: 'banner' })
 
 function randomGap(gaps) {
   const list = Array.isArray(gaps) ? gaps : []
@@ -42,11 +51,7 @@ export function mixClipFeedRows(list, { banners = true } = {}) {
     if (besideBanner) return
     if (sinceAd < nextGap) return
 
-    out.push({
-      kind: 'ad',
-      ad: { id: `exo-clip-feed-${i}`, provider: 'exoclick', zoneId: EXOCLICK_FEED_ZONE, format: 'display' },
-      key: `exo-clip-feed-${i}`,
-    })
+    out.push({ kind: 'ad', ad: clipAd(`exo-clip-feed-${i}`), key: `exo-clip-feed-${i}` })
     sinceAd = 0
     nextGap = randomGap(CLIP_AD_GAPS)
   })
@@ -54,7 +59,7 @@ export function mixClipFeedRows(list, { banners = true } = {}) {
   if (!out.some((r) => r.kind === 'ad') && items.length >= 2) {
     out.splice(Math.min(2, out.length), 0, {
       kind: 'ad',
-      ad: { id: 'exo-clip-feed-fallback', provider: 'exoclick', zoneId: EXOCLICK_FEED_ZONE, format: 'display' },
+      ad: clipAd('exo-clip-feed-fallback'),
       key: 'exo-clip-feed-fallback',
     })
   }
@@ -73,11 +78,7 @@ export function mixPicFeedRows(list) {
     if (i >= items.length - 1) return
     if (sinceAd < nextGap) return
 
-    out.push({
-      kind: 'ad',
-      ad: { id: `exo-pic-feed-${i}`, provider: 'exoclick', zoneId: EXOCLICK_FEED_ZONE, format: 'display' },
-      key: `exo-pic-feed-${i}`,
-    })
+    out.push({ kind: 'ad', ad: picAd(`exo-pic-feed-${i}`), key: `exo-pic-feed-${i}` })
     sinceAd = 0
     nextGap = randomGap(PIC_AD_GAPS)
   })
@@ -85,16 +86,11 @@ export function mixPicFeedRows(list) {
   if (!out.some((r) => r.kind === 'ad') && items.length >= 2) {
     out.splice(Math.min(3, out.length), 0, {
       kind: 'ad',
-      ad: { id: 'exo-pic-feed-fallback', provider: 'exoclick', zoneId: EXOCLICK_FEED_ZONE, format: 'display' },
+      ad: picAd('exo-pic-feed-fallback'),
       key: 'exo-pic-feed-fallback',
     })
   }
   return out
-}
-
-export function mixVideoFeedRows(list) {
-  const items = Array.isArray(list) ? list : []
-  return items.map((item, i) => ({ kind: 'item', item, key: item?.id || `item-${i}` }))
 }
 
 /**

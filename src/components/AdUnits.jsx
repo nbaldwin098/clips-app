@@ -3,19 +3,17 @@ import { ArrowUpRight, SkipForward } from 'lucide-react'
 import { getActiveAd, getVideoAdDurationSec, getVideoSkipAfterSec, placementAdsAllowed, recordAdClick, recordAdImpression } from '../lib/adEngine'
 import { openSafeUrl, safeHttpUrl } from '../lib/safeUrl'
 import ExoClickDisplay from './ExoClickDisplay'
+import FeedVideoAd from './FeedVideoAd'
 
 export function PlacementBanner({ placement, itemId }) {
   const campaign = useMemo(() => getActiveAd(placement), [placement, itemId])
   if (campaign) return <AdBanner ad={campaign} />
   if (!placementAdsAllowed(placement)) return null
-  if (placement === 'clip-banner' || placement === 'pic-banner' || placement === 'watch-banner') {
-    return (
-      <div className="pointer-events-auto w-full" onClick={(e) => e.stopPropagation()}>
-        <ExoClickDisplay format="banner" />
-      </div>
-    )
-  }
-  return null
+  return (
+    <div className="pointer-events-auto w-full" onClick={(e) => e.stopPropagation()}>
+      <ExoClickDisplay className="min-h-[90px]" />
+    </div>
+  )
 }
 
 function creativeImage(ad) {
@@ -66,31 +64,17 @@ export default function AdBanner({ ad }) {
   )
 }
 
-export function InFeedAd({ ad, variant = 'clip' }) {
+/**
+ * One in-feed slot. `ad.format` comes from src/lib/feedAdCadence.js and must
+ * match the zone type: a clip slot plays a VAST video, a pic tile fills a
+ * display <ins>. Both collapse to nothing when the network has no fill.
+ */
+export function InFeedAd({ ad, variant = 'clip', active = true }) {
   if (ad?.provider === 'exoclick') {
-    if (variant === 'video') {
-      return (
-        <div className="relative w-full overflow-hidden rounded-xl bg-[#1a1a1a]">
-          <ExoClickDisplay format="banner" />
-        </div>
-      )
+    if (ad.format === 'video' || variant === 'clip') {
+      return <FeedVideoAd active={active} className="aspect-[9/16] w-full rounded-xl" />
     }
-    if (variant === 'pic-row') {
-      return (
-        <div className="relative col-span-3 sm:col-span-4 md:col-span-5 lg:col-span-6 w-full overflow-hidden bg-[#1a1a1a] aspect-[3/1] sm:aspect-[4/1] md:aspect-[5/1] lg:aspect-[6/1] flex items-center justify-center">
-          <ExoClickDisplay format="banner" />
-        </div>
-      )
-    }
-    const frame =
-      variant === 'pic'
-        ? 'relative w-full aspect-square overflow-hidden bg-[#1a1a1a] flex items-center justify-center'
-        : 'relative block w-full aspect-[9/16] overflow-hidden rounded-xl bg-[#1a1a1a] flex items-center justify-center'
-    return (
-      <div className={frame}>
-        <ExoClickDisplay zoneId={ad.zoneId} format="display" />
-      </div>
-    )
+    return <ExoClickDisplay active={active} className="aspect-square w-full" />
   }
   return <CampaignInFeedAd ad={ad} variant={variant} />
 }
@@ -109,36 +93,9 @@ function CampaignInFeedAd({ ad, variant = 'clip' }) {
     if (href) openSafeUrl(href)
   }
 
-  if (variant === 'video') {
+  if (variant === 'pic') {
     return (
-      <button
-        type="button"
-        onClick={open}
-        className="relative block w-full aspect-video overflow-hidden rounded-xl bg-[#1a1a1a] text-left"
-      >
-        {img ? (
-          <img src={img} alt="" className="absolute inset-0 h-full w-full object-cover" />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-[#2a2a2a] to-[#111]" />
-        )}
-        <span className="absolute top-2 left-2 rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-black/70 text-white">Ad</span>
-        <span className="absolute inset-x-0 bottom-0 p-2.5 bg-gradient-to-t from-black/85 to-transparent">
-          <span className="block text-[13px] font-semibold text-white line-clamp-2">{ad.headline || 'Sponsored'}</span>
-          <span className="mt-1 inline-flex items-center gap-1 text-[11px] text-white/80">
-            {ad.ctaText || 'Open'} <ArrowUpRight className="h-3 w-3" />
-          </span>
-        </span>
-      </button>
-    )
-  }
-
-  if (variant === 'pic' || variant === 'pic-row') {
-    const frame =
-      variant === 'pic-row'
-        ? 'relative col-span-3 sm:col-span-4 md:col-span-5 lg:col-span-6 w-full aspect-[3/1] sm:aspect-[4/1] md:aspect-[5/1] lg:aspect-[6/1] overflow-hidden bg-[#1a1a1a] text-left'
-        : 'relative block w-full aspect-square overflow-hidden bg-[#1a1a1a] text-left'
-    return (
-      <button type="button" onClick={open} className={frame}>
+      <button type="button" onClick={open} className="relative block w-full aspect-square overflow-hidden bg-[#1a1a1a] text-left">
         {img ? (
           <img src={img} alt="" className="absolute inset-0 h-full w-full object-cover" />
         ) : (
