@@ -4,6 +4,7 @@
  * use the same rules or merge will resurrect junk.
  */
 import { lsGet, lsSet, removeImport } from './storage'
+import { isUserUploadRecord } from './mediaMeta'
 
 const HIDDEN_KEY = 'hidden_broken_media'
 
@@ -40,9 +41,17 @@ export function hasStableImage(item) {
   return [item?.mediaUrl, item?.thumbUrl, item?.sourceUrl, item?.mosaicThumb].some((u) => isHttpUrl(u) || isDataImageUrl(u))
 }
 
+export function hasLocalMediaHint(item) {
+  if (!item?.id) return false
+  if (isUserUploadRecord(item)) return true
+  if (Number(item.storedBytes) > 0) return true
+  return false
+}
+
 export function hasPlayableVideo(item) {
   if ([item?.mediaUrl, item?.sourceUrl].some(isKnownDeadUrl)) return false
-  return [item?.mediaUrl, item?.sourceUrl].some((u) => isHttpUrl(u) || isBlobUrl(u))
+  if ([item?.mediaUrl, item?.sourceUrl].some((u) => isHttpUrl(u) || isBlobUrl(u))) return true
+  return hasLocalMediaHint(item)
 }
 
 export function isRetiredCatalogItem(item) {

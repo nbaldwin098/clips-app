@@ -38,6 +38,7 @@ export default function ShortsStage({
   const copies = loop && n > 0 ? 3 : 1
   const jumping = useRef(false)
   const lastStart = useRef(null)
+  const lastCount = useRef(n)
   const [reelPos, setReelPos] = useState(0)
 
   const pageHeight = () => scrollerRef.current?.clientHeight || 1
@@ -46,8 +47,26 @@ export default function ShortsStage({
   const scrollToReel = (reelIdx, behavior = 'auto') => {
     const el = scrollerRef.current
     if (!el) return
-    el.scrollTo({ top: reelIdx * pageHeight(), behavior })
+    const top = reelIdx * pageHeight()
+    if (behavior === 'auto') {
+      el.scrollTop = top
+      return
+    }
+    el.scrollTo({ top, behavior })
   }
+
+  const snapToNearest = useCallback(() => {
+    const el = scrollerRef.current
+    if (!el || !n || jumping.current) return
+    const h = pageHeight()
+    const reelIdx = Math.round(el.scrollTop / h)
+    const targetTop = reelIdx * h
+    if (Math.abs(el.scrollTop - targetTop) > 3) {
+      jumping.current = true
+      el.scrollTop = targetTop
+      requestAnimationFrame(() => { jumping.current = false })
+    }
+  }, [n])
 
   useEffect(() => {
     if (!n) return
@@ -64,6 +83,22 @@ export default function ShortsStage({
     return () => cancelAnimationFrame(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [n, initialIndex, loop])
+
+  // When slides are removed (empty ads) or added, re-align scroll so we never
+  // sit between two half-visible clips.
+  useEffect(() => {
+    if (!n || lastCount.current === n) return
+    lastCount.current = n
+    const idx = Math.max(0, Math.min(n - 1, Number(activeIndex) || 0))
+    jumping.current = true
+    const target = middleReel(idx)
+    requestAnimationFrame(() => {
+      scrollToReel(target, 'auto')
+      setReelPos(target)
+      onActiveIndex?.(idx)
+      requestAnimationFrame(() => { jumping.current = false })
+    })
+  }, [n, activeIndex, loop, onActiveIndex])
 
   const onScroll = useCallback(() => {
     const el = scrollerRef.current
@@ -86,14 +121,21 @@ export default function ShortsStage({
     const el = scrollerRef.current
     if (!el) return
     el.addEventListener('scroll', onScroll, { passive: true })
-    return () => el.removeEventListener('scroll', onScroll)
-  }, [onScroll])
+    const onEnd = () => snapToNearest()
+    el.addEventListener('scrollend', onEnd)
+    return () => {
+      el.removeEventListener('scroll', onScroll)
+      el.removeEventListener('scrollend', onEnd)
+    }
+  }, [onScroll, snapToNearest])
 
   const goTo = useCallback((logical, behavior = 'smooth') => {
     if (!n) return
     const idx = Math.max(0, Math.min(n - 1, Number(logical) || 0))
+    jumping.current = true
     scrollToReel(middleReel(idx), behavior)
     onActiveIndex?.(idx)
+    requestAnimationFrame(() => { jumping.current = false })
   }, [n, loop, onActiveIndex])
 
   useEffect(() => {
@@ -131,6 +173,10 @@ export default function ShortsStage({
     }
   }
 
+  const slideShell = bleedMobile
+    ? 'h-full w-full min-h-full snap-start snap-always shrink-0 overflow-hidden flex items-center justify-center px-0 py-0 md:px-10 md:py-8'
+    : 'h-full w-full min-h-full snap-start snap-always shrink-0 overflow-hidden flex items-center justify-center px-3 py-4 sm:px-10 sm:py-8'
+
   return (
     <div className="h-full min-h-0 w-full bg-[#000000] flex flex-col relative">
       {header}
@@ -141,14 +187,7 @@ export default function ShortsStage({
           style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
         >
           {reel.map((row) => (
-            <div
-              key={row.key}
-              className={
-                bleedMobile
-                  ? 'h-full w-full snap-start snap-always shrink-0 flex items-stretch md:items-center justify-center px-0 py-0 md:px-10 md:py-8'
-                  : 'h-full w-full snap-start snap-always shrink-0 flex items-center justify-center px-3 py-4 sm:px-10 sm:py-8'
-              }
-            >
+            <div key={row.key} className={slideShell}>
               {Math.abs(row.reelIdx - reelPos) <= PRELOAD_NEAR
                 ? renderSlide(row.index, row.reelIdx === reelPos, Math.abs(row.reelIdx - reelPos) === 1)
                 : null}
@@ -216,14 +255,14 @@ export function ShortsCard({ children, actions, fillMobile = false }) {
 
   if (mobileFill) {
     return (
-      <div ref={hostRef} className="h-full w-full">
-        <div className="relative h-full w-full bg-black overflow-hidden">{children}</div>
+      <div ref={hostRef} className="h-full w-full min-h-0">
+        <div className="relative h-full w-full min-h-0 bg-black overflow-hidden">{children}</div>
       </div>
     )
   }
 
   return (
-    <div ref={hostRef} className="h-full w-full flex items-end justify-center gap-3">
+    <div ref={hostRef} className="h-full w-full min-h-0 flex items-end justify-center gap-3">
       <div
         className="relative bg-black overflow-hidden rounded-xl sm:rounded-2xl shrink-0 shadow-[0_8px_40px_rgba(0,0,0,0.45)]"
         style={

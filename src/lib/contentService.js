@@ -578,6 +578,7 @@ export async function publishLocalMedia(file, actor = null, {
 
     try {
       await storeMediaBlob(id, outFile)
+      record.localStored = true
     } catch {}
 
     const isVertical = processed.height > processed.width

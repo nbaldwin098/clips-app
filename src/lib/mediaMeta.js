@@ -35,6 +35,15 @@ export function isLibraryRecord(rec) {
   return String(rec.id || '').startsWith('org-') || rec.origin === 'public-domain-org'
 }
 
+export function isUserUploadRecord(rec) {
+  if (!rec?.id) return false
+  const origin = String(rec.origin || '')
+  if (origin === 'upload' || origin === 'upload-local') return true
+  if (String(rec.id).startsWith('up_')) return true
+  if (rec.hosted) return true
+  return false
+}
+
 export function olderIso(a, b) {
   const ta = parsePostedTime(a)
   const tb = parsePostedTime(b)
