@@ -20,6 +20,8 @@ npm run audit:deps
 | `puppeteer-core` | Only used by optional `scripts/ad-browser-check.mjs` (~20MB+ tooling). Install on demand. |
 | 16 dead source files | Old Navbar/Sidebar, RelatedRow, VideoPlayerModal, empty seeds, unused aliases, etc. |
 
+`npm install` dropped from ~223MB to ~193MB of `node_modules` after removing those packages.
+
 ## Bug found by the audit
 
 `App.jsx` rendered `<MfaGate />` but **never imported it**. Knip reported `MfaGate.jsx` as unused; MFA would crash at runtime. Fixed by wiring the import.
