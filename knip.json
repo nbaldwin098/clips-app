@@ -1,0 +1,16 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "src/main.jsx",
+    "scripts/live-smoke.mjs",
+    "scripts/test-named-activity.mjs"
+  ],
+  "project": ["src/**/*.{js,jsx}", "scripts/**/*.mjs"],
+  "ignore": [
+    "scripts/ad-browser-check.mjs",
+    "scripts/build-named-activity-sql.mjs",
+    "scripts/probe-bots-live.mjs"
+  ],
+  "ignoreDependencies": ["puppeteer-core"],
+  "ignoreExportsUsedInFile": true
+}
