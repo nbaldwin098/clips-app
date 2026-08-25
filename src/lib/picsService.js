@@ -1,8 +1,12 @@
 import { getImports, saveImport } from './storage'
-import { uploadImageToSupabase } from './mediaUpload'
-import { isSupabaseConfigured } from './supabaseClient'
+import {
+  uploadImageToSupabase,
+  canHostUploads,
+  cloudHostRequiredMessage,
+  deleteHostedMedia,
+} from './mediaUpload'
 import { pushContentRecord, notifyContentChanged } from './contentSync'
-import { processImageFile, storeMediaBlob } from './videoStorage'
+import { processImageFile } from './videoStorage'
 import { hasStableImage, hiddenBrokenIds } from './catalogHealth'
 import { isAccountHidden } from './trustSafety'
 
@@ -73,42 +77,24 @@ export async function publishPhoto(file, actor = null) {
   if (!String(file.type || '').startsWith('image/')) {
     return { ok: false, item: null, error: 'Choose an image file (jpg, png, webp).' }
   }
+  if (!canHostUploads(actor)) {
+    return { ok: false, item: null, error: cloudHostRequiredMessage(actor) }
+  }
   try {
     const processed = await processImageFile(file)
     const id = `pic_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
     const uploadFile = processed.displayFile || file
 
-    // Never persist ephemeral blob: object URLs — refresh kills them and
-    // cloud sync would publish empty stubs to other viewers.
-    let mediaUrl = ''
-    let hosted = false
-    let localStored = false
-
-    // Never surface raw storage/database errors to viewers — log internally and
-    // fall back to the local IndexedDB copy. Cloud writes require a signed-in actor.
-    if (actor?.id && isSupabaseConfigured()) {
-      const up = await uploadImageToSupabase(uploadFile, actor.id)
-      if (up.ok && up.publicUrl) {
-        mediaUrl = up.publicUrl
-        hosted = true
-      } else if (up.error) {
-        console.warn('[Clips] Supabase image upload failed, using local photo:', up.error)
+    const up = await uploadImageToSupabase(uploadFile, actor.id)
+    if (!up.ok || !up.publicUrl) {
+      return {
+        ok: false,
+        item: null,
+        error: up.error || 'Could not upload this photo to cloud storage.',
       }
     }
-
-    try {
-      localStored = !!(await storeMediaBlob(id, processed.displayFile || file))
-    } catch {
-      localStored = false
-    }
-
-    if (!mediaUrl && !localStored && !processed.thumbUrl) {
-      return { ok: false, item: null, error: 'Could not save this photo on this device.' }
-    }
-
-    const thumbUrl = String(processed.thumbUrl || '').startsWith('data:image/')
-      ? processed.thumbUrl
-      : (mediaUrl || '')
+    const mediaUrl = up.publicUrl
+    const thumbUrl = mediaUrl
 
     const record = {
       id,
@@ -118,27 +104,38 @@ export async function publishPhoto(file, actor = null) {
       sourceUrl: mediaUrl,
       mediaUrl,
       thumbUrl,
-      mosaicThumb: thumbUrl,
-      origin: hosted ? 'pic-upload' : 'pic-local',
-      hosted,
-      localStored,
+      mosaicThumb: String(processed.thumbUrl || '').startsWith('data:image/')
+        ? processed.thumbUrl
+        : mediaUrl,
+      origin: 'pic-upload',
+      hosted: true,
+      localStored: false,
+      storagePath: up.path || '',
       storedBytes: (processed.displayFile || file).size || 0,
       width: processed.width,
       height: processed.height,
       createdAt: new Date().toISOString(),
       priceUsd: 0,
+      creatorId: actor.id,
+      userId: actor.id,
+      handle: actor.handle,
+      displayName: actor.displayName || actor.handle,
+      avatarUrl: actor.avatarUrl || null,
     }
-    if (actor?.id) {
-      record.creatorId = actor.id
-      record.userId = actor.id
-      record.handle = actor.handle
-      record.displayName = actor.displayName || actor.handle
-      record.avatarUrl = actor.avatarUrl || null
+
+    const pushed = await pushContentRecord(record, actor)
+    if (!pushed) {
+      await deleteHostedMedia(mediaUrl)
+      return {
+        ok: false,
+        item: null,
+        error: 'Uploaded the file but could not save it to the cloud catalog. Try again.',
+      }
     }
+
     saveImport(record)
     notifyContentChanged()
-    pushContentRecord(record, actor).catch(() => {})
-    return { ok: true, item: record, error: null, hosted }
+    return { ok: true, item: record, error: null, hosted: true }
   } catch (err) {
     return { ok: false, item: null, error: err?.message || 'Could not upload photo.' }
   }

@@ -21,10 +21,20 @@ function triggerBlob(blob, name) {
   setTimeout(() => URL.revokeObjectURL(url), 4000)
 }
 
-/** Anyone can save a posted file. Uses IndexedDB first, then the hosted URL. */
+/** Anyone can save a posted file. Prefers the hosted cloud URL; IndexedDB is legacy only. */
 export async function downloadPostedMedia(item) {
   if (!item) return { ok: false, error: 'Nothing to download.' }
   const name = filenameFromItem(item)
+  const hosted = item.mediaUrl || item.sourceUrl || ''
+  if (String(hosted).startsWith('http://') || String(hosted).startsWith('https://')) {
+    try {
+      const res = await fetch(hosted, { mode: 'cors' })
+      if (res.ok) {
+        triggerBlob(await res.blob(), name)
+        return { ok: true }
+      }
+    } catch {}
+  }
   try {
     const local = await getMediaFile(item.id)
     if (local) {

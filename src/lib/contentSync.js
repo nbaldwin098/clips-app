@@ -1,18 +1,11 @@
 /**
  * Cross-device content sync.
  *
- * Publishing (via publishLocalMedia / importUserLink / publishPhoto) always
- * writes to the local `imports` cache first, so the UI on *this* device
- * updates instantly and still works offline / without Supabase. When
- * Supabase is configured and the actor is a real signed-in Supabase user,
- * we additionally:
- *   - push the record's metadata (not the raw file) to the shared `videos`
- *     table so other devices/users can see it, and
- *   - pull the latest rows from that table (on load, after publishing, and
- *     on an interval) and merge them into the local cache.
+ * Publishing uploads the binary to Supabase Storage (public URL) and upserts
+ * metadata into the shared `videos` table. The local `imports` cache is only a
+ * mirror for fast reads — hosted posts must not depend on this device.
  *
- * Without Supabase configured, everything stays local-only by design —
- * there is no way to sync across devices without a shared backend.
+ * Without Supabase configured, uploads are rejected (no silent device-only save).
  */
 import { mergeImports } from './storage'
 import { isUserUploadRecord } from './mediaMeta'
@@ -163,7 +156,7 @@ async function deleteOwnedDeadRows(actor) {
     for (const row of data || []) {
       const mapped = fromRow(row)
       if (keepCloudRow(mapped)) continue
-      // Keep cloud rows for uploads even when media_url is still empty — local IDB may hold the file.
+      // Keep cloud rows for user uploads — hosted links must not be pruned away.
       if (isUserUploadRecord(mapped)) continue
       await sb.from(TABLE).delete().eq('id', row.id).eq('creator_id', actor.id)
     }

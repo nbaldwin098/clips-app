@@ -55,6 +55,7 @@ import { startSession } from './lib/algorithmEngine'
 import { lsGet, lsSet } from './lib/storage'
 import { syncContentFromCloud, notifyContentChanged } from './lib/contentSync'
 import { setGraphActor, syncGraphFromCloud, syncPublicEngagementFromCloud } from './lib/graphSync'
+import { promoteDeviceUploadsToCloud } from './lib/promoteUploads'
 import { installRuntimeGuards } from './lib/selfHeal'
 import { pushLibraryCatalogToCloud } from './data/publicMediaSeed'
 import { isAdminSession } from './lib/moderation'
@@ -101,7 +102,11 @@ function AppShell() {
   useEffect(() => {
     if (isAuthenticated && user?.id) startSession(user.id)
     setGraphActor(user?.provider === 'supabase' ? user : null)
-    if (user?.provider === 'supabase') syncGraphFromCloud().catch(() => {})
+    if (user?.provider === 'supabase') {
+      syncGraphFromCloud().catch(() => {})
+      // Legacy device-only blobs → cloud links, then drop the device copy.
+      promoteDeviceUploadsToCloud(user).catch(() => {})
+    }
   }, [isAuthenticated, user?.id, user?.provider])
 
   useEffect(() => installRuntimeGuards(), [])

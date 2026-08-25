@@ -3,7 +3,7 @@ import { X, Upload, Film } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { publishLocalMedia, getShortsFeed, getById } from '../lib/contentService'
 import { saveDraft } from '../lib/youtubeParity'
-import { storeMediaBlob } from '../lib/videoStorage'
+import { canHostUploads, cloudHostRequiredMessage } from '../lib/mediaUpload'
 import { mergeTags, parseChaptersInput } from '../lib/mediaMeta'
 import SoundPicker from './SoundPicker'
 import { postDeniedMessage } from '../lib/trustSafety'
@@ -87,6 +87,11 @@ export default function UploadModal({
       onOpenAuth?.()
       return
     }
+    if (!canHostUploads(user)) {
+      setError(cloudHostRequiredMessage(user))
+      setStatus('error')
+      return
+    }
     const denied = postDeniedMessage(user)
     if (denied) {
       setError(denied)
@@ -124,6 +129,11 @@ export default function UploadModal({
 
   const saveAsDraft = async () => {
     if (!isAuthenticated) { onOpenAuth?.(); return }
+    if (!canHostUploads(user)) {
+      setError(cloudHostRequiredMessage(user))
+      setStatus('error')
+      return
+    }
     const row = saveDraft({
       userId: user.id,
       title: title.trim(),
@@ -137,9 +147,7 @@ export default function UploadModal({
       scheduledFor,
       hasFile: !!file,
     })
-    if (file) {
-      try { await storeMediaBlob(row.id, file) } catch {}
-    }
+    void row
     setDraftSaved(true)
     setError('')
     if (file) {
@@ -162,7 +170,12 @@ export default function UploadModal({
         </div>
         <div className="p-5 space-y-4">
           {!isAuthenticated && <p className="text-xs text-amber-400">Sign in first.</p>}
-
+          {isAuthenticated && !canHostUploads(user) && (
+            <p className="text-xs text-amber-400">{cloudHostRequiredMessage(user)}</p>
+          )}
+          <p className="text-[11px] text-zinc-500">
+            Files are uploaded as cloud links. They stay online until you delete the post — nothing is kept as the source of truth on this device.
+          </p>
           <div className="flex gap-2">
             <button type="button" onClick={() => setKind('short')} className={`flex-1 h-9 rounded-lg text-xs font-medium ${kind === 'short' ? 'bg-white text-black' : 'border border-zinc-700 text-zinc-400'}`}>Clip</button>
             <button type="button" onClick={() => setKind('video')} className={`flex-1 h-9 rounded-lg text-xs font-medium ${kind === 'video' ? 'bg-white text-black' : 'border border-zinc-700 text-zinc-400'}`}>Video</button>
