@@ -34,7 +34,7 @@ export default function Navbar({ onNavigate, onOpenAuth, onOpenUpload, onToggleS
         <div className="flex-1 flex justify-center px-2">
           <div className="relative w-full max-w-xl">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
-            <input type="search" placeholder="Search" onFocus={() => onNavigate('explore')} className="w-full h-9 rounded-full border border-zinc-800 bg-[#121218] pl-9 pr-4 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-white" />
+            <input type="search" placeholder="Search" onFocus={() => onNavigate('explore')} className="w-full h-8 border border-zinc-800 bg-[#121218] pl-9 pr-4 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-white" />
           </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
