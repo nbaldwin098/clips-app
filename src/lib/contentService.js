@@ -554,6 +554,7 @@ export function importUserLink(url, actor = null) {
 export async function publishLocalMedia(file, actor = null, {
   type = null, title = null, description = null, sound = null, tags = [],
   stitchOf = null, chapters = [], captionsText = '', scheduledFor = null, status = 'published',
+  priceUsd = 0,
 } = {}) {
   if (!file) return { ok: false, item: null, error: 'Choose a video file.' }
   if (!actor?.id) return { ok: false, item: null, error: signInToUploadMessage() }
@@ -601,6 +602,10 @@ export async function publishLocalMedia(file, actor = null, {
     const when = scheduledFor ? new Date(scheduledFor).getTime() : 0
     const isFuture = when && when > Date.now()
     const finalStatus = status === 'draft' ? 'draft' : (isFuture ? 'scheduled' : 'published')
+    const parsedPrice = Number(priceUsd)
+    const finalPrice = Number.isFinite(parsedPrice) && parsedPrice > 0
+      ? Math.round(parsedPrice * 100) / 100
+      : 0
 
     const record = {
       id,
@@ -634,7 +639,7 @@ export async function publishLocalMedia(file, actor = null, {
       scheduledFor: isFuture ? new Date(when).toISOString() : null,
       status: finalStatus,
       publishedAt: finalStatus === 'published' ? new Date().toISOString() : null,
-      priceUsd: 0,
+      priceUsd: finalPrice,
       creatorId: host.id,
       userId: host.id,
       handle: host.handle || actor.handle,

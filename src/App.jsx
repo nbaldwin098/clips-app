@@ -66,6 +66,7 @@ import { syncPromotionsFromCloud } from './lib/promotions'
 import PromoBanner from './components/PromoBanner'
 import { claimStripeReturn } from './lib/tips'
 import { membershipReturnPaid } from './lib/stripeConfig'
+import { addPremiumSub } from './lib/engagement'
 import { isOwnerAccount } from './data/ownerLogin'
 
 const KNOWN_VIEWS = new Set([
@@ -200,6 +201,18 @@ function AppShell() {
     if (kind === 'pic' && id) {
       setRouteId(id)
       setView('pics')
+      return
+    }
+    if (kind === 'checkout') {
+      const creatorId = params?.creator || params?.c || id || ''
+      if (creatorId) {
+        setCheckoutTarget({
+          id: creatorId,
+          handle: String(params?.handle || params?.h || '').replace(/^@/, ''),
+        })
+      }
+      setView('checkout')
+      setRouteId(id || '')
       return
     }
     if (KNOWN_VIEWS.has(kind)) {
