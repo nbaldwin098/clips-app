@@ -15,6 +15,7 @@
  * there is no way to sync across devices without a shared backend.
  */
 import { mergeImports } from './storage'
+import { isUserUploadRecord } from './mediaMeta'
 import { getSupabase, isSupabaseConfigured } from './supabaseClient'
 import { isFeedable, isReferenceItem, hasStableImage, purgeDeadCatalog } from './catalogHealth'
 
@@ -154,10 +155,12 @@ async function deleteOwnedDeadRows(actor) {
   const sb = await getSupabase()
   if (!sb) return
   try {
-    const { data } = await sb.from(TABLE).select('id, type, media_url, source_url, thumb_url, origin').eq('creator_id', actor.id)
+    const { data } = await sb.from(TABLE).select('id, type, media_url, source_url, thumb_url, origin, hosted').eq('creator_id', actor.id)
     for (const row of data || []) {
       const mapped = fromRow(row)
       if (keepCloudRow(mapped)) continue
+      // Keep cloud rows for uploads even when media_url is still empty — local IDB may hold the file.
+      if (isUserUploadRecord(mapped)) continue
       await sb.from(TABLE).delete().eq('id', row.id).eq('creator_id', actor.id)
     }
   } catch {}

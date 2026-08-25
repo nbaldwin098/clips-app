@@ -239,7 +239,7 @@ function ClipSlide({
   return (
     <ShortsCard actions={actions(true)} fillMobile>
       <div
-        className="absolute inset-x-0 top-12 bottom-44 md:bottom-48 z-[1]"
+        className="absolute inset-0 z-[1]"
         onClick={onSurfaceClick}
         onPointerDown={holdStart}
         onPointerUp={holdEnd}
@@ -504,8 +504,8 @@ export default function ShortsFeed({
       next.add(row.key)
       return next
     })
-    // After the ad row drops out, the next clip slides into this index.
-    window.setTimeout(() => goToRef.current?.(index, 'auto'), 150)
+    // Stay on this index — the next clip slides into the same slot.
+    window.setTimeout(() => goToRef.current?.(index, 'auto'), 80)
   }, [visibleMixed])
 
   const openClip = (item) => onNavigate?.('clips', item.id)
@@ -527,10 +527,11 @@ export default function ShortsFeed({
 
   return (
     <ShortsStage
-      key={`clips-player-${tab}`}
+      key={`clips-player-${tab}-${visibleMixed.length}`}
       count={visibleMixed.length}
       activeIndex={activeIdx}
       goToRef={goToRef}
+      loop={visibleMixed.length >= 4}
       onActiveIndex={(i) => {
         const prev = visibleMixed[prevIdx.current]?.item
         const waited = Date.now() - shownAt.current

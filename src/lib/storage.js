@@ -6,7 +6,7 @@
  */
 
 import { attachCrossPostMeta, detectPlatformFromUrl } from './crossPostDetector'
-import { olderIso, isLibraryRecord } from './mediaMeta'
+import { olderIso, isLibraryRecord, isUserUploadRecord } from './mediaMeta'
 
 export const STORAGE_TARGETS = {
   ZERO_REF: 'zero-storage-reference',
@@ -155,6 +155,7 @@ function pickMergedUrl(incoming, existing) {
   return incoming || existing || ''
 }
 
+
 export function mergeImports(records) {
   if (!records?.length) return getImports()
   const local = getImports()
@@ -169,18 +170,32 @@ export function mergeImports(records) {
     const localMosaic = prev.mosaicThumb || (String(prev.thumbUrl || '').startsWith('data:image/') ? prev.thumbUrl : '')
     next.mosaicThumb = localMosaic || next.mosaicThumb || ''
     if (isLibraryRecord(next) || isLibraryRecord(rec) || isLibraryRecord(prev)) {
-      const now = new Date().toISOString()
-      next.createdAt = now
-      next.publishedAt = now
+      // Do not bump library posts to "now" on every cloud pull — that was
+      // evicting real user uploads from the 500-row local cache cap.
+      next.createdAt = prev.createdAt || rec.createdAt || new Date().toISOString()
+      next.publishedAt = prev.publishedAt || rec.publishedAt || next.createdAt
     } else {
       next.createdAt = olderIso(prev.createdAt, rec.createdAt)
       next.publishedAt = olderIso(prev.publishedAt, rec.publishedAt)
     }
     byId.set(rec.id, next)
   }
-  const merged = [...byId.values()]
-    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
-    .slice(0, 500)
+  const IMPORT_CAP = 500
+  const all = [...byId.values()]
+  const protectedRows = all.filter(isUserUploadRecord)
+  const protectedIds = new Set(protectedRows.map((r) => r.id))
+  const library = all.filter((r) => isLibraryRecord(r) && !protectedIds.has(r.id))
+  const rest = all.filter((r) => !protectedIds.has(r.id) && !isLibraryRecord(r))
+  rest.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+  library.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+  const slots = Math.max(0, IMPORT_CAP - protectedRows.length)
+  const librarySlots = Math.min(library.length, Math.floor(slots * 0.55))
+  const restSlots = Math.max(0, slots - librarySlots)
+  const merged = [
+    ...protectedRows,
+    ...library.slice(0, librarySlots),
+    ...rest.slice(0, restSlots),
+  ]
   lsSet('imports', merged)
   return merged
 }

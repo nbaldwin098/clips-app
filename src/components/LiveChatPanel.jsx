@@ -37,6 +37,7 @@ export default function LiveChatPanel({
   const [tipBusy, setTipBusy] = useState('')
   const [customTip, setCustomTip] = useState('')
   const [timestampsEnabled, setTimestampsEnabled] = useState(false)
+  const [chatSettingsOpen, setChatSettingsOpen] = useState(false)
 
   const messagesEndRef = useRef(null)
   const chatContainerRef = useRef(null)

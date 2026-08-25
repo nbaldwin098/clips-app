@@ -8,7 +8,7 @@ export const EXOCLICK_BANNER_CLASS = AD_ZONES.banner.insClass
 
 /** Poll for a fill, then give up and collapse the slot. */
 const FILL_POLL_MS = 400
-const FILL_TIMEOUT_MS = 8000
+const FILL_TIMEOUT_MS = 12000
 const FILL_RETRY_MS = 3500
 
 export { ensureExoClickScript } from '../lib/exoClickServe'
