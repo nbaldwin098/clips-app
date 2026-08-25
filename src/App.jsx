@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import StreamingNavbar from './components/StreamingNavbar'
@@ -8,7 +8,6 @@ import MfaGate from './components/MfaGate'
 import HomeFeed from './components/HomeFeed'
 import ShortsFeed from './components/ShortsFeed'
 import LiveView from './components/LiveView'
-import CreatorStudio from './components/studio/CreatorStudio'
 import SettingsHub from './components/settings/SettingsHub'
 import LibraryPage from './components/LibraryPage'
 import HistoryPage from './components/HistoryPage'
@@ -32,9 +31,7 @@ import CheckoutPage from './components/CheckoutPage'
 import CheckoutModal from './components/CheckoutModal'
 import CreatorApplyPage from './components/CreatorApplyPage'
 import AdvertisePage from './components/AdvertisePage'
-import AdvertiserPortal from './components/AdvertiserPortal'
 import SupportPage from './components/SupportPage'
-import AdminPortal from './components/AdminPortal'
 import CreatorsPage from './components/CreatorsPage'
 import ChannelPage from './components/ChannelPage'
 import ProfilePage from './components/ProfilePage'
@@ -44,7 +41,6 @@ import CommunityPage from './components/CommunityPage'
 import StudioToolsPage from './components/StudioToolsPage'
 import StreamSettingsPage from './components/StreamSettingsPage'
 import ContentRulesPage from './components/ContentRulesPage'
-import WatchPage from './components/WatchPage'
 import CreatePage from './components/CreatePage'
 import SoundPage from './components/SoundPage'
 import TagPage from './components/TagPage'
@@ -66,7 +62,13 @@ import { syncPromotionsFromCloud } from './lib/promotions'
 import PromoBanner from './components/PromoBanner'
 import { claimStripeReturn } from './lib/tips'
 import { membershipReturnPaid } from './lib/stripeConfig'
+import { addPremiumSub } from './lib/engagement'
 import { isOwnerAccount } from './data/ownerLogin'
+
+const CreatorStudio = lazy(() => import('./components/studio/CreatorStudio'))
+const WatchPage = lazy(() => import('./components/WatchPage'))
+const AdminPortal = lazy(() => import('./components/AdminPortal'))
+const AdvertiserPortal = lazy(() => import('./components/AdvertiserPortal'))
 
 const KNOWN_VIEWS = new Set([
   'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
@@ -111,6 +113,22 @@ function AppShell() {
   }, [isAuthenticated, user?.id, user?.provider])
 
   useEffect(() => installRuntimeGuards(), [])
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    const titles = {
+      home: 'Recommended',
+      clips: 'Clips',
+      pics: 'Pics',
+      live: 'Live',
+      explore: 'Explore',
+      watch: routeId ? 'Watch' : 'Watch',
+      profile: profileTarget.handle ? `@${profileTarget.handle}` : 'Profile',
+      checkout: 'Premium',
+      dashboard: 'Creator Studio',
+    }
+    document.title = titles[view] ? `${titles[view]} · calabi` : 'calabi'
+  }, [view, routeId, profileTarget.handle])
 
   useEffect(() => {
     if (!user?.id || typeof window === 'undefined') return
@@ -202,7 +220,20 @@ function AppShell() {
       setView('pics')
       return
     }
+    if (kind === 'checkout') {
+      const creatorId = params?.creator || params?.c || id || ''
+      if (creatorId) {
+        setCheckoutTarget({
+          id: creatorId,
+          handle: String(params?.handle || params?.h || '').replace(/^@/, ''),
+        })
+      }
+      setView('checkout')
+      setRouteId(id || '')
+      return
+    }
     if (KNOWN_VIEWS.has(kind)) {
+      if (kind === 'explore' && params?.q) setSearchQuery(String(params.q))
       setView(kind === 'shorts' ? 'clips' : kind)
       setRouteId(id || '')
     }
@@ -328,12 +359,20 @@ function AppShell() {
     pushHash('profile', h || found?.handle || '', (found?.id || userId) ? { u: found?.id || userId } : null)
     try { window.scrollTo({ top: 0, behavior: 'smooth' }) } catch {}
   }
-  if (typeof window !== 'undefined') {
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
     window.__clipsOpenProfile = openProfile
     window.__clipsOpenSound = openSound
     window.__clipsOpenTag = openTag
     window.__clipsOpenWatch = openWatch
-  }
+    return () => {
+      delete window.__clipsOpenProfile
+      delete window.__clipsOpenSound
+      delete window.__clipsOpenTag
+      delete window.__clipsOpenWatch
+    }
+  })
+
   const openCheckout = (creatorId, creatorHandle) => {
     if (!isAuthenticated) { setAuthOpen(true); return }
     setCheckoutTarget({ id: creatorId || null, handle: creatorHandle || '' })
@@ -545,7 +584,8 @@ function AppShell() {
         searchQuery={searchQuery}
         onSearchChange={(q) => {
           setSearchQuery(q)
-          if (view !== 'explore') navigate('explore')
+          setView('explore')
+          pushHash('explore', '', q?.trim() ? { q: q.trim() } : null)
         }}
       />
       <PromoBanner onNavigate={navigate} onOpenWatch={openWatch} />
@@ -560,7 +600,11 @@ function AppShell() {
           focusedStreamUserId={focusedLiveStream?.userId}
         />
 
-        <main className={`flex-1 min-h-0 min-w-0 bg-[#000000] ${lockStage ? 'overflow-hidden' : 'overflow-y-auto'}`}>{renderMain()}</main>
+        <main className={`flex-1 min-h-0 min-w-0 bg-[#000000] ${lockStage ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+          <Suspense fallback={<div className="p-8 text-sm text-zinc-500">Loading…</div>}>
+            {renderMain()}
+          </Suspense>
+        </main>
 
         {isLiveView && (
           <LiveChatPanel

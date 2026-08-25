@@ -2,6 +2,7 @@ import { useMemo, useEffect, useState, useRef, useCallback } from 'react'
 import { ChevronLeft, Clapperboard, Heart, MessageCircle, Search, Share2, Volume2, VolumeX, X, RotateCcw } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getStableShortsFeed, getStableFollowingFeed, getWatchItem, getCreatorPublicContent } from '../lib/contentService'
+import { isFeedable } from '../lib/catalogHealth'
 import { getMediaBlobUrl } from '../lib/videoStorage'
 import { parseEmbedUrl } from '../lib/videoEmbed'
 import { safeIframeSrc, safeMediaUrl } from '../lib/safeUrl'
@@ -54,6 +55,7 @@ function ClipSlide({
   const [commentsOpen, setCommentsOpen] = useState(false)
   const [progress, setProgress] = useState(0)
   const [following, setFollowing] = useState(() => isSubscribed(user?.id, item.creatorId || item.userId))
+  const [shareCopied, setShareCopied] = useState(false)
   const lastTap = useRef(0)
   const lastTime = useRef(0)
   const looped = useRef(false)
@@ -203,6 +205,8 @@ function ClipSlide({
     e?.stopPropagation?.()
     try {
       await copyShareUrl('clips', item.id)
+      setShareCopied(true)
+      setTimeout(() => setShareCopied(false), 1800)
       if (user?.id) {
         recordInteraction(user.id, {
           contentId: item.id,
@@ -232,7 +236,7 @@ function ClipSlide({
       <RailBtn circled={circled} onClick={() => setCommentsOpen(true)} label={commentCount}>
         <MessageCircle className="h-7 w-7" />
       </RailBtn>
-      <RailBtn circled={circled} onClick={share} label="Share">
+      <RailBtn circled={circled} onClick={share} label={shareCopied ? 'Copied' : 'Share'}>
         <Share2 className="h-7 w-7" />
       </RailBtn>
       <RailBtn
@@ -255,14 +259,7 @@ function ClipSlide({
 
   return (
     <ShortsCard actions={actions(true)} fillMobile>
-      <div
-        className="absolute inset-0 z-[1] touch-pan-y"
-        onClick={onSurfaceClick}
-        onPointerDown={holdStart}
-        onPointerUp={holdEnd}
-        onPointerCancel={holdEnd}
-        onPointerLeave={holdEnd}
-      >
+      <div className="absolute inset-0 z-[1] pointer-events-none touch-pan-y">
         {isIframe && safeIframeSrc(videoSrc) ? (
           <iframe
             src={active ? safeIframeSrc(videoSrc) : undefined}
@@ -277,11 +274,16 @@ function ClipSlide({
           <video
             ref={bindVideoRef}
             src={safeMediaUrl(videoSrc)}
-            className="absolute inset-0 w-full h-full object-cover md:object-contain bg-black pointer-events-none"
+            className="absolute inset-0 w-full h-full object-cover md:object-contain bg-black pointer-events-auto touch-pan-y"
             playsInline
             loop
             muted={muted}
             preload={active || warm ? 'auto' : 'metadata'}
+            onClick={onSurfaceClick}
+            onPointerDown={holdStart}
+            onPointerUp={holdEnd}
+            onPointerCancel={holdEnd}
+            onPointerLeave={holdEnd}
             onTimeUpdate={(e) => {
               const el = e.target
               if (!el?.duration) return
@@ -450,14 +452,14 @@ export default function ShortsFeed({
   const recommended = useMemo(() => getStableShortsFeed(user?.id || null), [user?.id, syncTick])
   const following = useMemo(() => getStableFollowingFeed(user?.id, { shortsOnly: true }), [user?.id, syncTick])
   const items = useMemo(() => {
-    const base = tab === 'following' ? following : recommended
+    const base = (tab === 'following' ? following : recommended).filter(isFeedable)
     if (!focusId) return base
 
     // Click stash / catalog — same resolver watch uses. Profile and "Also on"
     // open clips that are often missing from the frozen home shorts feed.
     const focused = getWatchItem(focusId)
-    if (!focused || focused.type !== 'short') {
-      // Still try to keep the player usable if the id is already in the feed.
+    if (!focused || focused.type !== 'short' || !isFeedable(focused)) {
+      // Dead / deleted uploads must not become empty snap slots in the reel.
       if (base.some((i) => i.id === focusId)) return base
       return base
     }
@@ -466,7 +468,7 @@ export default function ShortsFeed({
     // instead of dumping into a random global shuffle.
     const creatorId = focused.creatorId || focused.userId
     const creatorClips = getCreatorPublicContent(creatorId, focused.handle)
-      .filter((i) => i.type === 'short')
+      .filter((i) => i.type === 'short' && isFeedable(i))
     const pool = creatorClips.length ? creatorClips : base
     const rest = pool.filter((i) => i.id !== focused.id)
     return [focused, ...rest]
@@ -509,7 +511,24 @@ export default function ShortsFeed({
         onOpen={openClip}
         tab={tab}
         onTab={setTab}
+        onOpenAuth={onOpenAuth}
+        isAuthenticated={Boolean(user?.id)}
       />
+    )
+  }
+
+  if (!mixed.length) {
+    return (
+      <div className="h-full min-h-0 flex flex-col items-center justify-center gap-4 bg-[#000000] px-6 text-center">
+        <p className="text-sm text-zinc-300">This clip was removed or is no longer available.</p>
+        <button
+          type="button"
+          onClick={backToGrid}
+          className="h-10 px-5 rounded-full bg-white text-black text-sm font-semibold"
+        >
+          Back to clips
+        </button>
+      </div>
     )
   }
 
@@ -519,7 +538,7 @@ export default function ShortsFeed({
       count={mixed.length}
       activeIndex={activeIdx}
       goToRef={goToRef}
-      loop={mixed.length >= 4}
+      loop={mixed.length >= 2}
       onActiveIndex={(i) => {
         const prev = mixed[prevIdx.current]?.item
         const waited = Date.now() - shownAt.current

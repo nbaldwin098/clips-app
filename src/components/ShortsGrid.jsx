@@ -34,12 +34,17 @@ function GridThumb({ item }) {
 
 function ShortTile({ item, onOpen }) {
   const [menu, setMenu] = useState(false)
+  const [copied, setCopied] = useState(false)
   const fresh = isRecentShort(item)
 
   const share = async (e) => {
     e.stopPropagation()
     setMenu(false)
-    try { await copyShareUrl('clips', item.id) } catch {}
+    try {
+      await copyShareUrl('clips', item.id)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    } catch {}
   }
 
   return (
@@ -72,7 +77,7 @@ function ShortTile({ item, onOpen }) {
       {menu ? (
         <div className="absolute top-10 right-2 z-30 min-w-[8rem] rounded-lg border border-zinc-700 bg-[#212121] py-1 shadow-xl">
           <button type="button" onClick={share} className="w-full px-3 py-2 text-left text-xs text-white hover:bg-white/10 inline-flex items-center gap-2">
-            <Share2 className="h-3.5 w-3.5" /> Share
+            <Share2 className="h-3.5 w-3.5" /> {copied ? 'Copied' : 'Share'}
           </button>
         </div>
       ) : null}
@@ -81,7 +86,7 @@ function ShortTile({ item, onOpen }) {
 }
 
 /** Recommended / following clip grid — content only. Ads belong in the player while scrolling. */
-export default function ShortsGrid({ items, onOpen, tab = 'recommended', onTab }) {
+export default function ShortsGrid({ items, onOpen, tab = 'recommended', onTab, onOpenAuth, isAuthenticated = false }) {
   const list = Array.isArray(items) ? items : []
   return (
     <div className="h-full overflow-y-auto bg-[#000000]">
@@ -104,9 +109,24 @@ export default function ShortsGrid({ items, onOpen, tab = 'recommended', onTab }
         ) : null}
       </div>
       {list.length === 0 ? (
-        <p className="px-4 pt-10 text-sm text-zinc-400 text-center">
-          {tab === 'following' ? 'Follow creators to fill this shelf.' : 'No clips yet'}
-        </p>
+        <div className="px-4 pt-10 text-center">
+          {tab === 'following' && !isAuthenticated ? (
+            <>
+              <p className="text-sm text-zinc-400">Sign in to see clips from creators you follow.</p>
+              <button
+                type="button"
+                onClick={() => onOpenAuth?.()}
+                className="mt-4 h-10 px-5 rounded-full bg-white text-black text-sm font-semibold"
+              >
+                Sign in
+              </button>
+            </>
+          ) : (
+            <p className="text-sm text-zinc-400">
+              {tab === 'following' ? 'Follow creators to fill this shelf.' : 'No clips yet'}
+            </p>
+          )}
+        </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 p-4 pb-16">
           {list.map((item) => (

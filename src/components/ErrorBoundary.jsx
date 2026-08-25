@@ -12,11 +12,6 @@ export default class ErrorBoundary extends Component {
 
   componentDidCatch(error, info) {
     console.error('Clips error boundary', error, info)
-    if (!this.state.retried) {
-      window.setTimeout(() => {
-        this.setState({ hasError: false, message: '', retried: true })
-      }, 400)
-    }
   }
 
   goHome = () => {

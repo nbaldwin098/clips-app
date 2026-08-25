@@ -215,7 +215,9 @@ export default function CreatorStudio({
     try {
       const res = await restoreLostUploads(user)
       const n = Number(res?.total) || 0
-      setRestoreNote(n ? `Restored ${n} post${n === 1 ? '' : 's'}.` : 'Nothing to restore.')
+      if (res?.error) setRestoreNote(res.error)
+      else if (n) setRestoreNote(`Restored ${n} post${n === 1 ? '' : 's'}.`)
+      else setRestoreNote('Nothing to restore on this device.')
     } catch {
       setRestoreNote("Couldn't restore right now.")
     } finally {

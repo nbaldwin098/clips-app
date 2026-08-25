@@ -1,6 +1,7 @@
 import { safeHttpUrl, safeMediaUrl } from './safeUrl'
 
 const warmed = new Set()
+const preloadLinks = new Set()
 
 function remember(url) {
   if (!url || warmed.has(url)) return false
@@ -28,6 +29,19 @@ export function preloadMediaUrl(raw, kind = 'video') {
   link.as = 'video'
   link.href = url
   document.head.appendChild(link)
+  preloadLinks.add(link)
+}
+
+/** Drop stale preload links when the reel moves on (keeps memory flat on long sessions). */
+export function revokeStalePreloads(keepUrls = []) {
+  if (typeof document === 'undefined') return
+  const keep = new Set((keepUrls || []).filter(Boolean))
+  for (const link of preloadLinks) {
+    if (!keep.has(link.href)) {
+      link.remove()
+      preloadLinks.delete(link)
+    }
+  }
 }
 
 export function preloadPostedItem(item) {

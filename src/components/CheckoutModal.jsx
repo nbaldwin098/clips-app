@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { X, Heart } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getMembershipPrice, isPremiumSub } from '../lib/engagement'
-import { getStripePaymentLink } from '../lib/stripeConfig'
+import { isStripeConfigured, getStripePaymentLink } from '../lib/stripeConfig'
 import { startPremiumCheckout } from '../lib/checkout'
 import { stashPendingStripe } from '../lib/tips'
 import { redirectSafeUrl } from '../lib/safeUrl'
@@ -15,6 +15,7 @@ export default function CheckoutModal({ open, onClose, creatorId, creatorHandle 
   const price = getMembershipPrice(target)
   const already = user && target ? isPremiumSub(user.id, target) : false
   const hasLink = !!getStripePaymentLink()
+  const configured = isStripeConfigured()
 
   if (!open) return null
 
@@ -53,7 +54,7 @@ export default function CheckoutModal({ open, onClose, creatorId, creatorHandle 
         </p>
         <ul className="mt-3 text-xs text-zinc-400 space-y-1 list-disc list-inside">
           <li>Badge in chat when chat exists</li>
-          <li>{hasLink ? 'Pays on Stripe Checkout' : 'Needs a Payment Link on Render to charge'}</li>
+          <li>{configured && hasLink ? 'Pays on Stripe Checkout' : 'Card checkout is not set up on this site yet.'}</li>
           <li>Payouts are not live</li>
         </ul>
         {already ? (

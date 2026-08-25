@@ -16,6 +16,10 @@ export default function PasswordRecoveryGate() {
       setError('Passwords do not match.')
       return
     }
+    if (pw.length < 8) {
+      setError('Password must be at least 8 characters.')
+      return
+    }
     setBusy(true)
     try {
       await updatePassword(pw)
@@ -31,7 +35,7 @@ export default function PasswordRecoveryGate() {
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/80 p-4">
       <form onSubmit={submit} className="w-full max-w-sm rounded-2xl border border-[#2f2f37] bg-[#1f1f23] p-5 space-y-3">
         <h2 className="text-lg font-semibold text-white">Choose a new password</h2>
-        <p className="text-xs text-zinc-500">You opened Clips from a reset email. Set a new password for this account.</p>
+        <p className="text-xs text-zinc-500">Use at least 8 characters with letters and numbers.</p>
         <input
           type="password"
           value={pw}
@@ -47,7 +51,7 @@ export default function PasswordRecoveryGate() {
           className="w-full h-11 rounded-lg border border-[#2f2f37] bg-[#000000] px-3 text-sm text-white"
         />
         {error ? <p className="text-sm text-red-400">{error}</p> : null}
-        <button type="submit" disabled={busy || pw.length < 6} className="w-full h-10 rounded-lg bg-white text-black text-sm font-bold disabled:opacity-50">
+        <button type="submit" disabled={busy || pw.length < 8 || confirm.length < 8} className="w-full h-10 rounded-lg bg-white text-black text-sm font-bold disabled:opacity-50">
           {busy ? 'Saving…' : 'Save password'}
         </button>
       </form>

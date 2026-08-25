@@ -8,7 +8,7 @@ import {
 } from './mediaUpload'
 import { pushContentRecord, notifyContentChanged, syncContentFromCloud } from './contentSync'
 import { processImageFile } from './videoStorage'
-import { hasStableImage, hiddenBrokenIds } from './catalogHealth'
+import { hasStableImage, hiddenBrokenIds, isFeedable } from './catalogHealth'
 import { isAccountHidden } from './trustSafety'
 import { newContentId } from './newContentId'
 
@@ -49,7 +49,7 @@ export function pickImmediatePhotoSrc(pic, { full = false } = {}) {
 
 export function getPicsFeed() {
   const hidden = hiddenBrokenIds()
-  const all = (getImports() || []).filter((i) => i && i.type === 'pic' && hasStableImage(i) && !hidden.has(i.id) && !isAccountHidden(i.creatorId || i.userId, i.handle))
+  const all = (getImports() || []).filter((i) => i && i.type === 'pic' && isFeedable(i) && hasStableImage(i) && !hidden.has(i.id) && !isAccountHidden(i.creatorId || i.userId, i.handle))
   return all
     .map((raw) => ({
       id: raw.id,
@@ -71,7 +71,7 @@ export function getPicsFeed() {
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 }
 
-export async function publishPhoto(file, actor = null) {
+export async function publishPhoto(file, actor = null, { priceUsd = 0 } = {}) {
   if (!file) return { ok: false, item: null, error: 'Choose a photo.' }
   if (!String(file.type || '').startsWith('image/')) {
     return { ok: false, item: null, error: 'Choose an image file (jpg, png, webp).' }
@@ -97,6 +97,10 @@ export async function publishPhoto(file, actor = null) {
       return { ok: false, item: null, error: uploadFailedMessage() }
     }
     const mediaUrl = up.publicUrl
+    const parsedPrice = Number(priceUsd)
+    const finalPrice = Number.isFinite(parsedPrice) && parsedPrice > 0
+      ? Math.round(parsedPrice * 100) / 100
+      : 0
 
     const record = {
       id,
@@ -117,7 +121,7 @@ export async function publishPhoto(file, actor = null) {
       width: processed.width,
       height: processed.height,
       createdAt: new Date().toISOString(),
-      priceUsd: 0,
+      priceUsd: finalPrice,
       creatorId: host.id,
       userId: host.id,
       handle: host.handle || actor.handle,

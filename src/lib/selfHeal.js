@@ -62,10 +62,6 @@ export function healUploadCatalog() {
     if (!row || typeof row !== 'object') return row
     let dirty = false
     const r = { ...row }
-    if (Number(r.priceUsd) > 0) {
-      r.priceUsd = 0
-      dirty = true
-    }
     for (const key of ['mediaUrl', 'sourceUrl', 'thumbUrl', 'mosaicThumb']) {
       const u = String(r[key] || '')
       if (isBlobUrl(u)) {

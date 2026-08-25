@@ -80,11 +80,8 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
     }
     const users = listIndexedUsers()
     const match = users.find((u) => String(u.email || '').toLowerCase() === mail)
-    if (match?.handle) {
-      setInfo(`Your username is @${match.handle}`)
-    } else {
-      setInfo('No username found on this device for that email. Sign in with email or phone — your @username is on your profile after you log in.')
-    }
+    void match
+    setInfo('If that email is on Clips, your @username is on your profile after you sign in. Check inbox if you forgot your password.')
   }
 
   const submit = async (e) => {
@@ -165,19 +162,19 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
   }
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4">
-      <div className="w-full max-w-md rounded-2xl border border-[#2f2f37] bg-[#1f1f23] shadow-2xl">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4" role="presentation">
+      <div className="w-full max-w-md rounded-2xl border border-[#2f2f37] bg-[#1f1f23] shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#2f2f37]">
           <div className="flex items-center gap-3 min-w-0">
             <BrandMark size={32} withWord />
             <div>
-              <h2 className="text-lg font-semibold text-[#efeff1]">{title}</h2>
+              <h2 id="auth-modal-title" className="text-lg font-semibold text-[#efeff1]">{title}</h2>
               <p className="text-[10px] text-zinc-500 mt-0.5">
-                {synced ? 'Synced across devices' : 'Local this device'}
+                {synced ? 'Synced across devices — uploads and follows work everywhere.' : 'Local this device — sign in with email for cloud uploads.'}
               </p>
             </div>
           </div>
-          <button type="button" onClick={onClose} className="text-zinc-400 hover:text-white">
+          <button type="button" aria-label="Close sign in" onClick={onClose} className="text-zinc-400 hover:text-white">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -202,7 +199,7 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
                     }}
                     className="w-full h-10 rounded-lg border border-[#2f2f37] bg-[#000000] text-sm font-semibold text-white hover:bg-[#18181b] disabled:opacity-60"
                   >
-                    {p.label}
+                    {busy ? 'Redirecting…' : p.label}
                   </button>
                 ))}
               </div>

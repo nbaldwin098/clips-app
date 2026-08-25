@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react'
+import { useState, useRef, useMemo, useEffect } from 'react'
 import { X, Upload, Film } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { publishLocalMedia, getShortsFeed, getById } from '../lib/contentService'
@@ -31,6 +31,15 @@ export default function UploadModal({
 
   const stitchOptions = useMemo(() => getShortsFeed(user?.id || null).slice(0, 40), [user?.id, open])
   const stitchItem = stitchId ? (getById(stitchId) || initialStitch) : initialStitch
+
+  useEffect(() => {
+    if (!open) return
+    setKind(initialKind === 'short' ? 'short' : 'video')
+    setSound(initialSound)
+    setStitchId(initialStitch?.id || '')
+  }, [open, initialKind, initialSound, initialStitch])
+
+  const uploadProgress = status === 'reading' ? 55 : status === 'ready' ? 100 : 0
 
   if (!open) return null
 
@@ -150,12 +159,17 @@ export default function UploadModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70" onClick={() => { reset(); onClose() }} />
-      <div className="relative w-full max-w-md rounded-2xl bg-[#1f1f23] shadow-2xl border border-[#2f2f37] max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="presentation">
+      <div className="absolute inset-0 bg-black/70" onClick={() => { reset(); onClose() }} aria-hidden="true" />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="upload-modal-title"
+        className="relative w-full max-w-md rounded-2xl bg-[#1f1f23] shadow-2xl border border-[#2f2f37] max-h-[90vh] overflow-y-auto"
+      >
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#2f2f37] sticky top-0 bg-[#1f1f23] z-10">
-          <h2 className="text-base font-semibold text-[#efeff1]">Upload</h2>
-          <button type="button" onClick={() => { reset(); onClose() }} className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-zinc-800">
+          <h2 id="upload-modal-title" className="text-base font-semibold text-[#efeff1]">Upload</h2>
+          <button type="button" aria-label="Close upload" onClick={() => { reset(); onClose() }} className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-zinc-800">
             <X className="h-4 w-4 text-zinc-400" />
           </button>
         </div>
@@ -266,6 +280,15 @@ export default function UploadModal({
               {status === 'reading' ? 'Uploading…' : scheduledFor ? 'Schedule' : 'Publish'}
             </button>
           </div>
+
+          {uploadProgress > 0 && status !== 'ready' ? (
+            <div className="space-y-1">
+              <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+                <div className="h-full bg-white transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
+              </div>
+              <p className="text-[11px] text-zinc-500">Encoding and uploading to the cloud…</p>
+            </div>
+          ) : null}
 
           {status === 'error' && <p className="text-sm text-red-400">{error}</p>}
           {draftSaved && !meta && <p className="text-xs text-zinc-400">Draft saved. Open Studio to publish later.</p>}

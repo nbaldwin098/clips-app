@@ -38,6 +38,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
   const [liveNow, setLiveNow] = useState(() => (lsGet('live_board', []) || []).filter((b) => b.isLive))
   const [, setTick] = useState(0)
   const [sharing, setSharing] = useState(false)
+  const [screenError, setScreenError] = useState('')
   const [adNote, setAdNote] = useState('')
   const [, bumpAdUi] = useState(0)
   const refreshAdUi = () => bumpAdUi((n) => n + 1)
@@ -148,7 +149,11 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
   }
 
   const shareScreen = async () => {
-    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getDisplayMedia) return
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getDisplayMedia) {
+      setScreenError('Screen share is not supported in this browser.')
+      return
+    }
+    setScreenError('')
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true })
       const el = screenRef.current
@@ -161,7 +166,9 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
         setSharing(false)
         if (screenRef.current) screenRef.current.srcObject = null
       })
-    } catch {}
+    } catch (err) {
+      setScreenError(err?.name === 'NotAllowedError' ? 'Screen share permission denied.' : 'Could not share screen.')
+    }
   }
 
   const subCount = focusedStream?.userId ? getSubscriberCount(focusedStream.userId) : 0
@@ -187,7 +194,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
       <div>
         <h1 className="text-2xl font-bold text-white">Live</h1>
         <p className="mt-1 text-sm text-[#aaa]">
-          Live video ingest is not connected yet. People can list themselves in the lobby.
+          Live video ingest is not connected yet. Lobby listings and watcher counts are approximate on this device.
         </p>
       </div>
 
@@ -267,6 +274,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
                 >
                   <MonitorUp className="h-4 w-4" /> {sharing ? 'Sharing this PC' : 'Share this screen'}
                 </button>
+                {screenError ? <p className="w-full text-[11px] text-red-400">{screenError}</p> : null}
                 </>
               )}
               <FollowButton creatorId={focusedStream.userId} handle={focusedStream.handle} onOpenAuth={onOpenAuth} />

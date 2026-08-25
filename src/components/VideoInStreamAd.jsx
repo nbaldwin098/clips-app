@@ -74,12 +74,13 @@ export default function VideoInStreamAd({ creative, slot, onDone }) {
             <button
               type="button"
               onClick={() => onDone?.()}
+              aria-label="Skip advertisement"
               className="inline-flex items-center gap-1.5 h-8 px-4 rounded-xl bg-white text-black text-xs font-bold"
             >
               Skip Ad <SkipForward className="h-3.5 w-3.5" />
             </button>
           ) : (
-            <div className="px-3 py-1 rounded-xl bg-black/80 border border-zinc-700 text-zinc-300 text-xs">
+            <div className="px-3 py-1 rounded-xl bg-black/80 border border-zinc-700 text-zinc-300 text-xs" aria-live="polite">
               Skip in <span className="font-bold text-white">{Math.max(0, Math.ceil(skipAfter - elapsed))}s</span>
             </div>
           )}

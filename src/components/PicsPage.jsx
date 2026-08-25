@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { ImagePlus, X, Share2, Download, Heart } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getPicsFeed, publishPhoto, pickImmediatePhotoSrc, isHttpUrl, isDataImageUrl } from '../lib/picsService'
+import { isFeedable } from '../lib/catalogHealth'
 import { isPicHearted, togglePicHeart } from '../lib/picHearts'
 import { useContentSyncTick } from '../lib/useContentSync'
 import { subscribeContentUpdates } from '../lib/contentSync'
@@ -60,7 +61,13 @@ function PicImage({ pic, className, alt = '', full = false, fill = false, eager 
     onUnplayable?.(pic.id)
   }
 
-  if (failed || !src) return null
+  if (failed || !src) {
+    return (
+      <div className={`flex items-center justify-center bg-zinc-900 text-zinc-500 text-xs ${fill ? 'absolute inset-0' : className || 'h-full w-full'}`}>
+        Image unavailable
+      </div>
+    )
+  }
 
   if (fill) {
     return (
@@ -120,10 +127,15 @@ function PicHeartBtn({ pic, active, onOpenAuth, className = '' }) {
 function PicSlide({ pic, active, onOpenProfile, onOpenAuth, eager = true }) {
   const { user } = useAuth()
   const lastTap = useRef(0)
+  const [shareCopied, setShareCopied] = useState(false)
 
   const share = async (e) => {
     e?.stopPropagation?.()
-    try { await copyShareUrl('pic', pic.id) } catch {}
+    try {
+      await copyShareUrl('pic', pic.id)
+      setShareCopied(true)
+      setTimeout(() => setShareCopied(false), 1800)
+    } catch {}
   }
 
   const onSurfaceClick = () => {
@@ -143,6 +155,7 @@ function PicSlide({ pic, active, onOpenProfile, onOpenAuth, eager = true }) {
         <span className="h-11 w-11 rounded-full bg-[#272727] hover:bg-[#3d3d3d] flex items-center justify-center text-white">
           <Share2 className="h-5 w-5" />
         </span>
+        <span className="text-[11px] text-white font-medium drop-shadow">{shareCopied ? 'Copied' : 'Share'}</span>
       </button>
       <button type="button" onClick={() => downloadPostedMedia(pic)} className="flex flex-col items-center gap-1">
         <span className="h-11 w-11 rounded-full bg-[#272727] hover:bg-[#3d3d3d] flex items-center justify-center text-white">
@@ -159,11 +172,6 @@ function PicSlide({ pic, active, onOpenProfile, onOpenAuth, eager = true }) {
         onClick={onSurfaceClick}
       >
         <PicImage pic={pic} full eager={eager} className="max-h-full max-w-full w-auto h-auto object-contain" />
-        {active ? (
-          <div className="md:hidden absolute right-3 top-1/2 -translate-y-1/2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto">
-            <PicHeartBtn pic={pic} active onOpenAuth={onOpenAuth} />
-          </div>
-        ) : null}
       </div>
           {handle ? (
         <div className="absolute inset-x-0 bottom-0 z-10">
@@ -178,7 +186,9 @@ function PicSlide({ pic, active, onOpenProfile, onOpenAuth, eager = true }) {
           </div>
         </div>
       ) : null}
-      <div className="md:hidden absolute right-2 bottom-32 z-10">{actions}</div>
+      <div className="md:hidden absolute right-2 bottom-32 z-10 flex flex-col items-center gap-5">
+        {actions}
+      </div>
     </ShortsCard>
   )
 }
@@ -237,13 +247,13 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
   const [openedAt, setOpenedAt] = useState(0)
 
   const shuffled = useMemo(() => {
-    const list = items || []
+    const list = (items || []).filter(isFeedable)
     if (!initialPicId) return shuffleFeed(list)
     // Deep-link / profile tap: keep that pic first so the viewer does not
     // open a random neighbor from the unshuffled index.
     const focused = list.find((p) => p.id === initialPicId)
     const rest = shuffleFeed(list.filter((p) => p.id !== initialPicId))
-    return focused ? [focused, ...rest] : shuffleFeed(list)
+    return focused && isFeedable(focused) ? [focused, ...rest] : shuffleFeed(list)
   }, [items, initialPicId])
   // Pic reel is content-only — no full-screen ad slides that stop scroll.
   const scrollRows = useMemo(
@@ -328,7 +338,7 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
           count={scrollRows.length}
           activeIndex={viewerIndex}
           goToRef={goToRef}
-          loop={scrollRows.length >= 4}
+          loop={scrollRows.length >= 2}
           onActiveIndex={(i) => {
             setViewerIndex(i)
             const pic = scrollRows[i]?.item

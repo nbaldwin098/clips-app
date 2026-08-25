@@ -64,7 +64,8 @@ export default function CreatePage({ onCreate, onOpenAuth, onNavigate }) {
         setPicError(res.error || 'Upload failed.')
         return
       }
-      onNavigate?.('pics')
+      if (res.item?.id) onNavigate?.('pics', res.item.id)
+      else onNavigate?.('pics')
     } catch (err) {
       setPicError(err?.message || 'Upload failed.')
     } finally {
