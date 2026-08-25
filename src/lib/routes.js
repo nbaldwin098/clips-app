@@ -1,4 +1,6 @@
-/** Path routes so a video, clip, pic, sound, or tag can be copied as calabi.us/watch/… */
+/** Path routes — posts share as calabi.us/<id> (YouTube-style). */
+
+import { looksLikeContentId, RESERVED_PATH_KINDS } from './publicId.js'
 
 function routeFromWindow() {
   if (typeof window === 'undefined') return '/'
@@ -6,6 +8,8 @@ function routeFromWindow() {
   if (hash.startsWith('#/')) return hash
   return `${window.location.pathname}${window.location.search}`
 }
+
+const CONTENT_SHARE_KINDS = new Set(['watch', 'clips', 'shorts', 'pic', 'v', 'content'])
 
 export function parseRoute(raw = '') {
   let source = String(raw || '')
@@ -19,8 +23,13 @@ export function parseRoute(raw = '') {
   const full = source.replace(/^#\/?/, '').replace(/^\//, '')
   const [path, qs] = full.split('?')
   const parts = (path || '').split('/').filter(Boolean)
-  const kind = decodeURIComponent(parts[0] || 'home')
-  const id = parts.slice(1).map((p) => decodeURIComponent(p)).join('/')
+  let kind = decodeURIComponent(parts[0] || 'home')
+  let id = parts.slice(1).map((p) => decodeURIComponent(p)).join('/')
+  // Bare /{id} → content (calabi.us/fnf48rth348…)
+  if (!id && looksLikeContentId(kind)) {
+    id = kind
+    kind = 'content'
+  }
   const params = {}
   if (qs) {
     new URLSearchParams(qs).forEach((v, k) => { params[k] = v })
@@ -28,9 +37,25 @@ export function parseRoute(raw = '') {
   return { kind: kind === 'shorts' ? 'clips' : kind, id, params }
 }
 
+/**
+ * Build a path. Content kinds with an id become bare /{id} share links.
+ * Page routes stay /clips, /watch (list), /profile/@handle, etc.
+ * Legacy /watch/{id} still parses via parseRoute.
+ */
 export function buildHash(kind, id = '', params = null) {
-  const k = encodeURIComponent(kind || 'home')
-  let path = (!kind || kind === 'home') && !id ? '/' : (!id ? `/${k}` : `/${k}/${encodeURIComponent(id)}`)
+  const rawKind = kind || 'home'
+  const k = encodeURIComponent(rawKind)
+  let path
+  if ((!rawKind || rawKind === 'home') && !id) {
+    path = '/'
+  } else if (id && CONTENT_SHARE_KINDS.has(rawKind)) {
+    // YouTube-style: calabi.us/<id>
+    path = `/${encodeURIComponent(id)}`
+  } else if (!id) {
+    path = `/${k}`
+  } else {
+    path = `/${k}/${encodeURIComponent(id)}`
+  }
   if (params && typeof params === 'object') {
     const q = new URLSearchParams()
     for (const [key, val] of Object.entries(params)) {
@@ -40,6 +65,11 @@ export function buildHash(kind, id = '', params = null) {
     if (s) path += `?${s}`
   }
   return path
+}
+
+/** Explicit bare content path (same as buildHash('content', id)). */
+export function buildContentPath(id, params = null) {
+  return buildHash('content', id, params)
 }
 
 export function migrateHashToPath() {
@@ -81,3 +111,5 @@ export async function copyShareUrl(kind, id, params = null) {
   }
   return url
 }
+
+export { looksLikeContentId, RESERVED_PATH_KINDS }

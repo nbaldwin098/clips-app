@@ -5,6 +5,7 @@ import { publishLocalMedia, getShortsFeed, getById } from '../lib/contentService
 import { saveDraft } from '../lib/youtubeParity'
 import { canHostUploads, cloudHostRequiredMessage } from '../lib/mediaUpload'
 import { mergeTags, parseChaptersInput } from '../lib/mediaMeta'
+import { shareUrl } from '../lib/routes'
 import SoundPicker from './SoundPicker'
 import { postDeniedMessage } from '../lib/trustSafety'
 
@@ -118,6 +119,7 @@ export default function UploadModal({
         type: published.item?.type || kind,
         soundTitle: published.item?.soundTitle || sound?.title || null,
         status: published.status,
+        sharePath: published.item?.id ? shareUrl('content', published.item.id) : '',
       })
       setStatus('ready')
       setDraftSaved(asDraft || published.status === 'draft' || published.status === 'scheduled')
@@ -291,6 +293,11 @@ export default function UploadModal({
               <p className={`text-xs ${meta.status === 'draft' || meta.status === 'scheduled' ? 'text-amber-400' : 'text-green-400'}`}>
                 {meta.status === 'draft' ? 'Saved as a draft' : meta.status === 'scheduled' ? 'Scheduled' : 'Uploaded'}
               </p>
+              {meta.sharePath && meta.status === 'published' ? (
+                <p className="text-[11px] text-zinc-400 break-all pt-1">
+                  Link: <span className="text-zinc-200">{meta.sharePath}</span>
+                </p>
+              ) : null}
             </div>
           )}
         </div>

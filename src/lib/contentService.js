@@ -10,6 +10,7 @@ import {
   deleteHostedMedia,
 } from './mediaUpload'
 import { pushContentRecord, deleteContentRecord, notifyContentChanged } from './contentSync'
+import { newContentId } from './newContentId'
 import { getSubscriptionsForUser } from './engagement'
 import { getPicsFeed } from './picsService'
 import { mergeTags, isReleased } from './mediaMeta'
@@ -567,7 +568,7 @@ export async function publishLocalMedia(file, actor = null, {
   try {
     const processed = await transcodeVideoForUpload(file, { asClip: type === 'short' })
     const outFile = processed.file || file
-    const id = `up_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
+    const id = newContentId()
 
     const up = await uploadVideoToSupabase(outFile, actor.id)
     if (!up.ok || !up.publicUrl) {

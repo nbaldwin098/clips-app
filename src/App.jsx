@@ -148,6 +148,22 @@ function AppShell() {
   const applyRoute = () => {
     const { kind, id, params } = parseRoute()
     setRouteParams(params || {})
+    // Bare calabi.us/<id> (and /content/<id>) → open the right player by type.
+    if ((kind === 'content' || kind === 'v') && id) {
+      setMiniItem(null)
+      setRouteId(id)
+      const item = getWatchItem(id)
+      if (item?.type === 'pic') {
+        setView('pics')
+        return
+      }
+      if (item?.type === 'short') {
+        setView('clips')
+        return
+      }
+      setView('watch')
+      return
+    }
     if (kind === 'watch' && id) {
       setMiniItem(null)
       setRouteId(id)
@@ -215,6 +231,9 @@ function AppShell() {
       if (dest === 'profile') {
         const uid = profileTarget.userId
         pushHash('profile', nextId, uid ? { u: uid } : null)
+      } else if ((dest === 'clips' || dest === 'watch' || dest === 'pics') && nextId) {
+        // Posts use bare /{id} share URLs; clip/pic/watch lists stay /clips etc.
+        pushHash('content', nextId)
       } else {
         pushHash(dest, nextId)
       }
@@ -241,7 +260,7 @@ function AppShell() {
     setMiniItem(null)
     setRouteId(item.id)
     setView('watch')
-    pushHash('watch', item.id)
+    pushHash('content', item.id)
     try { window.scrollTo({ top: 0, behavior: 'smooth' }) } catch {}
   }
 
@@ -266,7 +285,7 @@ function AppShell() {
     if (!id) return
     setRouteId(id)
     setView('pics')
-    pushHash('pic', id)
+    pushHash('content', id)
   }
 
   const openAuth = () => setAuthOpen(true)

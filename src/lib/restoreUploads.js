@@ -7,12 +7,18 @@ import { getImports, saveImport, mergeImports, lsGet, lsSet } from './storage'
 import { isUserUploadRecord } from './mediaMeta'
 import { listMediaBlobIds, getMediaBlobMeta } from './videoStorage'
 import { notifyContentChanged, pullContentRecords } from './contentSync'
+import { isShortPublicId } from './publicId.js'
 
 const HIDDEN_KEY = 'hidden_broken_media'
 
 function isUploadLikeId(id) {
   const s = String(id || '')
-  return s.startsWith('up_') || s.startsWith('pic_')
+  return s.startsWith('up_') || s.startsWith('pic_') || isShortPublicId(s)
+}
+
+function isUploadLikeRow(row) {
+  if (!row?.id) return false
+  return isUserUploadRecord(row) || isUploadLikeId(row.id)
 }
 
 function readSessionUser() {
@@ -82,7 +88,7 @@ export function claimOrphanUploads(actor = null) {
   let n = 0
   for (const row of getImports()) {
     if (!row?.id) continue
-    if (!isUserUploadRecord(row) && !isUploadLikeId(row.id)) continue
+    if (!isUploadLikeRow(row)) continue
     if (row.creatorId || row.userId) continue
     saveImport(withActor(row, user))
     n += 1
@@ -144,7 +150,7 @@ export async function restoreFromCloud(actor = null) {
     if (!rows?.length) return 0
     const existing = new Set(getImports().map((r) => r?.id).filter(Boolean))
     const missing = rows
-      .filter((r) => r?.id && isUploadLikeId(r.id) && !existing.has(r.id))
+      .filter((r) => r?.id && isUploadLikeRow(r) && !existing.has(r.id))
       .map((r) => withActor({
         ...r,
         restoredAt: new Date().toISOString(),
@@ -170,7 +176,7 @@ export async function restoreLostUploads(actor = null) {
   const fromCloud = await restoreFromCloud(user)
   const claimed = claimOrphanUploads(user)
   const unhidden = unhideUploadIds(
-    getImports().filter((r) => isUserUploadRecord(r) || isUploadLikeId(r?.id)).map((r) => r.id),
+    getImports().filter((r) => isUploadLikeRow(r)).map((r) => r.id),
   )
   const total = fromLegacy + fromIdb + fromCloud
   if (total || unhidden || claimed) {

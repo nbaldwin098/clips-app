@@ -17,8 +17,8 @@ export default function CreatorOnboarding({ onOpenImport, onDone, onNavigate }) 
   const handle = user?.handle || 'creator'
   const shareUrl =
     typeof window !== 'undefined'
-      ? `${window.location.origin}/?c=${encodeURIComponent(handle)}`
-      : `https://clips.app/?c=${handle}`
+      ? `${window.location.origin}/profile/${encodeURIComponent(handle)}`
+      : `https://calabi.us/profile/${handle}`
 
   const checkout = buildCheckout(price)
 

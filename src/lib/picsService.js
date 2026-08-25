@@ -9,6 +9,7 @@ import { pushContentRecord, notifyContentChanged } from './contentSync'
 import { processImageFile } from './videoStorage'
 import { hasStableImage, hiddenBrokenIds } from './catalogHealth'
 import { isAccountHidden } from './trustSafety'
+import { newContentId } from './newContentId'
 
 // Defensively strip raw storage/database error text that may have been saved
 // into `description` by an earlier build, so it never renders on a card.
@@ -82,7 +83,7 @@ export async function publishPhoto(file, actor = null) {
   }
   try {
     const processed = await processImageFile(file)
-    const id = `pic_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
+    const id = newContentId()
     const uploadFile = processed.displayFile || file
 
     const up = await uploadImageToSupabase(uploadFile, actor.id)
