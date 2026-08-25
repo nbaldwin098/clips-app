@@ -4,6 +4,7 @@ import {
   resolveUploadHost,
   signInToUploadMessage,
   uploadFailedMessage,
+  uploadHostRequiredMessage,
   deleteHostedMedia,
 } from './mediaUpload'
 import { pushContentRecord, notifyContentChanged, syncContentFromCloud } from './contentSync'
@@ -83,7 +84,7 @@ export async function publishPhoto(file, actor = null, { priceUsd = 0 } = {}) {
     return {
       ok: false,
       item: null,
-      error: actor?.id ? uploadFailedMessage() : signInToUploadMessage(),
+      error: uploadHostRequiredMessage(actor),
     }
   }
 
@@ -94,7 +95,7 @@ export async function publishPhoto(file, actor = null, { priceUsd = 0 } = {}) {
 
     const up = await uploadImageToSupabase(uploadFile, host.id)
     if (!up.ok || !up.publicUrl) {
-      return { ok: false, item: null, error: uploadFailedMessage() }
+      return { ok: false, item: null, error: up.error || uploadFailedMessage() }
     }
     const mediaUrl = up.publicUrl
     const parsedPrice = Number(priceUsd)
@@ -130,16 +131,16 @@ export async function publishPhoto(file, actor = null, { priceUsd = 0 } = {}) {
     }
 
     const pushed = await pushContentRecord(record, host)
-    if (!pushed) {
+    if (!pushed.ok) {
       await deleteHostedMedia(mediaUrl)
-      return { ok: false, item: null, error: uploadFailedMessage() }
+      return { ok: false, item: null, error: pushed.error || uploadFailedMessage() }
     }
 
     saveImport(record)
     notifyContentChanged()
     syncContentFromCloud(host).catch(() => {})
     return { ok: true, item: record, error: null, hosted: true }
-  } catch {
-    return { ok: false, item: null, error: uploadFailedMessage() }
+  } catch (err) {
+    return { ok: false, item: null, error: err?.message || uploadFailedMessage() }
   }
 }

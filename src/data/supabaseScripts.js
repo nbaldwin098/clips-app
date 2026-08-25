@@ -4,6 +4,8 @@ import purgeDead from '../../supabase/migrations/0007_purge_dead_media.sql?raw'
 import purgeDead2 from '../../supabase/migrations/0008_purge_dead_media.sql?raw'
 import namedActivity from '../../supabase/migrations/0009_named_activity.sql?raw'
 import stopNamedActivity from '../../supabase/migrations/0010_stop_named_activity.sql?raw'
+import showAdsLiveChat from '../../supabase/migrations/0011_show_ads_live_chat.sql?raw'
+import videosPublishColumns from '../../supabase/migrations/0012_videos_publish_columns.sql?raw'
 
 export const SETUP_SCRIPTS = [
   {
@@ -41,5 +43,17 @@ export const SETUP_SCRIPTS = [
     title: 'Stop named-account bots',
     file: '0010_stop_named_activity.sql',
     sql: String(stopNamedActivity || ''),
+  },
+  {
+    id: '0011',
+    title: 'Ad prefs + live chat sync',
+    file: '0011_show_ads_live_chat.sql',
+    sql: String(showAdsLiveChat || ''),
+  },
+  {
+    id: '0012',
+    title: 'Upload publish columns (fixes "Couldn\'t upload")',
+    file: '0012_videos_publish_columns.sql',
+    sql: String(videosPublishColumns || ''),
   },
 ]

@@ -8,6 +8,7 @@ import {
   resolveUploadHost,
   signInToUploadMessage,
   uploadFailedMessage,
+  uploadHostRequiredMessage,
   deleteHostedMedia,
 } from './mediaUpload'
 import { pushContentRecord, deleteContentRecord, notifyContentChanged, syncContentFromCloud } from './contentSync'
@@ -565,7 +566,7 @@ export async function publishLocalMedia(file, actor = null, {
     return {
       ok: false,
       item: null,
-      error: actor?.id ? uploadFailedMessage() : signInToUploadMessage(),
+      error: uploadHostRequiredMessage(actor),
     }
   }
 
@@ -576,7 +577,7 @@ export async function publishLocalMedia(file, actor = null, {
 
     const up = await uploadVideoToSupabase(outFile, host.id)
     if (!up.ok || !up.publicUrl) {
-      return { ok: false, item: null, error: uploadFailedMessage() }
+      return { ok: false, item: null, error: up.error || uploadFailedMessage() }
     }
     const mediaUrl = up.publicUrl
 
@@ -647,10 +648,10 @@ export async function publishLocalMedia(file, actor = null, {
 
     if (finalStatus === 'published') {
       const pushed = await pushContentRecord(record, host)
-      if (!pushed) {
+      if (!pushed.ok) {
         await deleteHostedMedia(mediaUrl)
         if (thumbUrl && thumbUrl !== mediaUrl) await deleteHostedMedia(thumbUrl)
-        return { ok: false, item: null, error: uploadFailedMessage() }
+        return { ok: false, item: null, error: pushed.error || uploadFailedMessage() }
       }
     }
 
@@ -669,8 +670,8 @@ export async function publishLocalMedia(file, actor = null, {
     }
 
     return { ok: true, item: normalizeItem(record), error: null, hosted: true, localStored: false, status: finalStatus }
-  } catch {
-    return { ok: false, item: null, error: uploadFailedMessage() }
+  } catch (err) {
+    return { ok: false, item: null, error: err?.message || uploadFailedMessage() }
   }
 }
 
@@ -694,7 +695,7 @@ export async function publishDraftItem(id, actor = null) {
   const host = await resolveUploadHost(actor?.id ? actor : { id: raw.creatorId, handle: raw.handle, provider: 'supabase' })
   if (host?.id) {
     const pushed = await pushContentRecord(next, host)
-    if (!pushed) return { ok: false, error: uploadFailedMessage() }
+    if (!pushed.ok) return { ok: false, error: pushed.error || uploadFailedMessage() }
   }
   saveImport(next)
   notifyContentChanged()

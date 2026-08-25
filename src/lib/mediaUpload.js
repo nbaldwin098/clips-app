@@ -62,6 +62,16 @@ export function signInToUploadMessage() {
   return 'Sign in to upload.'
 }
 
+export function uploadHostRequiredMessage(actor = null) {
+  if (!isSupabaseConfigured()) {
+    return 'Uploads need cloud storage — this site is not connected to Supabase yet.'
+  }
+  if (actor?.id && actor.provider !== 'supabase') {
+    return 'Sign in with your calabi account to upload (device-only login cannot publish).'
+  }
+  return signInToUploadMessage()
+}
+
 export function uploadFailedMessage() {
   return "Couldn't upload. Try again."
 }
