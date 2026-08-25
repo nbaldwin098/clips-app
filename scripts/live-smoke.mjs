@@ -159,8 +159,6 @@ assert(pageSrc.includes('membershipReturnPaid'), 'checkout page only marks paid 
 assert(!modalSrc.includes('addPremiumSub'), 'checkout modal does not fake a paid sub')
 assert(pageSrc.includes('usePremiumCheckout'), 'checkout page uses shared premium hook')
 assert(modalSrc.includes('usePremiumCheckout'), 'checkout modal uses shared premium hook')
-assert(pageSrc.includes('membershipReturnPaid'), 'checkout page handles stripe return')
-assert(modalSrc.includes('usePremiumCheckout'), 'checkout modal shares premium checkout flow')
 
 const engagementSrc = readFileSync(new URL('../src/lib/engagement.js', import.meta.url), 'utf8')
 assert(engagementSrc.includes('export const PREMIUM_PRICE = 5'), 'default list price')
