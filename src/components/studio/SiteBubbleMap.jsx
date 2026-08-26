@@ -7,7 +7,7 @@ import {
   ThumbsUp,
   ThumbsDown,
   Users,
-  Activity,
+  Eye,
   X,
   ChevronLeft,
 } from 'lucide-react'
@@ -65,11 +65,11 @@ const FACET_META = {
     Icon: Users,
     blurb: 'People who have posted on the site.',
   },
-  interactions: {
-    label: 'Interactions',
+  views: {
+    label: 'Views',
     color: '#22d3ee',
-    Icon: Activity,
-    blurb: 'Posts that picked up views, likes, and other actions.',
+    Icon: Eye,
+    blurb: 'Posts that have been viewed.',
   },
 }
 
@@ -129,10 +129,9 @@ export default function SiteBubbleMap({
   likes = 0,
   dislikes = 0,
   creators = 0,
-  interactions = 0,
+  views = 0,
   buckets = null,
   onNavigate = null,
-  focusFacet = null,
 }) {
   const wrapRef = useRef(null)
   const mapAnchorRef = useRef(null)
@@ -146,17 +145,6 @@ export default function SiteBubbleMap({
   const movedRef = useRef(false)
   const fitZRef = useRef(1)
 
-  useEffect(() => {
-    if (!focusFacet) return
-    const id = String(focusFacet).split('#')[0]
-    if (!FACET_META[id]) return
-    setExpandedId(id)
-    setSelectedItem(null)
-    try {
-      mapAnchorRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
-    } catch { /* ok */ }
-  }, [focusFacet])
-
   const overviewNodes = useMemo(() => ([
     { id: 'videos', value: videos, weight: Math.max(1, videos), kind: 'facet', ...FACET_META.videos },
     { id: 'clips', value: clips, weight: Math.max(1, clips), kind: 'facet', ...FACET_META.clips },
@@ -165,8 +153,8 @@ export default function SiteBubbleMap({
     { id: 'likes', value: likes, weight: Math.max(1, likes), kind: 'facet', ...FACET_META.likes },
     { id: 'dislikes', value: dislikes, weight: Math.max(1, dislikes), kind: 'facet', ...FACET_META.dislikes },
     { id: 'creators', value: creators, weight: Math.max(1, creators), kind: 'facet', ...FACET_META.creators },
-    { id: 'interactions', value: interactions, weight: Math.max(1, interactions), kind: 'facet', ...FACET_META.interactions },
-  ]), [videos, clips, pics, lives, likes, dislikes, creators, interactions])
+    { id: 'views', value: views, weight: Math.max(1, views), kind: 'facet', ...FACET_META.views },
+  ]), [videos, clips, pics, lives, likes, dislikes, creators, views])
 
   const childPop = useMemo(() => {
     if (!expandedId) return null
@@ -340,7 +328,7 @@ export default function SiteBubbleMap({
           <p className="text-xs text-zinc-500 mt-0.5">
             {expandedId
               ? `${formatCompactCount(childCount)} in this section${childPop?.aggregated ? ` · showing ${childPop.shown} + cluster` : ''} · click a bubble`
-              : 'Click Videos, Clips, Pics, Lives, Likes, Dislikes, Creators, or Interactions to expand'}
+              : 'Click Videos, Clips, Pics, Lives, Likes, Dislikes, Creators, or Views to expand'}
           </p>
         </div>
         {expandedId ? (
@@ -583,7 +571,7 @@ export default function SiteBubbleMap({
       {!expandedId ? (
         <div className="border-t border-zinc-800 px-4 py-3 bg-[#0c0c12]">
           <p className="text-[11px] text-zinc-500">
-            Tip: click any section bubble (even at 0) to expand it. Opening a post logs a view for creator analytics.
+            Tip: click any section bubble (even at 0) to expand it into individual bubbles.
           </p>
         </div>
       ) : null}

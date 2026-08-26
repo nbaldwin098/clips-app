@@ -202,11 +202,6 @@ export default function StudioRealtimeAnalytics({
             <p className="text-sm font-semibold text-white">Analytics</p>
             <LiveDot on={!refreshing} />
           </div>
-          <p className="text-[11px] text-zinc-500">
-            {forcePostTab
-              ? 'Stats for the selected post — matches the bubble and time slider above'
-              : 'Real-time channel + per-post · cloud-backed views, likes, follows, comments'}
-          </p>
         </div>
         <div className="flex items-center gap-0.5 border border-zinc-800 p-0.5">
           {ranges.map((r) => (
@@ -263,7 +258,7 @@ export default function StudioRealtimeAnalytics({
         {tab === 'channel' && !forcePostTab ? (
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              <Kpi label="Unique viewers" value={formatCount(channel.views)} hint="All posts" />
+              <Kpi label="Views" value={formatCount(channel.views)} hint="All posts" />
               <Kpi label="Likes" value={formatCount(channel.likes)} />
               <Kpi label="Followers" value={formatCount(channel.followers)} />
               <Kpi label="Comments" value={formatCount(channel.comments)} />
@@ -341,7 +336,7 @@ export default function StudioRealtimeAnalytics({
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              <Kpi label="Unique viewers" value={formatCount(postSnap.views)} />
+              <Kpi label="Views" value={formatCount(postSnap.views)} />
               <Kpi label="Likes" value={formatCount(postSnap.likes)} />
               <Kpi label="Comments" value={formatCount(postSnap.comments)} />
               <Kpi label="Shares" value={formatCount(postSnap.shares)} />
