@@ -25,14 +25,13 @@ export default function StreamingNavbar({
   const { user, isAuthenticated, authReady, logout } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
-  const [, walletTick] = useState(0)
+  const [, setWalletTick] = useState(0)
   const cash = getCalabiCashBalance(user?.id)
   const coins = getCoinBalance(user?.id)
-  void walletTick
 
   useEffect(() => {
     if (!user?.id) return
-    refreshWalletFromCloud(user.id).then(() => walletTick((n) => n + 1)).catch(() => {})
+    refreshWalletFromCloud(user.id).then(() => setWalletTick((n) => n + 1)).catch(() => {})
   }, [user?.id])
 
   useEffect(() => {
