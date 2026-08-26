@@ -1,4 +1,5 @@
-import SpaShell from '../SpaShell'
+import SiteChrome from '../SiteChrome'
+import AboutPage from '../../src/components/AboutPage'
 
 export const metadata = {
   title: 'About',
@@ -12,5 +13,9 @@ export const metadata = {
 }
 
 export default function AboutRoute() {
-  return <SpaShell />
+  return (
+    <SiteChrome>
+      <AboutPage />
+    </SiteChrome>
+  )
 }

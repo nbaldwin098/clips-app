@@ -1,4 +1,5 @@
-import SpaShell from '../SpaShell'
+import SiteChrome from '../SiteChrome'
+import { TermsOfService } from '../../src/components/legal/LegalPages'
 
 export const metadata = {
   title: 'Terms of Service',
@@ -7,5 +8,9 @@ export const metadata = {
 }
 
 export default function TermsRoute() {
-  return <SpaShell />
+  return (
+    <SiteChrome>
+      <TermsOfService />
+    </SiteChrome>
+  )
 }

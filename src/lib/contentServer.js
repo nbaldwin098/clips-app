@@ -49,3 +49,20 @@ export async function fetchContentById(id) {
     return null
   }
 }
+
+/** Recent public catalog ids for sitemap (best-effort). */
+export async function fetchRecentContentIds(limit = 200) {
+  const sb = serverSupabase()
+  if (!sb) return []
+  try {
+    const { data, error } = await sb
+      .from('videos')
+      .select('id')
+      .order('created_at', { ascending: false })
+      .limit(Math.max(1, Math.min(500, Number(limit) || 200)))
+    if (error || !data) return []
+    return data.map((r) => r.id).filter(Boolean)
+  } catch {
+    return []
+  }
+}

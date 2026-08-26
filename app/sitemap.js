@@ -1,4 +1,6 @@
-export default function sitemap() {
+import { fetchRecentContentIds } from '../src/lib/contentServer.js'
+
+export default async function sitemap() {
   const base = 'https://calabi.us'
   const now = new Date()
   const staticRoutes = [
@@ -17,10 +19,25 @@ export default function sitemap() {
     'legal-creator',
     'legal-community',
   ]
-  return staticRoutes.map((path) => ({
+  const staticEntries = staticRoutes.map((path) => ({
     url: path ? `${base}/${path}` : base,
     lastModified: now,
     changeFrequency: path === '' || path === 'clips' || path === 'pics' ? 'hourly' : 'weekly',
     priority: path === '' ? 1 : path === 'about' || path === 'help' ? 0.8 : 0.6,
   }))
+
+  let contentEntries = []
+  try {
+    const ids = await fetchRecentContentIds(200)
+    contentEntries = ids.map((id) => ({
+      url: `${base}/${id}`,
+      lastModified: now,
+      changeFrequency: 'daily',
+      priority: 0.7,
+    }))
+  } catch {
+    contentEntries = []
+  }
+
+  return [...staticEntries, ...contentEntries]
 }

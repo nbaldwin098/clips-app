@@ -1,4 +1,5 @@
-import SpaShell from '../SpaShell'
+import SiteChrome from '../SiteChrome'
+import { CommunityGuidelines } from '../../src/components/legal/LegalPages'
 
 export const metadata = {
   title: 'Community Guidelines',
@@ -7,5 +8,9 @@ export const metadata = {
 }
 
 export default function CommunityGuidelinesRoute() {
-  return <SpaShell />
+  return (
+    <SiteChrome>
+      <CommunityGuidelines />
+    </SiteChrome>
+  )
 }

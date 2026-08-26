@@ -1,4 +1,5 @@
-import SpaShell from '../SpaShell'
+import SiteChrome from '../SiteChrome'
+import { PrivacyPolicy } from '../../src/components/legal/LegalPages'
 
 export const metadata = {
   title: 'Privacy Policy',
@@ -7,5 +8,9 @@ export const metadata = {
 }
 
 export default function PrivacyRoute() {
-  return <SpaShell />
+  return (
+    <SiteChrome>
+      <PrivacyPolicy />
+    </SiteChrome>
+  )
 }
