@@ -4,13 +4,11 @@ import {
   ThumbsUp,
   ThumbsDown,
   Eye,
-  ShieldCheck,
-  UserCheck,
   Crown,
   Film,
   Clapperboard,
   Radio,
-  Clock,
+  Image as ImageIcon,
 } from 'lucide-react'
 import { listIndexedUsers } from '../lib/moderation'
 import { listImportsNormalized } from '../lib/contentService'
@@ -24,24 +22,9 @@ export default function StatsPage({ onNavigate }) {
   const users = useMemo(() => listIndexedUsers(), [syncTick])
   const allItems = useMemo(() => listImportsNormalized(), [syncTick])
   const likesMap = useMemo(() => lsGet('engagement_likes', {}) || {}, [syncTick])
-  const subsMap = useMemo(() => lsGet('engagement_subs', {}) || {}, [syncTick])
   const liveBoard = useMemo(() => (lsGet('live_board', []) || []).filter((b) => b.isLive), [syncTick])
-  const interactionCount = useMemo(() => {
-    const rows = lsGet('clips_creator_interactions', []) || []
-    return Array.isArray(rows) ? rows.length : 0
-  }, [syncTick])
 
   const totalUsers = users.length
-  const approvedCreators = users.filter((u) => u.creatorStatus === 'approved' || u.isCreator)
-  const totalCreators = approvedCreators.length
-
-  const totalSubscribers = useMemo(() => {
-    let count = 0
-    for (const list of Object.values(subsMap)) {
-      if (Array.isArray(list)) count += list.length
-    }
-    return count
-  }, [subsMap])
 
   const totalPremiumSubs = useMemo(() => {
     let count = 0
@@ -54,7 +37,7 @@ export default function StatsPage({ onNavigate }) {
       }
     }
     return count
-  }, [])
+  }, [syncTick])
 
   const { totalLikes, totalDislikes, totalViews } = useMemo(() => {
     let up = 0
@@ -77,33 +60,18 @@ export default function StatsPage({ onNavigate }) {
   const numClips = clips.length
   const numVideos = videos.length
   const numPics = pics.length
-
-  const clipDurationHours = useMemo(() => {
-    const totalSec = clips.reduce((acc, c) => acc + (Number(c.durationSec) || 0), 0)
-    return (totalSec / 3600).toFixed(2)
-  }, [clips])
-
-  const videoDurationHours = useMemo(() => {
-    const totalSec = videos.reduce((acc, v) => acc + (Number(v.durationSec) || 0), 0)
-    return (totalSec / 3600).toFixed(2)
-  }, [videos])
-
-  const numLiveStreamers = liveBoard.length
-  const interactionTotal = Math.max(interactionCount, totalLikes + totalSubscribers + totalViews)
+  const numLives = liveBoard.length
 
   const stats = [
-    { label: 'Total Users', value: totalUsers, icon: Users, hint: 'Registered platform accounts' },
-    { label: 'Total Views', value: totalViews.toLocaleString(), icon: Eye, hint: 'Verified watch impressions' },
-    { label: 'Total Likes', value: totalLikes.toLocaleString(), icon: ThumbsUp, hint: 'Positive community votes' },
-    { label: 'Total Dislikes', value: totalDislikes.toLocaleString(), icon: ThumbsDown, hint: 'Negative feedback votes' },
-    { label: 'Approved Creators', value: totalCreators, icon: ShieldCheck, hint: 'Approved creator accounts' },
-    { label: 'Followers', value: totalSubscribers.toLocaleString(), icon: UserCheck, hint: 'Channel follower relationships' },
-    { label: 'Premium members', value: totalPremiumSubs.toLocaleString(), icon: Crown, hint: 'Marked paid after Stripe return' },
-    { label: 'Number of Clips', value: numClips, icon: Clapperboard, hint: 'Vertical short-form media' },
-    { label: 'Number of Videos', value: numVideos, icon: Film, hint: 'Standard 1080p long-form videos' },
-    { label: 'Active Live Streamers', value: numLiveStreamers, icon: Radio, hint: 'Broadcasting live right now' },
-    { label: 'Clips Catalog Duration', value: `${clipDurationHours} hrs`, icon: Clock, hint: 'Total length of all clips in hours' },
-    { label: 'Videos Catalog Duration', value: `${videoDurationHours} hrs`, icon: Clock, hint: 'Total length of all videos in hours' },
+    { label: 'Users', value: totalUsers.toLocaleString(), icon: Users, hint: 'Registered accounts' },
+    { label: 'Likes', value: totalLikes.toLocaleString(), icon: ThumbsUp, hint: 'Positive votes' },
+    { label: 'Dislikes', value: totalDislikes.toLocaleString(), icon: ThumbsDown, hint: 'Negative votes' },
+    { label: 'Views', value: totalViews.toLocaleString(), icon: Eye, hint: 'Verified watch impressions' },
+    { label: 'Clips', value: numClips.toLocaleString(), icon: Clapperboard, hint: 'Vertical short-form' },
+    { label: 'Videos', value: numVideos.toLocaleString(), icon: Film, hint: 'Long-form videos' },
+    { label: 'Lives', value: numLives.toLocaleString(), icon: Radio, hint: 'Broadcasting now' },
+    { label: 'Pics', value: numPics.toLocaleString(), icon: ImageIcon, hint: 'Photo posts' },
+    { label: 'Premium subscribers', value: totalPremiumSubs.toLocaleString(), icon: Crown, hint: 'Marked paid after Stripe return' },
   ]
 
   return (
@@ -115,9 +83,9 @@ export default function StatsPage({ onNavigate }) {
         videos={numVideos}
         clips={numClips}
         pics={numPics}
-        live={numLiveStreamers}
-        creators={totalCreators}
-        interactions={interactionTotal}
+        lives={numLives}
+        likes={totalLikes}
+        dislikes={totalDislikes}
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">

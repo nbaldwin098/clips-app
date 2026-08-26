@@ -1,5 +1,13 @@
 import { useMemo, useState, useRef, useEffect, useCallback } from 'react'
-import { Film, Clapperboard, Image as ImageIcon, Radio, Users, Activity } from 'lucide-react'
+import {
+  Film,
+  Clapperboard,
+  Image as ImageIcon,
+  Radio,
+  ThumbsUp,
+  ThumbsDown,
+  X,
+} from 'lucide-react'
 import {
   layoutBubbleNetwork,
   contentBounds,
@@ -10,48 +18,85 @@ import {
 } from '../../lib/bubbleEngine'
 
 const NODE_META = {
-  videos: { label: 'Videos', color: '#38bdf8', Icon: Film },
-  clips: { label: 'Clips', color: '#f472b6', Icon: Clapperboard },
-  pics: { label: 'Pics', color: '#a78bfa', Icon: ImageIcon },
-  live: { label: 'Live', color: '#eb0400', Icon: Radio },
-  creators: { label: 'Creators', color: '#34d399', Icon: Users },
-  interactions: { label: 'Interactions', color: '#fbbf24', Icon: Activity },
+  videos: {
+    label: 'Videos',
+    color: '#38bdf8',
+    Icon: Film,
+    blurb: 'Long-form 16:9 posts in the catalog.',
+  },
+  clips: {
+    label: 'Clips',
+    color: '#f472b6',
+    Icon: Clapperboard,
+    blurb: 'Vertical short-form posts in the catalog.',
+  },
+  pics: {
+    label: 'Pics',
+    color: '#a78bfa',
+    Icon: ImageIcon,
+    blurb: 'Photo posts in the catalog.',
+  },
+  lives: {
+    label: 'Lives',
+    color: '#eb0400',
+    Icon: Radio,
+    blurb: 'Creators broadcasting live right now.',
+  },
+  likes: {
+    label: 'Likes',
+    color: '#34d399',
+    Icon: ThumbsUp,
+    blurb: 'Positive votes across catalog posts.',
+  },
+  dislikes: {
+    label: 'Dislikes',
+    color: '#f87171',
+    Icon: ThumbsDown,
+    blurb: 'Negative votes across catalog posts.',
+  },
 }
 
 /**
- * Site-wide bubble for Stats → More: calabi at center, platform facets in orbit.
- * Layout always fits the box; pan/zoom clamp so nothing leaves the frame.
+ * Site-wide bubble for Stats → More.
+ * Click any facet to open its section (works at 0 or millions).
  */
 export default function SiteBubbleMap({
   videos = 0,
   clips = 0,
   pics = 0,
-  live = 0,
-  creators = 0,
-  interactions = 0,
+  lives = 0,
+  likes = 0,
+  dislikes = 0,
 }) {
   const wrapRef = useRef(null)
-  const [size, setSize] = useState({ w: 720, h: 520 })
+  const [size, setSize] = useState({ w: 720, h: 480 })
   const [zoom, setZoom] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const [hover, setHover] = useState(null)
+  const [openId, setOpenId] = useState(null)
   const dragRef = useRef(null)
+  const movedRef = useRef(false)
 
   const nodes = useMemo(() => ([
     { id: 'videos', value: videos, weight: Math.max(1, videos), ...NODE_META.videos },
     { id: 'clips', value: clips, weight: Math.max(1, clips), ...NODE_META.clips },
     { id: 'pics', value: pics, weight: Math.max(1, pics), ...NODE_META.pics },
-    { id: 'live', value: live, weight: Math.max(1, live), ...NODE_META.live },
-    { id: 'creators', value: creators, weight: Math.max(1, creators), ...NODE_META.creators },
-    { id: 'interactions', value: interactions, weight: Math.max(1, interactions), ...NODE_META.interactions },
-  ]), [videos, clips, pics, live, creators, interactions])
+    { id: 'lives', value: lives, weight: Math.max(1, lives), ...NODE_META.lives },
+    { id: 'likes', value: likes, weight: Math.max(1, likes), ...NODE_META.likes },
+    { id: 'dislikes', value: dislikes, weight: Math.max(1, dislikes), ...NODE_META.dislikes },
+  ]), [videos, clips, pics, lives, likes, dislikes])
+
+  const openNode = useMemo(() => {
+    if (!openId) return null
+    return nodes.find((n) => n.id === openId) || { id: openId, value: 0, ...NODE_META[openId] }
+  }, [openId, nodes])
 
   useEffect(() => {
     const el = wrapRef.current
     if (!el) return undefined
     const measure = () => {
       const r = el.getBoundingClientRect()
-      setSize({ w: Math.max(280, r.width), h: Math.max(280, r.height) })
+      setSize({ w: Math.max(200, r.width), h: Math.max(200, r.height) })
     }
     measure()
     const ro = new ResizeObserver(measure)
@@ -120,26 +165,33 @@ export default function SiteBubbleMap({
 
   const onPointerDown = (e) => {
     if (e.button !== 0) return
+    movedRef.current = false
     dragRef.current = { px: e.clientX, py: e.clientY, ox: pan.x, oy: pan.y }
     e.currentTarget.setPointerCapture?.(e.pointerId)
   }
   const onPointerMove = (e) => {
     const d = dragRef.current
     if (!d) return
+    if (Math.abs(e.clientX - d.px) + Math.abs(e.clientY - d.py) > 4) movedRef.current = true
     const raw = { x: d.ox + (e.clientX - d.px), y: d.oy + (e.clientY - d.py) }
     setPan(keepHubInView(zoom, raw))
   }
   const onPointerUp = () => { dragRef.current = null }
 
+  const onNodeClick = (n) => {
+    if (movedRef.current) return
+    setOpenId(n.id)
+  }
+
   return (
     <div className="rounded-2xl border border-zinc-800 bg-[#07070a] overflow-hidden">
       <div className="px-4 py-3 border-b border-zinc-800">
         <p className="text-sm font-semibold text-white">Site bubble</p>
-        <p className="text-xs text-zinc-500 mt-0.5">calabi at the center — videos, clips, pics, live, creators, and interactions. Fits the box; scroll to zoom.</p>
+        <p className="text-xs text-zinc-500 mt-0.5">Click a section to open it — works at any count.</p>
       </div>
       <div
         ref={wrapRef}
-        className="relative h-[min(70vh,640px)] min-h-[480px] overflow-hidden cursor-grab active:cursor-grabbing touch-none"
+        className="relative h-[min(55vh,520px)] min-h-[320px] overflow-hidden cursor-grab active:cursor-grabbing touch-none"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -185,8 +237,17 @@ export default function SiteBubbleMap({
               className="cursor-pointer"
               onMouseEnter={() => setHover(n)}
               onMouseLeave={() => setHover(null)}
+              onClick={(e) => {
+                e.stopPropagation()
+                onNodeClick(n)
+              }}
             >
-              <circle r={n.size / 2 + 3} fill="none" stroke={n.color} strokeWidth="2.5" />
+              <circle
+                r={n.size / 2 + 3}
+                fill="none"
+                stroke={openId === n.id ? '#ffffff' : n.color}
+                strokeWidth={openId === n.id ? 3 : 2.5}
+              />
               <circle r={n.size / 2} fill="#121218" />
               <text textAnchor="middle" dominantBaseline="middle" fill={n.color} fontSize="10" fontWeight="700">
                 {formatCompactCount(n.value)}
@@ -197,10 +258,10 @@ export default function SiteBubbleMap({
             </g>
           ))}
         </svg>
-        {hover ? (
+        {hover && !openId ? (
           <div className="pointer-events-none absolute left-4 bottom-4 border border-zinc-700 bg-[#0e0e14]/95 px-3 py-2">
             <p className="text-xs font-semibold text-white">{hover.label}</p>
-            <p className="text-[11px] text-zinc-400">{Number(hover.value).toLocaleString()} on the site</p>
+            <p className="text-[11px] text-zinc-400">{Number(hover.value).toLocaleString()} · click to open</p>
           </div>
         ) : null}
         <div className="absolute bottom-3 right-3 flex flex-col gap-1">
@@ -233,6 +294,46 @@ export default function SiteBubbleMap({
           </button>
         </div>
       </div>
+
+      {openNode ? (
+        <div className="border-t border-zinc-800 px-4 py-4 bg-[#0c0c12]">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3 min-w-0">
+              {(() => {
+                const Icon = openNode.Icon
+                return (
+                  <div
+                    className="h-10 w-10 shrink-0 rounded-lg flex items-center justify-center"
+                    style={{ background: `${openNode.color}22`, color: openNode.color }}
+                  >
+                    {Icon ? <Icon className="h-5 w-5" /> : null}
+                  </div>
+                )
+              })()}
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-white">{openNode.label}</p>
+                <p className="text-2xl font-bold text-white tabular-nums mt-1">
+                  {Number(openNode.value || 0).toLocaleString()}
+                </p>
+                <p className="text-xs text-zinc-500 mt-1.5 leading-relaxed">
+                  {openNode.blurb || 'Catalog section'}
+                  {Number(openNode.value || 0) === 0
+                    ? ' — empty right now, but the section still opens.'
+                    : null}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setOpenId(null)}
+              className="h-8 w-8 shrink-0 inline-flex items-center justify-center border border-zinc-700 text-zinc-400 hover:text-white"
+              aria-label="Close section"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
