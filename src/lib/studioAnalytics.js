@@ -99,26 +99,35 @@ export function channelAnalyticsSnapshot(creatorId, posts = [], { range = '7d' }
   }
 }
 
-export function postAnalyticsSnapshot(creatorId, post, { range = '7d' } = {}) {
+export function postAnalyticsSnapshot(creatorId, post, { range = '7d', untilMs = null, sinceMs = null } = {}) {
   if (!post?.id) return null
   const views = getViews(post.id)
   const votes = getVotes(post.id) || { up: 0, down: 0 }
   const commentRows = (listComments(post.id) || []).filter((c) => !c.deleted)
-  const events = listCreatorInteractions(creatorId, { contentId: post.id, range, limit: 800 })
+  const events = listCreatorInteractions(creatorId, {
+    contentId: post.id,
+    range,
+    limit: 800,
+    untilMs,
+    sinceMs,
+    includeSubscribe: false,
+  })
   const byType = countTypes(events)
   const people = uniquePeople(events)
   const lastHourViews = hourViewsInCurrentLookback(post.id)
   const engagementActions = (votes.up || 0) + commentRows.length + (byType.share || 0)
   const engagementRate = views > 0 ? Math.round((engagementActions / views) * 1000) / 10 : 0
+  // When scrubbing, prefer interaction-derived counts so the slider matches the map
+  const scrubbing = untilMs != null
   return {
     id: post.id,
     title: post.title || 'Untitled',
     type: post.type || 'short',
     createdAt: post.createdAt || post.publishedAt || post.importedAt || '',
-    views,
-    likes: votes.up || 0,
+    views: scrubbing ? (byType.view || 0) : views,
+    likes: scrubbing ? (byType.like || 0) : (votes.up || 0),
     dislikes: votes.down || 0,
-    comments: commentRows.length,
+    comments: scrubbing ? (byType.comment || 0) : commentRows.length,
     shares: byType.share || 0,
     skips: byType.skip || 0,
     follows: byType.subscribe || 0,

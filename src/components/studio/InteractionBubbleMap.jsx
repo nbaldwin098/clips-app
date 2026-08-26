@@ -1,32 +1,24 @@
 import { useMemo, useState, useRef, useEffect, useCallback } from 'react'
 import {
   INTERACTION_TYPES,
-  SURFACE_LABELS,
-  CONTENT_TYPE_LABELS,
   resolveActorIdentities,
+  VIEW_ONLY_COLOR,
 } from '../../lib/creatorInteractions'
 import { fetchProfilesByIds } from '../../lib/profiles'
 import { cn } from '../../lib/utils'
-
-const RANGES = [
-  { id: '24h', label: '24h' },
-  { id: '7d', label: '7d' },
-  { id: '30d', label: '30d' },
-  { id: 'all', label: 'All' },
-]
 
 const GOLDEN = Math.PI * (3 - Math.sqrt(5))
 
 function layoutNetwork(people, width, height) {
   const cx = width / 2
   const cy = height / 2
-  const hubR = 28
+  const hubR = 32
   const maxR = Math.min(width, height) * 0.42
   const placed = people.map((p, i) => {
     const t = i + 1
     const ring = 0.28 + 0.72 * Math.sqrt(t / Math.max(people.length, 1))
     const angle = i * GOLDEN
-    const radius = hubR + 36 + ring * maxR
+    const radius = hubR + 40 + ring * maxR
     const size = Math.min(44, Math.max(18, 14 + Math.sqrt(p.weight || 1) * 6))
     return {
       ...p,
@@ -69,15 +61,14 @@ function typeChips(byType = {}) {
     })
 }
 
-/** Ordered action colors — brown ring if they only viewed; colored rings for real actions. */
+/** Brown ring if view-only; colored rings for real actions. */
 function actionRingColors(person) {
   const entries = Object.entries(person?.byType || {})
     .filter(([, n]) => Number(n) > 0)
     .sort((a, b) => b[1] - a[1])
   const actions = entries.filter(([id]) => id !== 'view')
   if (!actions.length) {
-    // Visited with no like / follow / share / comment — brown circle
-    return [{ id: 'view', color: '#92400e', label: 'View only' }]
+    return [{ id: 'view', color: VIEW_ONLY_COLOR || '#92400e', label: 'View only' }]
   }
   return actions.map(([id]) => {
     const meta = INTERACTION_TYPES.find((t) => t.id === id)
@@ -113,31 +104,92 @@ function ActionRings({ radius, rings, active }) {
   )
 }
 
+function ColorLegend({ counts = {} }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {INTERACTION_TYPES.map((t) => {
+        const n = Number(counts[t.id]) || 0
+        return (
+          <div
+            key={t.id}
+            className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 bg-[#0e0e14] px-2 py-1"
+            title={t.label}
+          >
+            <span
+              className="h-3.5 w-3.5 shrink-0 rounded-sm border border-black/40"
+              style={{ background: t.color }}
+            />
+            <span className="text-[11px] font-medium text-zinc-200">{t.short}</span>
+            <span className="text-[10px] tabular-nums text-zinc-500">{n}</span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function TimeScrubber({ startMs, endMs, valueMs, onChange, peopleCount, actionCount }) {
+  if (!startMs || !endMs || endMs <= startMs) return null
+  const pct = Math.max(0, Math.min(100, ((valueMs - startMs) / (endMs - startMs)) * 100))
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between gap-2 text-[10px] text-zinc-500">
+        <span>Posted {formatWhen(startMs)}</span>
+        <span className="text-zinc-300 font-semibold tabular-nums">
+          {peopleCount} people · {actionCount} actions by {formatWhen(valueMs)}
+        </span>
+        <span>Now</span>
+      </div>
+      <input
+        type="range"
+        min={startMs}
+        max={endMs}
+        step={Math.max(1000, Math.floor((endMs - startMs) / 400))}
+        value={valueMs}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-full accent-white h-2 cursor-pointer"
+        aria-label="Scrub interactions from post time to now"
+      />
+      <div className="relative h-1 rounded-full bg-zinc-800 overflow-hidden">
+        <div className="absolute inset-y-0 left-0 bg-white/70" style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Post-centered audience bubble map.
+ * Select a post → that post is the hub; people orbit with color-coded action rings.
+ */
 export default function InteractionBubbleMap({
   network = null,
   nodes: legacyNodes = [],
-  range = '7d',
-  onRangeChange,
   selectedPostId = null,
+  selectedPost = null,
   onSelectPost,
   postTitle = null,
   creator = null,
   onRefresh = null,
   refreshing = false,
+  untilMs = null,
+  onUntilChange = null,
+  postStartMs = null,
 }) {
   const wrapRef = useRef(null)
   const [size, setSize] = useState({ w: 640, h: 420 })
   const [hover, setHover] = useState(null)
   const [filter, setFilter] = useState('all')
-  const [surfaceFilter, setSurfaceFilter] = useState('all')
   const [zoom, setZoom] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const dragRef = useRef(null)
   const [identities, setIdentities] = useState({})
+  const nowMs = Date.now()
+  const startMs = postStartMs && Number.isFinite(postStartMs) ? postStartMs : nowMs - 86400000
+  const endMs = nowMs
+  const scrubMs = untilMs != null && Number.isFinite(untilMs) ? untilMs : endMs
 
   const peopleBase = useMemo(() => {
     if (network?.people?.length) return network.people
-    // Legacy flat bubbles → treat as pseudo-people only if they carry actorId
     return (legacyNodes || [])
       .filter((n) => n.actorId && n.source !== 'tally')
       .map((n) => ({
@@ -164,14 +216,19 @@ export default function InteractionBubbleMap({
   }, [network, legacyNodes])
 
   const edgesBase = network?.edges || []
-  const summary = network?.summary || { people: peopleBase.filter((p) => p.kind === 'person').length, total: 0, byType: {}, bySurface: {} }
+  const summary = network?.summary || {
+    people: peopleBase.filter((p) => p.kind === 'person').length,
+    total: 0,
+    byType: {},
+  }
+  const hubMeta = network?.hub || null
 
   useEffect(() => {
     const el = wrapRef.current
     if (!el) return
     const measure = () => {
       const r = el.getBoundingClientRect()
-      setSize({ w: Math.max(320, r.width), h: Math.max(280, r.height) })
+      setSize({ w: Math.max(320, r.width), h: Math.max(260, r.height) })
     }
     measure()
     const ro = new ResizeObserver(measure)
@@ -179,7 +236,6 @@ export default function InteractionBubbleMap({
     return () => ro.disconnect()
   }, [])
 
-  // Resolve real handles/avatars for every actor on the map.
   useEffect(() => {
     const ids = peopleBase.map((p) => p.actorId).filter(Boolean)
     if (!ids.length) {
@@ -187,8 +243,7 @@ export default function InteractionBubbleMap({
       return undefined
     }
     let cancelled = false
-    const local = resolveActorIdentities(ids, {})
-    setIdentities(local)
+    setIdentities(resolveActorIdentities(ids, {}))
     fetchProfilesByIds(ids).then((cloud) => {
       if (cancelled) return
       setIdentities(resolveActorIdentities(ids, cloud || {}))
@@ -209,75 +264,47 @@ export default function InteractionBubbleMap({
   }), [peopleBase, identities])
 
   const filtered = useMemo(() => {
-    let list = enriched
-    if (filter !== 'all') list = list.filter((n) => (n.byType && n.byType[filter]) || n.primaryType === filter)
-    if (surfaceFilter !== 'all') {
-      list = list.filter((n) => (n.primarySurface || 'unknown') === surfaceFilter
-        || (n.events || []).some((e) => e.surface === surfaceFilter))
-    }
-    return list
-  }, [enriched, filter, surfaceFilter])
+    if (filter === 'all') return enriched
+    return enriched.filter((n) => (n.byType && n.byType[filter]) || n.primaryType === filter)
+  }, [enriched, filter])
 
   const worldW = size.w / zoom
   const worldH = size.h / zoom
   const laid = useMemo(() => layoutNetwork(filtered, worldW, worldH), [filtered, worldW, worldH])
 
+  const hubId = hubMeta?.id || (selectedPostId ? `hub_post_${selectedPostId}` : `hub_${creator?.id || 'creator'}`)
   const nodeById = useMemo(() => {
     const m = new Map()
-    m.set(network?.hub?.id || `hub_${creator?.id || 'creator'}`, {
-      ...laid.hub,
-      id: network?.hub?.id || `hub_${creator?.id || 'creator'}`,
-    })
-    // Also accept generic 'hub' from layout
-    m.set('hub', { ...laid.hub, id: network?.hub?.id || 'hub' })
+    m.set(hubId, { ...laid.hub, id: hubId })
+    m.set('hub', { ...laid.hub, id: hubId })
     for (const n of laid.nodes) m.set(n.id, n)
     return m
-  }, [laid, network, creator?.id])
+  }, [laid, hubId])
+
+  const hubPos = nodeById.get(hubId) || laid.hub
 
   const visibleEdges = useMemo(() => {
     const ids = new Set(laid.nodes.map((n) => n.id))
-    const hubId = network?.hub?.id || `hub_${creator?.id || 'creator'}`
     return (edgesBase || []).filter((e) => {
       const fromOk = e.from === hubId || e.from === 'hub' || ids.has(e.from)
       const toOk = ids.has(e.to)
       return fromOk && toOk
     })
-  }, [edgesBase, laid.nodes, network, creator?.id])
-
-  const surfacesPresent = useMemo(() => {
-    const set = new Set()
-    for (const n of enriched) if (n.primarySurface) set.add(n.primarySurface)
-    return [...set]
-  }, [enriched])
-
-  const topPeople = useMemo(
-    () => [...filtered].filter((p) => p.kind === 'person').slice(0, 5),
-    [filtered]
-  )
+  }, [edgesBase, laid.nodes, hubId])
 
   const onPointerDown = useCallback((e) => {
     if (e.button !== 0) return
-    dragRef.current = {
-      px: e.clientX,
-      py: e.clientY,
-      ox: pan.x,
-      oy: pan.y,
-    }
+    dragRef.current = { px: e.clientX, py: e.clientY, ox: pan.x, oy: pan.y }
     e.currentTarget.setPointerCapture?.(e.pointerId)
   }, [pan])
 
   const onPointerMove = useCallback((e) => {
     const d = dragRef.current
     if (!d) return
-    setPan({
-      x: d.ox + (e.clientX - d.px),
-      y: d.oy + (e.clientY - d.py),
-    })
+    setPan({ x: d.ox + (e.clientX - d.px), y: d.oy + (e.clientY - d.py) })
   }, [])
 
-  const onPointerUp = useCallback(() => {
-    dragRef.current = null
-  }, [])
+  const onPointerUp = useCallback(() => { dragRef.current = null }, [])
 
   const onWheel = useCallback((e) => {
     e.preventDefault()
@@ -292,41 +319,35 @@ export default function InteractionBubbleMap({
     return () => el.removeEventListener('wheel', onWheel)
   }, [onWheel])
 
-  const resetView = () => {
-    setZoom(1)
-    setPan({ x: 0, y: 0 })
-  }
+  const resetView = () => { setZoom(1); setPan({ x: 0, y: 0 }) }
 
-  const hubId = network?.hub?.id || `hub_${creator?.id || 'creator'}`
-  const hubPos = nodeById.get(hubId) || nodeById.get('hub') || laid.hub
+  const title = postTitle || selectedPost?.title || hubMeta?.label || 'Post'
+  const viewCount = Number(summary.byType?.view) || 0
+  const isPostHub = hubMeta?.kind === 'post' || !!selectedPostId
+
+  if (!selectedPostId) {
+    return (
+      <div className="h-full min-h-0 flex flex-col items-center justify-center bg-[#07070a] border border-zinc-800 p-8 text-center">
+        <p className="text-sm font-semibold text-white">Pick a post</p>
+        <p className="text-xs text-zinc-500 mt-2 max-w-sm">
+          Each post has its own bubble map. Select one from Your posts — that post becomes the center, and everyone who viewed or acted on it orbits around it.
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div className="h-full min-h-0 flex flex-col bg-[#07070a] border border-zinc-800">
       <div className="shrink-0 flex flex-wrap items-center gap-2 px-3 py-2.5 border-b border-zinc-800">
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-white truncate">
-            Audience network{postTitle ? ` · ${postTitle}` : ''}
+            Post bubble · {title}
           </p>
           <p className="text-[11px] text-zinc-500">
-            Cloud audience — every signed-in viewer/liker. Brown = viewed only. Color rings = like, follow, share, comment.
+            Post is the center. People around it are color-coded by what they did.
             {summary.people ? ` · ${summary.people} people` : ''}
             {summary.total ? ` · ${summary.total} actions` : ''}
           </p>
-        </div>
-        <div className="flex items-center gap-0.5 border border-zinc-800 p-0.5">
-          {RANGES.map((r) => (
-            <button
-              key={r.id}
-              type="button"
-              onClick={() => onRangeChange?.(r.id)}
-              className={cn(
-                'h-7 px-2.5 text-[11px] font-semibold',
-                range === r.id ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
-              )}
-            >
-              {r.label}
-            </button>
-          ))}
         </div>
         {onRefresh ? (
           <button
@@ -340,78 +361,54 @@ export default function InteractionBubbleMap({
         ) : null}
       </div>
 
-      <div className="shrink-0 flex flex-wrap gap-1.5 px-3 py-2 border-b border-zinc-800/80">
-        <button
-          type="button"
-          onClick={() => setFilter('all')}
-          className={cn(
-            'h-7 px-2.5 text-[11px] font-medium border',
-            filter === 'all' ? 'border-white text-white' : 'border-zinc-800 text-zinc-500 hover:text-white'
-          )}
-        >
-          All actions
-        </button>
-        {INTERACTION_TYPES.map((t) => (
+      <div className="shrink-0 px-3 py-2 border-b border-zinc-800 space-y-2">
+        <p className="text-[10px] uppercase tracking-wider text-zinc-500">Legend</p>
+        <ColorLegend counts={summary.byType || {}} />
+        <div className="flex flex-wrap gap-1.5 pt-1">
           <button
-            key={t.id}
             type="button"
-            onClick={() => setFilter(t.id)}
+            onClick={() => setFilter('all')}
             className={cn(
-              'h-7 px-2.5 text-[11px] font-medium border inline-flex items-center gap-1.5',
-              filter === t.id ? 'border-white text-white' : 'border-zinc-800 text-zinc-500 hover:text-white'
+              'h-7 px-2.5 text-[11px] font-medium border',
+              filter === 'all' ? 'border-white text-white' : 'border-zinc-800 text-zinc-500 hover:text-white'
             )}
           >
-            <span className="h-2 w-2 shrink-0" style={{ background: t.color }} />
-            {t.short}
+            All
           </button>
-        ))}
+          {INTERACTION_TYPES.filter((t) => t.id !== 'subscribe').map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setFilter(t.id)}
+              className={cn(
+                'h-7 px-2 text-[11px] font-medium border inline-flex items-center gap-1.5',
+                filter === t.id ? 'border-white text-white' : 'border-zinc-800 text-zinc-500 hover:text-white'
+              )}
+            >
+              <span className="h-3 w-3 rounded-sm" style={{ background: t.color }} />
+              {t.short}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {surfacesPresent.length > 1 || selectedPostId ? (
-        <div className="shrink-0 flex flex-wrap gap-1.5 px-3 py-2 border-b border-zinc-800/80">
-          {surfacesPresent.length > 1 ? (
-            <>
-              <button
-                type="button"
-                onClick={() => setSurfaceFilter('all')}
-                className={cn(
-                  'h-7 px-2.5 text-[11px] font-medium border',
-                  surfaceFilter === 'all' ? 'border-white text-white' : 'border-zinc-800 text-zinc-500'
-                )}
-              >
-                All surfaces
-              </button>
-              {surfacesPresent.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setSurfaceFilter(s)}
-                  className={cn(
-                    'h-7 px-2.5 text-[11px] font-medium border',
-                    surfaceFilter === s ? 'border-white text-white' : 'border-zinc-800 text-zinc-500'
-                  )}
-                >
-                  {SURFACE_LABELS[s] || s}
-                </button>
-              ))}
-            </>
-          ) : null}
-          {selectedPostId ? (
-            <button
-              type="button"
-              onClick={() => onSelectPost?.(null)}
-              className="h-7 px-2.5 text-[11px] font-medium border border-zinc-700 text-zinc-300 ml-auto"
-            >
-              Clear post filter
-            </button>
-          ) : null}
+      {onUntilChange ? (
+        <div className="shrink-0 px-3 py-2.5 border-b border-zinc-800">
+          <TimeScrubber
+            startMs={startMs}
+            endMs={endMs}
+            valueMs={scrubMs}
+            onChange={onUntilChange}
+            peopleCount={summary.people || 0}
+            actionCount={summary.total || 0}
+          />
         </div>
       ) : null}
 
-      <div className="min-h-0 flex-1 flex flex-col md:flex-row">
+      <div className="min-h-0 flex-1 flex flex-col">
         <div
           ref={wrapRef}
-          className="relative flex-1 min-h-[280px] overflow-hidden cursor-grab active:cursor-grabbing touch-none"
+          className="relative flex-1 min-h-[260px] overflow-hidden cursor-grab active:cursor-grabbing touch-none"
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
@@ -420,9 +417,9 @@ export default function InteractionBubbleMap({
           {!laid.nodes.length ? (
             <div className="absolute inset-0 flex items-center justify-center p-6 text-center">
               <div>
-                <p className="text-sm text-zinc-300">No viewers synced yet</p>
+                <p className="text-sm text-zinc-300">No interactions yet for this post</p>
                 <p className="text-xs text-zinc-500 mt-1 max-w-sm">
-                  Open one of your posts while signed in — you should appear as a viewer node. Likes, follows, and shares add colored rings. Drag to pan, scroll to zoom.
+                  When someone views or likes while cloud signed-in, they appear here. Scrub the slider to replay growth from publish → now.
                 </p>
               </div>
             </div>
@@ -434,7 +431,7 @@ export default function InteractionBubbleMap({
               className="absolute inset-0"
               style={{ transform: `translate(${pan.x}px, ${pan.y}px)` }}
               role="img"
-              aria-label="Creator audience network map"
+              aria-label="Post audience bubble map"
             >
               <defs>
                 <radialGradient id="net-glow" cx="50%" cy="50%" r="50%">
@@ -455,11 +452,8 @@ export default function InteractionBubbleMap({
               <rect width="100%" height="100%" fill="url(#net-glow)" />
               <rect width="100%" height="100%" fill="url(#studio-grid)" />
 
-              {/* White connection lines */}
               {visibleEdges.map((e) => {
-                const from = e.from === hubId || e.kind === 'hub'
-                  ? hubPos
-                  : nodeById.get(e.from)
+                const from = e.from === hubId || e.kind === 'hub' ? hubPos : nodeById.get(e.from)
                 const to = nodeById.get(e.to)
                 if (!from || !to) return null
                 const isHub = e.kind === 'hub'
@@ -477,28 +471,46 @@ export default function InteractionBubbleMap({
                 )
               })}
 
-              {/* Creator hub */}
+              {/* Post hub + recurring view pulse rings */}
               <g transform={`translate(${hubPos.x}, ${hubPos.y})`}>
-                <circle r={(hubPos.size || 56) / 2 + 6} fill="none" stroke="#ffffff" strokeOpacity="0.15" strokeWidth="1.5" />
-                <circle r={(hubPos.size || 56) / 2} fill="#f4f4f5" />
-                {creator?.avatarUrl ? (
+                {isPostHub ? (
+                  <>
+                    <circle r={(hubPos.size || 64) / 2 + 18} fill="none" stroke={VIEW_ONLY_COLOR} strokeOpacity="0.35" strokeWidth="1.5">
+                      <animate attributeName="r" values={`${(hubPos.size || 64) / 2 + 10};${(hubPos.size || 64) / 2 + 28};${(hubPos.size || 64) / 2 + 10}`} dur="2.8s" repeatCount="indefinite" />
+                      <animate attributeName="stroke-opacity" values="0.45;0.08;0.45" dur="2.8s" repeatCount="indefinite" />
+                    </circle>
+                    <circle r={(hubPos.size || 64) / 2 + 10} fill="none" stroke={VIEW_ONLY_COLOR} strokeOpacity="0.55" strokeWidth="2">
+                      <animate attributeName="r" values={`${(hubPos.size || 64) / 2 + 6};${(hubPos.size || 64) / 2 + 16};${(hubPos.size || 64) / 2 + 6}`} dur="2.8s" begin="0.6s" repeatCount="indefinite" />
+                      <animate attributeName="stroke-opacity" values="0.6;0.12;0.6" dur="2.8s" begin="0.6s" repeatCount="indefinite" />
+                    </circle>
+                  </>
+                ) : (
+                  <circle r={(hubPos.size || 56) / 2 + 6} fill="none" stroke="#ffffff" strokeOpacity="0.15" strokeWidth="1.5" />
+                )}
+                <circle r={(hubPos.size || 64) / 2} fill="#f4f4f5" />
+                {hubMeta?.thumbUrl || selectedPost?.thumbUrl ? (
                   <image
-                    href={creator.avatarUrl}
-                    x={-(hubPos.size || 56) / 2}
-                    y={-(hubPos.size || 56) / 2}
-                    width={hubPos.size || 56}
-                    height={hubPos.size || 56}
+                    href={hubMeta?.thumbUrl || selectedPost?.thumbUrl}
+                    x={-(hubPos.size || 64) / 2}
+                    y={-(hubPos.size || 64) / 2}
+                    width={hubPos.size || 64}
+                    height={hubPos.size || 64}
                     clipPath="circle(50%)"
                     preserveAspectRatio="xMidYMid slice"
                   />
                 ) : (
-                  <text textAnchor="middle" dominantBaseline="middle" fill="#09090b" fontSize="11" fontWeight="700">
-                    YOU
+                  <text textAnchor="middle" dominantBaseline="middle" fill="#09090b" fontSize="10" fontWeight="800">
+                    POST
                   </text>
                 )}
-                <text y={(hubPos.size || 56) / 2 + 14} textAnchor="middle" fill="#a1a1aa" fontSize="9">
-                  {creator?.handle ? `@${creator.handle}` : 'Creator'}
+                <text y={(hubPos.size || 64) / 2 + 14} textAnchor="middle" fill="#e4e4e7" fontSize="9" fontWeight="600">
+                  {(title || 'Post').length > 22 ? `${String(title).slice(0, 21)}…` : (title || 'Post')}
                 </text>
+                {viewCount ? (
+                  <text y={(hubPos.size || 64) / 2 + 26} textAnchor="middle" fill="#a16207" fontSize="8">
+                    {viewCount} view{viewCount === 1 ? '' : 's'}
+                  </text>
+                ) : null}
               </g>
 
               {laid.nodes.map((b) => {
@@ -513,10 +525,6 @@ export default function InteractionBubbleMap({
                     className="cursor-pointer"
                     onMouseEnter={() => setHover(b)}
                     onMouseLeave={() => setHover(null)}
-                    onClick={(ev) => {
-                      ev.stopPropagation()
-                      if (b.topContentId) onSelectPost?.(b.topContentId)
-                    }}
                   >
                     <ActionRings radius={b.size / 2} rings={rings} active={active} />
                     <circle r={b.size / 2} fill="#121218" />
@@ -542,12 +550,7 @@ export default function InteractionBubbleMap({
                       </text>
                     )}
                     {b.size > 26 ? (
-                      <text
-                        y={b.size / 2 + ringPad + 8}
-                        textAnchor="middle"
-                        fill="#d4d4d8"
-                        fontSize="8"
-                      >
+                      <text y={b.size / 2 + ringPad + 8} textAnchor="middle" fill="#d4d4d8" fontSize="8">
                         {label.length > 14 ? `${label.slice(0, 13)}…` : label}
                       </text>
                     ) : null}
@@ -566,30 +569,18 @@ export default function InteractionBubbleMap({
               }}
             >
               <p className="text-xs font-semibold text-white">{personLabel(hover)}</p>
-              <p className="text-[11px] text-zinc-300 mt-0.5">
-                {hover.primaryLabel}
-                {hover.topTitle ? ` · ${hover.topTitle}` : ''}
-              </p>
-              <p className="text-[11px] text-zinc-400 mt-0.5">
-                {(SURFACE_LABELS[hover.primarySurface] || 'App')}
-                {hover.primaryContentType && CONTENT_TYPE_LABELS[hover.primaryContentType]
-                  ? ` · ${CONTENT_TYPE_LABELS[hover.primaryContentType]}`
-                  : ''}
-              </p>
+              <p className="text-[11px] text-zinc-300 mt-0.5">{hover.primaryLabel}</p>
               <div className="mt-1.5 flex flex-wrap gap-1">
                 {typeChips(hover.byType).map((c) => (
                   <span
                     key={c.id}
-                    className="text-[10px] px-1.5 py-0.5 border border-zinc-700 text-zinc-300"
-                    style={{ borderColor: c.color, boxShadow: `inset 0 0 0 1px ${c.color}` }}
+                    className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 border border-zinc-700 text-zinc-300"
                   >
+                    <span className="h-2.5 w-2.5 rounded-sm" style={{ background: c.color }} />
                     {c.label} {c.n}
                   </span>
                 ))}
               </div>
-              {Object.keys(hover.byType || {}).length > 1 ? (
-                <p className="text-[10px] text-zinc-500 mt-1">Multi-color rings on the node match these actions.</p>
-              ) : null}
               <p className="text-[11px] text-zinc-500 mt-1.5">
                 {hover.eventCount} events · last {formatWhen(hover.lastAt)}
               </p>
@@ -601,46 +592,7 @@ export default function InteractionBubbleMap({
             <button type="button" onClick={() => setZoom((z) => Math.max(0.55, z - 0.15))} className="h-8 w-8 border border-zinc-700 bg-[#121218] text-white text-sm font-bold">−</button>
             <button type="button" onClick={resetView} className="h-8 w-8 border border-zinc-700 bg-[#121218] text-white text-[10px] font-bold">⟲</button>
           </div>
-          <p className="absolute bottom-3 left-3 text-[10px] text-zinc-600">Drag to pan · scroll to zoom</p>
         </div>
-
-        <aside className="shrink-0 md:w-56 border-t md:border-t-0 md:border-l border-zinc-800 bg-[#0a0a0e] p-3 overflow-y-auto max-h-40 md:max-h-none">
-          <p className="text-[10px] uppercase tracking-wider text-zinc-500 mb-2">Insights</p>
-          <div className="space-y-2 text-[11px] text-zinc-400">
-            <p>
-              <span className="text-zinc-200 font-semibold">{summary.people || 0}</span> signed-in people
-            </p>
-            <p>
-              <span className="text-zinc-200 font-semibold">{summary.total || 0}</span> tracked actions
-            </p>
-            {Object.entries(summary.byType || {}).slice(0, 6).map(([id, n]) => {
-              const meta = INTERACTION_TYPES.find((t) => t.id === id)
-              return (
-                <div key={id} className="flex items-center justify-between gap-2">
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className="h-1.5 w-1.5" style={{ background: meta?.color || '#71717a' }} />
-                    {meta?.label || id}
-                  </span>
-                  <span className="text-zinc-300">{n}</span>
-                </div>
-              )
-            })}
-          </div>
-          {topPeople.length ? (
-            <div className="mt-4">
-              <p className="text-[10px] uppercase tracking-wider text-zinc-500 mb-2">Top engagers</p>
-              <ul className="space-y-1.5">
-                {topPeople.map((p) => (
-                  <li key={p.id} className="flex items-center gap-2 min-w-0">
-                    <span className="h-2 w-2 shrink-0" style={{ background: p.color }} />
-                    <span className="truncate text-[11px] text-zinc-300">{personLabel(p)}</span>
-                    <span className="ml-auto text-[10px] text-zinc-500">{p.weight}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-        </aside>
       </div>
     </div>
   )
