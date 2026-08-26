@@ -37,6 +37,11 @@ export function setVodChannel(userId, partial, owner = {}) {
   }
   all[userId] = next
   lsSet(CHANNEL_KEY, all)
+  try {
+    import('./streamSettings').then(({ pushStreamSettingsCloud, getStreamSettings }) => {
+      pushStreamSettingsCloud?.(userId, getStreamSettings?.(userId), next)
+    }).catch(() => {})
+  } catch {}
   if (next.enabled && handle) {
     try {
       indexUser({

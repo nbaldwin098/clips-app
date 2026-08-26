@@ -11,6 +11,7 @@ import creatorInteractions from '../../supabase/migrations/0014_creator_interact
 import videosFirstPublished from '../../supabase/migrations/0015_videos_first_published_at.sql?raw'
 import platformEconomy from '../../supabase/migrations/0016_platform_economy.sql?raw'
 import globalLiveChat from '../../supabase/migrations/0017_global_live_chat.sql?raw'
+import supportMarketplace from '../../supabase/migrations/0018_support_marketplace.sql?raw'
 
 export const SETUP_SCRIPTS = [
   {
@@ -90,5 +91,11 @@ export const SETUP_SCRIPTS = [
     title: 'Global live lobby chat',
     file: '0017_global_live_chat.sql',
     sql: String(globalLiveChat || ''),
+  },
+  {
+    id: '0018',
+    title: 'Support tickets + marketplace (sellers, products, orders)',
+    file: '0018_support_marketplace.sql',
+    sql: String(supportMarketplace || ''),
   },
 ]

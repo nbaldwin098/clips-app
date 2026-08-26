@@ -1,12 +1,17 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   LayoutDashboard, Users, Film, ShieldAlert, Wallet, Flag,
-  Radio, LifeBuoy, Settings, ClipboardList,
+  Radio, LifeBuoy, Settings, ClipboardList, ShoppingBag, BarChart3,
 } from 'lucide-react'
 import {
   isAdminSession, adminLogin, adminLogout, listApplications, setApplicationStatus,
   listTickets, updateTicket, isPlatformOwner,
 } from '../lib/moderation'
+import { pullSupportTickets } from '../lib/supportSync'
+import {
+  listPendingSellerApps, setSellerStatus, pullMarketplaceCatalog, cachedProducts,
+  formatUsdFromCents,
+} from '../lib/marketplaceSync'
 import {
   listCreatorBalances,
   recordManualPayout, listPayoutLedger, getPayoutContact,
@@ -20,6 +25,8 @@ import AdminPeople from './admin/AdminPeople'
 import AdminContent from './admin/AdminContent'
 import AdminSafety from './admin/AdminSafety'
 import { listEscrow, adminReleaseEscrow, adminRefundEscrow } from '../lib/donationEscrow'
+import { getCreatorAnalytics } from '../lib/engagement'
+import { syncPublicEngagementFromCloud } from '../lib/graphSync'
 
 function AdminEscrowPanel({ onChange }) {
   const rows = listEscrow({ limit: 40 })
@@ -55,16 +62,18 @@ function AdminEscrowPanel({ onChange }) {
 }
 
 const NAV = [
-  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-  { id: 'people', label: 'People', icon: Users },
-  { id: 'content', label: 'Content', icon: Film },
-  { id: 'safety', label: 'Safety', icon: ShieldAlert },
-  { id: 'payouts', label: 'Payouts', icon: Wallet },
-  { id: 'promos', label: 'Promos', icon: Flag },
-  { id: 'live', label: 'Live', icon: Radio },
-  { id: 'applications', label: 'Applications', icon: ClipboardList },
-  { id: 'tickets', label: 'Support', icon: LifeBuoy },
-  { id: 'setup', label: 'Setup', icon: Settings },
+  { id: 'overview', label: 'Overview', icon: LayoutDashboard, roles: ['owner', 'admin', 'cs', 'mod'] },
+  { id: 'analytics', label: 'Analytics', icon: BarChart3, roles: ['owner', 'admin', 'cs'] },
+  { id: 'tickets', label: 'Support desk', icon: LifeBuoy, roles: ['owner', 'admin', 'cs', 'mod'] },
+  { id: 'people', label: 'People', icon: Users, roles: ['owner', 'admin', 'cs'] },
+  { id: 'content', label: 'Content', icon: Film, roles: ['owner', 'admin', 'mod'] },
+  { id: 'safety', label: 'Safety', icon: ShieldAlert, roles: ['owner', 'admin', 'mod'] },
+  { id: 'shop', label: 'Marketplace', icon: ShoppingBag, roles: ['owner', 'admin', 'cs'] },
+  { id: 'payouts', label: 'Payouts', icon: Wallet, roles: ['owner', 'admin'] },
+  { id: 'promos', label: 'Promos', icon: Flag, roles: ['owner', 'admin'] },
+  { id: 'live', label: 'Live', icon: Radio, roles: ['owner', 'admin', 'mod'] },
+  { id: 'applications', label: 'Creator apps', icon: ClipboardList, roles: ['owner', 'admin', 'cs'] },
+  { id: 'setup', label: 'Setup', icon: Settings, roles: ['owner', 'admin'] },
 ]
 
 const ADMIN_UNLOCK_KEY = 'clips_admin_ui_unlocked'
@@ -80,10 +89,20 @@ export default function AdminPortal() {
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const authed = unlocked || isAdminSession(user) || isPlatformOwner(user)
-  const [tab, setTab] = useState('setup')
+  const [tab, setTab] = useState('tickets')
   const [, bump] = useState(0)
   const refresh = () => bump((n) => n + 1)
   const [payMsg, setPayMsg] = useState('')
+  const [sellerApps, setSellerApps] = useState([])
+  const [shopProducts, setShopProducts] = useState([])
+
+  useEffect(() => {
+    if (!authed) return
+    pullSupportTickets().then(() => refresh()).catch(() => {})
+    syncPublicEngagementFromCloud().catch(() => {})
+    listPendingSellerApps().then(setSellerApps).catch(() => {})
+    pullMarketplaceCatalog().then((r) => setShopProducts(r.products || cachedProducts())).catch(() => {})
+  }, [authed])
 
   const [payUser, setPayUser] = useState('')
   const [payAmt, setPayAmt] = useState('')
@@ -233,7 +252,10 @@ export default function AdminPortal() {
       </aside>
       <div className="flex-1 min-w-0 flex flex-col">
         <header className="h-14 shrink-0 border-b border-white/10 flex items-center justify-between px-5 bg-[#0b0b0d]">
-          <p className="text-sm font-medium">{NAV.find((n) => n.id === tab)?.label || 'Admin'}</p>
+          <div>
+            <p className="text-sm font-medium">{NAV.find((n) => n.id === tab)?.label || 'Admin'}</p>
+            <p className="text-[10px] text-zinc-500">CS / mod desk · cloud data · {ORG.productName}</p>
+          </div>
           <button type="button" onClick={() => {
             adminLogout()
             try { sessionStorage.removeItem(ADMIN_UNLOCK_KEY) } catch {}
@@ -242,16 +264,87 @@ export default function AdminPortal() {
         </header>
         <div className="flex-1 min-h-0 overflow-y-auto">
           {tab === 'overview' && (
-            <div className="p-5 grid sm:grid-cols-3 gap-3">
-              {Object.entries(stats || {}).map(([k, v]) => (
-                <div key={k} className="rounded-xl border border-white/10 bg-[#111113] p-4">
-                  <p className="text-[10px] uppercase text-zinc-500">{k}</p>
-                  <p className="text-xl font-semibold mt-1">{String(v)}</p>
+            <div className="p-5 space-y-4">
+              <p className="text-xs text-zinc-500">Queue snapshot for CS: open tickets, seller apps, creator applications.</p>
+              <div className="grid sm:grid-cols-4 gap-3">
+                <div className="rounded-xl border border-white/10 bg-[#111113] p-4">
+                  <p className="text-[10px] uppercase text-zinc-500">Open tickets</p>
+                  <p className="text-xl font-semibold mt-1">{tickets.filter((t) => t.status !== 'closed').length}</p>
                 </div>
-              ))}
-              <div className="rounded-xl border border-white/10 bg-[#111113] p-4 sm:col-span-3">
+                <div className="rounded-xl border border-white/10 bg-[#111113] p-4">
+                  <p className="text-[10px] uppercase text-zinc-500">Seller apps</p>
+                  <p className="text-xl font-semibold mt-1">{sellerApps.length}</p>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-[#111113] p-4">
+                  <p className="text-[10px] uppercase text-zinc-500">Creator apps</p>
+                  <p className="text-xl font-semibold mt-1">{apps.filter((a) => a.status === 'pending').length}</p>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-[#111113] p-4">
+                  <p className="text-[10px] uppercase text-zinc-500">Shop listings</p>
+                  <p className="text-xl font-semibold mt-1">{shopProducts.length}</p>
+                </div>
+              </div>
+              <div className="grid sm:grid-cols-3 gap-3">
+                {Object.entries(stats || {}).map(([k, v]) => (
+                  <div key={k} className="rounded-xl border border-white/10 bg-[#111113] p-4">
+                    <p className="text-[10px] uppercase text-zinc-500">{k}</p>
+                    <p className="text-xl font-semibold mt-1">{String(v)}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="rounded-xl border border-white/10 bg-[#111113] p-4">
                 <p className="text-xs text-zinc-500">Payouts held: {payoutsHeld() ? 'yes' : 'no'}</p>
               </div>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" className="h-9 px-3 bg-white text-black text-xs font-semibold" onClick={() => setTab('tickets')}>Open support desk</button>
+                <button type="button" className="h-9 px-3 border border-white/20 text-xs" onClick={() => setTab('shop')}>Marketplace</button>
+                <button type="button" className="h-9 px-3 border border-white/20 text-xs" onClick={() => setTab('analytics')}>Analytics</button>
+              </div>
+            </div>
+          )}
+          {tab === 'analytics' && (
+            <div className="p-5 space-y-4">
+              <p className="text-xs text-zinc-500">Platform engagement snapshot (cloud tallies when synced).</p>
+              <div className="grid sm:grid-cols-3 gap-3">
+                {Object.entries(stats || {}).map(([k, v]) => (
+                  <div key={k} className="rounded-xl border border-white/10 bg-[#111113] p-4">
+                    <p className="text-[10px] uppercase text-zinc-500">{k}</p>
+                    <p className="text-xl font-semibold mt-1">{String(v)}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="rounded-xl border border-white/10 bg-[#111113] p-4 text-xs text-zinc-400">
+                Creator analytics sample (signed-in owner):{' '}
+                {(() => {
+                  const a = user?.id ? getCreatorAnalytics(user.id) : null
+                  if (!a) return 'sign in as owner to see your channel sample'
+                  return `${a.subscribers || 0} followers · ${a.premiumSubs || 0} premium · views/likes from cloud tallies`
+                })()}
+              </div>
+            </div>
+          )}
+          {tab === 'shop' && (
+            <div className="p-5 space-y-4">
+              <p className="text-sm font-medium text-white">Seller applications</p>
+              {!sellerApps.length ? <p className="text-sm text-zinc-500">No pending seller apps.</p> : sellerApps.map((s) => (
+                <div key={s.userId} className="rounded-xl border border-white/10 bg-[#111113] p-3 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium">{s.displayName || s.userId}</p>
+                    <p className="text-xs text-zinc-500">{s.kind} · {s.payoutEmail}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button type="button" className="text-xs px-2 py-1 rounded bg-white text-black" onClick={async () => { await setSellerStatus(s.userId, 'approved'); setSellerApps(await listPendingSellerApps()); refresh() }}>Approve</button>
+                    <button type="button" className="text-xs px-2 py-1 rounded border border-white/20" onClick={async () => { await setSellerStatus(s.userId, 'rejected'); setSellerApps(await listPendingSellerApps()); refresh() }}>Reject</button>
+                  </div>
+                </div>
+              ))}
+              <p className="text-sm font-medium text-white pt-2">Active listings ({shopProducts.length})</p>
+              {shopProducts.slice(0, 20).map((p) => (
+                <div key={p.id} className="text-xs text-zinc-400 border border-white/5 rounded-lg px-3 py-2 flex justify-between">
+                  <span>{p.title} · {p.kind}</span>
+                  <span>{formatUsdFromCents(p.priceCents)}</span>
+                </div>
+              ))}
             </div>
           )}
           {tab === 'people' && <div className="p-5"><AdminPeople onChange={refresh} /></div>}
@@ -277,15 +370,29 @@ export default function AdminPortal() {
             </div>
           )}
           {tab === 'tickets' && (
-            <div className="p-5 space-y-2">
+            <div className="p-5 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm text-zinc-400">Support tickets from /support (cloud). Assign, prioritize, close.</p>
+                <button type="button" className="text-xs underline" onClick={() => pullSupportTickets().then(() => refresh())}>Refresh</button>
+              </div>
               {tickets.map((t) => (
-                <div key={t.id} className="rounded-xl border border-white/10 bg-[#111113] p-3">
-                  <p className="text-sm font-medium">{t.subject || t.id}</p>
-                  <p className="text-xs text-zinc-500">{t.status}</p>
-                  <button type="button" className="mt-2 text-xs underline" onClick={() => { updateTicket(t.id, { status: 'closed' }); refresh() }}>Close</button>
+                <div key={t.id} className="rounded-xl border border-white/10 bg-[#111113] p-4 space-y-2">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-medium text-white">{t.subject || t.id}</p>
+                      <p className="text-[11px] text-zinc-500 mt-0.5">
+                        @{t.handle || 'user'} · {t.email || '—'} · {t.status} · {String(t.createdAt || '').slice(0, 16)}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" className="text-xs px-2 py-1 rounded border border-white/20" onClick={() => { updateTicket(t.id, { status: 'in_progress' }); refresh() }}>In progress</button>
+                      <button type="button" className="text-xs px-2 py-1 rounded bg-white text-black" onClick={() => { updateTicket(t.id, { status: 'closed' }); refresh() }}>Close</button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-zinc-400 whitespace-pre-wrap">{t.body}</p>
                 </div>
               ))}
-              {!tickets.length ? <p className="text-sm text-zinc-500">No tickets</p> : null}
+              {!tickets.length ? <p className="text-sm text-zinc-500">No tickets in cloud yet. Run migration 0018, then users submit from Support.</p> : null}
             </div>
           )}
           {tab === 'payouts' && (

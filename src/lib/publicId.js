@@ -14,7 +14,7 @@ export const RESERVED_PATH_KINDS = new Set([
   'notifications', 'pics', 'checkout', 'creator-apply', 'verify', 'advertise', 'advertiser-portal', 'support', 'admin',
   'analytics', 'channel', 'profile', 'content-rules', 'vods',
   'subscriptions', 'playlists', 'community', 'studio-tools', 'stream-settings',
-  'calabi-studio', 'calabi-cash',
+  'calabi-studio', 'calabi-cash', 'shop', 'marketplace', 'seller', 'seller-portal',
   'legal-tos', 'legal-privacy', 'legal-creator', 'legal-community',
   'watch', 'sound', 'tag', 'create', 'pic', 'playlist', 'v', 'content',
   'api', 'assets', 'static', 'favicon.ico', 'robots.txt',

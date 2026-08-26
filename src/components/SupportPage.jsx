@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { createTicket, listTickets } from '../lib/moderation'
+import { createSupportTicketCloud, pullSupportTickets, cachedTickets } from '../lib/supportSync'
 import { notifyNewTicket } from '../lib/notifications'
 
 export default function SupportPage({ onOpenAuth }) {
@@ -8,17 +8,35 @@ export default function SupportPage({ onOpenAuth }) {
   const [subject, setSubject] = useState('')
   const [body, setBody] = useState('')
   const [sent, setSent] = useState(false)
-  const mine = isAuthenticated ? listTickets().filter((t) => t.userId === user?.id) : []
+  const [err, setErr] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [mine, setMine] = useState([])
 
-  const submit = (e) => {
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) return
+    pullSupportTickets().then((res) => {
+      const rows = (res.tickets || cachedTickets()).filter((t) => t.userId === user.id)
+      setMine(rows)
+    }).catch(() => setMine(cachedTickets().filter((t) => t.userId === user.id)))
+  }, [isAuthenticated, user?.id, sent])
+
+  const submit = async (e) => {
     e.preventDefault()
     if (!isAuthenticated) return
-    createTicket({
+    setBusy(true)
+    setErr('')
+    const res = await createSupportTicketCloud({
       userId: user.id,
       email: user.email,
+      handle: user.handle,
       subject: subject.trim(),
       body: body.trim(),
     })
+    setBusy(false)
+    if (!res.ok) {
+      setErr(res.error || 'Could not submit ticket to cloud.')
+      return
+    }
     notifyNewTicket({ userId: user.id, handle: user.handle, subject: subject.trim() })
     setSent(true)
     setSubject('')
@@ -29,7 +47,9 @@ export default function SupportPage({ onOpenAuth }) {
     <div className="p-4 md:p-6 max-w-lg mx-auto space-y-6">
       <div>
         <h1 className="text-lg font-semibold text-white">Customer support</h1>
-        <p className="text-xs text-zinc-500 mt-1">Report issues, appeals, payment questions. Tickets go to the admin portal.</p>
+        <p className="text-xs text-zinc-500 mt-1">
+          Tickets sync to the Admin portal for CS and mods. Stored in Supabase — not on this device.
+        </p>
       </div>
 
       {!isAuthenticated ? (
@@ -38,7 +58,8 @@ export default function SupportPage({ onOpenAuth }) {
         </p>
       ) : (
         <form onSubmit={submit} className="rounded-2xl border border-zinc-800 bg-[#121218] p-5 space-y-3">
-          {sent && <p className="text-xs text-white">Ticket submitted.</p>}
+          {sent && <p className="text-xs text-emerald-400">Ticket submitted to cloud. Staff will see it in Admin → Support.</p>}
+          {err ? <p className="text-xs text-amber-400">{err}</p> : null}
           <input
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
@@ -54,8 +75,8 @@ export default function SupportPage({ onOpenAuth }) {
             placeholder="Describe the issue"
             className="w-full rounded-lg border border-zinc-800 bg-[#000000] px-3 py-2 text-sm text-zinc-100"
           />
-          <button type="submit" className="h-10 px-4 rounded-lg bg-white text-black text-sm font-medium">
-            Submit ticket
+          <button type="submit" disabled={busy} className="h-10 px-4 rounded-lg bg-white text-black text-sm font-medium disabled:opacity-50">
+            {busy ? 'Sending…' : 'Submit ticket'}
           </button>
         </form>
       )}
