@@ -40,8 +40,8 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 | BUG-002 | Storage | Confirm public bucket named exactly `clips` exists | Migration `0003_clips_storage_bucket.sql`; policies for public read + owner write | `open` |
 | BUG-003 | Catalog | Confirm `videos` table still has rows after migrate | If empty, investigate wipe/purge; restore from backup if any | `open` |
 | BUG-004 | Auth | CS1 / owner cloud login edge cases still fragile | Recent URGENT restores; add regression test for owner + Supabase session | `open` |
-| BUG-005 | Next / SEO | SpaShell still owns most routes | Phase 3: dedicated `/clips`…`/support` pages + metadata; home/dashboard/watch still SpaShell | `doing` |
-| BUG-006 | Next / nav | Client `pushState` routing vs Next App Router | Phase 3: `NextNavContext` + `router.push` + pathname sync (Vite keeps `pushHash`) | `doing` |
+| BUG-005 | Next / SEO | SpaShell still owns most routes | Phase 3 PR #107: dedicated `/clips`…`/support` + metadata; home/dashboard/watch still SpaShell | `doing` |
+| BUG-006 | Next / nav | Client `pushState` routing vs Next App Router | Phase 3 PR #107: `NextNavContext` + `router.push` + pathname sync (Vite keeps `pushHash`) | `doing` |
 | BUG-007 | Deploy | Old Static Render service must stay deleted/suspended | Domain only on Node web service | `open` |
 | BUG-008 | Smoke | `live-smoke.mjs` still asserts removed ExoClick/VAST behavior | ~many FAIL after ads strip; rewrite smoke for no-ad / Next world | `open` |
 
