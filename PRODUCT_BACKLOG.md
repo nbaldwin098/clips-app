@@ -2,6 +2,8 @@
 
 CEO directive: execute everything. Track status.
 
+**500-item plan:** see [`docs/IMPROVEMENT_PLAN_500.md`](docs/IMPROVEMENT_PLAN_500.md) (fixes + improvements across live, money, studio, feeds, admin, SEO, etc.). Track bugs in [`docs/BUGS.md`](docs/BUGS.md).
+
 Legend: [x] done  [~] partial  [ ] open
 
 ## A. Discovery & Algorithm
