@@ -125,6 +125,20 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
           ) : (
             <>
               <FollowButton creatorId={resolvedId} handle={handle || found?.handle} onOpenAuth={onOpenAuth} />
+              <button
+                type="button"
+                onClick={() => {
+                  if (!user) {
+                    onOpenAuth?.()
+                    return
+                  }
+                  if (!resolvedId) return
+                  onNavigate?.('messages', resolvedId, { u: resolvedId, h: handle || found?.handle || '' })
+                }}
+                className="h-9 px-4 rounded-full border border-zinc-700 text-xs text-zinc-200 hover:border-white"
+              >
+                Message
+              </button>
               {onOpenCheckout && resolvedId ? (
                 <button type="button" onClick={() => onOpenCheckout(resolvedId, handle || found?.handle)} className="h-9 px-4 rounded-full bg-white text-black text-xs font-semibold">
                   Premium

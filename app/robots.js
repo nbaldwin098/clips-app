@@ -18,6 +18,7 @@ export default function robots() {
         '/watch-later',
         '/stats',
         '/notifications',
+        '/messages',
         '/subscriptions',
         '/analytics',
         '/channel',

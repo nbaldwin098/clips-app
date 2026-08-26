@@ -73,6 +73,7 @@ const CalabiStudioPage = lazy(() => import('./components/CalabiStudioPage'))
 const ShopPage = lazy(() => import('./components/ShopPage'))
 const SellerPortal = lazy(() => import('./components/SellerPortal'))
 const NewsPage = lazy(() => import('./components/NewsPage'))
+const MessagesPage = lazy(() => import('./components/MessagesPage'))
 
 const KNOWN_VIEWS = new Set([
   'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
@@ -82,7 +83,7 @@ const KNOWN_VIEWS = new Set([
   'subscriptions', 'playlists', 'community', 'studio-tools', 'stream-settings',
   'calabi-studio', 'calabi-cash', 'shop', 'marketplace', 'seller', 'seller-portal', 'news',
   'legal-tos', 'legal-privacy', 'legal-creator', 'legal-community',
-  'watch', 'sound', 'tag', 'create',
+  'watch', 'sound', 'tag', 'create', 'messages',
 ])
 
 function AppShell() {
@@ -284,7 +285,7 @@ function AppShell() {
     if (current?.type === 'video') setMiniItem(current)
   }
 
-  const navigate = (next, id = '') => {
+  const navigate = (next, id = '', params = null) => {
     try {
       const dest = next === 'shorts' ? 'clips' : String(next || 'home')
       setSidebarOpen(false)
@@ -295,13 +296,16 @@ function AppShell() {
       const nextId = rawId && typeof rawId === 'object' ? String(rawId.id || '') : String(rawId || '')
       setRouteId(nextId || '')
       if (dest === 'profile') {
-        const uid = profileTarget.userId
-        goPath('profile', nextId, uid ? { u: uid } : null)
+        const uid = (params && params.u) || profileTarget.userId
+        goPath('profile', nextId, uid ? { u: uid, ...(params || {}) } : params)
       } else if ((dest === 'clips' || dest === 'watch' || dest === 'pics') && nextId) {
         // Posts use bare /{id} share URLs; clip/pic/watch lists stay /clips etc.
         goPath('content', nextId)
+      } else if (dest === 'messages') {
+        setRouteParams(params && typeof params === 'object' ? params : {})
+        goPath('messages', nextId, params)
       } else {
-        goPath(dest, nextId)
+        goPath(dest, nextId, params)
       }
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch {
@@ -616,6 +620,15 @@ function AppShell() {
       case 'help': return <HelpPage />
       case 'about': return <AboutPage />
       case 'notifications': return <NotificationsPage onNavigate={navigate} onOpenWatch={openWatch} />
+      case 'messages':
+        return (
+          <MessagesPage
+            onNavigate={navigate}
+            onOpenAuth={openAuth}
+            initialPeerId={routeParams.u || routeId || ''}
+            initialPeerHandle={routeParams.h || ''}
+          />
+        )
       case 'create': return <CreatePage onCreate={openCreate} onOpenAuth={openAuth} onNavigate={navigate} />
       case 'legal-tos': return <TermsOfService />
       case 'legal-privacy': return <PrivacyPolicy />

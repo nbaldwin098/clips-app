@@ -159,6 +159,11 @@ export const SECTION_META = {
     description: 'Notifications on calabi.',
     noindex: true,
   },
+  messages: {
+    title: 'Messages',
+    description: 'Private messages on calabi.',
+    noindex: true,
+  },
   checkout: {
     title: 'Checkout',
     description: 'Premium checkout on calabi.',
