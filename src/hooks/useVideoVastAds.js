@@ -81,7 +81,9 @@ export function useVideoVastAds(item, { embed = false } = {}) {
   return {
     creative,
     slot,
-    showingVast: Boolean(creative),
+    // Treat pending preroll as "showing ad" so WatchPage holds autoplay
+    // even before a creative arrives (and without editing WatchPage).
+    showingVast: Boolean(creative) || (enabled && !prerollResolved),
     campaignBreak,
     prerollResolved: !enabled || prerollResolved,
     finishAd,
