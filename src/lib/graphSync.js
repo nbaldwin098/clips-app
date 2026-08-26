@@ -132,7 +132,7 @@ export async function syncCreatorInteractionsFromCloud() {
         const asInteractions = views
           .filter((v) => v.actor_id)
           .map((v) => ({
-            id: `cv_${v.id || `${v.content_id}_${v.actor_id}_${v.created_at}`}`,
+            id: `civ_${v.content_id}_${v.actor_id}_view`.slice(0, 180),
             creator_id: v.creator_id,
             content_id: v.content_id,
             type: 'view',

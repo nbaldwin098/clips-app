@@ -56,8 +56,10 @@ Deno.serve(async (req) => {
 
   const kind = String(body.kind || 'premium')
   const amountCents = Math.round(Number(body.amountCents) || 0)
-  if (!Number.isFinite(amountCents) || amountCents < 100) {
-    return json({ error: 'Minimum charge is $1.00.' }, 400)
+  // Coin packs start at $0.99; tips/premium stay ≥ $1.00
+  const minCents = (kind === 'coin_pack' || kind === 'calabi_cash') ? 99 : 100
+  if (!Number.isFinite(amountCents) || amountCents < minCents) {
+    return json({ error: `Minimum charge is $${(minCents / 100).toFixed(2)}.` }, 400)
   }
   if (amountCents > 500_00) {
     return json({ error: 'Maximum charge is $500.00.' }, 400)
@@ -141,7 +143,8 @@ function labelForKind(kind: string) {
     case 'post_purchase':
       return 'Paid post · calabi'
     case 'calabi_cash':
-      return 'Calabi Cash pack'
+    case 'coin_pack':
+      return 'Coin pack · calabi'
     case 'marketplace':
       return 'Shop order · calabi'
     case 'premium':

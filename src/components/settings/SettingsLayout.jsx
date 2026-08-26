@@ -9,7 +9,7 @@ export const SITE_SECTIONS = [
   { id: 'account', label: 'Account', icon: User, group: 'You' },
   { id: 'security', label: 'Security & Privacy', icon: Shield, group: 'You' },
   { id: 'notifications', label: 'Notifications', icon: Bell, group: 'You' },
-  { id: 'wallet', label: 'Wallet & Cash', icon: Wallet, group: 'Money' },
+  { id: 'wallet', label: 'Wallet & Coins', icon: Wallet, group: 'Money' },
   { id: 'legal', label: 'Legal & Data', icon: FileText, group: 'You' },
 ]
 

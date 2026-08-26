@@ -34,7 +34,7 @@ export default function NewsPage({ onNavigate }) {
     <div className="p-4 md:p-6 max-w-2xl mx-auto">
       <PageHeader
         title="News"
-        subtitle="Product updates from calabi — Cash, creators, shop, and more."
+        subtitle="Product updates from calabi — Coins, creators, shop, and more."
         onBack={() => onNavigate?.('home')}
       />
 

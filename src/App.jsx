@@ -467,7 +467,7 @@ function AppShell() {
         analytics: 'Analytics',
         'studio-tools': 'Studio',
         'calabi-studio': 'Calabi Studio',
-        'calabi-cash': 'Calabi Cash',
+        'calabi-cash': 'Coins',
         vods: 'VODs',
         verify: 'Verification',
       }

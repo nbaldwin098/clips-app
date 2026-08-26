@@ -63,8 +63,8 @@ const STUDIO_NAV = [
 
 const SECTION_META = {
   overview: { title: 'Creator Studio', subtitle: 'Posts, audience, and shortcuts' },
-  analytics: { title: 'Analytics', subtitle: 'Real accounts on your posts — bubble map from cloud events' },
-  earnings: { title: 'Earnings', subtitle: 'Cash share, withdrawals, and income chart' },
+  analytics: { title: 'Analytics', subtitle: 'Every signed-in visitor on your posts — brown = view only, color = action' },
+  earnings: { title: 'Earnings', subtitle: 'Tips, withdrawals, and income chart' },
   vods: { title: 'VOD library', subtitle: 'Past lives — manage visibility here' },
   stream: { title: 'Stream settings', subtitle: 'Key, quality, and VOD channel — stays in the dashboard' },
   verify: { title: 'Verification', subtitle: 'ID check for a verified badge' },
@@ -88,7 +88,7 @@ function groupNav(items) {
 }
 
 function PostRow({ post, active, deleting, onSelect, onPlay, onDelete }) {
-  const views = getViews(post.id) || post.views || 0
+  const views = getViews(post.id)
   const likes = getVotes(post.id)?.up || 0
   return (
     <div
@@ -258,11 +258,28 @@ export default function CreatorStudio({
   }, [user?.id])
 
   useEffect(() => {
-    if (!user?.id || user.provider !== 'supabase') return
-    import('../../lib/graphSync').then(({ syncCreatorInteractionsFromCloud }) => {
-      syncCreatorInteractionsFromCloud?.().catch(() => {})
-    }).catch(() => {})
-  }, [user?.id, user?.provider])
+    if (!user?.id || user.provider !== 'supabase') return undefined
+    let cancelled = false
+    const sync = () => {
+      import('../../lib/graphSync').then(({ syncCreatorInteractionsFromCloud }) => {
+        if (cancelled) return
+        syncCreatorInteractionsFromCloud?.().catch(() => {})
+      }).catch(() => {})
+      const ids = getCreatorContent(user.id, user.handle).map((p) => p.id).filter(Boolean)
+      if (ids.length) {
+        import('../../lib/economySync').then(({ pullViewCounts }) => {
+          if (cancelled) return
+          pullViewCounts(ids).catch(() => {})
+        }).catch(() => {})
+      }
+    }
+    sync()
+    const t = setInterval(sync, 20000)
+    return () => {
+      cancelled = true
+      clearInterval(t)
+    }
+  }, [user?.id, user?.provider, user?.handle])
 
   const finishOnboarding = () => {
     if (user?.id) lsSet(`calabi_onboarding_done_${user.id}`, true)
@@ -272,7 +289,7 @@ export default function CreatorStudio({
   const posts = useMemo(() => getCreatorContent(user?.id, user?.handle), [user?.id, user?.handle, syncTick])
   const showOnboarding = !onboardingDone && posts.length === 0
   const live = lsGet(`live_state_${user?.id}`, null)
-  const views = posts.reduce((n, c) => n + (getViews(c.id) || c.views || 0), 0)
+  const views = posts.reduce((n, c) => n + getViews(c.id), 0)
   const likes = posts.reduce((n, c) => n + (getVotes(c.id)?.up || 0), 0)
   const followers = getSubscriberCount(user?.id)
   const analytics = getCreatorAnalytics(user?.id)
@@ -507,7 +524,7 @@ export default function CreatorStudio({
                 columns={3}
                 items={[
                   { label: 'Posts', value: String(posts.length) },
-                  { label: 'Views', value: formatCount(views) },
+                  { label: 'Unique viewers', value: formatCount(views) },
                   { label: 'Likes', value: formatCount(likes) },
                   { label: 'Followers', value: formatCount(followers), hint: `${formatCount(premiumSubs)} premium` },
                   { label: 'VODs', value: String(vods.length) },

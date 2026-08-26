@@ -510,23 +510,27 @@ export async function cloudRequestWithdrawal(creatorId, amountUsd, methodId) {
   return { ok: true, request: { id: req.id, amountUsd: amount, methodId: method.id, methodLabel: method.label, status: 'pending', createdAt: req.created_at }, earnings: e }
 }
 
-export async function pushContentView({ id, contentId, creatorId, actorId, surface, contentType }) {
+export async function pushContentView({ id, contentId, creatorId, actorId, viewerKey, surface, contentType }) {
   const actor = getGraphActor()
   if (!isSupabaseConfigured() || !contentId || !creatorId) return false
   if (actorId && actor?.id && actorId !== actor.id) return false
+  // Guests without a session cannot insert under current RLS — signed-in only for fallback path.
   if (!actor?.id) return false
   const client = await sb()
   if (!client) return false
+  const key = viewerKey || actorId || actor.id
+  const rowId = (id || `cvu_${contentId}_${key}`).replace(/[^a-zA-Z0-9:_-]/g, '_').slice(0, 180)
   try {
     const { error } = await client.from('content_views').upsert({
-      id: id || `cv_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      id: rowId,
       content_id: contentId,
       creator_id: creatorId,
       actor_id: actorId || actor.id,
+      viewer_key: key,
       surface: surface || 'unknown',
       content_type: contentType || null,
       created_at: new Date().toISOString(),
-    })
+    }, { onConflict: 'id' })
     return !error
   } catch {
     return false
@@ -599,10 +603,11 @@ export async function pullViewCounts(contentIds = []) {
       .select('content_id, views')
       .in('content_id', contentIds.slice(0, 500))
     if (error || !data) return false
+    // Cloud counts are unique viewers — overwrite local (do not Math.max with inflated rewatch tallies).
     const map = lsGet('engagement_views', {}) || {}
     for (const r of data) {
       if (!r.content_id) continue
-      map[r.content_id] = Math.max(Number(map[r.content_id]) || 0, Number(r.views) || 0)
+      map[r.content_id] = Number(r.views) || 0
     }
     lsSet('engagement_views', map)
     return true

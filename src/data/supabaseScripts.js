@@ -13,6 +13,7 @@ import platformEconomy from '../../supabase/migrations/0016_platform_economy.sql
 import globalLiveChat from '../../supabase/migrations/0017_global_live_chat.sql?raw'
 import supportMarketplace from '../../supabase/migrations/0018_support_marketplace.sql?raw'
 import siteNews from '../../supabase/migrations/0019_site_news.sql?raw'
+import uniqueViews from '../../supabase/migrations/0020_unique_content_views.sql?raw'
 
 export const SETUP_SCRIPTS = [
   {
@@ -83,7 +84,7 @@ export const SETUP_SCRIPTS = [
   },
   {
     id: '0016',
-    title: 'Platform economy (Cash, coins, earnings, views, premium, vote tallies)',
+    title: 'Platform economy (coins, earnings, views, premium, vote tallies)',
     file: '0016_platform_economy.sql',
     sql: String(platformEconomy || ''),
   },
@@ -104,5 +105,11 @@ export const SETUP_SCRIPTS = [
     title: 'Site News feed (left-menu News tab)',
     file: '0019_site_news.sql',
     sql: String(siteNews || ''),
+  },
+  {
+    id: '0020',
+    title: 'Unique content views (by viewer / IP — stops rewatch inflation)',
+    file: '0020_unique_content_views.sql',
+    sql: String(uniqueViews || ''),
   },
 ]

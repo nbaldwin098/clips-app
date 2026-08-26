@@ -69,22 +69,20 @@ function typeChips(byType = {}) {
     })
 }
 
-/** Ordered action colors for a person — used as concentric rings (like + follow + share = 3 rings). */
+/** Ordered action colors — brown ring if they only viewed; colored rings for real actions. */
 function actionRingColors(person) {
   const entries = Object.entries(person?.byType || {})
     .filter(([, n]) => Number(n) > 0)
     .sort((a, b) => b[1] - a[1])
-  if (entries.length) {
-    return entries.map(([id]) => {
-      const meta = INTERACTION_TYPES.find((t) => t.id === id)
-      return { id, color: meta?.color || person.color || '#a1a1aa', label: meta?.short || id }
-    })
+  const actions = entries.filter(([id]) => id !== 'view')
+  if (!actions.length) {
+    // Visited with no like / follow / share / comment — brown circle
+    return [{ id: 'view', color: '#92400e', label: 'View only' }]
   }
-  if (person?.primaryType) {
-    const meta = INTERACTION_TYPES.find((t) => t.id === person.primaryType)
-    return [{ id: person.primaryType, color: meta?.color || person.color || '#a1a1aa', label: meta?.short || person.primaryType }]
-  }
-  return [{ id: 'view', color: person?.color || '#60a5fa', label: 'View' }]
+  return actions.map(([id]) => {
+    const meta = INTERACTION_TYPES.find((t) => t.id === id)
+    return { id, color: meta?.color || person.color || '#a1a1aa', label: meta?.short || id }
+  })
 }
 
 function ActionRings({ radius, rings, active }) {
@@ -308,7 +306,7 @@ export default function InteractionBubbleMap({
             Audience network{postTitle ? ` · ${postTitle}` : ''}
           </p>
           <p className="text-[11px] text-zinc-500">
-            Every signed-in viewer appears — including you on your own posts. Multi-color rings = like, follow, share, and more.
+            Every signed-in viewer appears — including you. Brown ring = viewed only. Colored rings = like, follow, share, comment.
             {summary.people ? ` · ${summary.people} people` : ''}
             {summary.total ? ` · ${summary.total} actions` : ''}
           </p>

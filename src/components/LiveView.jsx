@@ -314,7 +314,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
       {cashOpen ? (
         <div className="rounded-2xl border border-zinc-800 bg-[#121218] p-5">
           <div className="flex justify-between items-center mb-3">
-            <p className="text-sm font-semibold text-white">Buy Calabi Cash</p>
+            <p className="text-sm font-semibold text-white inline-flex items-center gap-1.5">Buy Coins</p>
             <button type="button" className="text-xs text-zinc-400" onClick={() => setCashOpen(false)}>Close</button>
           </div>
           <CalabiCashShop compact />

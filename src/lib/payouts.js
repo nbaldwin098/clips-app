@@ -34,7 +34,7 @@ export function viewsForCreator(userId, handle = '') {
     const cid = row.creatorId || row.userId
     const match = (userId && cid === userId) || (h && String(row.handle || '').toLowerCase() === h)
     if (!match) continue
-    views += getViews(row.id) || row.views || 0
+    views += getViews(row.id)
   }
   return views
 }

@@ -1,24 +1,15 @@
 /**
- * Calabi Cash + Gold Coins.
- * Cloud (Supabase wallets) is source of truth via economySync.
- * Cache is display-only after pull/push — never invent balances offline.
- *
- * Roles:
- * - Calabi Cash → donations/tips, TTS, premium subscriptions, paid features later
- * - Gold Coins → chat cosmetics (bigger messages, creator emotes/GIFs, highlights)
+ * Coins wallet (chat cosmetics) + Stripe tips/TTS for creator-set features.
+ * Calabi Cash removed — packs buy Coins only.
+ * Cloud wallets are source of truth via economySync.
  */
-
 import { lsGet } from './storage'
 import { getGraphActor } from './graphSync'
 import { isSupabaseConfigured } from './supabaseClient'
 import {
-  cachedCash,
   cachedCoins,
   cachedEarnings,
-  cacheCash,
   cacheCoins,
-  cloudCreditCash,
-  cloudSpendCash,
   cloudCreditCoins,
   cloudSpendCoins,
   cloudCreditEarnings,
@@ -29,207 +20,99 @@ import {
   pullEarnings,
 } from './economySync'
 
-export const CALABI_CASH_PER_USD = 100
-export const CALABI_CASH_UNIT_USD = 0.01
-
-/** Fliff-style packs: Cash display + Gold Coin bonus */
-export const CALABI_CASH_TIERS = [
-  { id: 't1', usd: 1.99, units: 400, bonusPct: 0, label: 'Up to 4.00 Cash', coins: 40, stack: 1 },
-  { id: 't3', usd: 4.99, units: 1000, bonusPct: 0, label: 'Up to 10.00 Cash', coins: 120, stack: 2 },
-  { id: 't5', usd: 9.99, units: 2000, bonusPct: 0, label: 'Up to 20.00 Cash', coins: 280, stack: 3 },
-  { id: 't10', usd: 19.99, units: 4000, bonusPct: 5, label: 'Up to 40.00 Cash', coins: 600, stack: 4, badge: 'Popular' },
-  { id: 't50', usd: 49.99, units: 10000, bonusPct: 10, label: 'Up to 100.00 Cash', coins: 1600, stack: 5, badge: 'Best value' },
+/** Coin packs (USD → coins). No Cash. */
+export const COIN_PACKS = [
+  { id: 'c100', usd: 0.99, coins: 100, label: '100 Coins', stack: 1 },
+  { id: 'c550', usd: 4.49, coins: 550, label: '550 Coins', stack: 2, badge: 'Popular' },
+  { id: 'c1350', usd: 9.99, coins: 1350, label: '1,350 Coins', stack: 3 },
+  { id: 'c3250', usd: 19.99, coins: 3250, label: '3,250 Coins', stack: 4 },
+  { id: 'c10000', usd: 49.99, coins: 10000, label: '10,000 Coins', stack: 5, badge: 'Best value' },
 ]
 
-export const CALABI_CASH_FIRST_BUY = {
-  id: 'first',
-  usd: 1,
-  units: 300,
-  bonusPct: 200,
-  label: 'First-Time · 3.00 Cash',
-  coins: 50,
-  stack: 1,
-  once: true,
-}
-
-export const CALABI_CASH_PACKS = CALABI_CASH_TIERS.map((t) => ({
-  id: t.id,
-  cash: t.units / 100,
-  coins: t.coins || 0,
-  priceUsd: t.usd,
-  label: t.label,
-  stack: t.stack || 1,
-  badge: t.badge,
-  units: t.units,
+/** @deprecated use COIN_PACKS — kept so old checkout kinds don't crash */
+export const CALABI_CASH_TIERS = COIN_PACKS.map((p) => ({
+  id: p.id,
+  usd: p.usd,
+  units: 0,
+  coins: p.coins,
+  label: p.label,
+  stack: p.stack,
+  badge: p.badge,
 }))
+export const CALABI_CASH_FIRST_BUY = null
+export const CALABI_CASH_PACKS = COIN_PACKS.map((p) => ({
+  id: p.id,
+  cash: 0,
+  coins: p.coins,
+  priceUsd: p.usd,
+  label: p.label,
+  stack: p.stack,
+  badge: p.badge,
+  units: 0,
+}))
+export const CALABI_CASH_PER_USD = 100
+export const CALABI_CASH_UNIT_USD = 0.01
 
 function cloudReady(userId) {
   const actor = getGraphActor()
   return !!(isSupabaseConfigured() && actor?.id && userId && actor.id === userId)
 }
 
-export function getCalabiCashBalance(userId) {
-  return cachedCash(userId)
+/** Cash balance retired — always 0 for display. */
+export function getCalabiCashBalance() {
+  return 0
 }
-
-export function getCashBalance(userId) {
-  return getCalabiCashBalance(userId)
+export function getCashBalance() {
+  return 0
 }
 
 export function getCoinBalance(userId) {
   return cachedCoins(userId)
 }
 
-export function hasUsedFirstBuy(userId) {
-  if (!userId) return true
-  return !!(lsGet('calabi_cash_first_buyers', {}) || {})[userId]
+export function hasUsedFirstBuy() {
+  return true
 }
 
-export function listCashTiersForUser(userId) {
-  const tiers = [...CALABI_CASH_TIERS]
-  if (userId && !hasUsedFirstBuy(userId)) tiers.unshift(CALABI_CASH_FIRST_BUY)
-  return tiers
+export function listCashTiersForUser() {
+  return [...COIN_PACKS]
+}
+
+export function listCoinPacks() {
+  return [...COIN_PACKS]
 }
 
 export function getTierById(id) {
-  if (id === CALABI_CASH_FIRST_BUY.id) return CALABI_CASH_FIRST_BUY
-  return CALABI_CASH_TIERS.find((t) => t.id === id) || null
+  return COIN_PACKS.find((p) => p.id === id) || null
 }
 
-export function listCashLedger(userId, limit = 50) {
-  const all = lsGet('calabi_cash_ledger', []) || []
-  if (!userId) return all.slice(0, limit)
-  return all.filter((r) => r.userId === userId).slice(0, limit)
+export function listCashLedger() {
+  return []
 }
 
-export function listCoinLedger(userId, limit = 50) {
-  const all = lsGet('calabi_coin_ledger', []) || []
-  if (!userId) return all.slice(0, limit)
-  return all.filter((r) => r.userId === userId).slice(0, limit)
+export function formatCash() {
+  return '0.00'
 }
 
-export function refreshWalletFromCloud(userId) {
-  return pullWallet(userId)
+export function formatCashDollars() {
+  return '$0.00'
 }
 
-export function refreshEarningsFromCloud(creatorId) {
-  return pullEarnings(creatorId)
-}
-
-/**
- * Credit Cash on cloud. Sync shape for callers; work is async on Supabase.
- * Fails closed if not a cloud-signed-in user.
- */
-export function creditCalabiCash(userId, units, meta = {}) {
-  if (!userId) return { ok: false, error: 'Sign in first.' }
-  if (!cloudReady(userId)) return { ok: false, error: 'Cloud account required.' }
-  const n = Math.floor(Number(units) || 0)
-  if (n <= 0) return { ok: false, error: 'Invalid amount.' }
-  const optimistic = getCalabiCashBalance(userId) + n
-  cacheCash(userId, optimistic)
-  ;(async () => {
-    const res = await cloudCreditCash(userId, n, meta)
-    if (!res.ok) {
-      cacheCash(userId, Math.max(0, getCalabiCashBalance(userId) - n))
-      return
-    }
-    const coins = Math.floor(Number(meta.coins) || 0)
-    if (coins > 0) await cloudCreditCoins(userId, coins, { kind: 'pack_bonus', note: meta.tierId || '' })
-    if (meta.usd > 0 && meta.creatorId) {
-      await cloudCreditEarnings(meta.creatorId, Number(meta.usd) * 0.7, { kind: 'cash_pack', packId: meta.tierId })
-    }
-  })()
-  return { ok: true, balance: optimistic, pendingCloud: true }
-}
-
-export function spendCalabiCash(userId, units, meta = {}) {
-  if (!userId) return { ok: false, error: 'Sign in first.' }
-  if (!cloudReady(userId)) return { ok: false, error: 'Cloud account required.' }
-  const n = Math.floor(Number(units) || 0)
-  if (n <= 0) return { ok: false, error: 'Invalid amount.' }
-  const bal = getCalabiCashBalance(userId)
-  if (bal < n) return { ok: false, error: 'Not enough Calabi Cash.', balance: bal }
-  cacheCash(userId, bal - n)
-  ;(async () => {
-    const res = await cloudSpendCash(userId, n, meta)
-    if (!res.ok) cacheCash(userId, bal)
-  })()
-  return { ok: true, balance: bal - n, pendingCloud: true }
-}
-
-export function creditCoins(userId, amount, meta = {}) {
-  if (!cloudReady(userId)) return 0
-  const add = Math.floor(Number(amount) || 0)
-  if (add <= 0) return getCoinBalance(userId)
-  const next = getCoinBalance(userId) + add
-  cacheCoins(userId, next)
-  ;(async () => {
-    const res = await cloudCreditCoins(userId, add, meta)
-    if (!res.ok) cacheCoins(userId, Math.max(0, next - add))
-  })()
-  return next
-}
-
-export function spendCoins(userId, amount, meta = {}) {
-  if (!cloudReady(userId)) return { ok: false, error: 'Cloud account required.', balance: 0 }
-  const sub = Math.floor(Number(amount) || 0)
-  if (sub <= 0) return { ok: false, balance: getCoinBalance(userId), error: 'Invalid amount' }
-  const bal = getCoinBalance(userId)
-  if (bal < sub) return { ok: false, balance: bal, error: 'Insufficient Gold Coins' }
-  cacheCoins(userId, bal - sub)
-  ;(async () => {
-    const res = await cloudSpendCoins(userId, sub, meta)
-    if (!res.ok) cacheCoins(userId, bal)
-  })()
-  return { ok: true, balance: bal - sub, pendingCloud: true }
-}
-
-/** Awaitable pack purchase — Cash + Gold Coins on cloud. */
-export async function purchaseCashPack(userId, packId) {
-  if (!userId) return { ok: false, error: 'Sign in first.' }
-  if (!cloudReady(userId)) return { ok: false, error: 'Cloud account required. Sign in with your calabi account.' }
-  const tier = getTierById(packId)
-  if (!tier) return { ok: false, error: 'Unknown pack' }
-  const cashRes = await cloudCreditCash(userId, tier.units, {
-    kind: 'pack_purchase',
-    tierId: tier.id,
-    usd: tier.usd,
-    note: tier.label,
-  })
-  if (!cashRes.ok) return cashRes
-  let coins = getCoinBalance(userId)
-  if (tier.coins > 0) {
-    const c = await cloudCreditCoins(userId, tier.coins, { kind: 'pack_bonus', note: tier.id })
-    if (c.ok) coins = c.balance
-  }
-  return {
-    ok: true,
-    cash: cashRes.balance,
-    coins,
-    addedCash: tier.units,
-    addedCoins: tier.coins || 0,
-    pack: tier,
-  }
-}
-
-export async function purchaseCashTier(userId, tierId) {
-  return purchaseCashPack(userId, tierId)
+export function cashUnitsToUsd() {
+  return 0
 }
 
 export function usdToCashUnits(usd) {
-  return Math.round(Number(usd) * CALABI_CASH_PER_USD)
+  return Math.round(Number(usd) * 100) || 0
 }
 
-export function cashUnitsToUsd(units) {
-  return Math.round(Number(units) * CALABI_CASH_UNIT_USD * 100) / 100
+export function creditCalabiCash(userId, units, meta = {}) {
+  // Legacy Cash callers → Coins (1:1) so tips/pools keep working after Cash removal.
+  return creditCoins(userId, units, { ...meta, migratedFrom: 'cash' })
 }
 
-export function formatCash(units) {
-  return cashUnitsToUsd(units).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
-
-export function formatCashDollars(units) {
-  return cashUnitsToUsd(units).toLocaleString(undefined, { style: 'currency', currency: 'USD' })
+export function spendCalabiCash(userId, units, meta = {}) {
+  return spendCoins(userId, units, { ...meta, migratedFrom: 'cash' })
 }
 
 export function creatorCashShare(units, creatorRate = 0.8) {
@@ -238,7 +121,52 @@ export function creatorCashShare(units, creatorRate = 0.8) {
   return { creator, platform: n - creator }
 }
 
-/* ——— Creator earnings (cloud) ——— */
+export function spendCoins(userId, amount, meta = {}) {
+  const n = Math.floor(Number(amount) || 0)
+  if (!userId || n < 1) return { ok: false, error: 'Invalid amount' }
+  if (!cloudReady(userId)) return { ok: false, error: 'Cloud wallet required' }
+  const bal = getCoinBalance(userId)
+  if (bal < n) return { ok: false, error: 'Insufficient Coins', balance: bal }
+  cacheCoins(userId, bal - n)
+  ;(async () => {
+    const res = await cloudSpendCoins(userId, n, meta)
+    if (!res?.ok) cacheCoins(userId, bal)
+  })()
+  return { ok: true, balance: bal - n }
+}
+
+export function creditCoins(userId, amount, meta = {}) {
+  const n = Math.floor(Number(amount) || 0)
+  if (!userId || n < 1) return { ok: false }
+  if (!cloudReady(userId)) return { ok: false, error: 'Cloud wallet required' }
+  const bal = getCoinBalance(userId)
+  cacheCoins(userId, bal + n)
+  ;(async () => {
+    await cloudCreditCoins(userId, n, meta)
+  })()
+  return { ok: true, balance: bal + n }
+}
+
+/** Buy a coin pack after Stripe return — credits coins only. */
+export async function purchaseCoinPack(userId, tierId) {
+  const pack = getTierById(tierId)
+  if (!pack || !userId) return { ok: false, error: 'Invalid pack' }
+  if (!cloudReady(userId)) return { ok: false, error: 'Sign in with cloud account' }
+  const res = await cloudCreditCoins(userId, pack.coins, { kind: 'pack', tierId: pack.id, usd: pack.usd })
+  if (!res?.ok) return { ok: false, error: res?.error || 'Could not credit coins' }
+  await pullWallet(userId)
+  return { ok: true, addedCoins: pack.coins, pack }
+}
+
+/** @deprecated */
+export async function purchaseCashPack(userId, tierId) {
+  return purchaseCoinPack(userId, tierId)
+}
+
+export async function refreshWalletFromCloud(userId) {
+  if (!userId) return
+  await pullWallet(userId)
+}
 
 export function getCreatorEarnings(creatorId) {
   return cachedEarnings(creatorId)
@@ -291,6 +219,11 @@ export function listWithdrawRequests(creatorId, limit = 30) {
 
 export async function requestWithdrawal(creatorId, amountUsd, methodId) {
   return cloudRequestWithdrawal(creatorId, amountUsd, methodId)
+}
+
+export async function refreshEarningsFromCloud(creatorId) {
+  if (!creatorId) return
+  await pullEarnings(creatorId)
 }
 
 export const COIN_REDEEMS = [
