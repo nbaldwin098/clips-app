@@ -55,62 +55,104 @@ export function parseVastClock(raw) {
 }
 
 function cdata(text) {
-  return String(text || '').replace(/<!\[CDATA\[|\]\]>/g, '').trim()
+  return String(text || '').replace('<![CDATA[', '').replace(']]>', '').trim()
 }
 
 function tagText(xml, tag) {
-  const re = new RegExp('<' + tag + '[^>]*>([\\s\\S]*?)</' + tag + '>', 'i')
-  const m = String(xml || '').match(re)
-  return m ? cdata(m[1]) : ''
+  const open = '<' + tag
+  const close = '</' + tag + '>'
+  const raw = String(xml || '')
+  const start = raw.toLowerCase().indexOf(open.toLowerCase())
+  if (start < 0) return ''
+  const after = raw.indexOf('>', start)
+  if (after < 0) return ''
+  const end = raw.toLowerCase().indexOf(close.toLowerCase(), after)
+  if (end < 0) return ''
+  return cdata(raw.slice(after + 1, end))
 }
 
 function attr(xml, name) {
-  const m = String(xml || '').match(new RegExp(name + '="([^"]+)"', 'i'))
-  return m ? m[1] : ''
+  const raw = String(xml || '')
+  const key = name + '="'
+  const i = raw.indexOf(key)
+  if (i < 0) return ''
+  const start = i + key.length
+  const end = raw.indexOf('"', start)
+  return end < 0 ? '' : raw.slice(start, end)
+}
+
+function extractBlock(xml, tag) {
+  const raw = String(xml || '')
+  const needle = '<' + tag
+  const lower = raw.toLowerCase()
+  const start = lower.indexOf(needle.toLowerCase())
+  if (start < 0) return ''
+  const close = '</' + tag + '>'
+  const end = lower.indexOf(close.toLowerCase(), start)
+  if (end < 0) return raw.slice(start)
+  return raw.slice(start, end + close.length)
 }
 
 export function parseVastXml(xml) {
   const raw = String(xml || '')
-  if (!/<VAST/i.test(raw)) return null
+  if (raw.toUpperCase().indexOf('<VAST') < 0) return null
   const wrapperUri = tagText(raw, 'VASTAdTagURI')
   if (wrapperUri) {
     return { wrapper: true, wrapperUrl: safeHttpUrl(wrapperUri) }
   }
-  const linearMatch = raw.match(/<Linear\\b[^>]*>[\\s\\S]*?<\\/Linear>/i)
-  const linear = linearMatch ? linearMatch[0] : ''
+  const linear = extractBlock(raw, 'Linear')
   if (!linear) return null
   const files = []
-  const fileRe = /<MediaFile\\b([^>]*)>([\\s\\S]*?)<\\/MediaFile>/gi
-  let fm
-  while ((fm = fileRe.exec(linear))) {
-    const url = safeMediaUrl(cdata(fm[2]))
+  let searchFrom = 0
+  const lower = linear.toLowerCase()
+  while (true) {
+    const idx = lower.indexOf('<mediafile', searchFrom)
+    if (idx < 0) break
+    const tagEnd = linear.indexOf('>', idx)
+    if (tagEnd < 0) break
+    const openTag = linear.slice(idx, tagEnd + 1)
+    const closeIdx = lower.indexOf('</mediafile>', tagEnd)
+    if (closeIdx < 0) break
+    const body = linear.slice(tagEnd + 1, closeIdx)
+    const url = safeMediaUrl(cdata(body))
+    searchFrom = closeIdx + 12
     if (!url) continue
     files.push({
       url,
-      type: attr(fm[1], 'type'),
-      width: Number(attr(fm[1], 'width')) || 0,
-      height: Number(attr(fm[1], 'height')) || 0,
-      bitrate: Number(attr(fm[1], 'bitrate')) || 0,
+      type: attr(openTag, 'type'),
+      width: Number(attr(openTag, 'width')) || 0,
+      height: Number(attr(openTag, 'height')) || 0,
+      bitrate: Number(attr(openTag, 'bitrate')) || 0,
     })
   }
-  const mp4 = files.filter((f) => /mp4/i.test(f.type) || /\\.mp4(\\?|$)/i.test(f.url))
+  const mp4 = files.filter((f) => /mp4/i.test(f.type) || f.url.indexOf('.mp4') >= 0)
   const pool = mp4.length ? mp4 : files
   pool.sort((a, b) => (b.width - a.width) || (b.bitrate - a.bitrate))
   const media = pool[0]
   if (!media || !media.url) return null
   const durationSec = parseVastClock(tagText(linear, 'Duration'))
-  const openMatch = linear.match(/<Linear\\b[^>]*>/i)
-  const skipRaw = attr(openMatch ? openMatch[0] : '', 'skipoffset')
+  const openEnd = linear.indexOf('>')
+  const linearOpen = openEnd >= 0 ? linear.slice(0, openEnd + 1) : ''
+  const skipRaw = attr(linearOpen, 'skipoffset')
   const skipAfterSec = skipRaw ? parseVastClock(skipRaw) : YT_SKIP_AFTER_SEC
   const clickThrough = safeHttpUrl(tagText(linear, 'ClickThrough'))
   const impression = safeHttpUrl(tagText(raw, 'Impression'))
   const errorUrl = tagText(raw, 'Error')
   const tracking = {}
-  const tr = /<Tracking\\b([^>]*)>([\\s\\S]*?)<\\/Tracking>/gi
-  let tm
-  while ((tm = tr.exec(linear))) {
-    const event = attr(tm[1], 'event')
-    const url = safeHttpUrl(cdata(tm[2]))
+  let tFrom = 0
+  const tLower = linear.toLowerCase()
+  while (true) {
+    const idx = tLower.indexOf('<tracking', tFrom)
+    if (idx < 0) break
+    const tagEnd = linear.indexOf('>', idx)
+    if (tagEnd < 0) break
+    const openTag = linear.slice(idx, tagEnd + 1)
+    const closeIdx = tLower.indexOf('</tracking>', tagEnd)
+    if (closeIdx < 0) break
+    const body = linear.slice(tagEnd + 1, closeIdx)
+    const event = attr(openTag, 'event')
+    const url = safeHttpUrl(cdata(body))
+    tFrom = closeIdx + 11
     if (event && url) {
       tracking[event] = tracking[event] || []
       tracking[event].push(url)
@@ -124,7 +166,7 @@ export function parseVastXml(xml) {
     skipAfterSec: skipAfterSec > 0 ? skipAfterSec : YT_SKIP_AFTER_SEC,
     clickThrough,
     impression,
-    errorUrl: safeHttpUrl(errorUrl.replace('[ERRORCODE]', '900')),
+    errorUrl: safeHttpUrl(String(errorUrl || '').replace('[ERRORCODE]', '900')),
     tracking,
     title: tagText(raw, 'AdTitle') || 'Sponsored',
     advertiser: tagText(raw, 'Advertiser') || 'Ad',
