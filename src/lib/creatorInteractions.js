@@ -7,10 +7,25 @@ import { lsGet, lsSet } from './storage'
 import { getViews, getVotes, getSubscriberCount } from './engagement'
 import { listComments } from './youtubeParity'
 import { getImports } from './storage'
-import { notifyContentChanged } from './contentSync'
 
 const KEY = 'clips_creator_interactions'
 const MAX = 2500
+const INTERACTION_EVENT = 'clips-creator-interactions'
+
+/** Lightweight tick for studio map — does not refresh the whole catalog. */
+export function notifyInteractionsChanged() {
+  if (typeof window === 'undefined') return
+  try {
+    window.dispatchEvent(new CustomEvent(INTERACTION_EVENT))
+  } catch {}
+}
+
+export function subscribeInteractionsChanged(fn) {
+  if (typeof window === 'undefined') return () => {}
+  const handler = () => { try { fn?.() } catch {} }
+  window.addEventListener(INTERACTION_EVENT, handler)
+  return () => window.removeEventListener(INTERACTION_EVENT, handler)
+}
 
 export const INTERACTION_TYPES = [
   { id: 'view', label: 'Opened / viewed', color: '#60a5fa', short: 'View' },
@@ -142,7 +157,7 @@ export function logCreatorInteraction({
     if (surf !== 'unknown') recent.surface = surf
     if (cType) recent.contentType = cType
     save(list)
-    notifyContentChanged()
+    notifyInteractionsChanged()
     queueCloudPush(recent)
     return recent
   }
@@ -161,7 +176,7 @@ export function logCreatorInteraction({
   }
   list.unshift(row)
   save(list)
-  notifyContentChanged()
+  notifyInteractionsChanged()
   queueCloudPush(row)
   return row
 }
@@ -204,7 +219,7 @@ export function mergeCreatorInteractionsFromCloud(rows = []) {
   }
   const merged = [...byId.values()].sort((a, b) => Date.parse(b.at) - Date.parse(a.at)).slice(0, MAX)
   save(merged)
-  if (n) notifyContentChanged()
+  if (n) notifyInteractionsChanged()
   return n
 }
 

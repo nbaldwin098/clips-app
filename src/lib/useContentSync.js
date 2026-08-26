@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { subscribeContentUpdates } from './contentSync'
+import { subscribeInteractionsChanged } from './creatorInteractions'
 
 /**
  * Returns a counter that increments whenever the local content cache
@@ -10,5 +11,12 @@ import { subscribeContentUpdates } from './contentSync'
 export function useContentSyncTick() {
   const [tick, setTick] = useState(0)
   useEffect(() => subscribeContentUpdates(() => setTick((t) => t + 1)), [])
+  return tick
+}
+
+/** Increments when creator interaction events are logged (bubble map). */
+export function useInteractionSyncTick() {
+  const [tick, setTick] = useState(0)
+  useEffect(() => subscribeInteractionsChanged(() => setTick((t) => t + 1)), [])
   return tick
 }

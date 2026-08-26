@@ -27,7 +27,7 @@ import { formatCount } from '../../lib/uiFormat'
 import { formatPostedAt } from '../../lib/mediaMeta'
 import { cn } from '../../lib/utils'
 import { restoreLostUploads } from '../../lib/restoreUploads'
-import { useContentSyncTick } from '../../lib/useContentSync'
+import { useContentSyncTick, useInteractionSyncTick } from '../../lib/useContentSync'
 import InteractionBubbleMap from './InteractionBubbleMap'
 import ErrorReportPrompt from '../ErrorReportPrompt'
 import CreatorAnalyticsPanel from '../settings/CreatorAnalyticsPanel'
@@ -234,6 +234,7 @@ export default function CreatorStudio({
 }) {
   const { user } = useAuth()
   const syncTick = useContentSyncTick()
+  const interactionTick = useInteractionSyncTick()
   const [section, setSection] = useState(() => lsGet('calabi_studio_section', initialSection) || initialSection)
   const [onboardingDone, setOnboardingDone] = useState(() => lsGet(`calabi_onboarding_done_${user?.id}`, false))
   const [selectedPostId, setSelectedPostId] = useState(null)
@@ -292,7 +293,7 @@ export default function CreatorStudio({
 
   const bubbles = useMemo(
     () => buildInteractionBubbles(user?.id, posts, { contentId: selectedPostId, range }),
-    [user?.id, posts, selectedPostId, range, syncTick]
+    [user?.id, posts, selectedPostId, range, syncTick, interactionTick]
   )
 
   const openPost = (c) => {
