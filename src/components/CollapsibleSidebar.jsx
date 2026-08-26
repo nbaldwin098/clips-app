@@ -16,7 +16,6 @@ import {
   BookOpen,
   ListVideo,
   LifeBuoy,
-  X,
   Image as ImageIcon,
   Activity,
   Megaphone,
@@ -117,13 +116,6 @@ export default function CollapsibleSidebar({
 
   const body = (
     <div className="flex flex-col h-full min-h-0 text-zinc-300">
-      <div className="flex items-center justify-between p-2.5 border-b border-[#23232c] md:hidden">
-        <span className="text-xs font-semibold text-zinc-200">Menu</span>
-        <button type="button" onClick={onClose} className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-[#1e1e27]" aria-label="Close menu">
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-
       <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden py-2 px-1.5 space-y-4">
         <nav className="space-y-0.5">
           <NavBtn collapsed={collapsed} active={currentView === 'home'} onClick={() => go('home')} icon={Home} label="Recommended" />
@@ -269,26 +261,12 @@ export default function CollapsibleSidebar({
     <>
       <aside
         className={cn(
-          'hidden md:flex flex-col shrink-0 h-[calc(100dvh-3.5rem)] sticky top-14 bg-[#000000] border-r border-[#23232c] transition-all duration-200 z-30 overflow-hidden',
+          'flex flex-col shrink-0 h-[calc(100dvh-3.5rem)] sticky top-14 bg-[#000000] border-r border-[#23232c] transition-all duration-200 z-30 overflow-hidden',
           collapsed ? 'w-14' : 'w-60'
         )}
       >
         {body}
       </aside>
-
-      {open && (
-        <div className="md:hidden fixed inset-x-0 top-14 bottom-0 z-40 flex">
-          <aside className="relative w-60 max-w-[85vw] h-full bg-[#000000] border-r border-[#23232c] shadow-2xl flex flex-col">
-            {body}
-          </aside>
-          <button
-            type="button"
-            className="flex-1 h-full bg-black/60 backdrop-blur-[1px]"
-            aria-label="Close menu"
-            onClick={onClose}
-          />
-        </div>
-      )}
     </>
   )
 }

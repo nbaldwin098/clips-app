@@ -8,7 +8,7 @@ export default function HelpPage() {
     },
     {
       q: 'How do I upload or go live?',
-      a: 'Open the left menu (hamburger) and tap Create, under Live. Upload a video, clip, or pic, or go live from there. Live opens a lobby until ingest is connected — it does not start a video stream by itself.',
+      a: 'Open Create in the left menu (under Live). Upload a video, clip, or pic, or go live from there. Live opens a lobby until ingest is connected — it does not start a video stream by itself.',
     },
     {
       q: 'Can I donate on live or on a video?',

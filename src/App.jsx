@@ -397,8 +397,6 @@ function AppShell() {
     navigate('live')
   }
 
-  const toggleSidebar = () => setSidebarOpen((v) => !v)
-
   const toggleChat = () => {
     if (typeof window !== 'undefined' && window.innerWidth < 1024) {
       setMobileChatOpen((v) => !v)
@@ -578,8 +576,6 @@ function AppShell() {
       <StreamingNavbar
         onNavigate={navigate}
         onOpenAuth={openAuth}
-        onToggleSidebar={toggleSidebar}
-        sidebarOpen={sidebarOpen}
         onOpenWatch={openWatch}
         searchQuery={searchQuery}
         onSearchChange={(q) => {
