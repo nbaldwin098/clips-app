@@ -1,6 +1,6 @@
 /**
  * Storage helpers.
- * Catalog (imports) is cloud-only via catalogStore — not localStorage.
+ * Catalog (imports) is cloud-backed via catalogStore — not localStorage.
  * Liked/saved/history/settings remain device prefs until those move to cloud too.
  */
 
@@ -22,7 +22,6 @@ export const STORAGE_TARGETS = {
 const LS_KEYS = {
   user: 'clips_user',
   mode: 'clips_mode',
-  // imports intentionally NOT persisted
   liked: 'clips_liked',
   saved: 'clips_saved',
   settings: 'clips_settings',
@@ -39,8 +38,7 @@ function safeParse(raw, fallback) {
 
 export function lsGet(key, fallback = null) {
   if (typeof localStorage === 'undefined') return fallback
-  // Never serve a persisted catalog — wipe legacy key if present
-  if (key === 'imports' || key === LS_KEYS.imports) {
+  if (key === 'imports' || key === 'clips_imports') {
     try { localStorage.removeItem('clips_imports') } catch { /* ok */ }
     return Array.isArray(fallback) ? fallback : []
   }
@@ -59,12 +57,11 @@ export function lsGet(key, fallback = null) {
 
 export function lsSet(key, value) {
   if (typeof localStorage === 'undefined') return
-  // Block catalog writes to disk
   if (key === 'imports' || key === 'clips_imports') return
   try {
     localStorage.setItem(LS_KEYS[key] || key, JSON.stringify(value))
   } catch {
-    // quota or private mode — ignore
+    // quota or private mode
   }
 }
 
@@ -115,7 +112,7 @@ export function parseExternalShort(url) {
   }
 }
 
-/** Optimistic memory update only — cloud is source of truth after sync. */
+/** Upsert one record into session catalog (after upload or edit). */
 export function saveImport(record) {
   if (!record?.id) return getImports()
   return upsertCatalogRecord(record)
@@ -133,17 +130,24 @@ export function removeImport(id) {
   removeCatalogRecord(id)
 }
 
-/**
- * Replace memory catalog with cloud rows (not a merge with disk).
- * Call after every successful cloud pull.
- */
+/** Full replace from a successful cloud pull. */
 export function replaceImportsFromCloud(records) {
   return setCatalog(Array.isArray(records) ? records : [])
 }
 
-/** @deprecated use replaceImportsFromCloud — kept so old callers compile */
+/**
+ * Merge records into the session catalog (seed + soft sync).
+ * Must NOT wipe existing rows — that deleted just-uploaded clips.
+ */
 export function mergeImports(records) {
-  return replaceImportsFromCloud(records)
+  if (!records?.length) return getImports()
+  const byId = new Map(getCatalog().map((r) => [r.id, r]))
+  for (const rec of records) {
+    if (!rec?.id) continue
+    const prev = byId.get(rec.id) || {}
+    byId.set(rec.id, { ...prev, ...rec })
+  }
+  return setCatalog([...byId.values()])
 }
 
 export function toggleLiked(id) {

@@ -1,8 +1,8 @@
 /**
- * Cloud catalog sync. Supabase is the only source of truth for content.
- * Session memory holds the latest pull; nothing is written to localStorage.
+ * Cloud catalog sync. Supabase is the source of truth.
+ * Session memory holds the latest pull; catalog is not written to localStorage.
  */
-import { replaceImportsFromCloud, removeImport, purgeLegacyLocalCatalog } from './storage'
+import { replaceImportsFromCloud, mergeImports, removeImport, purgeLegacyLocalCatalog, getImports } from './storage'
 import { isUserUploadRecord } from './mediaMeta'
 import { getSupabase, isSupabaseConfigured } from './supabaseClient'
 import { isFeedable, isReferenceItem, hasStableImage, purgeDeadCatalog } from './catalogHealth'
@@ -168,13 +168,30 @@ async function deleteOwnedDeadRows(actor) {
   } catch {}
 }
 
-/** Pull cloud catalog and replace session memory entirely. */
+/**
+ * Pull cloud catalog into session memory.
+ * Preserves just-uploaded hosted rows for 2 minutes if the pull has not caught up yet.
+ * Never wipes the catalog on an empty/failed pull.
+ */
 export async function syncContentFromCloud(actor = null) {
   purgeLegacyLocalCatalog()
   if (actor) await deleteOwnedDeadRows(actor)
   const rows = await pullContentRecords()
-  // Always replace — even empty — so deletes in Supabase cannot linger in memory
-  replaceImportsFromCloud(rows)
+  if (rows.length > 0) {
+    const cloudIds = new Set(rows.map((r) => r.id))
+    const pending = getImports().filter((r) => {
+      if (!r?.id || cloudIds.has(r.id)) return false
+      if (!r.hosted) return false
+      const media = cloudUrl(r.mediaUrl) || cloudUrl(r.sourceUrl)
+      if (!media) return false
+      const age = Date.now() - new Date(r.createdAt || 0).getTime()
+      return Number.isFinite(age) && age >= 0 && age < 120000
+    })
+    replaceImportsFromCloud([...pending, ...rows])
+  } else {
+    // Empty pull: do not erase session catalog (upload would vanish).
+    mergeImports([])
+  }
   purgeDeadCatalog()
   notifyContentChanged()
   return rows
