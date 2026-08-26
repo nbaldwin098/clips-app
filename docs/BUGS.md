@@ -112,7 +112,7 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 | ID | Issue | PR | Date |
 |----|-------|-----|------|
 | BUG-001 | Production uploads confirmed after Next env fix | owner check | 2026-08-26 |
-| BUG-003 | `videos` catalog has live rows; drop static sitemap override | (this PR) | 2026-08-26 |
+| BUG-003 | `videos` catalog has live rows; drop static sitemap override | #110 | 2026-08-26 |
 | BUG-113 | Next SEO finish: all known routes have App Router pages + metadata | #109 | 2026-08-26 |
 | BUG-005 | SpaShell route peel / Next SEO rebuild | #103–#109 | 2026-08-26 |
 | BUG-112 | Next SEO Phase 3: section routes + NextNavContext | #107 | 2026-08-26 |
