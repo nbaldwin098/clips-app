@@ -9,6 +9,9 @@ import { clearFrozenFeeds } from './frozenFeeds'
 
 const HIDDEN_KEY = 'hidden_broken_media'
 
+/** Titles the operator asked to purge (still in some local caches after cloud delete). */
+const RETIRED_TITLE_RE = /^(insane|spooky\s*halloween)$/i
+
 export function isHttpUrl(url) {
   const u = String(url || '')
   return u.startsWith('https://') || u.startsWith('http://')
@@ -55,8 +58,6 @@ export function hasLocalMediaHint(item) {
 
 export function hasPlayableVideo(item) {
   if ([item?.mediaUrl, item?.sourceUrl].some(isKnownDeadUrl)) return false
-  // Public feeds only accept stable http(s) media. Orphaned blob: URLs from the
-  // old local-storage upload era freeze the reel (empty snap slots) for everyone.
   if ([item?.mediaUrl, item?.sourceUrl].some((u) => isHttpUrl(u))) return true
   if (hasLocalMediaHint(item) && [item?.mediaUrl, item?.sourceUrl].some(isBlobUrl)) return true
   return false
@@ -68,6 +69,8 @@ export function isRetiredCatalogItem(item) {
   const creator = String(item.creatorId || item.userId || '')
   const origin = String(item.origin || '')
   const handle = String(item.handle || '').toLowerCase()
+  const title = String(item.title || '').trim()
+  if (RETIRED_TITLE_RE.test(title)) return true
   return (
     id.startsWith('edu-')
     || creator === 'edu-kids-class'
@@ -120,14 +123,20 @@ export function purgeDeadCatalog() {
     if (isReferenceItem(row)) return false
     if (isRetiredCatalogItem(row)) return false
     if (isUserUploadRecord(row)) return isFeedable(row)
-    if (row.type === 'pic' && !hasStableImage(row)) return false
-    if ((row.type === 'video' || row.type === 'short') && !hasPlayableVideo(row)) return false
-    return true
+    return isFeedable(row)
   })
   const removed = list.length - next.length
-  if (removed) {
+  if (removed > 0) {
     lsSet('imports', next)
-    try { clearFrozenFeeds() } catch {}
+    try { clearFrozenFeeds() } catch { /* ok */ }
   }
+  // Legacy mirror
+  try {
+    const legacy = lsGet('user_clips', []) || []
+    if (Array.isArray(legacy) && legacy.length) {
+      const cleaned = legacy.filter((row) => row?.id && !hidden.has(row.id) && !isRetiredCatalogItem(row) && !isReferenceItem(row))
+      if (cleaned.length !== legacy.length) lsSet('user_clips', cleaned)
+    }
+  } catch { /* ok */ }
   return removed
 }

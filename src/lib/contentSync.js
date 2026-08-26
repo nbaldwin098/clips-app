@@ -7,7 +7,7 @@
  *
  * Without Supabase configured, uploads are rejected (no silent device-only save).
  */
-import { mergeImports } from './storage'
+import { mergeImports, getImports, removeImport, lsGet, lsSet } from './storage'
 import { isUserUploadRecord } from './mediaMeta'
 import { getSupabase, isSupabaseConfigured } from './supabaseClient'
 import { isFeedable, isReferenceItem, hasStableImage, purgeDeadCatalog } from './catalogHealth'
@@ -102,13 +102,6 @@ function catalogSyncErrorMessage(error) {
   return msg
 }
 
-/**
- * Publish a record's metadata to the shared catalog. Only attempted for a
- * real Supabase-authenticated actor (actor.provider === 'supabase'), since
- * the table's RLS insert policy requires creator_id === auth.uid() — an
- * anonymous/local-only viewer could never satisfy that, so we don't even
- * try (avoids a doomed round-trip and any chance of surfacing a DB error).
- */
 export async function pushContentRecord(record, actor) {
   if (!record?.id || !actor?.id || actor.provider !== 'supabase' || !isSupabaseConfigured()) {
     return { ok: false, error: 'Catalog sync unavailable.' }
@@ -177,11 +170,57 @@ async function deleteOwnedDeadRows(actor) {
     for (const row of data || []) {
       const mapped = fromRow(row)
       if (keepCloudRow(mapped)) continue
-      // Keep cloud rows for user uploads — hosted links must not be pruned away.
       if (isUserUploadRecord(mapped)) continue
       await sb.from(TABLE).delete().eq('id', row.id).eq('creator_id', actor.id)
     }
   } catch {}
+}
+
+/**
+ * Drop local mirror rows that no longer exist in the cloud catalog.
+ * Only runs when the pull looks complete (< PULL_LIMIT) so we do not
+ * mass-delete older rows that simply fell outside the page window.
+ */
+function reconcileLocalWithCloud(cloudRows) {
+  if (!Array.isArray(cloudRows) || cloudRows.length === 0) return 0
+  if (cloudRows.length >= PULL_LIMIT) return 0
+  const cloudIds = new Set(cloudRows.map((r) => r.id).filter(Boolean))
+  let removed = 0
+  for (const rec of getImports()) {
+    if (!rec?.id || cloudIds.has(rec.id)) continue
+    if (rec.status === 'draft') continue
+    if (rec.localStored === true && !rec.hosted) continue
+    if (isReferenceItem(rec)) continue
+    const media = String(rec.mediaUrl || rec.sourceUrl || '')
+    const wasCloudHosted =
+      rec.hosted === true
+      || media.includes('/storage/v1/object/')
+      || media.includes('supabase')
+    if (!wasCloudHosted && !isUserUploadRecord(rec)) continue
+    removeImport(rec.id)
+    removed += 1
+  }
+  try {
+    const legacy = lsGet('user_clips', []) || []
+    if (Array.isArray(legacy) && legacy.length) {
+      const cleaned = legacy.filter((r) => !r?.id || cloudIds.has(r.id) || r.status === 'draft')
+      if (cleaned.length !== legacy.length) lsSet('user_clips', cleaned)
+    }
+  } catch { /* ok */ }
+  if (removed) {
+    try { clearFrozenFeeds() } catch { /* ok */ }
+  }
+  return removed
+}
+
+function dropLocalId(id) {
+  if (!id) return
+  removeImport(id)
+  try {
+    const legacy = lsGet('user_clips', []) || []
+    if (Array.isArray(legacy)) lsSet('user_clips', legacy.filter((r) => r?.id !== id))
+  } catch { /* ok */ }
+  try { clearFrozenFeeds() } catch { /* ok */ }
 }
 
 /** Pull + merge into the local cache, then notify any subscribed pages. Returns rows pulled. */
@@ -189,7 +228,10 @@ export async function syncContentFromCloud(actor = null) {
   purgeDeadCatalog()
   if (actor) await deleteOwnedDeadRows(actor)
   const rows = await pullContentRecords()
-  if (rows.length) mergeImports(rows)
+  if (rows.length) {
+    mergeImports(rows)
+    reconcileLocalWithCloud(rows)
+  }
   purgeDeadCatalog()
   notifyContentChanged()
   return rows
@@ -211,8 +253,19 @@ export async function subscribeCloudCatalog(onChange) {
       .channel('clips-videos-catalog')
       .on(
         'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: TABLE },
+        (payload) => {
+          const id = payload?.old?.id
+          if (id) dropLocalId(id)
+          notifyContentChanged()
+          onChange?.()
+        },
+      )
+      .on(
+        'postgres_changes',
         { event: '*', schema: 'public', table: TABLE },
-        () => {
+        (payload) => {
+          if (payload?.eventType === 'DELETE') return
           syncContentFromCloud().then(() => onChange?.()).catch(() => onChange?.())
         },
       )
