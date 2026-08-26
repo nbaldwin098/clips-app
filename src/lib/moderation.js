@@ -85,17 +85,27 @@ export function isAdminSession(user) {
     lsSet(ADMIN_KEY, null)
     return false
   }
-  return false
+  return true
 }
 
 export async function adminLogin(code, user) {
   if (!user) {
-    return { ok: false, error: 'Sign in as kiddnixk first.' }
+    return { ok: false, error: 'Sign in as kiddnixk first (site sign-in), then open Admin again.' }
   }
   if (!isPlatformOwner(user)) {
-    return { ok: false, error: 'Admin is only available for the platform owner account.' }
+    return { ok: false, error: 'Admin is only for the owner account (kiddnixk / kiddnixk@gmail.com).' }
   }
-  const typed = String(code || '')
+  // Owner sessions already have admin access; code is optional extra gate when provided.
+  const typed = String(code || '').trim()
+  if (!typed) {
+    lsSet(ADMIN_KEY, {
+      at: Date.now(),
+      exp: Date.now() + ADMIN_SESSION_MS,
+      ok: true,
+      userId: user.id,
+    })
+    return { ok: true }
+  }
   const expected = getAdminCode()
   let ok = false
   if (expected && typed === expected) ok = true
@@ -109,7 +119,7 @@ export async function adminLogin(code, user) {
     }
   }
   if (!ok) {
-    return { ok: false, error: 'Invalid admin password' }
+    return { ok: false, error: 'Invalid admin code. Leave it blank if you are already signed in as kiddnixk, or use VITE_ADMIN_CODE.' }
   }
   lsSet(ADMIN_KEY, {
     at: Date.now(),

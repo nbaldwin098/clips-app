@@ -44,6 +44,7 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 | BUG-006 | Next / nav | Client `pushState` routing vs Next App Router | Done in #107 (`NextNavContext` + `router.push`) | `done` |
 | BUG-007 | Deploy | Old Static Render service must stay deleted/suspended | Domain only on Node web service | `open` |
 | BUG-008 | Smoke | `live-smoke.mjs` still asserts removed ExoClick/VAST behavior | Smoke rewritten for no-op stubs + deleted ad modules | `done` |
+| BUG-090 | Auth | Admin unlock broken; owner still treated as cs1 on live | kiddnixk owner + Admin cloud password field (#121) | `doing` |
 
 ### P1 — important
 
@@ -88,9 +89,9 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 | BUG-052 | Product | Notifications: no push/email yet | In-app only | `open` |
 | BUG-053 | Product | 2FA / MFA gate — verify import + flow on Next | Past missing-import bug | `open` |
 | BUG-054 | Product | VOD library is device-local metadata | Server VODs when ingest exists | `open` |
-| BUG-055 | Product | Concurrent viewer graph missing | Audience network map in Analytics (real actors + white edges); concurrent live graph still open | `partial` |
-| BUG-088 | Studio | Bubble map invented tally bubbles / no pan / no people | Real actor network + pan/zoom + profile resolve | `doing` |
-| BUG-089 | Catalog | Post “posted at” drifted on updates | `first_published_at` + preserve trigger (0015) | `doing` |
+| BUG-055 | Product | Concurrent viewer graph missing | Audience network map in Analytics (#123); concurrent live graph still open | `partial` |
+| BUG-088 | Studio | Bubble map invented tally bubbles / no pan / no people | Shipped in #123 | `done` |
+| BUG-089 | Catalog | Post “posted at” drifted on updates | `first_published_at` + 0015 in #123 — run SQL in Supabase | `done` |
 | BUG-056 | Product | Custom emotes partial | | `open` |
 | BUG-057 | Product | Stream schedule partial | | `open` |
 | BUG-058 | CI | Align smoke suite with ads-removed + Next | Block merge on green subset | `open` |
