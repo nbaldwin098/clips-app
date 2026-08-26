@@ -926,6 +926,12 @@ export default function CreatorLab({ onNavigate, initialMode = 'edit', compact =
   const start = initialMode === 'live' ? 'live' : initialMode === 'socials' ? 'socials' : 'edit'
   const [mode, setMode] = useState(start)
 
+  useEffect(() => {
+    if (initialMode === 'live' || initialMode === 'socials' || initialMode === 'edit') {
+      setMode(initialMode)
+    }
+  }, [initialMode])
+
   if (!isAuthenticated) {
     return (
       <div className={cn('p-6', compact ? '' : 'max-w-3xl mx-auto')}>
