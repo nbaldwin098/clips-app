@@ -1,8 +1,7 @@
 /**
- * Cloud social graph. Local storage is always the UI source.
- * When the signed-in user is a real Supabase account, we push/pull
- * follows, votes, comments, playlists, and that user's notifications.
- * Failures stay silent — never leak raw DB errors into the UI.
+ * Cloud social graph. Supabase is source of truth for follows, votes,
+ * comments, playlists, notifications, and creator interactions.
+ * Local storage is a display cache filled by pull — never invent cloud rows.
  */
 import { lsGet, lsSet } from './storage'
 import { getSupabase, isSupabaseConfigured } from './supabaseClient'
@@ -421,6 +420,14 @@ export async function syncGraphFromCloud() {
     if (!playlists.error && playlists.data) applyPlaylists(playlists.data)
     if (!notifs.error && notifs.data) applyNotifications(notifs.data)
     try { await syncCreatorInteractionsFromCloud() } catch {}
+    try {
+      const { pullPremiumSubs, pullWallet, pullEarnings } = await import('./economySync')
+      await pullPremiumSubs()
+      if (actor?.id) {
+        await pullWallet(actor.id)
+        await pullEarnings(actor.id)
+      }
+    } catch {}
     emit()
     pushMine()
     return true

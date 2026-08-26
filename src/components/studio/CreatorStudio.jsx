@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from 'react'
 import {
   LayoutDashboard,
   BarChart3,
-  Wallet,
+  CircleDollarSign,
   Video,
   BadgeCheck,
   Settings,
@@ -19,7 +19,7 @@ import { useAuth } from '../../context/AuthContext'
 import CreatorOnboarding from '../CreatorOnboarding'
 import { lsGet, lsSet } from '../../lib/storage'
 import { getCreatorContent, deleteCatalogItem } from '../../lib/contentService'
-import { getViews, getVotes } from '../../lib/engagement'
+import { getViews, getVotes, getSubscriberCount, getCreatorAnalytics } from '../../lib/engagement'
 import { creatorBalance } from '../../lib/payouts'
 import { listVods, setVodVisibility, getVodChannel } from '../../lib/vods'
 import { buildInteractionNetwork } from '../../lib/creatorInteractions'
@@ -31,8 +31,8 @@ import { useContentSyncTick, useInteractionSyncTick } from '../../lib/useContent
 import InteractionBubbleMap from './InteractionBubbleMap'
 import ErrorReportPrompt from '../ErrorReportPrompt'
 import CreatorAnalyticsPanel from '../settings/CreatorAnalyticsPanel'
-import RevenueSettings from '../settings/RevenueSettings'
-import CalabiCashShop from '../CalabiCashShop'
+import CreatorEarningsPanel from './CreatorEarningsPanel'
+import StreamSettings from '../settings/StreamSettings'
 import VerifyPage from '../VerifyPage'
 import {
   getIdVerificationForUser,
@@ -55,16 +55,18 @@ import {
 const STUDIO_NAV = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard, group: 'Studio' },
   { id: 'analytics', label: 'Analytics', icon: BarChart3, group: 'Studio' },
-  { id: 'wallet', label: 'Wallet', icon: Wallet, group: 'Studio' },
-  { id: 'vods', label: 'VODs', icon: Video, group: 'Library' },
+  { id: 'earnings', label: 'Earnings', icon: CircleDollarSign, group: 'Money' },
+  { id: 'vods', label: 'VODs', icon: Video, group: 'Live' },
+  { id: 'stream', label: 'Stream', icon: Radio, group: 'Live' },
   { id: 'verify', label: 'Get verified', icon: BadgeCheck, group: 'Account' },
 ]
 
 const SECTION_META = {
-  overview: { title: 'Creator Studio', subtitle: 'Posts, activity, and shortcuts' },
-  analytics: { title: 'Analytics', subtitle: 'Where and how people interact with your posts' },
-  wallet: { title: 'Wallet & revenue', subtitle: 'Cash, memberships, and payouts' },
-  vods: { title: 'VOD library', subtitle: 'Past live lobbies on this device' },
+  overview: { title: 'Creator Studio', subtitle: 'Posts, audience, and shortcuts' },
+  analytics: { title: 'Analytics', subtitle: 'Real accounts on your posts — bubble map from cloud events' },
+  earnings: { title: 'Earnings', subtitle: 'Cash share, withdrawals, and income chart' },
+  vods: { title: 'VOD library', subtitle: 'Past lives — manage visibility here' },
+  stream: { title: 'Stream settings', subtitle: 'Key, quality, and VOD channel — stays in the dashboard' },
   verify: { title: 'Verification', subtitle: 'ID check for a verified badge' },
 }
 
@@ -133,24 +135,21 @@ function PostRow({ post, active, deleting, onSelect, onPlay, onDelete }) {
   )
 }
 
-function VodsPanel({ user, onNavigate }) {
+function VodsPanel({ user }) {
   const vods = listVods(user?.id)
   const ch = getVodChannel(user?.id)
   return (
     <div className="space-y-4 max-w-2xl">
       <SettingsNotice>
         <p>
-          Copies of ended live lobbies on this device.
+          Ended live lobbies for your cloud account.
           {ch.enabled
             ? ` Second channel @${ch.handle || '—'} is ${ch.autoPublish ? 'auto-posting' : 'manual'}.`
-            : ' Second channel is off.'}
+            : ' Second channel is off — turn it on under Stream in this dashboard.'}
         </p>
-        <SettingsButton variant="ghost" onClick={() => onNavigate?.('settings', 'stream')}>
-          VOD & stream settings
-        </SettingsButton>
       </SettingsNotice>
       {vods.length === 0 ? (
-        <p className="text-sm text-zinc-500">No lives ended on this device yet.</p>
+        <p className="text-sm text-zinc-500">No lives ended yet.</p>
       ) : vods.map((v) => (
         <SettingsCard key={v.id} title={v.title || 'Past broadcast'}>
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -238,14 +237,16 @@ export default function CreatorStudio({
   const [section, setSection] = useState(() => lsGet('calabi_studio_section', initialSection) || initialSection)
   const [onboardingDone, setOnboardingDone] = useState(() => lsGet(`calabi_onboarding_done_${user?.id}`, false))
   const [selectedPostId, setSelectedPostId] = useState(null)
-  const [range, setRange] = useState('7d')
+  const [range, setRange] = useState('all')
   const [postFilter, setPostFilter] = useState('all')
   const [restoreBusy, setRestoreBusy] = useState(false)
   const [restoreNote, setRestoreNote] = useState('')
   const [deletingId, setDeletingId] = useState(null)
 
   useEffect(() => {
-    if (initialSection) setSection(initialSection)
+    if (!initialSection) return
+    if (initialSection === 'wallet') setSection('earnings')
+    else setSection(initialSection)
   }, [initialSection])
 
   useEffect(() => {
@@ -272,6 +273,10 @@ export default function CreatorStudio({
   const showOnboarding = !onboardingDone && posts.length === 0
   const live = lsGet(`live_state_${user?.id}`, null)
   const views = posts.reduce((n, c) => n + (getViews(c.id) || c.views || 0), 0)
+  const likes = posts.reduce((n, c) => n + (getVotes(c.id)?.up || 0), 0)
+  const followers = getSubscriberCount(user?.id)
+  const analytics = getCreatorAnalytics(user?.id)
+  const premiumSubs = Number(analytics?.premiumSubs) || 0
   const approved = user?.creatorStatus === 'approved'
   const balance = creatorBalance(user?.id, user?.handle)
   const vods = listVods(user?.id)
@@ -499,9 +504,12 @@ export default function CreatorStudio({
                 />
               ) : null}
               <SettingsKpiGrid
+                columns={3}
                 items={[
                   { label: 'Posts', value: String(posts.length) },
                   { label: 'Views', value: formatCount(views) },
+                  { label: 'Likes', value: formatCount(likes) },
+                  { label: 'Followers', value: formatCount(followers), hint: `${formatCount(premiumSubs)} premium` },
                   { label: 'VODs', value: String(vods.length) },
                   { label: 'Lobby', value: live?.isLive ? 'Live' : 'Off', hint: approved ? `$${balance.paid.toFixed(2)} paid` : 'Apply to earn' },
                 ]}
@@ -541,16 +549,21 @@ export default function CreatorStudio({
             </div>
           ) : null}
 
-          {section === 'wallet' ? (
-            <div className="h-full overflow-y-auto space-y-8 max-w-3xl">
-              <CalabiCashShop />
-              <RevenueSettings onNavigate={onNavigate} />
+          {section === 'earnings' ? (
+            <div className="h-full overflow-hidden">
+              <CreatorEarningsPanel />
             </div>
           ) : null}
 
           {section === 'vods' ? (
             <div className="h-full overflow-y-auto">
-              <VodsPanel user={user} onNavigate={onNavigate} />
+              <VodsPanel user={user} />
+            </div>
+          ) : null}
+
+          {section === 'stream' ? (
+            <div className="h-full overflow-y-auto max-w-2xl">
+              <StreamSettings />
             </div>
           ) : null}
 

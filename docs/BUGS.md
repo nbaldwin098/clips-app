@@ -90,10 +90,13 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 | BUG-051 | Legal | Terms still say “Clips” in places — brand to calabi | Done in #106 | `done` |
 | BUG-052 | Product | Notifications: no push/email yet | In-app only | `open` |
 | BUG-053 | Product | 2FA / MFA gate — verify import + flow on Next | Past missing-import bug | `open` |
-| BUG-054 | Product | VOD library is device-local metadata | Server VODs when ingest exists | `open` |
+| BUG-054 | Product | VOD library is device-local metadata | `vods` + `stream_settings` tables in 0016; wire sync next | `doing` |
 | BUG-055 | Product | Concurrent viewer graph missing | Audience network map in Analytics (#123); concurrent live graph still open | `partial` |
 | BUG-088 | Studio | Bubble map invented tally bubbles / no pan / no people | Shipped in #123 | `done` |
 | BUG-089 | Catalog | Post “posted at” drifted on updates | `first_published_at` + 0015 in #123 — run SQL in Supabase | `done` |
+| BUG-093 | Studio | Creator dashboard empty / wallet wrong place / no earnings | Earnings + stream/VODs in studio; wallet under Site settings; cloud economy 0016–0017 | `doing` |
+| BUG-094 | Engagement | Likes/views/premium not updating tallies / bubble map empty | Vote→tally trigger + content_views + premium_subs in 0016; ensureUpvote logs | `doing` |
+| BUG-095 | Live | Global chat vs creator chat | global_live_chat 0017; LiveChatPanel switches on focus | `doing` |
 | BUG-056 | Product | Custom emotes partial | | `open` |
 | BUG-057 | Product | Stream schedule partial | | `open` |
 | BUG-058 | CI | Align smoke suite with ads-removed + Next | Block merge on green subset | `open` |
@@ -177,7 +180,7 @@ Last updated: 2026-08-26 (platform differentiators foundations: Cash, pools, Gho
 
 | ID | Area | Issue | Notes | Status |
 |----|------|-------|-------|--------|
-| BUG-060 | Cash | Calabi Cash wallets + web tiers | Per-tier Payment Link env vars + claim path; create Stripe products next | `partial` |
+| BUG-060 | Cash | Calabi Cash wallets + web tiers | Cloud `wallets` + Fliff packs + Gold Coins (0016); Stripe Payment Links still optional | `doing` |
 | BUG-061 | Live | Pools / Ghost AI / PvP challenges | `0013_live_feature_state` + pull/push when table exists | `partial` |
 | BUG-062 | Live | Group streams + raids | Invite/request UI; ingest multi-host TBD | `partial` |
 | BUG-063 | Studio | Calabi Studio CapCut parity | Trim/filters/avatar/shell; cloud encode TBD | `partial` |

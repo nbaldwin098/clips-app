@@ -9,6 +9,8 @@ import videosPublishColumns from '../../supabase/migrations/0012_videos_publish_
 import liveFeatureState from '../../supabase/migrations/0013_live_feature_state.sql?raw'
 import creatorInteractions from '../../supabase/migrations/0014_creator_interactions.sql?raw'
 import videosFirstPublished from '../../supabase/migrations/0015_videos_first_published_at.sql?raw'
+import platformEconomy from '../../supabase/migrations/0016_platform_economy.sql?raw'
+import globalLiveChat from '../../supabase/migrations/0017_global_live_chat.sql?raw'
 
 export const SETUP_SCRIPTS = [
   {
@@ -76,5 +78,17 @@ export const SETUP_SCRIPTS = [
     title: 'Immutable first-publish timestamps',
     file: '0015_videos_first_published_at.sql',
     sql: String(videosFirstPublished || ''),
+  },
+  {
+    id: '0016',
+    title: 'Platform economy (Cash, coins, earnings, views, premium, vote tallies)',
+    file: '0016_platform_economy.sql',
+    sql: String(platformEconomy || ''),
+  },
+  {
+    id: '0017',
+    title: 'Global live lobby chat',
+    file: '0017_global_live_chat.sql',
+    sql: String(globalLiveChat || ''),
   },
 ]
