@@ -10,6 +10,13 @@ assert.match(cash, /units: 300/)
 assert.match(cash, /units: 1150/)
 assert.match(cash, /units: 6000/)
 
+const stripe = readFileSync('src/lib/stripeConfig.js', 'utf8')
+assert.match(stripe, /getCalabiCashPaymentLink/)
+assert.match(stripe, /VITE_STRIPE_CASH_LINK_T1/)
+
+assert.equal(existsSync('supabase/migrations/0013_live_feature_state.sql'), true)
+assert.equal(existsSync('src/lib/liveFeatureSync.js'), true)
+
 const split = readFileSync('src/lib/revenueSplit.js', 'utf8')
 assert.match(split, /CREATOR_REV_SHARE = 0\.8/)
 

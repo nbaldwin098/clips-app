@@ -348,6 +348,60 @@ export function AuthProvider({ children }) {
       }
     }
 
+    const org = findOfficialLogin(email)
+    if (org) {
+      if (modeAuth === 'signup') throw new Error('That email is a library channel. Sign in instead.')
+      if (!password || password.length < 6) throw new Error('Email and a password of at least 6 characters are required.')
+      const ok = await verifySecret(password, org.passwordHash)
+      if (!ok) throw new Error('Wrong email or password.')
+      const next = {
+        id: org.id,
+        email: org.email,
+        displayName: org.displayName,
+        handle: org.handle,
+        provider: 'local',
+        avatarUrl: org.avatarUrl || '',
+        bannerUrl: org.bannerUrl || '',
+        bio: org.bio || '',
+        passwordHash: org.passwordHash,
+        isCreator: true,
+        creatorStatus: 'approved',
+        isPlatformAdmin: false,
+        role: 'user',
+      }
+      rejectIfBlocked(next)
+      setUser(next)
+      setMode('creator')
+      try { indexUser(next) } catch {}
+      return next
+    }
+
+    const named = findNamedAccountLogin(email)
+    if (named) {
+      if (modeAuth === 'signup') throw new Error('That email is already a site account. Sign in instead.')
+      if (!password || password.length < 6) throw new Error('Email and a password of at least 6 characters are required.')
+      if (!verifyNamedAccountPassword(named.n, password)) throw new Error('Wrong email or password.')
+      const next = {
+        id: named.id,
+        email: named.email,
+        displayName: named.displayName,
+        handle: named.handle,
+        provider: 'local',
+        avatarUrl: named.avatarUrl,
+        bannerUrl: named.bannerUrl,
+        bio: '',
+        isCreator: false,
+        creatorStatus: 'none',
+        isPlatformAdmin: false,
+        role: 'user',
+      }
+      rejectIfBlocked(next)
+      setUser(next)
+      setMode('viewer')
+      try { indexUser(next) } catch {}
+      return next
+    }
+
     if (isSupabaseConfigured() && email && password) {
       const sb = await getSupabase()
       if (sb) {

@@ -6,6 +6,7 @@ import { lsGet, lsSet } from './storage'
 import { postLiveChat } from './engagement'
 import { spendCalabiCash, creditCalabiCash, creatorCashShare } from './calabiCash'
 import { CREATOR_REV_SHARE } from './revenueSplit'
+import { pushLiveFeatureState } from './liveFeatureSync'
 
 const KEY = 'live_pools'
 
@@ -15,6 +16,7 @@ function all() {
 
 function save(map) {
   lsSet(KEY, map)
+  pushLiveFeatureState().catch(() => {})
 }
 
 export function getActivePool(hostId) {

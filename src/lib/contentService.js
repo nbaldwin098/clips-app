@@ -473,6 +473,11 @@ export function getById(id) {
   if (fromImport && !isReferenceItem(fromImport) && !isRetiredCatalogItem(fromImport) && isReleased(fromImport)) {
     return normalizeItem(withViewCounts([fromImport])[0])
   }
+  // Legacy device uploads before cloud catalog
+  const legacy = (lsGet('user_clips', []) || []).find((i) => i?.id === id)
+  if (legacy && !isReferenceItem(legacy) && !isRetiredCatalogItem(legacy) && isReleased(legacy)) {
+    return normalizeItem(withViewCounts([legacy])[0])
+  }
   return null
 }
 

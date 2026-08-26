@@ -10,12 +10,12 @@ export function checkoutCanCharge() {
   return !!getStripePaymentLink()
 }
 
-export async function startPremiumCheckout({ already = false, email = '', reference = '' } = {}) {
+export async function startPremiumCheckout({ already = false, email = '', reference = '', paymentLink = '' } = {}) {
   if (already) {
     return { granted: false, status: 'already', message: 'You already have premium on this channel.', url: '' }
   }
 
-  const link = getStripePaymentLink()
+  const link = paymentLink || getStripePaymentLink()
   if (link) {
     const url = buildPaymentLink(link, { email, reference })
     return {
