@@ -10,9 +10,8 @@ import {
   uploadFailedMessage,
   uploadHostRequiredMessage,
   deleteHostedMedia,
-  MAX_CLIP_BYTES,
   MAX_CLIP_DURATION_SEC,
-  MAX_VIDEO_BYTES,
+  MAX_VIDEO_DURATION_SEC,
   clipLimitsMessage,
   videoLimitsMessage,
 } from './mediaUpload'
@@ -563,15 +562,12 @@ export async function publishLocalMedia(file, actor = null, {
     const asClip = type === 'short'
     const prepare = prepareVideoForUpload || transcodeVideoForUpload
     const processed = await prepare(file)
+    const dur = Number(processed.durationSec) || 0
     if (asClip) {
-      if ((file.size || 0) > MAX_CLIP_BYTES) {
+      if (dur > MAX_CLIP_DURATION_SEC + 0.5) {
         return { ok: false, item: null, error: clipLimitsMessage() }
       }
-      const dur = Number(processed.durationSec) || 0
-      if (dur > MAX_CLIP_DURATION_SEC + 0.5) {
-        return { ok: false, item: null, error: `Clips must be ${MAX_CLIP_DURATION_SEC} seconds or shorter.` }
-      }
-    } else if ((file.size || 0) > MAX_VIDEO_BYTES) {
+    } else if (dur > MAX_VIDEO_DURATION_SEC + 0.5) {
       return { ok: false, item: null, error: videoLimitsMessage() }
     }
     const outFile = processed.file || file
@@ -707,7 +703,6 @@ export async function publishDraftItem(id, actor = null) {
   return { ok: true, item: normalizeItem(next) }
 }
 
-/** Remove a post from the session catalog, Supabase, and storage. */
 export async function deleteCatalogItem(id, actor = null) {
   if (!id) return { ok: false, error: 'Missing id' }
   const raw = getImports().find((i) => i.id === id) || null
