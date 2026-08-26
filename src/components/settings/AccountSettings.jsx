@@ -37,11 +37,9 @@ export default function AccountSettings({ onNavigate }) {
   const [handle, setHandle] = useState(user?.handle || '')
   const [bio, setBio] = useState(user?.bio || '')
   const [avatarDraft, setAvatarDraft] = useState(null)
-  const [bannerDraft, setBannerDraft] = useState(null)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const avatarRef = useRef(null)
-  const bannerRef = useRef(null)
 
   useEffect(() => {
     setDisplayName(user?.displayName || '')
@@ -51,7 +49,6 @@ export default function AccountSettings({ onNavigate }) {
 
   const dirty = Boolean(
     avatarDraft
-    || bannerDraft
     || displayName !== (user?.displayName || '')
     || handle !== (user?.handle || '')
     || bio !== (user?.bio || '')
@@ -64,10 +61,9 @@ export default function AccountSettings({ onNavigate }) {
     try {
       await saveProfile(
         { displayName: displayName.trim(), handle, bio: bio.slice(0, 280) },
-        { avatar: avatarDraft, banner: bannerDraft },
+        { avatar: avatarDraft },
       )
       setAvatarDraft(null)
-      setBannerDraft(null)
     } catch (e) {
       setErr(e.message || 'Could not save.')
     } finally {
@@ -79,10 +75,9 @@ export default function AccountSettings({ onNavigate }) {
     if (!dirty || !user) return
     const t = setTimeout(() => { save() }, 600)
     return () => clearTimeout(t)
-  }, [dirty, displayName, handle, bio, avatarDraft, bannerDraft, user?.id])
+  }, [dirty, displayName, handle, bio, avatarDraft, user?.id])
 
   const avatarSrc = avatarDraft || user?.avatarUrl
-  const bannerSrc = bannerDraft || user?.bannerUrl
 
   return (
     <div className="space-y-8 pb-20">
@@ -94,34 +89,32 @@ export default function AccountSettings({ onNavigate }) {
       <SettingsSection title="Profile">
         <SettingsCard>
           <div className="space-y-4">
-            <div className="flex gap-4 items-start">
+            <div className="flex flex-col sm:flex-row gap-4 items-center sm:items-start">
               <button
                 type="button"
                 onClick={() => avatarRef.current?.click()}
-                className="relative h-20 w-20 rounded-full bg-[#121218] border border-zinc-800 overflow-hidden shrink-0"
+                className="relative h-28 w-28 rounded-full bg-[#121218] border border-zinc-800 overflow-hidden shrink-0"
                 title="Change profile picture"
               >
                 {avatarSrc ? <img src={avatarSrc} alt="" className="h-full w-full object-cover" /> : (
-                  <span className="flex h-full items-center justify-center text-white">{displayName?.[0]?.toUpperCase() || '?'}</span>
+                  <span className="flex h-full items-center justify-center text-2xl text-white">{displayName?.[0]?.toUpperCase() || '?'}</span>
                 )}
                 <span className="absolute inset-0 flex items-center justify-center bg-black/45 text-white">
                   <Camera className="h-5 w-5" />
                 </span>
               </button>
-              <button type="button" onClick={() => bannerRef.current?.click()} className="flex-1 h-20 rounded-xl bg-[#121218] border border-zinc-800 overflow-hidden relative">
-                {bannerSrc ? <img src={bannerSrc} alt="" className="h-full w-full object-cover" /> : <span className="text-xs text-zinc-500 flex items-center justify-center h-full">Banner</span>}
-                <span className="absolute inset-0 flex items-center justify-center bg-black/30 text-white text-xs">Change banner</span>
-              </button>
+              <div className="text-center sm:text-left pt-1">
+                <p className="text-sm text-white font-medium">Profile picture</p>
+                <p className="text-xs text-zinc-500 mt-1">Shown on your channel and posts. No banners.</p>
+                <button type="button" onClick={() => avatarRef.current?.click()} className="mt-2 text-xs text-zinc-300 underline">
+                  Change photo
+                </button>
+              </div>
             </div>
             <input ref={avatarRef} type="file" accept="image/*" className="hidden" onChange={(e) => {
               const f = e.target.files?.[0]
               e.target.value = ''
               readImage(f, 512, setAvatarDraft)
-            }} />
-            <input ref={bannerRef} type="file" accept="image/*" className="hidden" onChange={(e) => {
-              const f = e.target.files?.[0]
-              e.target.value = ''
-              readImage(f, 1280, setBannerDraft)
             }} />
             <SettingsInput
               label="Display name"

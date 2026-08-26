@@ -13,6 +13,7 @@ import { recordInteraction } from '../lib/algorithmEngine'
 import { resolvePlayback, PLAYBACK_SPEEDS, formatClock, isHttp } from '../lib/playback'
 import { parseEmbedUrl } from '../lib/videoEmbed'
 import { redirectSafeUrl, safeIframeSrc, safeMediaUrl } from '../lib/safeUrl'
+import { filterCss } from '../lib/streamFilters'
 import { copyShareUrl } from '../lib/routes'
 import { setPageMeta } from '../lib/pageMeta'
 import { useContentSyncTick } from '../lib/useContentSync'
@@ -615,6 +616,7 @@ export default function WatchPage({
                 onTimeUpdate={handleTimeUpdate}
                 onEnded={onEnded}
                 onError={tryNext}
+                style={filterCss(item?.filterId || item?.engagement?.filterId) ? { filter: filterCss(item?.filterId || item?.engagement?.filterId) } : undefined}
                 className="absolute inset-0 w-full h-full object-contain bg-transparent"
               />
             )}

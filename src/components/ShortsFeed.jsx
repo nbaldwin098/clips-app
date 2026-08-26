@@ -16,6 +16,7 @@ import ShortsStage, { ShortsCard } from './ShortsStage'
 import ShortsGrid from './ShortsGrid'
 import { preloadPostedItems } from '../lib/preloadMedia'
 import { useContentSyncTick } from '../lib/useContentSync'
+import { filterCss } from '../lib/streamFilters'
 
 function resolvePlayUrl(item) {
   return item?.mediaUrl || item?.sourceUrl || ''
@@ -258,6 +259,7 @@ function ClipSlide({
             ref={bindVideoRef}
             src={safeMediaUrl(videoSrc)}
             className="absolute inset-0 w-full h-full object-cover md:object-contain bg-black pointer-events-none"
+            style={filterCss(item.filterId || item.engagement?.filterId) ? { filter: filterCss(item.filterId || item.engagement?.filterId) } : undefined}
             playsInline
             loop
             muted={muted}
@@ -483,8 +485,10 @@ export default function ShortsFeed({
     preloadPostedItems(items.slice(from), inPlayer ? 3 : 2)
   }, [activeIdx, items, inPlayer])
 
-  const openClip = (id) => {
-    onNavigate?.('clips', { id })
+  const openClip = (itemOrId) => {
+    const id = typeof itemOrId === 'string' ? itemOrId : itemOrId?.id
+    if (!id) return
+    onNavigate?.('clips', id)
   }
 
   const backToGrid = () => {

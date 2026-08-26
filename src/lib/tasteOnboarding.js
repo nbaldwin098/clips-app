@@ -8,8 +8,9 @@ export const MEDIA_TOPICS = [
   'Music', 'Gaming', 'Sports', 'Comedy', 'Film', 'Art', 'Nature', 'Tech', 'Food', 'Education',
 ]
 
+/** Topic picker removed from home — always treated as done. */
 export function hasPickedTopics() {
-  return lsGet(KEY, false) === true
+  return true
 }
 
 export function seedTopicAffinity(userId, topics) {

@@ -1,16 +1,28 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { X, Upload, Loader2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { publishLocalMedia, getShortsFeed, getById } from '../lib/contentService'
-import { stashWatchItem } from '../lib/contentService'
+import { publishLocalMedia, stashWatchItem } from '../lib/contentService'
 import { canPost, postDeniedMessage } from '../lib/trustSafety'
+import { STREAM_FILTERS, filterCss } from '../lib/streamFilters'
+import { LIVE_CATEGORIES, mergeTags } from '../lib/mediaMeta'
+import { cn } from '../lib/utils'
+
+const VISIBILITY = [
+  { id: 'public', label: 'Public' },
+  { id: 'unlisted', label: 'Unlisted' },
+]
 
 export default function UploadModal({ open, onClose, onDone, initialKind = 'video' }) {
   const { user } = useAuth()
   const [kind, setKind] = useState(initialKind === 'short' ? 'short' : 'video')
   const [file, setFile] = useState(null)
+  const [previewUrl, setPreviewUrl] = useState('')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [category, setCategory] = useState('')
+  const [tagsText, setTagsText] = useState('')
+  const [filterId, setFilterId] = useState('none')
+  const [visibility, setVisibility] = useState('public')
   const [priceUsd, setPriceUsd] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
@@ -21,20 +33,42 @@ export default function UploadModal({ open, onClose, onDone, initialKind = 'vide
     if (!open) return
     setKind(initialKind === 'short' ? 'short' : 'video')
     setFile(null)
+    setPreviewUrl('')
     setTitle('')
     setDescription('')
+    setCategory('')
+    setTagsText('')
+    setFilterId('none')
+    setVisibility('public')
     setPriceUsd('')
     setErr('')
     setProgress('')
     setBusy(false)
   }, [open, initialKind])
 
+  useEffect(() => {
+    if (!file) {
+      setPreviewUrl('')
+      return undefined
+    }
+    const url = URL.createObjectURL(file)
+    setPreviewUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [file])
+
+  const previewFilter = useMemo(() => filterCss(filterId), [filterId])
+
   if (!open) return null
 
   const reset = () => {
     setFile(null)
+    setPreviewUrl('')
     setTitle('')
     setDescription('')
+    setCategory('')
+    setTagsText('')
+    setFilterId('none')
+    setVisibility('public')
     setPriceUsd('')
     setErr('')
     setProgress('')
@@ -68,12 +102,19 @@ export default function UploadModal({ open, onClose, onDone, initialKind = 'vide
     setErr('')
     setProgress('Uploading…')
     try {
+      const tagBits = [
+        ...String(tagsText || '').split(/[,#\s]+/).map((t) => t.trim()).filter(Boolean),
+        category ? String(category).toLowerCase().replace(/\s+/g, '-') : '',
+      ].filter(Boolean)
       const published = await publishLocalMedia(file, user, {
         type: kind === 'short' ? 'short' : 'video',
         title: title.trim() || undefined,
         description: description.trim() || undefined,
         status: 'published',
         priceUsd: priceUsd ? Number(priceUsd) : 0,
+        tags: mergeTags(tagBits, description),
+        filterId,
+        visibility,
       })
       if (!published.ok || !published.item) {
         setErr(published.error || "Couldn't upload. Try again.")
@@ -94,83 +135,185 @@ export default function UploadModal({ open, onClose, onDone, initialKind = 'vide
   }
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center bg-black/70 p-0 sm:p-4">
-      <div className="w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl border border-white/10 bg-[#111113] shadow-xl">
-        <div className="flex items-center justify-between px-4 h-12 border-b border-white/10">
-          <p className="text-sm font-semibold text-white">Upload</p>
-          <button type="button" aria-label="Close upload" onClick={() => { reset(); onClose() }} className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-zinc-800">
+    <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center bg-black/75 p-0 sm:p-4">
+      <div className="w-full sm:max-w-3xl max-h-[92dvh] overflow-hidden border border-zinc-800 bg-[#0a0a0e] shadow-xl flex flex-col">
+        <div className="flex items-center justify-between px-4 h-12 border-b border-zinc-800 shrink-0">
+          <p className="text-sm font-semibold text-white">
+            {kind === 'short' ? 'Upload clip' : 'Upload video'}
+          </p>
+          <button type="button" aria-label="Close upload" onClick={() => { reset(); onClose() }} className="h-8 w-8 flex items-center justify-center hover:bg-zinc-800">
             <X className="h-4 w-4 text-zinc-400" />
           </button>
         </div>
-        <div className="p-4 space-y-3">
-          <div className="flex gap-2">
-            <button type="button" onClick={() => setKind('short')} className={`flex-1 h-9 rounded-lg text-xs font-medium ${kind === 'short' ? 'bg-white text-black' : 'border border-zinc-700 text-zinc-400'}`}>Clip</button>
-            <button type="button" onClick={() => setKind('video')} className={`flex-1 h-9 rounded-lg text-xs font-medium ${kind === 'video' ? 'bg-white text-black' : 'border border-zinc-700 text-zinc-400'}`}>Video</button>
-          </div>
-          <p className="text-[11px] text-zinc-500">
-            {kind === 'short'
-              ? 'Clips: max 60 seconds. MP4 works best on phones.'
-              : 'Videos: max 24 hours.'}
-          </p>
 
-          <input
-            ref={inputRef}
-            type="file"
-            accept="video/mp4,video/quicktime,video/*"
-            className="hidden"
-            onChange={onPick}
-          />
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => inputRef.current?.click()}
-            className="w-full h-24 rounded-xl border border-dashed border-white/15 bg-black/40 flex flex-col items-center justify-center gap-2 text-zinc-400 hover:border-white/30"
-          >
-            <Upload className="h-6 w-6" />
-            <span className="text-xs">{file ? file.name : 'Choose video file'}</span>
-          </button>
-
-          <label className="block text-xs text-zinc-400">Title
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="mt-1 w-full h-10 rounded-lg bg-black border border-white/10 px-3 text-sm text-white"
-              maxLength={120}
-            />
-          </label>
-          <label className="block text-xs text-zinc-400">Description
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="mt-1 w-full min-h-[72px] rounded-lg bg-black border border-white/10 px-3 py-2 text-sm text-white resize-y"
-              maxLength={5000}
-            />
-          </label>
-          <label className="block text-xs text-zinc-400">Price (USD, optional paid post)
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={priceUsd}
-              onChange={(e) => setPriceUsd(e.target.value)}
-              placeholder="0 = free"
-              className="mt-1 w-full h-10 rounded-lg bg-black border border-white/10 px-3 text-sm text-white"
-            />
-          </label>
-
-          {err ? <p className="text-xs text-red-400">{err}</p> : null}
-          {progress ? (
-            <div className="flex items-center gap-2 text-xs text-zinc-400">
-              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-              {progress}
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="grid sm:grid-cols-2 gap-0">
+            {/* Preview + look filters */}
+            <div className="border-b sm:border-b-0 sm:border-r border-zinc-800 bg-black p-4 space-y-3">
+              <div className="aspect-[9/16] sm:aspect-video max-h-[42vh] mx-auto w-full bg-[#111] overflow-hidden flex items-center justify-center">
+                {previewUrl ? (
+                  <video
+                    src={previewUrl}
+                    className="h-full w-full object-contain"
+                    style={previewFilter ? { filter: previewFilter } : undefined}
+                    controls
+                    muted
+                    playsInline
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => inputRef.current?.click()}
+                    className="w-full h-full flex flex-col items-center justify-center gap-2 text-zinc-500 hover:text-zinc-300 border border-dashed border-zinc-700"
+                  >
+                    <Upload className="h-7 w-7" />
+                    <span className="text-xs">Select video file</span>
+                  </button>
+                )}
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-zinc-500 mb-2">Look filters</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {STREAM_FILTERS.map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => setFilterId(f.id)}
+                      className={cn(
+                        'h-8 px-2.5 text-[11px] font-medium border',
+                        filterId === f.id ? 'border-white text-white' : 'border-zinc-800 text-zinc-500 hover:text-zinc-300'
+                      )}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
-          ) : null}
 
+            {/* Details */}
+            <div className="p-4 space-y-3">
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setKind('short')} className={cn('flex-1 h-9 text-xs font-medium border', kind === 'short' ? 'bg-white text-black border-white' : 'border-zinc-800 text-zinc-400')}>Clip</button>
+                <button type="button" onClick={() => setKind('video')} className={cn('flex-1 h-9 text-xs font-medium border', kind === 'video' ? 'bg-white text-black border-white' : 'border-zinc-800 text-zinc-400')}>Video</button>
+              </div>
+              <p className="text-[11px] text-zinc-500">
+                {kind === 'short' ? 'Clips: max 60 seconds. MP4 works best.' : 'Videos: max 24 hours.'}
+              </p>
+
+              <input
+                ref={inputRef}
+                type="file"
+                accept="video/mp4,video/quicktime,video/*"
+                className="hidden"
+                onChange={onPick}
+              />
+              {file ? (
+                <button type="button" disabled={busy} onClick={() => inputRef.current?.click()} className="w-full h-9 border border-zinc-800 text-xs text-zinc-400 hover:text-white truncate px-3">
+                  {file.name}
+                </button>
+              ) : null}
+
+              <label className="block text-xs text-zinc-400">Title
+                <input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="mt-1 w-full h-10 bg-black border border-zinc-800 px-3 text-sm text-white"
+                  maxLength={120}
+                  placeholder="Add a title that describes your video"
+                />
+              </label>
+              <label className="block text-xs text-zinc-400">Description
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="mt-1 w-full min-h-[72px] bg-black border border-zinc-800 px-3 py-2 text-sm text-white resize-y"
+                  maxLength={5000}
+                  placeholder="Tell viewers about your video"
+                />
+              </label>
+
+              <div>
+                <p className="text-xs text-zinc-400 mb-1.5">Category</p>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setCategory('')}
+                    className={cn('h-7 px-2 text-[11px] border', !category ? 'border-white text-white' : 'border-zinc-800 text-zinc-500')}
+                  >
+                    None
+                  </button>
+                  {LIVE_CATEGORIES.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setCategory(c)}
+                      className={cn('h-7 px-2 text-[11px] border', category === c ? 'border-white text-white' : 'border-zinc-800 text-zinc-500')}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <label className="block text-xs text-zinc-400">Tags
+                <input
+                  value={tagsText}
+                  onChange={(e) => setTagsText(e.target.value)}
+                  className="mt-1 w-full h-10 bg-black border border-zinc-800 px-3 text-sm text-white"
+                  placeholder="gaming, funny, tutorial"
+                />
+              </label>
+
+              <div>
+                <p className="text-xs text-zinc-400 mb-1.5">Visibility</p>
+                <div className="flex gap-2">
+                  {VISIBILITY.map((v) => (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => setVisibility(v.id)}
+                      className={cn('flex-1 h-9 text-xs font-medium border', visibility === v.id ? 'border-white text-white' : 'border-zinc-800 text-zinc-500')}
+                    >
+                      {v.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <label className="block text-xs text-zinc-400">Price (USD, optional)
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={priceUsd}
+                  onChange={(e) => setPriceUsd(e.target.value)}
+                  placeholder="0 = free"
+                  className="mt-1 w-full h-10 bg-black border border-zinc-800 px-3 text-sm text-white"
+                />
+              </label>
+
+              {err ? <p className="text-xs text-red-400">{err}</p> : null}
+              {progress ? (
+                <div className="flex items-center gap-2 text-xs text-zinc-400">
+                  {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                  {progress}
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+
+        <div className="shrink-0 border-t border-zinc-800 px-4 py-3 flex justify-end gap-2">
+          <button type="button" onClick={() => { reset(); onClose() }} className="h-10 px-4 text-sm text-zinc-400 hover:text-white">
+            Cancel
+          </button>
           <button
             type="button"
             disabled={busy || !file}
             onClick={submit}
-            className="w-full h-11 rounded-xl bg-white text-black text-sm font-semibold disabled:opacity-40"
+            className="h-10 px-5 bg-white text-black text-sm font-semibold disabled:opacity-40"
           >
             {busy ? 'Uploading…' : 'Publish'}
           </button>

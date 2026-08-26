@@ -55,7 +55,6 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
   const tabItems = tab === 'pics' ? pics : tab === 'clips' ? clips : tab === 'playlists' || tab === 'live' ? [] : videos
   const displayName = found?.displayName || handle || 'Creator'
   const avatar = found?.avatarUrl || (isSelf ? user?.avatarUrl : null)
-  const banner = found?.bannerUrl || (isSelf ? user?.bannerUrl : null)
   const bio = found?.bio || (isSelf ? user?.bio : '') || ''
   const subs = resolvedId ? getSubscriberCount(resolvedId) : 0
   const official = isOfficialCreator(creatorId, handle)
@@ -77,16 +76,11 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
 
   return (
     <div className="max-w-[1280px] mx-auto pb-16">
-      <div className="relative mx-4 mt-4 h-40 sm:h-52 rounded-2xl overflow-hidden bg-[#272727]">
-        {banner ? <img src={banner} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" /> : (
-          <div className="h-full w-full bg-gradient-to-r from-[#1a1a1a] via-[#2a2a2a] to-[#3a3a3a]" />
-        )}
-      </div>
-      <div className="px-4 -mt-12 relative z-10 flex flex-wrap items-end gap-4">
-        <div className="rounded-full ring-4 ring-black">
-          <ChannelAvatar src={avatar} name={displayName} size={96} />
+      <div className="relative mx-4 mt-4 flex flex-col items-center sm:items-start gap-4 sm:flex-row sm:gap-6 pt-6 pb-2">
+        <div className="rounded-full ring-4 ring-black shrink-0">
+          <ChannelAvatar src={avatar} name={displayName} size={112} />
         </div>
-        <div className="flex-1 min-w-[160px] pb-1">
+        <div className="flex-1 min-w-[160px] text-center sm:text-left pb-1">
           <h1 className="text-2xl font-bold text-white inline-flex items-center gap-2">
             {displayName}
             {verified ? <VerifiedBadge className="h-4 w-4" title={official ? 'Official channel' : 'Verified'} /> : null}
@@ -111,7 +105,7 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
           )}
         </div>
       </div>
-      {bio && <p className="px-4 mt-4 text-sm text-zinc-400 max-w-2xl">{bio}</p>}
+      {bio && <p className="px-4 mt-2 text-sm text-zinc-400 max-w-2xl text-center sm:text-left">{bio}</p>}
       <div className="px-4 mt-6 flex gap-6 border-b border-[#272727]">
         {[
           { id: 'videos', label: 'Videos' },

@@ -37,14 +37,12 @@ export default function ChannelPage({ onNavigate }) {
   const [code, setCode] = useState('')
   const [price, setPrice] = useState(() => getMembershipPrice(user?.id))
   const [emotes, setEmotes] = useState(() => listEmotes(user?.id))
-  const bannerRef = useRef(null)
   const avatarRef = useRef(null)
 
   const [displayName, setDisplayName] = useState(user?.displayName || '')
   const [handle, setHandle] = useState(user?.handle || '')
   const [bio, setBio] = useState(user?.bio || '')
   const [avatarDraft, setAvatarDraft] = useState(null)
-  const [bannerDraft, setBannerDraft] = useState(null)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const [copied, setCopied] = useState(false)
@@ -57,7 +55,6 @@ export default function ChannelPage({ onNavigate }) {
 
   const dirty = Boolean(
     avatarDraft
-    || bannerDraft
     || displayName !== (user?.displayName || '')
     || handle !== (user?.handle || '')
     || bio !== (user?.bio || '')
@@ -70,11 +67,10 @@ export default function ChannelPage({ onNavigate }) {
     try {
       await saveProfile(
         { displayName: displayName.trim(), handle, bio: bio.slice(0, 280) },
-        { avatar: avatarDraft, banner: bannerDraft },
+        { avatar: avatarDraft },
       )
       if (user?.id) setPrice(setMembershipPrice(user.id, price))
       setAvatarDraft(null)
-      setBannerDraft(null)
     } catch (e) {
       setErr(e.message || 'Could not save.')
     } finally {
@@ -86,10 +82,9 @@ export default function ChannelPage({ onNavigate }) {
     if (!dirty || !user) return
     const t = setTimeout(() => { save() }, 600)
     return () => clearTimeout(t)
-  }, [dirty, displayName, handle, bio, avatarDraft, bannerDraft, price, user?.id])
+  }, [dirty, displayName, handle, bio, avatarDraft, price, user?.id])
 
   const avatarSrc = avatarDraft || user?.avatarUrl
-  const bannerSrc = bannerDraft || user?.bannerUrl
 
   const add = (e) => {
     e.preventDefault()
@@ -105,29 +100,11 @@ export default function ChannelPage({ onNavigate }) {
         <PageHeader title="Channel" onBack={() => onNavigate?.('home')} />
       </div>
 
-      <div className="relative mx-4 h-36 sm:h-44 rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800">
-        {bannerSrc ? <img src={bannerSrc} alt="" className="h-full w-full object-cover" /> : null}
-        <button
-          type="button"
-          onClick={() => bannerRef.current?.click()}
-          className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/35 transition-colors"
-        >
-          <span className="h-9 px-3 rounded-lg bg-black/70 border border-white/20 text-xs text-white flex items-center gap-1.5">
-            <Camera className="h-3.5 w-3.5" /> Change banner
-          </span>
-        </button>
-        <input ref={bannerRef} type="file" accept="image/*" className="hidden" onChange={(e) => {
-          const f = e.target.files?.[0]
-          e.target.value = ''
-          readImage(f, 1280, setBannerDraft)
-        }} />
-      </div>
-
-      <div className="px-4 sm:px-6 -mt-10 relative flex flex-col sm:flex-row sm:items-end gap-4">
+      <div className="px-4 sm:px-6 mt-4 relative flex flex-col sm:flex-row sm:items-end gap-4">
         <button
           type="button"
           onClick={() => avatarRef.current?.click()}
-          className="relative h-24 w-24 rounded-full border-4 border-black bg-[#121218] overflow-hidden shrink-0 group"
+          className="relative h-28 w-28 rounded-full border-4 border-black bg-[#121218] overflow-hidden shrink-0 group"
           title="Change profile picture"
         >
           {avatarSrc ? (
@@ -157,6 +134,7 @@ export default function ChannelPage({ onNavigate }) {
             {rank ? ` · Rank #${rank}` : ''}
             {user?.creatorStatus === 'approved' ? ' · Creator' : ''}
           </p>
+          <p className="text-[11px] text-zinc-600 mt-1">Tap the avatar to change your photo. No channel banners.</p>
           <button
             type="button"
             className="mt-2 h-8 px-3 rounded-lg bg-white text-black text-xs font-semibold"
