@@ -1,7 +1,7 @@
 /**
  * Sensitive payout destinations (bank routing/account, crypto addresses).
- * Details stay in a dedicated vault key — not echoed into public profile settings.
- * Cloud withdraw_methods stores a masked summary; full secrets remain in this vault + upsert details when cloud is available.
+ * Local vault caches for the session; cloud `payout_secrets` is SOT when signed in.
+ * withdraw_methods.details stays masked for display.
  */
 import { lsGet, lsSet } from './storage'
 
@@ -33,6 +33,9 @@ export function storePayoutSecret(creatorId, methodId, secret) {
   }
   all[creatorId] = row
   lsSet(VAULT_KEY, all)
+  queueMicrotask(() => {
+    pushPayoutSecretCloud(creatorId, methodId, secret).catch(() => {})
+  })
 }
 
 export function getPayoutSecret(creatorId, methodId) {
@@ -47,6 +50,74 @@ export function removePayoutSecret(creatorId, methodId) {
   delete row[methodId]
   all[creatorId] = row
   lsSet(VAULT_KEY, all)
+  queueMicrotask(() => {
+    removePayoutSecretCloud(creatorId, methodId).catch(() => {})
+  })
+}
+
+export async function pushPayoutSecretCloud(creatorId, methodId, secret) {
+  if (!creatorId || !methodId || !secret) return { ok: false }
+  try {
+    const { getSupabase, isSupabaseConfigured } = await import('./supabaseClient')
+    if (!isSupabaseConfigured()) return { ok: false, error: 'Cloud not configured.' }
+    const { getGraphActor } = await import('./graphSync')
+    const actor = getGraphActor()
+    if (!actor?.id || actor.id !== creatorId) return { ok: false, error: 'Wrong account.' }
+    const sb = await getSupabase()
+    if (!sb) return { ok: false }
+    const { error } = await sb.from('payout_secrets').upsert({
+      method_id: methodId,
+      creator_id: creatorId,
+      kind: secret.kind || 'paypal',
+      payload: secret,
+      updated_at: new Date().toISOString(),
+    })
+    if (error) return { ok: false, error: error.message }
+    return { ok: true }
+  } catch (err) {
+    return { ok: false, error: err?.message }
+  }
+}
+
+export async function removePayoutSecretCloud(creatorId, methodId) {
+  try {
+    const { getSupabase, isSupabaseConfigured } = await import('./supabaseClient')
+    if (!isSupabaseConfigured()) return { ok: false }
+    const { getGraphActor } = await import('./graphSync')
+    const actor = getGraphActor()
+    if (!actor?.id || actor.id !== creatorId) return { ok: false }
+    const sb = await getSupabase()
+    if (!sb) return { ok: false }
+    await sb.from('payout_secrets').delete().eq('method_id', methodId).eq('creator_id', creatorId)
+    return { ok: true }
+  } catch {
+    return { ok: false }
+  }
+}
+
+export async function pullPayoutSecretsCloud(creatorId) {
+  if (!creatorId) return { ok: false }
+  try {
+    const { getSupabase, isSupabaseConfigured } = await import('./supabaseClient')
+    if (!isSupabaseConfigured()) return { ok: false }
+    const { getGraphActor } = await import('./graphSync')
+    const actor = getGraphActor()
+    if (!actor?.id || actor.id !== creatorId) return { ok: false }
+    const sb = await getSupabase()
+    if (!sb) return { ok: false }
+    const { data, error } = await sb.from('payout_secrets').select('*').eq('creator_id', creatorId)
+    if (error) return { ok: false, error: error.message }
+    const all = vaultAll()
+    const row = all[creatorId] || {}
+    for (const r of data || []) {
+      row[r.method_id] = { ...(r.payload || {}), storedAt: r.updated_at || r.created_at }
+    }
+    all[creatorId] = row
+    lsSet(VAULT_KEY, all)
+    return { ok: true }
+  } catch (err) {
+    return { ok: false, error: err?.message }
+  }
 }
 
 export function buildMethodSummary(type, fields = {}) {

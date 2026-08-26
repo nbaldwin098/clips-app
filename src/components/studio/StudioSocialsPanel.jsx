@@ -15,6 +15,7 @@ import {
   setSocialShowOnProfile,
   queueSocialPost,
   listSocialJobs,
+  anySocialOAuthConfigured,
 } from '../../lib/socialConnects'
 import {
   SettingsCard,
@@ -176,7 +177,7 @@ export default function StudioSocialsPanel({ onNavigate }) {
 
       <SettingsNotice>
         <p>
-          Connects are saved on this device until live OAuth keys ship. Toggle Show on profile for each connected network.
+          Save handles and toggle Show on profile anytime. Posting out only works when OAuth client IDs are configured for that network — we do not fake a publish queue.
         </p>
       </SettingsNotice>
 
@@ -342,13 +343,18 @@ export default function StudioSocialsPanel({ onNavigate }) {
               </label>
 
               <div className="flex flex-wrap items-center gap-2">
-                <SettingsButton disabled={busy || !selectedProviders.length} onClick={onPost}>
-                  {busy ? 'Queueing…' : 'Post to selected'}
+                <SettingsButton disabled={busy || !selectedProviders.length || !anySocialOAuthConfigured()} onClick={onPost}>
+                  {busy ? 'Queueing…' : anySocialOAuthConfigured() ? 'Post to selected' : 'Publish APIs not connected'}
                 </SettingsButton>
                 <SettingsButton variant="ghost" onClick={() => onNavigate?.('calabi-studio', 'socials')}>
                   Open Calabi Studio
                 </SettingsButton>
               </div>
+              {!anySocialOAuthConfigured() ? (
+                <p className="text-xs text-zinc-500">
+                  Set VITE_OAUTH_*_CLIENT_ID env keys to enable real publish. Profile icons still work.
+                </p>
+              ) : null}
               {note ? <p className="text-xs text-amber-400">{note}</p> : null}
             </div>
           )}

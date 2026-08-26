@@ -58,7 +58,10 @@ export default function SubscriptionsPage({ onNavigate, onOpenAuth, onPlayItem, 
 
       {uploads.length === 0 ? (
         channels.length > 0 ? (
-          <p className="text-sm text-zinc-500 text-center py-10">People you follow have not posted on this device yet.</p>
+          <div className="rounded-2xl border border-zinc-800 bg-[#121218] px-6 py-12 text-center">
+            <p className="text-sm text-zinc-200">No public posts from people you follow yet</p>
+            <p className="mt-1 text-xs text-zinc-500">When they publish videos, clips, or pics, they show up here.</p>
+          </div>
         ) : null
       ) : (
         <MediaShelves items={uploads} onPlayItem={onPlayItem} onOpenPic={onOpenPic} />

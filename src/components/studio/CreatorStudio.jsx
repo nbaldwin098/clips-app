@@ -177,8 +177,8 @@ function VodsPanel({ user }) {
   const [demoCode, setDemoCode] = useState('')
   const linked = getLinkedVodAccount(user?.id)
 
-  const onSendCode = () => {
-    const res = startVodAccountLink(user?.id, linkEmail)
+  const onSendCode = async () => {
+    const res = await startVodAccountLink(user?.id, linkEmail)
     setLinkNote(res.message || res.error || '')
     setDemoCode(res.demoCode || '')
     bump((n) => n + 1)

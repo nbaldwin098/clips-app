@@ -4,6 +4,7 @@
 import { lsGet, lsSet } from './storage'
 import { listIndexedUsers } from './moderation'
 import { setVodChannel, vodChannelId } from './vods'
+import { sendVerificationCodeEmail } from './mail'
 
 const PENDING_KEY = 'calabi.vod.link.pending.v1'
 const LINKED_KEY = 'calabi.vod.linked.v1'
@@ -17,7 +18,7 @@ export function getLinkedVodAccount(ownerUserId) {
   return (lsGet(LINKED_KEY, {}) || {})[ownerUserId] || null
 }
 
-export function startVodAccountLink(ownerUserId, email) {
+export async function startVodAccountLink(ownerUserId, email) {
   const normalized = String(email || '').trim().toLowerCase()
   if (!ownerUserId) return { ok: false, error: 'Sign in required.' }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
@@ -42,13 +43,21 @@ export function startVodAccountLink(ownerUserId, email) {
     expiresAt: new Date(Date.now() + 15 * 60_000).toISOString(),
   }
   lsSet(PENDING_KEY, all)
-  // Dev/demo: code is returned so the creator can complete verify without mail infra.
+
+  const mailed = await sendVerificationCodeEmail({
+    to: normalized,
+    code,
+    purpose: 'vod-account-link',
+  })
+  if (!mailed.ok) {
+    return { ok: false, error: mailed.error || 'Could not send code.' }
+  }
   return {
     ok: true,
     email: normalized,
     targetHandle: match.handle || '',
-    demoCode: code,
-    message: `Code sent to ${normalized}. Enter it to link @${match.handle || 'account'}.`,
+    demoCode: mailed.demo ? code : '',
+    message: mailed.message || `Code sent to ${normalized}. Enter it to link @${match.handle || 'account'}.`,
   }
 }
 

@@ -74,6 +74,7 @@ export default function CollapsibleSidebar({
   focusedStreamUserId,
 }) {
   const collapsed = true // Icons-only forever — never expand the left rail
+  // width formula kept for layout contract: collapsed ? 'w-14' : 'w-60'
   const [moreOpen, setMoreOpen] = useState(false)
   const [liveNow, setLiveNow] = useState(() => (lsGet('live_board', []) || []).filter((b) => b.isLive))
   const [recommendedCreators, setRecommendedCreators] = useState(() => listSidebarCreators(8))

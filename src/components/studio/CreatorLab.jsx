@@ -14,6 +14,8 @@ import {
   Upload,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { startLiveLobby, stopLiveLobby, getMyLiveState } from '../../lib/liveLobby'
+import { liveIngestConnected, liveListingBlockedReason } from '../../lib/liveIngest'
 import {
   ASPECTS,
   LIVE_LAYOUTS,
@@ -500,6 +502,7 @@ function EditLab({ onOpenCreate }) {
  * OBS-like live mixer: camera + screen + layouts → canvas → local record / go live lobby.
  */
 function LiveLab({ onNavigate }) {
+  const { user } = useAuth()
   const canvasRef = useRef(null)
   const camVideoRef = useRef(null)
   const screenVideoRef = useRef(null)
@@ -520,8 +523,48 @@ function LiveLab({ onNavigate }) {
   const [recording, setRecording] = useState(false)
   const [recUrl, setRecUrl] = useState('')
   const [note, setNote] = useState('')
+  const [lobbyBusy, setLobbyBusy] = useState(false)
+  const [lobbyLive, setLobbyLive] = useState(() => !!getMyLiveState(user?.id)?.isLive)
   const [elapsed, setElapsed] = useState(0)
   const startedAtRef = useRef(0)
+
+  useEffect(() => {
+    setLobbyLive(!!getMyLiveState(user?.id)?.isLive)
+  }, [user?.id])
+
+  const toggleLobby = async () => {
+    if (!user?.id) {
+      setNote('Sign in to list a live lobby.')
+      return
+    }
+    setLobbyBusy(true)
+    setNote('')
+    try {
+      if (lobbyLive) {
+        const res = await stopLiveLobby(user)
+        if (res.ok) {
+          setLobbyLive(false)
+          setNote('Lobby ended. Session saved to VODs.')
+        } else {
+          setNote(res.error || 'Could not end lobby.')
+        }
+      } else {
+        const res = await startLiveLobby(user, { title: text || undefined })
+        if (res.ok) {
+          setLobbyLive(true)
+          setNote(
+            liveIngestConnected()
+              ? 'You are listed Live. Viewers can find you on the Live tab.'
+              : (liveListingBlockedReason() || 'Lobby listed. Share this browser window for viewers until RTMP ingest is connected.')
+          )
+        } else {
+          setNote(res.error || 'Could not start lobby.')
+        }
+      }
+    } finally {
+      setLobbyBusy(false)
+    }
+  }
 
   const aspect = ASPECTS.find((a) => a.id === aspectId) || ASPECTS[0]
 
@@ -898,12 +941,22 @@ function LiveLab({ onNavigate }) {
           )}
           <button
             type="button"
-            onClick={() => onNavigate?.('live')}
-            className="h-10 inline-flex items-center justify-center gap-1.5 border border-zinc-600 text-xs font-semibold text-white"
+            disabled={lobbyBusy}
+            onClick={toggleLobby}
+            className="h-10 inline-flex items-center justify-center gap-1.5 border border-zinc-600 text-xs font-semibold text-white disabled:opacity-50"
           >
-            Go live lobby
+            <Radio className="h-3.5 w-3.5" /> {lobbyLive ? 'End lobby' : 'Go live lobby'}
           </button>
         </div>
+        {lobbyLive ? (
+          <button
+            type="button"
+            onClick={() => onNavigate?.('live')}
+            className="text-center text-xs text-zinc-400 underline"
+          >
+            Open Live tab
+          </button>
+        ) : null}
         {recUrl ? (
           <a href={recUrl} download className="block text-center text-xs text-zinc-400 underline">
             Download recording again
