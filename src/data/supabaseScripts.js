@@ -1,3 +1,7 @@
+import videosTable from '../../supabase/migrations/0001_videos_table.sql?raw'
+import watchProgress from '../../supabase/migrations/0002_watch_progress_table.sql?raw'
+import clipsStorage from '../../supabase/migrations/0003_clips_storage_bucket.sql?raw'
+import profiles from '../../supabase/migrations/0004_profiles.sql?raw'
 import sitePromos from '../../supabase/migrations/0005_site_promos.sql?raw'
 import socialGraph from '../../supabase/migrations/0006_social_graph.sql?raw'
 import purgeDead from '../../supabase/migrations/0007_purge_dead_media.sql?raw'
@@ -14,7 +18,32 @@ import globalLiveChat from '../../supabase/migrations/0017_global_live_chat.sql?
 import supportMarketplace from '../../supabase/migrations/0018_support_marketplace.sql?raw'
 import siteNews from '../../supabase/migrations/0019_site_news.sql?raw'
 
+/** Run in order. 0001–0004 are required before anything that references profiles. */
 export const SETUP_SCRIPTS = [
+  {
+    id: '0001',
+    title: 'Videos / clips / pics catalog (required first)',
+    file: '0001_videos_table.sql',
+    sql: String(videosTable || ''),
+  },
+  {
+    id: '0002',
+    title: 'Watch progress (cross-device resume)',
+    file: '0002_watch_progress_table.sql',
+    sql: String(watchProgress || ''),
+  },
+  {
+    id: '0003',
+    title: 'Storage bucket "clips" (uploads)',
+    file: '0003_clips_storage_bucket.sql',
+    sql: String(clipsStorage || ''),
+  },
+  {
+    id: '0004',
+    title: 'Profiles table (required — fixes "profiles does not exist")',
+    file: '0004_profiles.sql',
+    sql: String(profiles || ''),
+  },
   {
     id: '0005',
     title: 'Site banners',

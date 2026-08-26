@@ -54,6 +54,15 @@ export default function AdminSetup() {
           </a>
           , paste one script, then Run. Do not type the file name into the box.
         </p>
+        <p className="text-xs text-amber-400/90">
+          Start with <strong className="text-amber-300">0001 → 0004</strong> if you have never set up this project.
+          Error <code className="text-amber-200">42P01 … profiles does not exist</code> means 0004 was skipped — run 0004, then re-run the script that failed (e.g. 0019 News).
+        </p>
+        <p className="text-xs text-zinc-500">
+          After 0004, promote yourself once (replace the UUID with Authentication → Users → your id):
+          {' '}
+          <code className="text-zinc-400">update public.profiles set role = &apos;admin&apos;, creator_status = &apos;approved&apos; where id = &apos;YOUR-UUID&apos;;</code>
+        </p>
         <p className="text-xs text-zinc-500">
           0010 turns off the named-account like/watch job. The 467 people accounts still exist for sign-in. Run 0010 in the SQL editor if 0009 already scheduled that job.
         </p>
