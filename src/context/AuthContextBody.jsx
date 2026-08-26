@@ -311,7 +311,7 @@ export function AuthProvider({ children }) {
       throw new Error(
         sanitizeAuthError(
           hint
-            || 'Wrong email or password. Use your cloud password for cs1@calabi.us (or your linked Gmail).',
+            || 'Wrong email or password. Use your cloud password for cs1@calabi.us.',
         ),
       )
     }

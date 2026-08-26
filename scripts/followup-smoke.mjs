@@ -12,7 +12,7 @@ const org = readFileSync('src/lib/orgConfig.js', 'utf8')
 const liveAds = readFileSync('src/lib/liveAds.js', 'utf8')
 
 assert.match(org, /productName: 'calabi'/)
-assert.match(adEngine, /Ads system removed/)
+assert.match(adEngine, /ADSENSE_KEEP_STREAM_PIP|getAdSenseClientId/)
 assert.match(vastAds, /VAST ads removed/)
 assert.doesNotMatch(watchPage, /useVideoVastAds/)
 assert.doesNotMatch(watchPage, /VideoInStreamAd/)

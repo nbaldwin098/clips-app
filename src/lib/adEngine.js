@@ -1,11 +1,34 @@
-/** Ads system removed from calabi — AdSense return planned.
- * When ads return: keep a tiny PiP of the creator stream visible during the ad,
- * then restore full-size playback when the ad ends.
+/** AdSense bootstrap — units place later. ExoClick/VAST removed.
+ * When display ads run: keep a tiny PiP of the creator stream, then restore full size.
  */
+
 export const ADSENSE_KEEP_STREAM_PIP = true
+
+/** Publisher client id from env (ca-pub-…). Empty = AdSense script not loaded. */
+export function getAdSenseClientId() {
+  let raw = ''
+  try {
+    raw = String(
+      (typeof process !== 'undefined' && (process.env.NEXT_PUBLIC_ADSENSE_CLIENT || process.env.VITE_ADSENSE_CLIENT))
+      || '',
+    ).trim()
+  } catch {}
+  try {
+    if (!raw && typeof import.meta !== 'undefined' && import.meta.env) {
+      raw = String(import.meta.env.VITE_ADSENSE_CLIENT || import.meta.env.NEXT_PUBLIC_ADSENSE_CLIENT || '').trim()
+    }
+  } catch {}
+  if (/^ca-pub-\d{10,20}$/.test(raw)) return raw
+  return ''
+}
+
+export function adsenseEnabled() {
+  return !!getAdSenseClientId()
+}
+
 export const AD_PLACEMENTS = []
 export const ALL_PLACEMENTS = []
-export function adsAreRunning() { return false }
+export function adsAreRunning() { return adsenseEnabled() }
 export function mixFeedAds(items) {
   return (items || []).map((item) => ({ kind: 'item', item, key: item?.id }))
 }
@@ -28,7 +51,9 @@ export function listAdApplications() { return [] }
 export function submitAdApplication() { return { ok: false } }
 export function approveAdApplication() { return null }
 export function rejectAdApplication() { return null }
-export function getAdSettings() { return { keepStreamPip: ADSENSE_KEEP_STREAM_PIP } }
+export function getAdSettings() {
+  return { keepStreamPip: ADSENSE_KEEP_STREAM_PIP, clientId: getAdSenseClientId() }
+}
 export function setAdSettings() { return {} }
 export function campaignPlacements() { return [] }
 export function advertiserLogin() { return { ok: false, error: 'Ads removed.' } }
