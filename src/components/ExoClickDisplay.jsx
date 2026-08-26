@@ -1,176 +1,39 @@
-import { useEffect, useRef, useState } from 'react'
-import { AD_ZONES, AD_PROVIDER_SCRIPT, displayZone, isDisplayZone } from '../lib/adZones'
-import { queueExoClickServe, resurfaceExoClickInContainer } from '../lib/exoClickServe'
+/**
+ * Display/banner ads are retired (VAST-only stack).
+ * This module stays import-safe so old call sites do not crash the app.
+ */
+import { useEffect } from 'react'
+import { AD_PROVIDER_SCRIPT } from '../lib/adZones'
 
 export const EXOCLICK_AD_SCRIPT = AD_PROVIDER_SCRIPT
-export const EXOCLICK_BANNER_ZONE = AD_ZONES.banner.id
-export const EXOCLICK_BANNER_CLASS = AD_ZONES.banner.insClass
+export const EXOCLICK_BANNER_ZONE = ''
+export const EXOCLICK_BANNER_CLASS = ''
 
-/** Poll for a fill, then give up and collapse the slot. */
-const FILL_POLL_MS = 300
-const FILL_TIMEOUT_MS = 2500
-const FILL_RETRY_MS = 900
-const BANNER_FILL_TIMEOUT_MS = 6000
+export const FILL_TIMEOUT_MS = 2500
+export const FILL_RETRY_MS = 900
+export const BANNER_FILL_TIMEOUT_MS = 6000
 
 export { ensureExoClickScript } from '../lib/exoClickServe'
 
-/**
- * ExoClick usually injects a sibling <div> next to <ins>, but some creatives
- * land inside the <ins>. Treat either as a fill — missing that is why ads
- * were skipped as "empty" even when they were on screen.
- */
-export function slotHasAd(container) {
-  if (!container) return false
-  if (container.querySelector('iframe, img, video, a[href], canvas, object, embed')) return true
-  for (const child of container.children) {
-    if (child.dataset?.adLabel === 'true') continue
-    if (child.tagName === 'INS') {
-      if (child.children.length > 0) return true
-      if (child.offsetWidth > 8 && child.offsetHeight > 20) return true
-      continue
-    }
-    const rect = child.getBoundingClientRect()
-    if (rect.width > 8 && rect.height > 8) return true
-  }
+export function slotHasAd() {
   return false
 }
 
-function stopClick(e) {
-  e.stopPropagation()
-}
-
-/**
- * One ExoClick display unit at its native size. The parent letterboxes
- * around it — we never stretch an <ins> into a 9:16 or 16:9 frame.
- *
- * `touch-pan-y` so a clip/pic reel can keep scrolling through the slot.
- * Clicks still hit the creative; we only stop click bubbling, not pointerdown.
- */
-export default function ExoClickDisplay({
-  zoneId,
-  insClass,
-  className = '',
-  active = true,
-  onFill,
-  fillTimeoutMs,
-  fillFrame = false,
-}) {
-  const zone = zoneId && isDisplayZone(zoneId) ? String(zoneId) : displayZone().id
-  const badZone = Boolean(zoneId && !isDisplayZone(zoneId))
-  const containerRef = useRef(null)
-  const insRef = useRef(null)
-  const onFillRef = useRef(onFill)
-  onFillRef.current = onFill
-  const timeoutMs = Number(fillTimeoutMs) > 0 ? Number(fillTimeoutMs) : FILL_TIMEOUT_MS
-  const [state, setState] = useState('pending') // pending | filled | empty
-
+/** No-op: banners removed. Notifies parent of empty fill. */
+export default function ExoClickDisplay({ active = true, onFill, className = '' }) {
   useEffect(() => {
-    if (!active || badZone) return undefined
-    let cancelled = false
-    let poll = 0
-    let retryTimer = 0
-    let started = 0
-
-    const markFilled = () => {
-      window.clearInterval(poll)
-      window.clearTimeout(retryTimer)
-      setState('filled')
-      onFillRef.current?.(true)
-    }
-
-    const markEmpty = () => {
-      window.clearInterval(poll)
-      window.clearTimeout(retryTimer)
-      setState('empty')
-      onFillRef.current?.(false)
-    }
-
-    const requestFill = () => resurfaceExoClickInContainer(containerRef.current)
-
-    const ins = insRef.current
-    if (ins) delete ins.dataset.exoQueued
-    setState('pending')
-
-    requestFill().then((ok) => {
-      if (cancelled) return
-      if (!ok) {
-        markEmpty()
-        return
-      }
-      started = Date.now()
-      poll = window.setInterval(() => {
-        if (cancelled) return
-        if (slotHasAd(containerRef.current)) {
-          markFilled()
-          return
-        }
-        if (Date.now() - started >= timeoutMs) {
-          markEmpty()
-        }
-      }, FILL_POLL_MS)
-
-      retryTimer = window.setTimeout(() => {
-        if (cancelled || slotHasAd(containerRef.current)) return
-        requestFill()
-      }, FILL_RETRY_MS)
-    })
-
-    return () => {
-      cancelled = true
-      if (poll) window.clearInterval(poll)
-      if (retryTimer) window.clearTimeout(retryTimer)
-    }
-  }, [zone, active, badZone, timeoutMs])
-
-  if (badZone) {
-    if (import.meta.env?.DEV) {
-      console.warn(`[ads] zone ${zoneId} is not a display zone — see src/lib/adZones.js`)
-    }
-    return null
-  }
-  if (state === 'empty') {
-    if (fillFrame) return null
-    return (
-      <div
-        className={`exo-slot pointer-events-none min-h-[90px] w-full rounded-md bg-[#141414] ${className}`}
-        aria-hidden="true"
-      />
-    )
-  }
+    if (!active) return undefined
+    onFill?.(false)
+    return undefined
+  }, [active, onFill])
 
   return (
     <div
-      ref={containerRef}
-      data-fill-frame={fillFrame ? 'true' : undefined}
-      className={`exo-slot pointer-events-auto relative flex w-full items-center justify-center overflow-hidden touch-pan-y touch-manipulation ${
-        fillFrame ? 'h-full min-h-0 [&_iframe]:max-h-full [&_iframe]:max-w-full [&_img]:max-h-full [&_img]:max-w-full [&_a]:max-h-full [&_a]:max-w-full' : ''
-      } ${
-        state === 'filled' ? 'bg-[#111]' : 'bg-[#1a1a1a]'
-      } ${className}`}
-      onClick={stopClick}
-    >
-      {state === 'filled' || state === 'pending' ? (
-        <span
-          data-ad-label="true"
-          className="pointer-events-none absolute left-1.5 top-1.5 z-10 rounded bg-black/70 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white"
-        >
-          Ad
-        </span>
-      ) : null}
-      <ins
-        ref={insRef}
-        className={insClass || AD_ZONES.banner.insClass}
-        data-zoneid={zone}
-        style={{
-          display: 'inline-block',
-          maxWidth: '100%',
-          pointerEvents: 'auto',
-          ...(fillFrame ? { width: '100%', height: '100%', maxHeight: '100%' } : {}),
-        }}
-      />
-    </div>
+      className={`exo-slot pointer-events-none min-h-0 w-full ${className}`}
+      data-ad-retired="banner"
+      aria-hidden="true"
+    />
   )
 }
 
 export { clipBannerAllowed } from '../lib/adEngine'
-export { BANNER_FILL_TIMEOUT_MS, FILL_TIMEOUT_MS, FILL_RETRY_MS }

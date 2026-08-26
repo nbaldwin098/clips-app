@@ -1,20 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowUpRight, SkipForward } from 'lucide-react'
-import { getActiveAd, getVideoAdDurationSec, getVideoSkipAfterSec, placementAdsAllowed, recordAdClick, recordAdImpression } from '../lib/adEngine'
+import { getActiveAd, getVideoAdDurationSec, getVideoSkipAfterSec, recordAdClick, recordAdImpression } from '../lib/adEngine'
 import { getAdViewerId } from '../lib/adPrefs'
 import { openSafeUrl, safeHttpUrl } from '../lib/safeUrl'
-import ExoClickDisplay, { BANNER_FILL_TIMEOUT_MS } from './ExoClickDisplay'
+import { loadExoClickVast } from '../lib/vastAds'
+import VideoInStreamAd from './VideoInStreamAd'
 
+/** Campaign-only strip — no ExoClick banner/display. */
 export function PlacementBanner({ placement, itemId }) {
   const viewerId = getAdViewerId()
   const campaign = useMemo(() => getActiveAd(placement, viewerId), [placement, itemId, viewerId])
   if (campaign) return <AdBanner ad={campaign} />
-  if (!placementAdsAllowed(placement, viewerId)) return null
-  return (
-    <div className="pointer-events-auto w-full" onClick={(e) => e.stopPropagation()}>
-      <ExoClickDisplay className="min-h-[90px]" />
-    </div>
-  )
+  return null
 }
 
 function creativeImage(ad) {
@@ -66,28 +63,64 @@ export default function AdBanner({ ad }) {
 }
 
 /**
- * One in-feed scroll slot — fills the same ShortsCard frame as a clip or pic.
- * Clips and pics share the ExoClick display zone.
+ * In-feed scroll slot — feed VAST (no banner/display).
  */
 export function InFeedAd({ ad, variant = 'clip', active = true, onFill }) {
   if (ad?.provider === 'exoclick') {
+    return <FeedVastSlide active={active} onFill={onFill} />
+  }
+  return <CampaignInFeedAd ad={ad} variant={variant} />
+}
+
+function FeedVastSlide({ active = true, onFill }) {
+  const [creative, setCreative] = useState(null)
+  const [tried, setTried] = useState(false)
+  const onFillRef = useRef(onFill)
+  onFillRef.current = onFill
+
+  useEffect(() => {
+    if (!active) return undefined
+    let cancelled = false
+    setTried(false)
+    setCreative(null)
+    loadExoClickVast({ kind: 'feed', attempts: 3 }).then((parsed) => {
+      if (cancelled) return
+      setTried(true)
+      if (parsed?.mediaUrl) {
+        setCreative(parsed)
+        onFillRef.current?.(true)
+      } else {
+        onFillRef.current?.(false)
+      }
+    }).catch(() => {
+      if (cancelled) return
+      setTried(true)
+      onFillRef.current?.(false)
+    })
+    return () => { cancelled = true }
+  }, [active])
+
+  if (!active) return null
+  if (tried && !creative) return null
+  if (!creative) {
     return (
-      <div
-        className="absolute inset-0 bg-black touch-pan-y touch-manipulation"
-        data-ad-slide=""
-        onClick={(e) => e.stopPropagation()}
-      >
-        <ExoClickDisplay
-          active={active}
-          className="h-full w-full min-h-0"
-          fillFrame
-          fillTimeoutMs={BANNER_FILL_TIMEOUT_MS}
-          onFill={onFill}
-        />
+      <div className="absolute inset-0 bg-black flex items-center justify-center" data-ad-slide="">
+        <span className="text-[10px] uppercase tracking-wider text-zinc-500">Ad</span>
       </div>
     )
   }
-  return <CampaignInFeedAd ad={ad} variant={variant} />
+  return (
+    <div className="absolute inset-0 bg-black touch-pan-y" data-ad-slide="" onClick={(e) => e.stopPropagation()}>
+      <VideoInStreamAd
+        creative={creative}
+        slot="feed"
+        onDone={() => {
+          setCreative(null)
+          onFillRef.current?.(false)
+        }}
+      />
+    </div>
+  )
 }
 
 function CampaignInFeedAd({ ad, variant = 'clip' }) {
@@ -142,7 +175,7 @@ function CampaignInFeedAd({ ad, variant = 'clip' }) {
   )
 }
 
-/** Skippable preroll covering the video until skip or the ad ends. */
+/** Skippable campaign preroll covering the video until skip or the ad ends. */
 export function VideoPreroll({ ad, onSkip, onComplete }) {
   const skipAfter = getVideoSkipAfterSec(ad)
   const duration = getVideoAdDurationSec(ad)
