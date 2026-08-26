@@ -1,4 +1,5 @@
 import { safeHttpUrl, safeMediaUrl } from './safeUrl'
+import { warmVastTag } from './vastAds'
 
 const warmed = new Set()
 const preloadLinks = new Set()
@@ -54,7 +55,7 @@ export function preloadPostedItem(item) {
   preloadMediaUrl(item.mediaUrl || item.sourceUrl, 'video')
 }
 
-export function preloadPostedItems(list, limit = 3) {
+export function preloadPostedItems(list, limit = 4) {
   const rows = Array.isArray(list) ? list : []
   let n = 0
   for (const row of rows) {
@@ -64,4 +65,21 @@ export function preloadPostedItems(list, limit = 3) {
     n += 1
     if (n >= limit) break
   }
+}
+
+/** Warm content ahead in a mixed reel and prefetch the matching VAST tag. */
+export function preloadReelAhead(mixed, fromIndex = 0, count = 3) {
+  const rows = Array.isArray(mixed) ? mixed : []
+  const slice = rows.slice(Math.max(0, fromIndex), Math.max(0, fromIndex) + count + 2)
+  preloadPostedItems(slice, count)
+  const hasAd = slice.some((r) => r?.kind === 'ad')
+  if (hasAd) warmVastTag('feed')
+}
+
+export function warmAdsForSurface(surface = 'video') {
+  if (surface === 'feed' || surface === 'clips' || surface === 'pics') warmVastTag('feed')
+  else if (surface === 'live') {
+    warmVastTag('video')
+    warmVastTag('live-creator')
+  } else warmVastTag('video')
 }
