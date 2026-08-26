@@ -10,14 +10,14 @@ const APPS_KEY = 'creator_applications'
 const TICKETS_KEY = 'support_tickets'
 const USERS_INDEX = 'users_index'
 
-export const PLATFORM_OWNER_HANDLE = 'cs1'
+export const PLATFORM_OWNER_HANDLE = 'kiddnixk'
 const ADMIN_SESSION_MS = 8 * 60 * 60 * 1000
 
 const RESERVED = new Set([
   'admin', 'administrator', 'clips', 'support', 'help', 'official', 'youtube',
   'twitch', 'settings', 'login', 'signup', 'api', 'www', 'root', 'null', 'undefined',
   'mod', 'moderator', 'staff', 'system', 'about', 'terms', 'privacy', 'copyright',
-  'cs1',
+  'kiddnixk', 'cs1',
 ])
 
 export function normalizeHandle(raw) {
@@ -66,7 +66,7 @@ export function getAdminCode() {
   return runtimeEnv('VITE_ADMIN_CODE')
 }
 
-/** Owner is a cloud user whose email/handle matches CS1 aliases, or VITE_PLATFORM_OWNER_ID. */
+/** Owner is a cloud user whose email/handle matches kiddnixk aliases, or VITE_PLATFORM_OWNER_ID. */
 export function isPlatformOwner(user) {
   if (!user) return false
   if (isOwnerAccount(user)) return true
@@ -90,7 +90,7 @@ export function isAdminSession(user) {
 
 export async function adminLogin(code, user) {
   if (!user) {
-    return { ok: false, error: 'Sign in as cs1 first.' }
+    return { ok: false, error: 'Sign in as kiddnixk first.' }
   }
   if (!isPlatformOwner(user)) {
     return { ok: false, error: 'Admin is only available for the platform owner account.' }
