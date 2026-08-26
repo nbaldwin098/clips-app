@@ -8,7 +8,6 @@ import { recordView } from '../lib/engagement'
 import { recordInteraction } from '../lib/algorithmEngine'
 import { useContentSyncTick } from '../lib/useContentSync'
 import { subscribeContentUpdates } from '../lib/contentSync'
-import { deleteCatalogItem } from '../lib/contentService'
 import { getMediaBlobUrl } from '../lib/videoStorage'
 import { copyShareUrl, replaceHash } from '../lib/routes'
 import ShortsStage, { ShortsCard } from './ShortsStage'
@@ -391,10 +390,10 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
 
   const refresh = useCallback(() => setItems(getPicsFeed()), [])
   const dropBroken = useCallback((id) => {
+    // Session hide only — never delete cloud catalog from a decode/CDN error.
     hideBrokenMedia(id)
-    deleteCatalogItem(id, user).catch(() => {})
     refresh()
-  }, [user, refresh])
+  }, [refresh])
 
   useEffect(() => subscribeContentUpdates(refresh), [refresh])
   useEffect(() => {

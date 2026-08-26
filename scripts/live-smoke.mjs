@@ -582,6 +582,12 @@ assert(creatorsSrc.includes('listSidebarCreators'), 'creators page ranks people 
 
 const healthSrc = readFileSync(new URL('../src/lib/catalogHealth.js', import.meta.url), 'utf8')
 assert(healthSrc.includes('purgeDeadCatalog'), 'dead pics and sample clips are purged')
+assert(healthSrc.includes('isUserUploadRecord'), 'catalog health protects user uploads')
+assert(healthSrc.includes('hosted === true') || healthSrc.includes('row.hosted'), 'hideBrokenMedia keeps hosted uploads')
+const picsWipe = readFileSync(new URL('../src/components/PicsPage.jsx', import.meta.url), 'utf8')
+assert(!/dropBroken[\s\S]{0,200}deleteCatalogItem/.test(picsWipe), 'pics media errors must not cloud-delete posts')
+assert(picsWipe.includes('hideBrokenMedia'), 'pics still hides broken tiles locally')
+assert(readFileSync(new URL('../src/lib/contentSync.js', import.meta.url), 'utf8').includes('unhideBrokenMedia'), 'cloud sync clears false broken hides')
 
 const purgeSql = readFileSync(new URL('../supabase/migrations/0007_purge_dead_media.sql', import.meta.url), 'utf8')
 assert(purgeSql.includes("type = 'pic'"), 'sql removes unplayable pics')

@@ -9,7 +9,7 @@
 import { replaceImportsFromCloud, removeImport, purgeLegacyLocalCatalog, getImports } from './storage'
 import { isUserUploadRecord, stampFirstPublished, olderIso } from './mediaMeta'
 import { getSupabase, isSupabaseConfigured } from './supabaseClient'
-import { isFeedable, isReferenceItem, hasStableImage, purgeDeadCatalog } from './catalogHealth'
+import { isFeedable, isReferenceItem, hasStableImage, purgeDeadCatalog, unhideBrokenMedia } from './catalogHealth'
 import { clearFrozenFeeds } from './frozenFeeds'
 import { markCatalogHydrated } from './catalogStore'
 
@@ -287,6 +287,8 @@ export async function syncContentFromCloud(actor = null) {
       }
       return { ...row, firstPublishedAt: prev.firstPublishedAt }
     }))
+    // Cloud truth wins — clear false "broken" hides so posts reappear after sync.
+    unhideBrokenMedia(rows.map((r) => r.id))
   } else {
     // Empty/failed pull must not wipe, but the UI needs a hydrated signal.
     markCatalogHydrated()
