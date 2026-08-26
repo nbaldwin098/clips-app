@@ -140,8 +140,10 @@ export default function StudioRealtimeAnalytics({
   refreshing = false,
   onRefresh,
   tick = 0,
+  untilMs = null,
+  forcePostTab = false,
 }) {
-  const [tab, setTab] = useState(selectedPost ? 'post' : 'channel')
+  const [tab, setTab] = useState(selectedPost || forcePostTab ? 'post' : 'channel')
   const [clock, setClock] = useState(() => Date.now())
 
   useEffect(() => {
@@ -150,16 +152,26 @@ export default function StudioRealtimeAnalytics({
   }, [])
 
   useEffect(() => {
-    if (selectedPost) setTab('post')
-  }, [selectedPost?.id])
+    if (selectedPost || forcePostTab) setTab('post')
+  }, [selectedPost?.id, forcePostTab])
+
+  const postSince = selectedPost
+    ? Date.parse(selectedPost.createdAt || selectedPost.publishedAt || selectedPost.importedAt || '') || null
+    : null
 
   const channel = useMemo(
     () => channelAnalyticsSnapshot(creatorId, posts, { range }),
     [creatorId, posts, range, tick, clock]
   )
   const postSnap = useMemo(
-    () => (selectedPost ? postAnalyticsSnapshot(creatorId, selectedPost, { range }) : null),
-    [creatorId, selectedPost, range, tick, clock]
+    () => (selectedPost
+      ? postAnalyticsSnapshot(creatorId, selectedPost, {
+          range: 'all',
+          untilMs,
+          sinceMs: postSince || undefined,
+        })
+      : null),
+    [creatorId, selectedPost, untilMs, postSince, tick, clock]
   )
   const postRows = useMemo(
     () => listPostAnalyticsRows(creatorId, posts, { range: 'all' }),
@@ -191,7 +203,9 @@ export default function StudioRealtimeAnalytics({
             <LiveDot on={!refreshing} />
           </div>
           <p className="text-[11px] text-zinc-500">
-            Real-time channel + per-post · cloud-backed views, likes, follows, comments
+            {forcePostTab
+              ? 'Stats for the selected post — matches the bubble and time slider above'
+              : 'Real-time channel + per-post · cloud-backed views, likes, follows, comments'}
           </p>
         </div>
         <div className="flex items-center gap-0.5 border border-zinc-800 p-0.5">
@@ -221,6 +235,7 @@ export default function StudioRealtimeAnalytics({
         ) : null}
       </div>
 
+      {!forcePostTab ? (
       <div className="shrink-0 flex gap-4 px-3 border-b border-zinc-800">
         {[
           { id: 'channel', label: 'Channel' },
@@ -242,9 +257,10 @@ export default function StudioRealtimeAnalytics({
           </button>
         ))}
       </div>
+      ) : null}
 
       <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3">
-        {tab === 'channel' ? (
+        {tab === 'channel' && !forcePostTab ? (
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               <Kpi label="Unique viewers" value={formatCount(channel.views)} hint="All posts" />
@@ -303,7 +319,7 @@ export default function StudioRealtimeAnalytics({
           </>
         ) : null}
 
-        {tab === 'post' && postSnap ? (
+        {(tab === 'post' || forcePostTab) && postSnap ? (
           <>
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
@@ -313,13 +329,15 @@ export default function StudioRealtimeAnalytics({
                   Posted {formatPostedAt(postedAtOf(selectedPost)) || '—'}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => onSelectPost?.(null)}
-                className="text-[11px] text-zinc-400 hover:text-white shrink-0"
-              >
-                Clear
-              </button>
+              {!forcePostTab ? (
+                <button
+                  type="button"
+                  onClick={() => onSelectPost?.(null)}
+                  className="text-[11px] text-zinc-400 hover:text-white shrink-0"
+                >
+                  Clear
+                </button>
+              ) : null}
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -369,13 +387,13 @@ export default function StudioRealtimeAnalytics({
           </>
         ) : null}
 
-        {tab === 'post' && !postSnap ? (
+        {(tab === 'post' || forcePostTab) && !postSnap ? (
           <p className="text-sm text-zinc-500 py-8 text-center">
-            Select a post in the left list to open its analytics.
+            Select a post in Your posts to open its analytics.
           </p>
         ) : null}
 
-        {tab === 'posts' ? (
+        {tab === 'posts' && !forcePostTab ? (
           <div className="rounded-xl border border-zinc-800 overflow-hidden">
             <table className="w-full text-left text-xs">
               <thead className="bg-[#0a0a0e] text-zinc-500 border-b border-zinc-800">

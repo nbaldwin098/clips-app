@@ -307,17 +307,32 @@ export function replaceCreatorInteractionsForCreator(creatorId, rows = []) {
   return byId.size
 }
 
-export function listCreatorInteractions(creatorId, { contentId = null, range = 'all', limit = 800 } = {}) {
+export function listCreatorInteractions(creatorId, {
+  contentId = null,
+  range = 'all',
+  limit = 800,
+  untilMs = null,
+  sinceMs = null,
+  includeSubscribe = null,
+} = {}) {
   if (!creatorId) return []
   const cut = rangeCutoff(range)
+  const allowSubscribe = includeSubscribe == null ? !contentId : !!includeSubscribe
   return all()
     .filter((r) => r.creatorId === creatorId)
     .filter((r) => {
       if (!contentId) return true
-      if (r.type === 'subscribe') return true
+      if (r.type === 'subscribe') return allowSubscribe
       return r.contentId === contentId
     })
-    .filter((r) => !cut || Date.parse(r.at) >= cut)
+    .filter((r) => {
+      const t = Date.parse(r.at)
+      if (!Number.isFinite(t)) return false
+      if (cut && t < cut) return false
+      if (sinceMs != null && t < sinceMs) return false
+      if (untilMs != null && t > untilMs) return false
+      return true
+    })
     .slice(0, limit)
 }
 
@@ -356,12 +371,25 @@ export function buildInteractionBubbles(creatorId, posts = [], { contentId = nul
 }
 
 /**
- * One node per real actor. Tallies are never invented as people.
+ * One node per real actor around a post hub (or creator hub if no post).
+ * Tallies are never invented as people.
  */
-export function buildInteractionNetwork(creatorId, posts = [], { contentId = null, range = 'all' } = {}) {
-  const live = listCreatorInteractions(creatorId, { contentId, range, limit: 1500 })
-    .filter((ev) => ev && ev.source !== 'tally')
+export function buildInteractionNetwork(creatorId, posts = [], {
+  contentId = null,
+  range = 'all',
+  untilMs = null,
+  sinceMs = null,
+} = {}) {
+  const live = listCreatorInteractions(creatorId, {
+    contentId,
+    range,
+    limit: 1500,
+    untilMs,
+    sinceMs,
+    includeSubscribe: !contentId,
+  }).filter((ev) => ev && ev.source !== 'tally')
   const postById = new Map((posts || []).map((p) => [p.id, p]))
+  const selectedPost = contentId ? postById.get(contentId) : null
   const byActor = new Map()
   let guestEvents = 0
 
@@ -384,7 +412,6 @@ export function buildInteractionNetwork(creatorId, posts = [], { contentId = nul
       }
       byActor.set(key, bucket)
     }
-    // Each event counts as 1 (unique action), never inflated weight
     bucket.events.push(ev)
     bucket.byType[ev.type] = (bucket.byType[ev.type] || 0) + 1
     if (ev.contentId) bucket.contentIds.add(ev.contentId)
@@ -402,7 +429,7 @@ export function buildInteractionNetwork(creatorId, posts = [], { contentId = nul
     const meta = typeMeta(primaryType)
     const viewOnly = actionTypes.length === 0
     const topEv = [...bucket.events].sort((a, b) => Date.parse(b.at) - Date.parse(a.at))[0]
-    const post = topEv?.contentId ? postById.get(topEv.contentId) : null
+    const post = topEv?.contentId ? postById.get(topEv.contentId) : selectedPost
     people.push({
       id: `actor_${bucket.actorId}`,
       kind: 'person',
@@ -421,7 +448,7 @@ export function buildInteractionNetwork(creatorId, posts = [], { contentId = nul
       primarySurface: topEv?.surface || 'unknown',
       primaryContentType: topEv?.contentType || contentTypeForItem(post) || null,
       contentIds: [...bucket.contentIds],
-      topContentId: topEv?.contentId || null,
+      topContentId: topEv?.contentId || contentId || null,
       topTitle: topEv?.title || post?.title || (primaryType === 'subscribe' ? 'Channel' : 'Post'),
       firstAt: Number.isFinite(bucket.firstAt) ? bucket.firstAt : Date.now(),
       lastAt: bucket.lastAt || Date.now(),
@@ -450,8 +477,8 @@ export function buildInteractionNetwork(creatorId, posts = [], { contentId = nul
       short: 'Guest',
       primarySurface: 'unknown',
       primaryContentType: null,
-      contentIds: [],
-      topContentId: null,
+      contentIds: contentId ? [contentId] : [],
+      topContentId: contentId || null,
       topTitle: 'Signed-out sessions',
       firstAt: Date.now(),
       lastAt: Date.now(),
@@ -459,12 +486,22 @@ export function buildInteractionNetwork(creatorId, posts = [], { contentId = nul
     })
   }
 
-  const hub = {
-    id: `hub_${creatorId || 'creator'}`,
-    kind: 'hub',
-    actorId: creatorId || null,
-    label: 'You',
-  }
+  const hub = contentId
+    ? {
+        id: `hub_post_${contentId}`,
+        kind: 'post',
+        contentId,
+        actorId: null,
+        label: selectedPost?.title || 'Post',
+        postType: selectedPost?.type || null,
+        thumbUrl: selectedPost?.thumbUrl || selectedPost?.thumbnailUrl || selectedPost?.coverUrl || null,
+      }
+    : {
+        id: `hub_${creatorId || 'creator'}`,
+        kind: 'hub',
+        actorId: creatorId || null,
+        label: 'You',
+      }
 
   const edges = []
   for (const person of people) {
@@ -516,6 +553,7 @@ export function buildInteractionNetwork(creatorId, posts = [], { contentId = nul
   const summary = summarizeNetwork(people, live)
   return { hub, people, edges, events: live, summary }
 }
+
 
 export function summarizeNetwork(people = [], events = []) {
   const byType = {}

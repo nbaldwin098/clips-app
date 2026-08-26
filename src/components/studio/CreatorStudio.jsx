@@ -63,7 +63,7 @@ const STUDIO_NAV = [
 
 const SECTION_META = {
   overview: { title: 'Creator Studio', subtitle: 'Posts, audience, and shortcuts' },
-  analytics: { title: 'Analytics', subtitle: 'Live audience map + channel & per-post stats (cloud)' },
+  analytics: { title: 'Analytics', subtitle: 'Pick a post → its bubble map + live stats under it' },
   earnings: { title: 'Earnings', subtitle: 'Tips, withdrawals, and income chart' },
   vods: { title: 'VOD library', subtitle: 'Past lives — manage visibility here' },
   stream: { title: 'Stream settings', subtitle: 'Key, quality, and VOD channel — stays in the dashboard' },
@@ -243,6 +243,7 @@ export default function CreatorStudio({
   const [restoreNote, setRestoreNote] = useState('')
   const [deletingId, setDeletingId] = useState(null)
   const [cloudSyncBusy, setCloudSyncBusy] = useState(false)
+  const [untilMs, setUntilMs] = useState(null)
 
   const refreshAudienceFromCloud = async () => {
     if (!user?.id || user.provider !== 'supabase') return
@@ -335,10 +336,29 @@ export default function CreatorStudio({
   }, [posts, postFilter])
 
   const selectedPost = posts.find((p) => p.id === selectedPostId) || null
+  const postStartMs = selectedPost
+    ? (Date.parse(postedAtOf(selectedPost) || selectedPost.createdAt || selectedPost.publishedAt || '') || null)
+    : null
+
+  // Analytics requires a post — auto-pick the newest when entering the section.
+  useEffect(() => {
+    if (section !== 'analytics') return
+    if (selectedPostId && posts.some((p) => p.id === selectedPostId)) return
+    if (posts[0]?.id) setSelectedPostId(posts[0].id)
+  }, [section, posts, selectedPostId])
+
+  useEffect(() => {
+    setUntilMs(null)
+  }, [selectedPostId])
 
   const network = useMemo(
-    () => buildInteractionNetwork(user?.id, posts, { contentId: selectedPostId, range }),
-    [user?.id, posts, selectedPostId, range, syncTick, interactionTick]
+    () => buildInteractionNetwork(user?.id, posts, {
+      contentId: selectedPostId,
+      range: 'all',
+      untilMs: untilMs ?? Date.now(),
+      sinceMs: postStartMs || undefined,
+    }),
+    [user?.id, posts, selectedPostId, untilMs, postStartMs, syncTick, interactionTick]
   )
 
   const openPost = (c) => {
@@ -571,21 +591,23 @@ export default function CreatorStudio({
           ) : null}
 
           {section === 'analytics' ? (
-            <div className="h-full min-h-0 flex flex-col xl:flex-row gap-3 overflow-hidden">
-              <div className="min-h-0 flex-1 min-h-[280px] xl:min-w-0">
+            <div className="h-full min-h-0 flex flex-col gap-3 overflow-hidden">
+              <div className="min-h-0 flex-[1.15] min-h-[300px]">
                 <InteractionBubbleMap
                   network={network}
-                  range={range}
-                  onRangeChange={setRange}
                   selectedPostId={selectedPostId}
+                  selectedPost={selectedPost}
                   onSelectPost={setSelectedPostId}
                   postTitle={selectedPost?.title}
                   creator={user}
                   onRefresh={refreshAudienceFromCloud}
                   refreshing={cloudSyncBusy}
+                  untilMs={untilMs ?? Date.now()}
+                  onUntilChange={setUntilMs}
+                  postStartMs={postStartMs}
                 />
               </div>
-              <div className="min-h-0 h-[42%] xl:h-auto xl:w-[min(420px,40%)] xl:shrink-0">
+              <div className="min-h-0 flex-1 min-h-[220px] overflow-hidden border-t border-zinc-800 pt-3">
                 <StudioRealtimeAnalytics
                   creatorId={user?.id}
                   posts={posts}
@@ -596,6 +618,8 @@ export default function CreatorStudio({
                   refreshing={cloudSyncBusy}
                   onRefresh={refreshAudienceFromCloud}
                   tick={interactionTick + syncTick}
+                  untilMs={untilMs ?? Date.now()}
+                  forcePostTab
                 />
               </div>
             </div>
