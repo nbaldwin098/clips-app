@@ -10,6 +10,7 @@ import { cn } from '../lib/utils'
 const VISIBILITY = [
   { id: 'public', label: 'Public' },
   { id: 'unlisted', label: 'Unlisted' },
+  { id: 'private', label: 'Private' },
 ]
 
 export default function UploadModal({ open, onClose, onDone, initialKind = 'video' }) {

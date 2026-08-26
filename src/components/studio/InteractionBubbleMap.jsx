@@ -188,6 +188,21 @@ export default function InteractionBubbleMap({
   const endMs = nowMs
   const scrubMs = untilMs != null && Number.isFinite(untilMs) ? untilMs : endMs
 
+  const keepHubInView = useCallback((nextZoom, nextPan, hub, w, h) => {
+    if (!hub || !w || !h) return nextPan
+    const sx = hub.x * nextZoom + nextPan.x
+    const sy = hub.y * nextZoom + nextPan.y
+    // Keep hub inside a generous center band so zoom-out never ejects the map.
+    const marginX = Math.max(48, w * 0.2)
+    const marginY = Math.max(48, h * 0.2)
+    let { x, y } = nextPan
+    if (sx < marginX) x += marginX - sx
+    if (sx > w - marginX) x -= sx - (w - marginX)
+    if (sy < marginY) y += marginY - sy
+    if (sy > h - marginY) y -= sy - (h - marginY)
+    return { x, y }
+  }, [])
+
   const peopleBase = useMemo(() => {
     if (network?.people?.length) return network.people
     return (legacyNodes || [])
@@ -228,7 +243,7 @@ export default function InteractionBubbleMap({
     if (!el) return
     const measure = () => {
       const r = el.getBoundingClientRect()
-      setSize({ w: Math.max(320, r.width), h: Math.max(260, r.height) })
+      setSize({ w: Math.max(480, r.width), h: Math.max(420, r.height) })
     }
     measure()
     const ro = new ResizeObserver(measure)
@@ -300,15 +315,16 @@ export default function InteractionBubbleMap({
   const onPointerMove = useCallback((e) => {
     const d = dragRef.current
     if (!d) return
-    setPan({ x: d.ox + (e.clientX - d.px), y: d.oy + (e.clientY - d.py) })
-  }, [])
+    const raw = { x: d.ox + (e.clientX - d.px), y: d.oy + (e.clientY - d.py) }
+    setPan(keepHubInView(zoom, raw, laid.hub, size.w, size.h))
+  }, [keepHubInView, zoom, laid.hub, size.w, size.h])
 
   const onPointerUp = useCallback(() => { dragRef.current = null }, [])
 
   const clampZoom = (z) => {
-    // Soft safety only — effectively endless for normal use
+    // Allow deep zoom-out, but never so far the hub leaves the viewport band.
     if (!Number.isFinite(z) || z <= 0) return 1
-    return Math.min(500, Math.max(0.02, z))
+    return Math.min(500, Math.max(0.28, z))
   }
 
   const zoomAt = useCallback((factor, clientX, clientY) => {
@@ -325,11 +341,12 @@ export default function InteractionBubbleMap({
       setPan((p) => {
         const wx = (cx - p.x) / z
         const wy = (cy - p.y) / z
-        return { x: cx - wx * next, y: cy - wy * next }
+        const raw = { x: cx - wx * next, y: cy - wy * next }
+        return keepHubInView(next, raw, laid.hub, size.w, size.h)
       })
       return next
     })
-  }, [])
+  }, [keepHubInView, laid.hub, size.w, size.h])
 
   const onWheel = useCallback((e) => {
     e.preventDefault()
@@ -433,7 +450,7 @@ export default function InteractionBubbleMap({
       <div className="min-h-0 flex-1 flex flex-col">
         <div
           ref={wrapRef}
-          className="relative flex-1 min-h-[260px] overflow-hidden cursor-grab active:cursor-grabbing touch-none"
+          className="relative flex-1 min-h-[480px] overflow-hidden cursor-grab active:cursor-grabbing touch-none"
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}

@@ -68,6 +68,36 @@ export function listVods(userId) {
   return (lsGet(VODS_KEY, []) || []).filter((v) => v.userId === userId)
 }
 
+/** Lives + creator/user clips saved into the VOD library. */
+export function listVodLibrary(userId) {
+  return listVods(userId)
+}
+
+export function saveClipToVodLibrary(user, content) {
+  if (!user?.id || !content?.id) return null
+  const all = lsGet(VODS_KEY, []) || []
+  if (all.some((v) => v.contentId === content.id || v.id === `clipvod_${content.id}`)) {
+    return all.find((v) => v.contentId === content.id || v.id === `clipvod_${content.id}`)
+  }
+  const vod = {
+    id: `clipvod_${content.id}`,
+    userId: user.id,
+    handle: user.handle,
+    title: content.title || 'Clip',
+    category: content.category || '',
+    startedAt: content.publishedAt || content.createdAt || new Date().toISOString(),
+    endedAt: content.publishedAt || content.createdAt || new Date().toISOString(),
+    durationSec: Number(content.durationSec) || 0,
+    visibility: content.visibility === 'private' || content.status === 'draft' ? 'private' : (content.visibility || 'public'),
+    contentId: content.id,
+    kind: 'clip',
+    watchers: 0,
+  }
+  all.unshift(vod)
+  lsSet(VODS_KEY, all.slice(0, 400))
+  return vod
+}
+
 export function setVodVisibility(vodId, visibility) {
   const all = lsGet(VODS_KEY, []) || []
   const next = all.map((v) => (v.id === vodId ? { ...v, visibility } : v))
@@ -79,6 +109,7 @@ export function setVodVisibility(vodId, visibility) {
     if (rec) {
       saveImport({
         ...rec,
+        visibility: visibility === 'public' ? 'public' : 'private',
         status: visibility === 'public' ? 'published' : 'draft',
       })
     }

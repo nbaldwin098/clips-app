@@ -548,10 +548,33 @@ export async function pushLiveLobby(payload) {
 }
 
 export async function endLiveLobby(userId) {
-  if (!userId || !isSupabaseConfigured()) return false
+  if (!userId) return false
+  try {
+    const { lsGet, lsSet } = await import('./storage')
+    const liveState = lsGet(`live_state_${userId}`, null)
+      || (lsGet('live_board', []) || []).find((b) => b.userId === userId)
+    if (liveState) {
+      const { archiveEndedLive } = await import('./vods')
+      const { listIndexedUsers } = await import('./moderation')
+      const users = listIndexedUsers?.() || []
+      const user = users.find((u) => u.id === userId) || {
+        id: userId,
+        handle: liveState.handle || '',
+      }
+      archiveEndedLive(user, { ...liveState, isLive: false })
+      try {
+        lsSet(`live_state_${userId}`, { ...liveState, isLive: false, endedAt: new Date().toISOString() })
+      } catch {}
+      try {
+        const board = (lsGet('live_board', []) || []).filter((b) => b.userId !== userId)
+        lsSet('live_board', board)
+      } catch {}
+    }
+  } catch {}
+  if (!isSupabaseConfigured()) return true
   try {
     const sb = await getSupabase()
-    if (!sb) return false
+    if (!sb) return true
     const { error } = await sb.from('live_lobby').delete().eq('user_id', userId)
     return !error
   } catch {
