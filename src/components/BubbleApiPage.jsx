@@ -13,7 +13,7 @@ import {
   ExternalLink,
 } from 'lucide-react'
 import PageHeader from './PageHeader'
-import { useAuth } from '../lib/auth'
+import { useAuth } from '../context/AuthContext'
 import { lsGet, lsSet } from '../lib/storage'
 import { cn } from '../lib/utils'
 
