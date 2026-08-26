@@ -1,17 +1,17 @@
 /**
  * Upload video/image to Supabase Storage → durable public URL.
- * Published posts must have an http(s) mediaUrl so anyone can play them.
+ * Duration limits: clips 60s, videos 24h. No public size caps (safety ceiling only).
  */
 import { getSupabase, isSupabaseConfigured } from './supabaseClient'
 
 const BUCKET = 'clips'
-export const MAX_VIDEO_BYTES = 80 * 1024 * 1024
-/** Clips (shorts): tighter cap so storage stays predictable. */
-export const MAX_CLIP_BYTES = 40 * 1024 * 1024
+/** Clips only — 60 seconds. */
 export const MAX_CLIP_DURATION_SEC = 60
+/** Long-form videos — 24 hours. */
+export const MAX_VIDEO_DURATION_SEC = 24 * 60 * 60
+/** Abuse ceiling only (not shown to users as a product limit). */
+export const MAX_UPLOAD_BYTES = 2 * 1024 * 1024 * 1024
 const MAX_IMAGE = 12 * 1024 * 1024
-/** @deprecated use MAX_VIDEO_BYTES */
-const MAX_VIDEO = MAX_VIDEO_BYTES
 const PUBLIC_MARKER = `/storage/v1/object/public/${BUCKET}/`
 
 function extFromFile(file, fallback = 'bin') {
@@ -26,7 +26,6 @@ function extFromFile(file, fallback = 'bin') {
   return fallback
 }
 
-/** Active Supabase auth user (needed for storage RLS + catalog upsert). */
 export async function getHostSessionUser() {
   if (!isSupabaseConfigured()) return null
   try {
@@ -39,15 +38,10 @@ export async function getHostSessionUser() {
   }
 }
 
-/** True when uploads can be hosted as playable public links. */
 export function canHostUploads(actor) {
   return !!(isSupabaseConfigured() && actor?.id && actor.provider === 'supabase')
 }
 
-/**
- * Resolve who can write to storage right now.
- * Prefers the live Supabase session (so a linked owner login can upload).
- */
 export async function resolveUploadHost(actor = null) {
   const sessionUser = await getHostSessionUser()
   if (sessionUser?.id) {
@@ -82,11 +76,11 @@ export function uploadFailedMessage() {
 }
 
 export function clipLimitsMessage() {
-  return `Clips max ${MAX_CLIP_DURATION_SEC}s and ${Math.round(MAX_CLIP_BYTES / (1024 * 1024))}MB. Use MP4 for best playback.`
+  return `Clips must be ${MAX_CLIP_DURATION_SEC} seconds or shorter. MP4 works best on phones.`
 }
 
 export function videoLimitsMessage() {
-  return `Videos max ${Math.round(MAX_VIDEO_BYTES / (1024 * 1024))}MB.`
+  return `Videos must be ${MAX_VIDEO_DURATION_SEC / 3600} hours or shorter.`
 }
 
 async function uploadToBucket(file, userId, { maxBytes, kind }) {
@@ -97,7 +91,7 @@ async function uploadToBucket(file, userId, { maxBytes, kind }) {
   if (file.size > maxBytes) {
     return {
       ok: false,
-      error: `File too large (max ${Math.round(maxBytes / (1024 * 1024))}MB).`,
+      error: 'File is too large to upload.',
     }
   }
   try {
@@ -127,15 +121,13 @@ async function uploadToBucket(file, userId, { maxBytes, kind }) {
 }
 
 export async function uploadVideoToSupabase(file, userId, { asClip = false } = {}) {
-  const maxBytes = asClip ? MAX_CLIP_BYTES : MAX_VIDEO_BYTES
-  return uploadToBucket(file, userId, { maxBytes, kind: 'videos' })
+  return uploadToBucket(file, userId, { maxBytes: MAX_UPLOAD_BYTES, kind: 'videos' })
 }
 
 export async function uploadImageToSupabase(file, userId) {
   return uploadToBucket(file, userId, { maxBytes: MAX_IMAGE, kind: 'pics' })
 }
 
-/** Host a data:image thumbnail as a durable public URL. */
 export async function uploadDataUrlToSupabase(dataUrl, userId, name = 'thumb.jpg') {
   try {
     const res = await fetch(dataUrl)
