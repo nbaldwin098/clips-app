@@ -746,7 +746,7 @@ export default function CreatorStudio({
             <div className="h-full overflow-y-auto space-y-8">
               <MakePostPanel onOpenUpload={onOpenUpload} onNavigate={onNavigate} compact />
               <div className="border-t border-zinc-800 pt-6">
-                <CreatorLab onNavigate={onNavigate} compact />
+                <CreatorLab onNavigate={onNavigate} onOpenAuth={onOpenAuth} compact />
               </div>
             </div>
           ) : null}

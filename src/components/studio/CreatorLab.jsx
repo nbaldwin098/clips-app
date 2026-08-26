@@ -6,6 +6,7 @@ import {
   Film,
   ImagePlus,
   Monitor,
+  Newspaper,
   Pause,
   Play,
   Radio,
@@ -28,6 +29,7 @@ import {
 import { cn } from '../../lib/utils'
 import HashtagInput, { tagsFromHashtagField } from '../HashtagInput'
 import StudioSocialsPanel from './StudioSocialsPanel'
+import { ComposePaper } from '../NewsPage'
 
 function fmtTime(sec) {
   const s = Math.max(0, Number(sec) || 0)
@@ -974,13 +976,17 @@ function LiveLab({ onNavigate }) {
 /**
  * In-site CapCut + OBS creator tool for calabi users.
  */
-export default function CreatorLab({ onNavigate, initialMode = 'edit', compact = false }) {
+export default function CreatorLab({ onNavigate, initialMode = 'edit', compact = false, onOpenAuth }) {
   const { isAuthenticated } = useAuth()
-  const start = initialMode === 'live' ? 'live' : initialMode === 'socials' ? 'socials' : 'edit'
+  const start =
+    initialMode === 'live' ? 'live'
+      : initialMode === 'socials' ? 'socials'
+        : initialMode === 'news' ? 'news'
+          : 'edit'
   const [mode, setMode] = useState(start)
 
   useEffect(() => {
-    if (initialMode === 'live' || initialMode === 'socials' || initialMode === 'edit') {
+    if (initialMode === 'live' || initialMode === 'socials' || initialMode === 'edit' || initialMode === 'news') {
       setMode(initialMode)
     }
   }, [initialMode])
@@ -989,7 +995,7 @@ export default function CreatorLab({ onNavigate, initialMode = 'edit', compact =
     return (
       <div className={cn('p-6', compact ? '' : 'max-w-3xl mx-auto')}>
         <h1 className="text-xl font-semibold text-white">Calabi Studio</h1>
-        <p className="text-sm text-zinc-400 mt-2">Sign in to edit, go live, and post to socials on calabi.</p>
+        <p className="text-sm text-zinc-400 mt-2">Sign in to edit, go live, post to socials, and publish News.</p>
       </div>
     )
   }
@@ -1002,7 +1008,7 @@ export default function CreatorLab({ onNavigate, initialMode = 'edit', compact =
             <Clapperboard className="h-6 w-6" /> Calabi Studio
           </h1>
           <p className="text-sm text-zinc-400 mt-1">
-            Edit like CapCut, mix live like OBS, connect socials and post — all on calabi.
+            Edit, go live, socials, and News — all on calabi.
           </p>
         </div>
       ) : null}
@@ -1038,12 +1044,37 @@ export default function CreatorLab({ onNavigate, initialMode = 'edit', compact =
         >
           Socials
         </button>
+        <button
+          type="button"
+          onClick={() => setMode('news')}
+          className={cn(
+            'h-9 px-4 text-xs font-semibold inline-flex items-center gap-1.5',
+            mode === 'news' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
+          )}
+        >
+          <Newspaper className="h-3.5 w-3.5" /> News
+        </button>
       </div>
 
       {mode === 'edit' ? (
         <EditLab onOpenCreate={() => onNavigate?.('create')} />
       ) : mode === 'live' ? (
         <LiveLab onNavigate={onNavigate} />
+      ) : mode === 'news' ? (
+        <div className="max-w-2xl space-y-4">
+          <ComposePaper
+            compact
+            onOpenAuth={onOpenAuth}
+            onPublished={() => onNavigate?.('news')}
+          />
+          <button
+            type="button"
+            onClick={() => onNavigate?.('news')}
+            className="h-9 px-4 border border-zinc-700 text-xs text-zinc-300 hover:border-white hover:text-white"
+          >
+            Open News tab
+          </button>
+        </div>
       ) : (
         <StudioSocialsPanel onNavigate={onNavigate} />
       )}

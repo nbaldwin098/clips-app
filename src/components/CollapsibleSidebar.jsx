@@ -139,22 +139,20 @@ export default function CollapsibleSidebar({
           <NavBtn collapsed={collapsed} active={currentView === 'create'} onClick={() => go('create')} icon={Plus} label="Create" />
         </nav>
 
-        {/* Following sits under Create, visually separated */}
+        {/* Following sits under Create */}
         <div className="pt-2 mt-1 border-t border-[#1e1e27] space-y-0.5">
           <NavBtn collapsed={collapsed} active={currentView === 'subscriptions'} onClick={() => go('subscriptions')} icon={Users} label="Following" />
         </div>
 
-        <div className="pt-3 border-t border-[#1e1e27] space-y-1">
-          {!collapsed && (
-            <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-1 flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#eb0400]" />
-              Lobby ({liveNow.length})
-            </p>
-          )}
-          {liveNow.length === 0 ? (
-            !collapsed && <p className="px-2.5 text-[11px] text-zinc-600">Live video is not on yet. Lobby is empty.</p>
-          ) : (
-            liveNow.map((s) => (
+        {liveNow.length > 0 ? (
+          <div className="pt-3 border-t border-[#1e1e27] space-y-1">
+            {!collapsed && (
+              <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-1 flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#eb0400]" />
+                Lobby ({liveNow.length})
+              </p>
+            )}
+            {liveNow.map((s) => (
               <button
                 key={s.userId}
                 type="button"
@@ -180,11 +178,11 @@ export default function CollapsibleSidebar({
                 )}
                 {!collapsed && <span className="text-[10px] text-zinc-500 shrink-0">{formatElapsed(s.startedAt)}</span>}
               </button>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        ) : null}
 
-        <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
+        <div className="pt-2 border-t border-[#1e1e27] space-y-0.5">
           {!collapsed && <p className="px-2.5 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Top creators</p>}
           <NavBtn collapsed={collapsed} active={currentView === 'creators'} onClick={() => go('creators')} icon={Users} label="Top creators" />
           {recommendedCreators.map((c) => (
