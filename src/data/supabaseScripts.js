@@ -7,6 +7,7 @@ import stopNamedActivity from '../../supabase/migrations/0010_stop_named_activit
 import showAdsLiveChat from '../../supabase/migrations/0011_show_ads_live_chat.sql?raw'
 import videosPublishColumns from '../../supabase/migrations/0012_videos_publish_columns.sql?raw'
 import liveFeatureState from '../../supabase/migrations/0013_live_feature_state.sql?raw'
+import creatorInteractions from '../../supabase/migrations/0014_creator_interactions.sql?raw'
 
 export const SETUP_SCRIPTS = [
   {
@@ -62,5 +63,11 @@ export const SETUP_SCRIPTS = [
     title: 'Live pools / challenges / group sync',
     file: '0013_live_feature_state.sql',
     sql: String(liveFeatureState || ''),
+  },
+  {
+    id: '0014',
+    title: 'Creator interaction map (bubble events)',
+    file: '0014_creator_interactions.sql',
+    sql: String(creatorInteractions || ''),
   },
 ]

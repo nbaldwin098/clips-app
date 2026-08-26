@@ -13,13 +13,31 @@ export function isPicHearted(picId) {
   return getPicHearts().includes(picId)
 }
 
-export function togglePicHeart(picId) {
+export function togglePicHeart(picId, meta = {}) {
   if (!picId) return getPicHearts()
   const set = new Set(getPicHearts())
-  if (set.has(picId)) set.delete(picId)
+  const was = set.has(picId)
+  if (was) set.delete(picId)
   else set.add(picId)
   const next = [...set]
   lsSet(KEY, next)
   notifyContentChanged()
+  if (!was) {
+    queueMicrotask(() => {
+      import('./creatorInteractions').then(({ logCreatorInteraction, creatorIdForContent }) => {
+        const creatorId = meta.creatorId || creatorIdForContent(picId)
+        if (!creatorId) return
+        logCreatorInteraction({
+          creatorId,
+          contentId: picId,
+          type: 'like',
+          actorId: meta.actorId || null,
+          title: meta.title || '',
+          surface: 'pics',
+          contentType: 'pic',
+        })
+      }).catch(() => {})
+    })
+  }
   return next
 }

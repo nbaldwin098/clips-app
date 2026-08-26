@@ -50,7 +50,7 @@ export default function ContentCard({ item, onOpen, onOpenProfile, variant }) {
       if (viewStartTime.current) {
         const durationMs = Date.now() - viewStartTime.current
         if (uid && itemId && durationMs < 1800) {
-          recordInteraction(uid, { contentId: itemId, type: 'early_skip', tags, creatorId: cid })
+          recordInteraction(uid, { contentId: itemId, type: 'early_skip', tags, creatorId: cid, surface: 'home' })
         }
       }
     }
@@ -98,7 +98,7 @@ export default function ContentCard({ item, onOpen, onOpenProfile, variant }) {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
       if (user?.id) {
-        recordInteraction(user.id, { contentId: item.id, type: 'share', tags: item.tags || [], creatorId: item.creatorId || item.userId })
+        recordInteraction(user.id, { contentId: item.id, type: 'share', tags: item.tags || [], creatorId: item.creatorId || item.userId, surface: 'home' })
       }
     } catch {}
   }

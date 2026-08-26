@@ -205,6 +205,8 @@ export function recordInteraction(userId, event) {
       type: event.type,
       actorId: userId,
       title: event.title || '',
+      surface: event.surface || 'unknown',
+      contentType: event.contentType || null,
     })
   }
 

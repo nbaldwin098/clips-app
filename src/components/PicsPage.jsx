@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext'
 import { getPicsFeed, publishPhoto, pickImmediatePhotoSrc, isHttpUrl, isDataImageUrl } from '../lib/picsService'
 import { isFeedable } from '../lib/catalogHealth'
 import { isPicHearted, togglePicHeart } from '../lib/picHearts'
+import { recordView } from '../lib/engagement'
+import { recordInteraction } from '../lib/algorithmEngine'
 import { useContentSyncTick } from '../lib/useContentSync'
 import { subscribeContentUpdates } from '../lib/contentSync'
 import { hideBrokenMedia } from '../lib/catalogHealth'
@@ -98,7 +100,11 @@ function PicHeartBtn({ pic, active, onOpenAuth, className = '' }) {
     e?.stopPropagation?.()
     e?.preventDefault?.()
     if (!user?.id) { onOpenAuth?.(); return }
-    togglePicHeart(pic.id)
+    togglePicHeart(pic.id, {
+      creatorId: pic.creatorId || pic.userId,
+      actorId: user.id,
+      title: pic.title,
+    })
     setBurst(true)
     setTimeout(() => setBurst(false), 450)
   }
@@ -135,6 +141,17 @@ function PicSlide({ pic, active, onOpenProfile, onOpenAuth, eager = true }) {
       await copyShareUrl('pic', pic.id)
       setShareCopied(true)
       setTimeout(() => setShareCopied(false), 1800)
+      if (user?.id) {
+        recordInteraction(user.id, {
+          contentId: pic.id,
+          type: 'share',
+          tags: pic.tags || [],
+          creatorId: pic.creatorId || pic.userId,
+          title: pic.title,
+          surface: 'pics',
+          contentType: 'pic',
+        })
+      }
     } catch {}
   }
 
@@ -142,7 +159,11 @@ function PicSlide({ pic, active, onOpenProfile, onOpenAuth, eager = true }) {
     const now = Date.now()
     if (now - lastTap.current < 280) {
       if (!user?.id) { onOpenAuth?.(); return }
-      togglePicHeart(pic.id)
+      togglePicHeart(pic.id, {
+        creatorId: pic.creatorId || pic.userId,
+        actorId: user.id,
+        title: pic.title,
+      })
     }
     lastTap.current = now
   }
@@ -202,7 +223,11 @@ function MosaicPicTile({ pic, onOpen, onOpenAuth, onUnplayable }) {
     e.stopPropagation()
     e.preventDefault()
     if (!user?.id) { onOpenAuth?.(); return }
-    togglePicHeart(pic.id)
+    togglePicHeart(pic.id, {
+      creatorId: pic.creatorId || pic.userId,
+      actorId: user.id,
+      title: pic.title,
+    })
   }
 
   return (
@@ -292,6 +317,19 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
       replaceHash('content', pic.id)
     }
   }
+
+  useEffect(() => {
+    if (viewerIndex == null) return
+    const pic = scrollItems[viewerIndex]
+    if (!pic?.id) return
+    recordView(pic.id, {
+      creatorId: pic.creatorId || pic.userId,
+      title: pic.title,
+      actorId: user?.id || null,
+      surface: 'pics',
+      contentType: 'pic',
+    })
+  }, [viewerIndex, scrollItems, user?.id])
 
   useEffect(() => {
     if (viewerIndex == null) return
