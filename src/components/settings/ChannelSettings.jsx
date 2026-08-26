@@ -15,7 +15,7 @@ function SocialConnectSection({ userId }) {
     <section className="pt-6 border-t border-zinc-800 space-y-4">
       <h2 className="text-sm font-semibold text-white">Connected socials (post & multi-stream)</h2>
       <p className="text-xs text-zinc-500">
-        Connect once, then push clips from Calabi Studio or Live with one tap. OAuth tokens are mocked until API keys ship — destinations are saved on this device.
+        Connect once, then push videos, clips, pics, and VODs from Creator Studio → Socials. OAuth tokens are mocked until API keys ship — destinations are saved on this device.
       </p>
       <div className="space-y-2 max-w-md">
         {SOCIAL_PROVIDERS.map((p) => {
