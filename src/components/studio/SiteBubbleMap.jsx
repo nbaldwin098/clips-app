@@ -132,8 +132,10 @@ export default function SiteBubbleMap({
   interactions = 0,
   buckets = null,
   onNavigate = null,
+  focusFacet = null,
 }) {
   const wrapRef = useRef(null)
+  const mapAnchorRef = useRef(null)
   const [size, setSize] = useState({ w: 720, h: 480 })
   const [zoom, setZoom] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
@@ -143,6 +145,17 @@ export default function SiteBubbleMap({
   const dragRef = useRef(null)
   const movedRef = useRef(false)
   const fitZRef = useRef(1)
+
+  useEffect(() => {
+    if (!focusFacet) return
+    const id = String(focusFacet).split('#')[0]
+    if (!FACET_META[id]) return
+    setExpandedId(id)
+    setSelectedItem(null)
+    try {
+      mapAnchorRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
+    } catch { /* ok */ }
+  }, [focusFacet])
 
   const overviewNodes = useMemo(() => ([
     { id: 'videos', value: videos, weight: Math.max(1, videos), kind: 'facet', ...FACET_META.videos },
@@ -318,7 +331,7 @@ export default function SiteBubbleMap({
   const childCount = childPop?.total ?? 0
 
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-[#07070a] overflow-hidden">
+    <div ref={mapAnchorRef} className="rounded-2xl border border-zinc-800 bg-[#07070a] overflow-hidden">
       <div className="px-4 py-3 border-b border-zinc-800 flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-white">
@@ -349,6 +362,22 @@ export default function SiteBubbleMap({
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
       >
+        {/* Backdrop stays put — only bubbles zoom & pan */}
+        <svg
+          width={size.w}
+          height={size.h}
+          viewBox={`0 0 ${size.w} ${size.h}`}
+          className="absolute inset-0 pointer-events-none"
+          aria-hidden
+        >
+          <defs>
+            <radialGradient id="site-glow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#16161f" />
+              <stop offset="100%" stopColor="#07070a" />
+            </radialGradient>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#site-glow)" />
+        </svg>
         <svg
           width={size.w}
           height={size.h}
@@ -357,10 +386,6 @@ export default function SiteBubbleMap({
           style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})` }}
         >
           <defs>
-            <radialGradient id="site-glow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#16161f" />
-              <stop offset="100%" stopColor="#07070a" />
-            </radialGradient>
             {laid.nodes.map((n) => (
               n.thumbUrl ? (
                 <clipPath key={`clip_${n.id}`} id={`site_clip_${n.id}`}>
@@ -369,7 +394,6 @@ export default function SiteBubbleMap({
               ) : null
             ))}
           </defs>
-          <rect width="100%" height="100%" fill="url(#site-glow)" />
           {laid.nodes.map((n) => (
             <line
               key={`e_${n.id}`}
@@ -419,14 +443,12 @@ export default function SiteBubbleMap({
                   onNodeActivate(n)
                 }}
                 onClick={(e) => {
-                  // Fallback for environments that synthesize click without pointerup ordering quirks.
                   e.stopPropagation()
                   e.preventDefault()
                 }}
                 onMouseEnter={() => setHover(n)}
                 onMouseLeave={() => setHover(null)}
               >
-                {/* Invisible hit target larger than the visual bubble */}
                 <circle r={Math.max(n.size / 2 + 14, 22)} fill="transparent" />
                 <circle
                   r={n.size / 2 + 3}

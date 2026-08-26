@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useRef } from 'react'
 import {
   Users,
   ThumbsUp,
@@ -29,6 +29,8 @@ import SiteBubbleMap from './studio/SiteBubbleMap'
 export default function StatsPage({ onNavigate }) {
   const syncTick = useContentSyncTick()
   const [backupTick, setBackupTick] = useState(0)
+  const [focusFacet, setFocusFacet] = useState(null)
+  const focusNonce = useRef(0)
   const users = useMemo(() => listIndexedUsers(), [syncTick])
   const allItems = useMemo(() => listImportsNormalized(), [syncTick])
   const likesMap = useMemo(() => lsGet('engagement_likes', {}) || {}, [syncTick])
@@ -149,16 +151,24 @@ export default function StatsPage({ onNavigate }) {
   ])
 
   const stats = [
-    { label: 'Users', value: totalUsers.toLocaleString(), icon: Users, hint: 'Registered accounts' },
-    { label: 'Likes', value: totalLikes.toLocaleString(), icon: ThumbsUp, hint: 'Positive votes' },
-    { label: 'Dislikes', value: totalDislikes.toLocaleString(), icon: ThumbsDown, hint: 'Negative votes' },
+    { label: 'Likes', value: totalLikes.toLocaleString(), icon: ThumbsUp, hint: 'Press to see every liked post', facet: 'likes' },
+    { label: 'Dislikes', value: totalDislikes.toLocaleString(), icon: ThumbsDown, hint: 'Press to see every disliked post', facet: 'dislikes' },
+    { label: 'Lives', value: numLives.toLocaleString(), icon: Radio, hint: 'Press to see who is live now', facet: 'lives' },
+    { label: 'Clips', value: numClips.toLocaleString(), icon: Clapperboard, hint: 'Press to see every clip', facet: 'clips' },
+    { label: 'Videos', value: numVideos.toLocaleString(), icon: Film, hint: 'Press to see every video', facet: 'videos' },
+    { label: 'Pics', value: numPics.toLocaleString(), icon: ImageIcon, hint: 'Press to see every pic', facet: 'pics' },
     { label: 'Views', value: totalViews.toLocaleString(), icon: Eye, hint: 'Verified watch impressions' },
-    { label: 'Clips', value: numClips.toLocaleString(), icon: Clapperboard, hint: 'Vertical short-form' },
-    { label: 'Videos', value: numVideos.toLocaleString(), icon: Film, hint: 'Long-form videos' },
-    { label: 'Lives', value: numLives.toLocaleString(), icon: Radio, hint: 'Broadcasting now' },
-    { label: 'Pics', value: numPics.toLocaleString(), icon: ImageIcon, hint: 'Photo posts' },
+    { label: 'Users', value: totalUsers.toLocaleString(), icon: Users, hint: 'Registered accounts' },
     { label: 'Premium subscribers', value: totalPremiumSubs.toLocaleString(), icon: Crown, hint: 'Marked paid after Stripe return' },
   ]
+
+  const openFacet = (facet) => {
+    if (!facet) return
+    focusNonce.current += 1
+    setFocusFacet(`${facet}#${focusNonce.current}`)
+  }
+
+  const focusFacetId = focusFacet ? String(focusFacet).split('#')[0] : null
 
   const onSnapshotNow = () => {
     snapshotCatalogBackup('manual')
@@ -181,7 +191,9 @@ export default function StatsPage({ onNavigate }) {
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-8">
       <PageHeader title="Platform Stats" onBack={() => onNavigate?.('home')} />
-      <p className="text-xs text-zinc-500">Counts from this catalog — nothing invented.</p>
+      <p className="text-xs text-zinc-500">
+        Press Likes, Dislikes, Lives, Clips, Videos, or Pics to expand every item in the site bubble.
+      </p>
 
       <SiteBubbleMap
         videos={numVideos}
@@ -194,13 +206,48 @@ export default function StatsPage({ onNavigate }) {
         interactions={numInteractions}
         buckets={bubbleBuckets}
         onNavigate={onNavigate}
+        focusFacet={focusFacet}
       />
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+        {stats.map(({ label, value, icon: Icon, hint, facet }) => {
+          const pressable = !!facet
+          const active = focusFacetId === facet
+          const Tag = pressable ? 'button' : 'div'
+          return (
+            <Tag
+              key={label}
+              type={pressable ? 'button' : undefined}
+              onClick={pressable ? () => openFacet(facet) : undefined}
+              className={[
+                'rounded-2xl border bg-[#121218] p-5 text-left transition-all flex flex-col justify-between w-full',
+                pressable
+                  ? active
+                    ? 'border-white ring-1 ring-white/30'
+                    : 'border-zinc-800 hover:border-white cursor-pointer'
+                  : 'border-zinc-800',
+              ].join(' ')}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-zinc-400">{label}</span>
+                <div className="h-8 w-8 rounded-lg bg-white/10 flex items-center justify-center text-white">
+                  <Icon className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <p className="text-2xl font-bold tracking-tight text-white">{value}</p>
+                <p className="text-[11px] text-zinc-500 mt-1">{hint}</p>
+              </div>
+            </Tag>
+          )
+        })}
+      </div>
 
       <div className="rounded-2xl border border-zinc-800 bg-[#121218] p-5 space-y-3">
         <div>
           <p className="text-sm font-semibold text-white">Catalog safety backup</p>
           <p className="text-xs text-zinc-500 mt-1">
-            Local last-known-good snapshot. Taken after cloud sync and before intentional deletes. Not a full cloud backup.
+            Local last-known-good snapshot. Taken after cloud sync and before intentional deletes.
           </p>
         </div>
         <p className="text-xs text-zinc-400">
@@ -233,26 +280,6 @@ export default function StatsPage({ onNavigate }) {
             <Download className="h-3.5 w-3.5" /> Download JSON
           </button>
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-        {stats.map(({ label, value, icon: Icon, hint }) => (
-          <div
-            key={label}
-            className="rounded-2xl border border-zinc-800 bg-[#121218] p-5 hover:border-zinc-700 transition-all card-lift flex flex-col justify-between"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-zinc-400">{label}</span>
-              <div className="h-8 w-8 rounded-lg bg-white/10 flex items-center justify-center text-white">
-                <Icon className="h-4 w-4" />
-              </div>
-            </div>
-            <div className="mt-3">
-              <p className="text-2xl font-bold tracking-tight text-white">{value}</p>
-              <p className="text-[11px] text-zinc-500 mt-1">{hint}</p>
-            </div>
-          </div>
-        ))}
       </div>
     </div>
   )
