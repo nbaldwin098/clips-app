@@ -13,6 +13,7 @@ import { copyShareUrl, replaceHash } from '../lib/routes'
 import ShortsStage, { ShortsCard } from './ShortsStage'
 import { downloadPostedMedia } from '../lib/mediaDownload'
 import { shuffleFeed } from '../lib/shuffleFeed'
+import ErrorReportPrompt from './ErrorReportPrompt'
 import { preloadPostedItems } from '../lib/preloadMedia'
 import { mixFeedAds } from '../lib/adEngine'
 import { InFeedAd } from './AdUnits'
@@ -436,7 +437,12 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
         <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={onPick} />
       </div>
 
-      {error && <p className="px-4 pt-3 text-sm text-red-400">{error}</p>}
+      {error && (
+        <div className="px-4 pt-3">
+          <p className="text-sm text-red-400">{error}</p>
+          <ErrorReportPrompt message={error} context="pic-upload" onOpenAuth={onOpenAuth} />
+        </div>
+      )}
       {items.length === 0 ? (
         <div className="m-4 rounded-2xl border border-zinc-800 bg-[#121218] px-6 py-16 text-center">
           <p className="text-sm text-zinc-300">No pics yet</p>

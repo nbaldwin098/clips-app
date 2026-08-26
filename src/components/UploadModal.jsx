@@ -7,6 +7,7 @@ import { mergeTags, parseChaptersInput } from '../lib/mediaMeta'
 import { shareUrl } from '../lib/routes'
 import SoundPicker from './SoundPicker'
 import { postDeniedMessage } from '../lib/trustSafety'
+import ErrorReportPrompt from './ErrorReportPrompt'
 
 export default function UploadModal({
   open, onClose, initialKind = 'video', initialSound = null, initialStitch = null, onOpenAuth,
@@ -290,7 +291,17 @@ export default function UploadModal({
             </div>
           ) : null}
 
-          {status === 'error' && <p className="text-sm text-red-400">{error}</p>}
+          {status === 'error' && (
+            <>
+              <p className="text-sm text-red-400">{error}</p>
+              <ErrorReportPrompt
+                message={error}
+                context="upload"
+                detail={`kind=${kind}${file?.name ? ` file=${file.name}` : ''}`}
+                onOpenAuth={onOpenAuth}
+              />
+            </>
+          )}
           {draftSaved && !meta && <p className="text-xs text-zinc-400">Draft saved. Open Studio to publish later.</p>}
           {meta && (
             <div className="rounded-lg border border-zinc-700 bg-[#18181b] p-3 text-sm space-y-1">

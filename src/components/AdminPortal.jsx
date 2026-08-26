@@ -289,7 +289,8 @@ export default function AdminPortal() {
             {tickets.length === 0 ? <p className="text-xs text-zinc-500">No tickets.</p> :
               tickets.map((t) => (
                 <div key={t.id} className="rounded-xl border border-white/10 bg-[#111113] p-4 text-sm mb-2">
-                  <div className="flex justify-between"><span>{t.subject}</span>
+                  <div className="flex justify-between gap-2">
+                    <span>{t.kind === 'error' ? '[Error] ' : ''}{t.subject}</span>
                     <select value={t.status} onChange={(e) => { updateTicket(t.id, { status: e.target.value }); refresh() }} className="text-xs bg-black border border-white/10 rounded px-2">
                       <option value="open">open</option><option value="closed">closed</option>
                     </select>

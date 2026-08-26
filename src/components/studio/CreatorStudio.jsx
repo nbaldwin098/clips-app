@@ -28,6 +28,7 @@ import { cn } from '../../lib/utils'
 import { restoreLostUploads } from '../../lib/restoreUploads'
 import { useContentSyncTick } from '../../lib/useContentSync'
 import InteractionBubbleMap from './InteractionBubbleMap'
+import ErrorReportPrompt from '../ErrorReportPrompt'
 import CreatorAnalyticsPanel from '../settings/CreatorAnalyticsPanel'
 import RevenueSettings from '../settings/RevenueSettings'
 import VerifyPage from '../VerifyPage'
@@ -355,7 +356,12 @@ export default function CreatorStudio({
             </button>
           </div>
           {restoreNote ? (
-            <p className="mt-2 text-[10px] text-zinc-400 leading-snug">{restoreNote}</p>
+            <div className="mt-2">
+              <p className="text-[10px] text-zinc-400 leading-snug">{restoreNote}</p>
+              {restoreNote.includes("Couldn't") || restoreNote.toLowerCase().includes('error') ? (
+                <ErrorReportPrompt message={restoreNote} context="restore-uploads" />
+              ) : null}
+            </div>
           ) : null}
         </div>
         <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-2">
