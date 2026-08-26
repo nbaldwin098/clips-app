@@ -25,7 +25,6 @@ import {
 } from 'lucide-react'
 import { lsGet } from '../lib/storage'
 import { listSidebarCreators } from '../lib/contentService'
-import BrandMark from './BrandMark'
 import ChannelAvatar from './ChannelAvatar'
 import VerifiedBadge from './VerifiedBadge'
 import { cn } from '../lib/utils'
@@ -239,20 +238,6 @@ export default function CollapsibleSidebar({
             </div>
           )}
         </div>
-      </div>
-
-      <div className="mt-auto shrink-0 border-t border-[#23232c] p-2">
-        <button
-          type="button"
-          onClick={() => go('home')}
-          className={cn(
-            'w-full flex items-center rounded-lg hover:bg-[#181820] text-left',
-            collapsed ? 'justify-center p-1' : 'gap-2 px-1.5 py-1.5'
-          )}
-          title="calabi"
-        >
-          <BrandMark size={collapsed ? 28 : 32} withWord={!collapsed} />
-        </button>
       </div>
     </div>
   )
