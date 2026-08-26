@@ -95,18 +95,22 @@ export default function ExplorePage({ onPlayItem, onOpenPic, onOpenTag, initialQ
         </div>
       )}
 
-      {!q && tags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {tags.map((t) => (
-            <button
-              key={t.tag}
-              type="button"
-              onClick={() => onOpenTag?.(t.tag)}
-              className="h-7 px-2.5 rounded-full bg-zinc-900 border border-zinc-800 text-[11px] text-zinc-300"
-            >
-              #{t.tag}
-            </button>
-          ))}
+      {tags.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="text-[11px] uppercase tracking-wider text-zinc-500">Hashtags</p>
+          <div className="flex flex-wrap gap-1.5">
+            {tags.map((t) => (
+              <button
+                key={t.tag}
+                type="button"
+                onClick={() => onOpenTag?.(t.tag)}
+                className="h-7 px-2.5 border border-zinc-800 bg-zinc-900 text-[11px] text-zinc-300 hover:border-white hover:text-white"
+              >
+                #{t.tag}
+                {t.count > 1 ? <span className="text-zinc-600 ml-1">{t.count}</span> : null}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 

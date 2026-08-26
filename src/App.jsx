@@ -39,7 +39,6 @@ import SubscriptionsPage from './components/SubscriptionsPage'
 import PlaylistsPage from './components/PlaylistsPage'
 import CommunityPage from './components/CommunityPage'
 import StudioToolsPage from './components/StudioToolsPage'
-import StreamSettingsPage from './components/StreamSettingsPage'
 import ContentRulesPage from './components/ContentRulesPage'
 import CreatePage from './components/CreatePage'
 import SoundPage from './components/SoundPage'
@@ -466,7 +465,7 @@ function AppShell() {
         channel: 'Channel',
         analytics: 'Analytics',
         'studio-tools': 'Studio',
-        'calabi-studio': 'Creator Lab',
+        'calabi-studio': 'Calabi Studio',
         'calabi-cash': 'Coins',
         vods: 'VODs',
         verify: 'Verification',
@@ -514,7 +513,7 @@ function AppShell() {
           />
         )
       case 'tag':
-        return <TagPage tag={routeId} onNavigate={navigate} onPlayItem={openWatch} />
+        return <TagPage tag={routeId} onNavigate={navigate} onPlayItem={openWatch} onOpenPic={openPic} onOpenTag={openTag} />
       case 'live':
         return (
           <LiveView
@@ -578,7 +577,7 @@ function AppShell() {
       case 'playlists': return <PlaylistsPage onNavigate={navigate} onOpenAuth={openAuth} onPlayItem={openWatch} onOpenPic={openPic} playlistId={routeId} />
       case 'community': return <CommunityPage onNavigate={navigate} onOpenAuth={openAuth} />
       case 'studio-tools': return <StudioToolsPage onNavigate={navigate} />
-      case 'calabi-studio': return <CalabiStudioPage onNavigate={navigate} />
+      case 'calabi-studio': return <CalabiStudioPage onNavigate={navigate} initialMode={routeId || 'edit'} />
       case 'settings': return <SettingsHub section={routeId} onNavigate={navigate} />
       case 'explore': return <ExplorePage onPlayItem={openWatch} onOpenPic={openPic} onOpenTag={openTag} initialQuery={searchQuery} onApplyQuery={setSearchQuery} />
       case 'pics': return <PicsPage onOpenAuth={openAuth} onOpenProfile={openProfile} initialPicId={routeId} />

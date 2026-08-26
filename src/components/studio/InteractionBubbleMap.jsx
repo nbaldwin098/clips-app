@@ -268,9 +268,8 @@ export default function InteractionBubbleMap({
     return enriched.filter((n) => (n.byType && n.byType[filter]) || n.primaryType === filter)
   }, [enriched, filter])
 
-  const worldW = size.w / zoom
-  const worldH = size.h / zoom
-  const laid = useMemo(() => layoutNetwork(filtered, worldW, worldH), [filtered, worldW, worldH])
+  // Fixed layout world; zoom/pan are a camera (endless), not a re-layout.
+  const laid = useMemo(() => layoutNetwork(filtered, size.w, size.h), [filtered, size.w, size.h])
 
   const hubId = hubMeta?.id || (selectedPostId ? `hub_post_${selectedPostId}` : `hub_${creator?.id || 'creator'}`)
   const nodeById = useMemo(() => {
@@ -306,11 +305,37 @@ export default function InteractionBubbleMap({
 
   const onPointerUp = useCallback(() => { dragRef.current = null }, [])
 
+  const clampZoom = (z) => {
+    // Soft safety only — effectively endless for normal use
+    if (!Number.isFinite(z) || z <= 0) return 1
+    return Math.min(500, Math.max(0.02, z))
+  }
+
+  const zoomAt = useCallback((factor, clientX, clientY) => {
+    const el = wrapRef.current
+    if (!el) {
+      setZoom((z) => clampZoom(z * factor))
+      return
+    }
+    const rect = el.getBoundingClientRect()
+    const cx = clientX - rect.left
+    const cy = clientY - rect.top
+    setZoom((z) => {
+      const next = clampZoom(z * factor)
+      setPan((p) => {
+        const wx = (cx - p.x) / z
+        const wy = (cy - p.y) / z
+        return { x: cx - wx * next, y: cy - wy * next }
+      })
+      return next
+    })
+  }, [])
+
   const onWheel = useCallback((e) => {
     e.preventDefault()
-    const delta = e.deltaY > 0 ? -0.08 : 0.08
-    setZoom((z) => Math.min(2.4, Math.max(0.55, z + delta)))
-  }, [])
+    const factor = e.deltaY > 0 ? 0.9 : 1 / 0.9
+    zoomAt(factor, e.clientX, e.clientY)
+  }, [zoomAt])
 
   useEffect(() => {
     const el = wrapRef.current
@@ -425,11 +450,11 @@ export default function InteractionBubbleMap({
             </div>
           ) : (
             <svg
-              width="100%"
-              height="100%"
-              viewBox={`0 0 ${worldW} ${worldH}`}
-              className="absolute inset-0"
-              style={{ transform: `translate(${pan.x}px, ${pan.y}px)` }}
+              width={size.w}
+              height={size.h}
+              viewBox={`0 0 ${size.w} ${size.h}`}
+              className="absolute left-0 top-0 origin-top-left will-change-transform"
+              style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})` }}
               role="img"
               aria-label="Post audience bubble map"
             >
@@ -588,9 +613,34 @@ export default function InteractionBubbleMap({
           ) : null}
 
           <div className="absolute bottom-3 right-3 flex flex-col gap-1">
-            <button type="button" onClick={() => setZoom((z) => Math.min(2.4, z + 0.15))} className="h-8 w-8 border border-zinc-700 bg-[#121218] text-white text-sm font-bold">+</button>
-            <button type="button" onClick={() => setZoom((z) => Math.max(0.55, z - 0.15))} className="h-8 w-8 border border-zinc-700 bg-[#121218] text-white text-sm font-bold">−</button>
-            <button type="button" onClick={resetView} className="h-8 w-8 border border-zinc-700 bg-[#121218] text-white text-[10px] font-bold">⟲</button>
+            <button
+              type="button"
+              onClick={() => {
+                const el = wrapRef.current?.getBoundingClientRect()
+                const cx = (el?.left || 0) + (el?.width || 0) / 2
+                const cy = (el?.top || 0) + (el?.height || 0) / 2
+                zoomAt(1.2, cx, cy)
+              }}
+              className="h-8 w-8 border border-zinc-700 bg-[#121218] text-white text-sm font-bold"
+              aria-label="Zoom in"
+            >
+              +
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const el = wrapRef.current?.getBoundingClientRect()
+                const cx = (el?.left || 0) + (el?.width || 0) / 2
+                const cy = (el?.top || 0) + (el?.height || 0) / 2
+                zoomAt(1 / 1.2, cx, cy)
+              }}
+              className="h-8 w-8 border border-zinc-700 bg-[#121218] text-white text-sm font-bold"
+              aria-label="Zoom out"
+            >
+              −
+            </button>
+            <button type="button" onClick={resetView} className="h-8 w-8 border border-zinc-700 bg-[#121218] text-white text-[10px] font-bold" aria-label="Reset view">⟲</button>
+            <span className="text-[9px] text-zinc-500 text-center tabular-nums">{zoom >= 10 ? zoom.toFixed(0) : zoom.toFixed(2)}×</span>
           </div>
         </div>
       </div>

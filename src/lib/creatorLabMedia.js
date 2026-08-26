@@ -88,16 +88,6 @@ export function containDraw(ctx, media, dx, dy, dw, dh) {
   }
 }
 
-export function applyCssFilter(ctx, css, w, h, drawFn) {
-  ctx.save()
-  if (css) ctx.filter = css
-  drawFn()
-  ctx.restore()
-  if (!css) return
-  // reset filter for overlays drawn after
-  ctx.filter = 'none'
-}
-
 export function stopStream(stream) {
   try {
     stream?.getTracks?.().forEach((t) => t.stop())

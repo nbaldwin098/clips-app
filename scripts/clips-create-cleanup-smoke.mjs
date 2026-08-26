@@ -1,8 +1,8 @@
 /**
- * Smoke: clips open fix, no taste picker, avatars not banners, create filters.
+ * Smoke: clips open fix, no taste picker, avatars not banners, create hashtags.
  */
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 
 const shorts = readFileSync('src/components/ShortsFeed.jsx', 'utf8')
 const home = readFileSync('src/components/HomeFeed.jsx', 'utf8')
@@ -13,22 +13,27 @@ const create = readFileSync('src/components/CreatePage.jsx', 'utf8')
 const upload = readFileSync('src/components/UploadModal.jsx', 'utf8')
 const app = readFileSync('src/App.jsx', 'utf8')
 const css = readFileSync('src/index.css', 'utf8')
-const taste = readFileSync('src/lib/tasteOnboarding.js', 'utf8')
+const lab = readFileSync('src/components/studio/CreatorLab.jsx', 'utf8')
 
 assert.match(shorts, /typeof itemOrId === 'string' \? itemOrId : itemOrId\?\.id/)
 assert.doesNotMatch(shorts, /onNavigate\?\.\('clips', \{ id \}\)/)
 assert.match(app, /typeof rawId === 'object'/)
 assert.match(css, /scrollbar-gutter:\s*stable/)
 assert.doesNotMatch(home, /TastePicker/)
-assert.match(taste, /return true/)
+assert.equal(existsSync('src/components/TastePicker.jsx'), false)
+assert.equal(existsSync('src/lib/aiAvatar.js'), false)
 assert.doesNotMatch(profile, /bannerUrl|Change banner/)
 assert.doesNotMatch(channel, /Change banner/)
 assert.doesNotMatch(account, /Change banner|bannerDraft/)
 assert.match(profile, /ChannelAvatar/)
 assert.match(create, /Pick a format/)
-assert.match(upload, /Look filters/)
-assert.match(upload, /STREAM_FILTERS/)
+assert.doesNotMatch(upload, /Look filters/)
+assert.doesNotMatch(upload, /STREAM_FILTERS/)
+assert.match(upload, /HashtagInput|Hashtags/)
 assert.match(upload, /Category/)
 assert.match(upload, /LIVE_CATEGORIES/)
+assert.match(lab, /StudioSocialsPanel/)
+assert.doesNotMatch(lab, /STREAM_FILTERS/)
+assert.doesNotMatch(lab, /aiAvatar|AI avatar/)
 
 console.log('clips-create-cleanup-smoke: ok')

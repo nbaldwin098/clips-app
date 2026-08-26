@@ -305,7 +305,7 @@ export default function StudioSocialsPanel({ onNavigate }) {
                 <SettingsButton disabled={busy || !selectedProviders.length} onClick={onPost}>
                   {busy ? 'Queueing…' : 'Post to selected'}
                 </SettingsButton>
-                <SettingsButton variant="ghost" onClick={() => onNavigate?.('calabi-studio')}>
+                <SettingsButton variant="ghost" onClick={() => onNavigate?.('calabi-studio', 'socials')}>
                   Open Calabi Studio
                 </SettingsButton>
               </div>
