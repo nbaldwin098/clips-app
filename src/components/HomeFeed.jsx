@@ -12,11 +12,14 @@ import Footer from './Footer'
 import HourlyHitsCarousel from './HourlyHitsCarousel'
 import { preloadPostedItem, preloadPostedItems } from '../lib/preloadMedia'
 import { useContentSyncTick } from '../lib/useContentSync'
+import { isCatalogHydrated } from '../lib/catalogStore'
+import { syncContentFromCloud } from '../lib/contentSync'
 
 export default function HomeFeed({ onPlayItem, onOpenPic, onOpenProfile, onNavigate }) {
   const { user } = useAuth()
   const syncTick = useContentSyncTick()
   const [picked, setPicked] = useState(() => hasPickedTopics())
+  const hydrated = isCatalogHydrated()
   const items = useMemo(() => getStableHomeFeed(user?.id || null), [user?.id, picked, syncTick])
   const following = useMemo(() => getStableFollowingFeed(user?.id || null), [user?.id, syncTick])
   const promo = useMemo(() => getActivePromotion(), [syncTick])
@@ -28,6 +31,11 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onOpenProfile, onNavig
     if (!user?.id) return []
     return listContinueWatching(user.id).map((row) => getWatchItem(row.contentId)).filter((i) => i && i.type === 'video')
   }, [user?.id, syncTick])
+
+  // Ensure a catalog pull starts even if App's interval hasn't fired yet.
+  useEffect(() => {
+    syncContentFromCloud(user).catch(() => {})
+  }, [user?.id])
 
   useEffect(() => {
     preloadPostedItem(featured)
@@ -93,7 +101,11 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onOpenProfile, onNavig
         </section>
       )}
 
-      {items.length === 0 ? (
+      {!hydrated ? (
+        <div className="rounded-2xl border border-[#272727] bg-[#0f0f0f] px-6 py-16 text-center">
+          <p className="text-sm font-medium text-zinc-400">Loading posts…</p>
+        </div>
+      ) : items.length === 0 ? (
         <div className="rounded-2xl border border-[#272727] bg-[#0f0f0f] px-6 py-16 text-center">
           <div className="mx-auto h-12 w-12 rounded-full bg-white/10 flex items-center justify-center">
             <Sparkles className="h-6 w-6 text-white" />

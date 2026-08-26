@@ -2,11 +2,12 @@
  * Cloud catalog sync. Supabase is the source of truth.
  * Session memory holds the latest pull; catalog is not written to localStorage.
  */
-import { replaceImportsFromCloud, mergeImports, removeImport, purgeLegacyLocalCatalog, getImports } from './storage'
+import { replaceImportsFromCloud, removeImport, purgeLegacyLocalCatalog, getImports } from './storage'
 import { isUserUploadRecord } from './mediaMeta'
 import { getSupabase, isSupabaseConfigured } from './supabaseClient'
 import { isFeedable, isReferenceItem, hasStableImage, purgeDeadCatalog } from './catalogHealth'
 import { clearFrozenFeeds } from './frozenFeeds'
+import { markCatalogHydrated } from './catalogStore'
 
 const TABLE = 'videos'
 const SYNC_EVENT = 'clips-content-sync'
@@ -225,7 +226,8 @@ export async function syncContentFromCloud(actor = null) {
     })
     replaceImportsFromCloud([...pending, ...rows])
   } else {
-    mergeImports([])
+    // Empty/failed pull must not wipe, but the UI needs a hydrated signal.
+    markCatalogHydrated()
   }
   purgeDeadCatalog()
   notifyContentChanged()
