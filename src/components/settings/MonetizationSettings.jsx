@@ -44,7 +44,7 @@ export default function MonetizationSettings({ onNavigate }) {
         <SettingsSaveHint />
       </SettingsSection>
 
-      <SettingsSection title="Earn" divider description="Site AdSense (when enabled) keeps a tiny live picture during ads, then returns to full stream. Ad money is platform revenue, not a creator share.">
+      <SettingsSection title="Earn" divider description="Tips, premium memberships, and Calabi Cash are how creators get paid. Site ads are off — not a creator share and not a payout source.">
         {!approved ? (
           <SettingsNotice>
             <p>Anyone can create. You have to apply to earn.</p>

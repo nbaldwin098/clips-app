@@ -51,10 +51,10 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 |----|------|-------|-------|--------|
 | BUG-010 | Live | Live ingest not connected — lobby only | Gate on `VITE_LIVE_INGEST_CONNECTED`; OBS/RTMP/HLS still missing | `open` |
 | BUG-011 | Live | Host ad controls / liveAds stubs after ads removal | LiveView + Stream settings controls removed; thin stubs kept for advertise portal | `done` |
-| BUG-012 | Ads | Decide monetization path: AdSense vs none vs later video ads | Head script via `NEXT_PUBLIC_ADSENSE_CLIENT`; units still TBD | `doing` |
-| BUG-013 | Ads | Wire AdSense units for clip-feed + pic-feed if keeping AdSense | Need slot IDs after site approved; Auto ads off preferred | `open` |
-| BUG-014 | Creator Studio | Setup hub / earnings / apply badge not on `main` | Draft PR #93 stale; re-land on current main | `open` |
-| BUG-015 | Creator Studio | Orphan AnalyticsPage / channel branding duplication | Consolidate Account + Channel settings | `open` |
+| BUG-012 | Ads | Decide monetization path: AdSense vs none vs later video ads | Product decision: no ads for now; tips/premium/Cash | `wontfix` |
+| BUG-013 | Ads | Wire AdSense units for clip-feed + pic-feed if keeping AdSense | Cancelled with BUG-012 | `wontfix` |
+| BUG-014 | Creator Studio | Setup hub / earnings / apply badge not on `main` | Studio hub + grouped rail shipped | `doing` |
+| BUG-015 | Creator Studio | Orphan AnalyticsPage / channel branding duplication | Settings grouped template; Account uses SettingsTemplates | `doing` |
 | BUG-016 | Payouts | Manual payouts only; no Stripe Connect | Honest copy exists; Connect still planned | `open` |
 | BUG-017 | SEO | Dynamic sitemap for public content ids | Done in #106 | `done` |
 | BUG-018 | SEO | Server-render real HTML for About/Help/Legal bodies | Done in #106 | `done` |
@@ -137,16 +137,18 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 
 | ID | Issue | Reason |
 |----|-------|--------|
-| — | Keep ExoClick VAST as primary | Product moved off ExoClick; use AdSense or none |
+| — | Keep ExoClick VAST as primary | Product moved off ExoClick |
+| BUG-012 | AdSense monetization path | Decided: no ads; tips/premium/Cash only |
+| BUG-013 | Wire AdSense clip/pic units | Cancelled with BUG-012 |
 
 ---
 
 ## Next 5 to pull (suggested order)
 
-1. **BUG-002** — Confirm Storage bucket is named exactly `clips`  
-2. **BUG-027** — Close/rebase stale open PRs  
-3. **BUG-012** — Decide AdSense vs none and wire or drop #102  
-4. **BUG-004** — Owner / CS1 cloud login regression coverage  
+1. **BUG-010** — Live ingest (RTMP/HLS)  
+2. **BUG-016** — Stripe Connect payouts  
+3. **BUG-014 / BUG-015** — Finish studio/settings polish after hub PR  
+4. **BUG-053** — MFA enroll flow spot-check on cloud  
 5. **BUG-040** — Quarantine or fix flaky named-activity smoke
 
 ---

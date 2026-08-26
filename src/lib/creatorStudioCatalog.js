@@ -25,7 +25,6 @@ export const CREATOR_STUDIO_GROUPS = [
       { id: 'stream-settings', label: 'Stream & ingest', route: { view: 'settings', section: 'stream' }, status: 'partial' },
       { id: 'stream-key', label: 'Stream key', route: { view: 'settings', section: 'stream' }, status: 'live' },
       { id: 'multi-stream', label: 'Multi-stream YT/TikTok', route: { view: 'live' }, status: 'partial' },
-      { id: 'live-ads', label: 'Live ad breaks', route: { view: 'settings', section: 'stream' }, status: 'planned' },
     ],
   },
   {
@@ -96,8 +95,8 @@ export const KICK_TWITCH_PARITY = [
   { feature: 'Two-factor authentication', kick: 'partial', twitch: 'live', clips: 'live' },
   { feature: 'DMCA / copyright tools', kick: 'live', twitch: 'live', clips: 'live' },
   { feature: 'ID verification badge', kick: 'live', twitch: 'live', clips: 'live' },
-  { feature: 'Ad revenue share to creators', kick: 'partial', twitch: 'live', clips: 'planned', note: 'Site ads run; no creator ad share in dashboard.' },
-  { feature: 'Live mid-roll ads', kick: 'partial', twitch: 'live', clips: 'live', note: 'Automated and manual live ad breaks in settings.' },
+  { feature: 'Ad revenue share to creators', kick: 'partial', twitch: 'live', clips: 'planned', note: 'Not pursuing site ads for now; tips/premium/Cash instead.' },
+  { feature: 'Live mid-roll ads', kick: 'partial', twitch: 'live', clips: 'planned', note: 'Paused — no AdSense/VAST path active.' },
 ]
 
 export function statusLabel(status) {

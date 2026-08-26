@@ -13,6 +13,8 @@ import {
   Play,
   RotateCcw,
   Trash2,
+  Sparkles,
+  Clapperboard,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import CreatorOnboarding from '../CreatorOnboarding'
@@ -38,19 +40,50 @@ import {
   isVerifiedChannel,
 } from '../../lib/verification'
 import { isOfficialCreator } from '../../lib/uiFormat'
+import {
+  CREATOR_STUDIO_GROUPS,
+  navigateStudioItem,
+  statusLabel,
+} from '../../lib/creatorStudioCatalog'
+import {
+  SettingsPageHeader,
+  SettingsCard,
+  SettingsKpiGrid,
+  SettingsButton,
+  SettingsNotice,
+} from '../settings/SettingsTemplates'
 
-const NAV = [
-  { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-  { id: 'wallet', label: 'Wallet', icon: Wallet },
-  { id: 'vods', label: 'VODs', icon: Video },
-  { id: 'verify', label: 'Get verified', icon: BadgeCheck },
+const STUDIO_NAV = [
+  { id: 'overview', label: 'Overview', icon: LayoutDashboard, group: 'Studio' },
+  { id: 'analytics', label: 'Analytics', icon: BarChart3, group: 'Studio' },
+  { id: 'wallet', label: 'Wallet', icon: Wallet, group: 'Studio' },
+  { id: 'vods', label: 'VODs', icon: Video, group: 'Library' },
+  { id: 'verify', label: 'Get verified', icon: BadgeCheck, group: 'Account' },
 ]
+
+const SECTION_META = {
+  overview: { title: 'Creator Studio', subtitle: 'Posts, activity, and shortcuts' },
+  analytics: { title: 'Analytics', subtitle: 'Views, likes, and growth' },
+  wallet: { title: 'Wallet & revenue', subtitle: 'Cash, memberships, and payouts' },
+  vods: { title: 'VOD library', subtitle: 'Past live lobbies on this device' },
+  verify: { title: 'Verification', subtitle: 'ID check for a verified badge' },
+}
 
 function typeLabel(type) {
   if (type === 'video') return 'Video'
   if (type === 'pic') return 'Pic'
   return 'Clip'
+}
+
+function groupNav(items) {
+  const groups = []
+  for (const item of items) {
+    const name = item.group || 'Studio'
+    const last = groups[groups.length - 1]
+    if (!last || last.name !== name) groups.push({ name, items: [item] })
+    else last.items.push(item)
+  }
+  return groups
 }
 
 function PostRow({ post, active, deleting, onSelect, onPlay, onDelete }) {
@@ -71,23 +104,19 @@ function PostRow({ post, active, deleting, onSelect, onPlay, onDelete }) {
           </div>
           <span className="shrink-0 text-[10px] text-zinc-500">{formatPostedAt(post.createdAt) || '—'}</span>
         </div>
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          <span className="h-6 px-2 inline-flex items-center text-[10px] font-semibold bg-[#18181f] text-zinc-300 border border-zinc-800">
-            {formatCount(views)} views
-          </span>
-          <span className="h-6 px-2 inline-flex items-center text-[10px] font-semibold bg-[#18181f] text-zinc-300 border border-zinc-800">
-            {formatCount(likes)} likes
-          </span>
-          <span className="h-6 px-2 inline-flex items-center text-[10px] font-semibold bg-[#18181f] text-zinc-300 border border-zinc-800">
-            {post.status || 'live'}
-          </span>
+        <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] text-zinc-400">
+          <span>{formatCount(views)} views</span>
+          <span>·</span>
+          <span>{formatCount(likes)} likes</span>
+          <span>·</span>
+          <span>{post.status || 'live'}</span>
         </div>
       </button>
-      <div className="mt-2 grid grid-cols-2 gap-1">
+      <div className="mt-2 flex gap-1">
         <button
           type="button"
           onClick={() => onPlay(post)}
-          className="h-8 inline-flex items-center justify-center gap-1.5 border border-zinc-700 text-xs text-white hover:bg-white hover:text-black"
+          className="h-8 flex-1 inline-flex items-center justify-center gap-1.5 border border-zinc-700 text-xs text-white hover:bg-white hover:text-black"
         >
           <Play className="h-3.5 w-3.5" /> Open
         </button>
@@ -95,34 +124,12 @@ function PostRow({ post, active, deleting, onSelect, onPlay, onDelete }) {
           type="button"
           onClick={() => onDelete(post)}
           disabled={deleting}
-          className="h-8 inline-flex items-center justify-center gap-1.5 border border-red-900/60 text-xs text-red-300 hover:bg-red-950 disabled:opacity-50"
+          className="h-8 px-3 inline-flex items-center justify-center border border-red-900/60 text-xs text-red-300 hover:bg-red-950 disabled:opacity-50"
+          title="Delete"
         >
-          <Trash2 className="h-3.5 w-3.5" /> {deleting ? 'Deleting…' : 'Delete'}
+          <Trash2 className="h-3.5 w-3.5" />
         </button>
       </div>
-    </div>
-  )
-}
-
-function OverviewStats({ posts, views, vods, live, approved, paid }) {
-  return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
-      {[
-        { label: 'Posts', value: String(posts) },
-        { label: 'Views', value: formatCount(views) },
-        { label: 'VODs', value: String(vods) },
-        { label: 'Lobby', value: live ? 'Live' : 'Off' },
-      ].map((s) => (
-        <div key={s.label} className="border border-zinc-800 bg-[#0c0c10] p-3">
-          <p className="text-[10px] uppercase tracking-wider text-zinc-500">{s.label}</p>
-          <p className="mt-1 text-xl font-semibold text-white tabular-nums">{s.value}</p>
-        </div>
-      ))}
-      {approved ? (
-        <p className="col-span-2 lg:col-span-4 text-[11px] text-zinc-500">
-          ${paid.toFixed(2)} marked paid by hand. Views do not pay a rate.
-        </p>
-      ) : null}
     </div>
   )
 }
@@ -131,46 +138,89 @@ function VodsPanel({ user, onNavigate }) {
   const vods = listVods(user?.id)
   const ch = getVodChannel(user?.id)
   return (
-    <div className="space-y-3 p-1">
-      <p className="text-xs text-zinc-500">
-        Copies of ended live lobbies on this device.
-        {ch.enabled ? ` Second channel @${ch.handle || '—'} is ${ch.autoPublish ? 'auto-posting' : 'manual'}.` : ' Second channel is off.'}
-      </p>
-      <button
-        type="button"
-        onClick={() => onNavigate?.('settings', 'stream')}
-        className="h-9 px-3 border border-zinc-700 text-xs text-white"
-      >
-        VOD & stream settings
-      </button>
+    <div className="space-y-4 max-w-2xl">
+      <SettingsNotice>
+        <p>
+          Copies of ended live lobbies on this device.
+          {ch.enabled
+            ? ` Second channel @${ch.handle || '—'} is ${ch.autoPublish ? 'auto-posting' : 'manual'}.`
+            : ' Second channel is off.'}
+        </p>
+        <SettingsButton variant="ghost" onClick={() => onNavigate?.('settings', 'stream')}>
+          VOD & stream settings
+        </SettingsButton>
+      </SettingsNotice>
       {vods.length === 0 ? (
         <p className="text-sm text-zinc-500">No lives ended on this device yet.</p>
       ) : vods.map((v) => (
-        <div key={v.id} className="border border-zinc-800 bg-[#0c0c10] p-3 flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <p className="text-sm text-white">{v.title}</p>
+        <SettingsCard key={v.id} title={v.title || 'Past broadcast'}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-[11px] text-zinc-500">
               {v.endedAt?.slice(0, 16).replace('T', ' ')} · {Math.round((v.durationSec || 0) / 60)} min
             </p>
+            <select
+              value={v.visibility}
+              onChange={(e) => setVodVisibility(v.id, e.target.value)}
+              className="h-9 border border-zinc-800 bg-black px-2 text-xs text-white"
+            >
+              <option value="private">Private</option>
+              <option value="public">Public</option>
+            </select>
           </div>
-          <select
-            value={v.visibility}
-            onChange={(e) => setVodVisibility(v.id, e.target.value)}
-            className="h-9 border border-zinc-800 bg-black px-2 text-xs text-white"
-          >
-            <option value="private">Private</option>
-            <option value="public">Public</option>
-          </select>
-        </div>
+        </SettingsCard>
       ))}
     </div>
   )
 }
 
-function VerifyPanel({ onOpenAuth, onNavigate }) {
+function StudioHub({
+  onNavigate,
+  onOpenUpload,
+  onOpenImport,
+  approved,
+}) {
+  const handlers = { onOpenUpload, onOpenImport }
   return (
-    <div className="max-w-xl">
-      <VerifyPage onOpenAuth={onOpenAuth} onNavigate={onNavigate} />
+    <div className="space-y-4">
+      <SettingsPageHeader
+        title="Shortcuts"
+        subtitle="Organized by what you are doing — not a wall of buttons."
+      />
+      <div className="grid gap-3 md:grid-cols-2">
+        {CREATOR_STUDIO_GROUPS.filter((g) => g.id !== 'account').map((group) => (
+          <SettingsCard
+            key={group.id}
+            title={group.label}
+            description={group.description}
+          >
+            <ul className="space-y-1">
+              {group.items
+                .filter((item) => item.status !== 'planned' && item.route)
+                .slice(0, 5)
+                .map((item) => (
+                  <li key={item.id}>
+                    <button
+                      type="button"
+                      onClick={() => navigateStudioItem(onNavigate, item, handlers)}
+                      className="w-full flex items-center justify-between gap-2 px-2 py-1.5 text-left text-sm text-zinc-300 hover:bg-[#18181f] hover:text-white"
+                    >
+                      <span>{item.label}</span>
+                      <span className="text-[10px] uppercase tracking-wide text-zinc-600">
+                        {statusLabel(item.status)}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+            </ul>
+          </SettingsCard>
+        ))}
+      </div>
+      {!approved ? (
+        <SettingsNotice>
+          <p>Anyone can create. Apply when you want payouts.</p>
+          <SettingsButton onClick={() => onNavigate?.('creator-apply')}>Apply to earn</SettingsButton>
+        </SettingsNotice>
+      ) : null}
     </div>
   )
 }
@@ -193,6 +243,11 @@ export default function CreatorStudio({
   const [restoreBusy, setRestoreBusy] = useState(false)
   const [restoreNote, setRestoreNote] = useState('')
   const [deletingId, setDeletingId] = useState(null)
+  const [showHub, setShowHub] = useState(true)
+
+  useEffect(() => {
+    if (initialSection) setSection(initialSection)
+  }, [initialSection])
 
   useEffect(() => {
     lsSet('calabi_studio_section', section)
@@ -216,6 +271,9 @@ export default function CreatorStudio({
   const vods = listVods(user?.id)
   const verified = isOfficialCreator(user?.id, user?.handle) || isVerifiedChannel(user?.id, user?.handle)
   const verifyStatus = getIdVerificationForUser(user?.id)?.status
+  const navGroups = groupNav(STUDIO_NAV)
+  const meta = SECTION_META[section] || SECTION_META.overview
+  const showPostsColumn = section === 'overview' || section === 'analytics'
 
   const filteredPosts = useMemo(() => {
     if (postFilter === 'all') return posts
@@ -270,170 +328,163 @@ export default function CreatorStudio({
 
   return (
     <div className="h-[calc(100dvh-3.5rem)] min-h-[480px] flex bg-[#000000] text-zinc-100 overflow-hidden">
-      {/* Icon rail — creator pages only */}
-      <aside className="w-14 shrink-0 border-r border-zinc-800 bg-[#050506] flex flex-col items-center py-3 gap-1">
+      {/* Labeled studio rail */}
+      <aside className="hidden sm:flex w-52 shrink-0 border-r border-zinc-800 bg-[#050506] flex-col py-3">
         <button
           type="button"
           onClick={() => onNavigate?.('home')}
-          className="h-10 w-10 flex items-center justify-center text-zinc-500 hover:text-white"
-          title="Back to site"
+          className="mx-2 mb-2 h-9 px-2 inline-flex items-center gap-2 text-xs text-zinc-500 hover:text-white"
         >
-          <ChevronLeft className="h-5 w-5" />
+          <ChevronLeft className="h-4 w-4" /> Site
         </button>
-        <div className="w-8 border-t border-zinc-800 my-1" />
-        {NAV.map((item) => {
-          const Icon = item.icon
-          const active = section === item.id
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setSection(item.id)}
-              title={item.label}
-              className={cn(
-                'h-10 w-10 flex items-center justify-center',
-                active ? 'bg-white text-black' : 'text-zinc-400 hover:text-white hover:bg-[#18181f]'
-              )}
-            >
-              <Icon className="h-5 w-5" />
-            </button>
-          )
-        })}
-        <div className="flex-1" />
-        <button
-          type="button"
-          onClick={() => onNavigate?.('settings', 'channel')}
-          title="Creator settings"
-          className="h-10 w-10 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-[#18181f]"
-        >
-          <Settings className="h-5 w-5" />
-        </button>
+        <nav className="flex-1 px-2 space-y-4 overflow-y-auto">
+          {navGroups.map((g) => (
+            <div key={g.name}>
+              <p className="px-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">{g.name}</p>
+              <div className="space-y-0.5">
+                {g.items.map((item) => {
+                  const Icon = item.icon
+                  const active = section === item.id
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setSection(item.id)}
+                      className={cn(
+                        'w-full flex items-center gap-2.5 px-2.5 py-2 text-sm font-medium text-left',
+                        active ? 'bg-white text-black' : 'text-zinc-400 hover:bg-[#18181f] hover:text-white'
+                      )}
+                    >
+                      <Icon className="h-4 w-4 shrink-0" />
+                      {item.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+        </nav>
+        <div className="px-2 pt-2 border-t border-zinc-800 space-y-0.5">
+          <button
+            type="button"
+            onClick={() => onNavigate?.('calabi-studio')}
+            className="w-full flex items-center gap-2.5 px-2.5 py-2 text-sm text-zinc-400 hover:bg-[#18181f] hover:text-white"
+          >
+            <Clapperboard className="h-4 w-4" /> Calabi Studio
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate?.('settings', 'channel')}
+            className="w-full flex items-center gap-2.5 px-2.5 py-2 text-sm text-zinc-400 hover:bg-[#18181f] hover:text-white"
+          >
+            <Settings className="h-4 w-4" /> Creator settings
+          </button>
+        </div>
       </aside>
 
-      {/* Posts column */}
-      <section className="w-[300px] max-w-[42vw] shrink-0 border-r border-zinc-800 flex flex-col min-h-0 bg-[#07070a]">
-        <div className="shrink-0 px-3 py-3 border-b border-zinc-800">
-          <p className="text-sm font-semibold text-white">Your posts</p>
-          <p className="text-[11px] text-zinc-500 mt-0.5">Select a post to filter the interaction map</p>
-          <div className="mt-2 flex gap-1">
-            {[
-              { id: 'all', label: 'All' },
-              { id: 'video', label: 'Videos' },
-              { id: 'clip', label: 'Clips' },
-              { id: 'pic', label: 'Pics' },
-            ].map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setPostFilter(t.id)}
-                className={cn(
-                  'h-7 px-2 text-[11px] font-semibold',
-                  postFilter === t.id ? 'bg-white text-black' : 'bg-[#18181f] text-zinc-400'
-                )}
-              >
-                {t.label}
-              </button>
+      {/* Mobile section picker */}
+      <div className="sm:hidden absolute top-14 left-0 right-0 z-10 border-b border-zinc-800 bg-[#050506] px-3 py-2">
+        <select
+          value={section}
+          onChange={(e) => setSection(e.target.value)}
+          className="w-full h-9 border border-zinc-800 bg-[#121218] px-2 text-sm text-white"
+        >
+          {STUDIO_NAV.map((s) => (
+            <option key={s.id} value={s.id}>{s.label}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Posts column — only where it helps */}
+      {showPostsColumn ? (
+        <section className="w-[280px] max-w-[40vw] shrink-0 border-r border-zinc-800 flex flex-col min-h-0 bg-[#07070a] max-sm:hidden">
+          <div className="shrink-0 px-3 py-3 border-b border-zinc-800 space-y-2">
+            <div>
+              <p className="text-sm font-semibold text-white">Your posts</p>
+              <p className="text-[11px] text-zinc-500">Select one to filter the map</p>
+            </div>
+            <div className="flex gap-1">
+              {[
+                { id: 'all', label: 'All' },
+                { id: 'video', label: 'Videos' },
+                { id: 'clip', label: 'Clips' },
+                { id: 'pic', label: 'Pics' },
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setPostFilter(t.id)}
+                  className={cn(
+                    'h-7 px-2 text-[11px] font-semibold',
+                    postFilter === t.id ? 'bg-white text-black' : 'bg-[#18181f] text-zinc-400'
+                  )}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-2">
+            {filteredPosts.length === 0 ? (
+              <p className="p-3 text-xs text-zinc-500">No posts yet.</p>
+            ) : filteredPosts.map((post) => (
+              <PostRow
+                key={post.id}
+                post={post}
+                active={selectedPostId === post.id}
+                deleting={deletingId === post.id}
+                onSelect={setSelectedPostId}
+                onPlay={openPost}
+                onDelete={onDeletePost}
+              />
             ))}
           </div>
-          <div className="mt-2 grid grid-cols-2 gap-1">
-            <button type="button" onClick={onOpenUpload} className="h-8 inline-flex items-center justify-center gap-1 bg-white text-black text-[11px] font-semibold">
-              <Upload className="h-3.5 w-3.5" /> Upload
-            </button>
-            <button type="button" onClick={onOpenImport} className="h-8 inline-flex items-center justify-center gap-1 border border-zinc-700 text-[11px] text-white">
-              <Link2 className="h-3.5 w-3.5" /> Import
-            </button>
-            <button type="button" onClick={() => onNavigate?.('live')} className="h-8 inline-flex items-center justify-center gap-1 border border-zinc-700 text-[11px] text-white">
-              <Radio className="h-3.5 w-3.5" /> Live
-            </button>
-            <button
-              type="button"
-              onClick={onRestore}
-              disabled={restoreBusy}
-              className="h-8 inline-flex items-center justify-center gap-1 border border-zinc-700 text-[11px] text-white disabled:opacity-50"
-              title="Restore missing posts"
-            >
-              <RotateCcw className={cn('h-3.5 w-3.5', restoreBusy && 'animate-spin')} />
-              {restoreBusy ? 'Restoring…' : 'Restore'}
-            </button>
-          </div>
-          {restoreNote ? (
-            <div className="mt-2">
-              <p className="text-[10px] text-zinc-400 leading-snug">{restoreNote}</p>
-              {restoreNote.includes("Couldn't") || restoreNote.toLowerCase().includes('error') ? (
-                <ErrorReportPrompt message={restoreNote} context="restore-uploads" />
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-        <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-2">
-          {filteredPosts.length === 0 ? (
-            <div className="p-3 space-y-2">
-              <p className="text-xs text-zinc-500">No posts yet. Upload a video, clip, or pic.</p>
-              <button
-                type="button"
-                onClick={onRestore}
-                disabled={restoreBusy}
-                className="text-[11px] text-zinc-300 underline underline-offset-2 disabled:opacity-50"
-              >
-                Restore posts…
-              </button>
-            </div>
-          ) : filteredPosts.map((post) => (
-            <PostRow
-              key={post.id}
-              post={post}
-              active={selectedPostId === post.id}
-              deleting={deletingId === post.id}
-              onSelect={setSelectedPostId}
-              onPlay={openPost}
-              onDelete={onDeletePost}
-            />
-          ))}
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       {/* Main workspace */}
-      <main className="flex-1 min-w-0 min-h-0 flex flex-col">
-        <header className="shrink-0 flex flex-wrap items-center gap-2 px-4 py-2.5 border-b border-zinc-800 bg-[#050506]">
+      <main className="flex-1 min-w-0 min-h-0 flex flex-col max-sm:pt-12">
+        <header className="shrink-0 flex flex-wrap items-center gap-2 px-4 py-3 border-b border-zinc-800 bg-[#050506]">
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-white">
-              {section === 'overview' && 'Creator Studio'}
-              {section === 'analytics' && 'Analytics'}
-              {section === 'wallet' && 'Revenue & wallet'}
-              {section === 'vods' && 'VOD library'}
-              {section === 'verify' && 'Verification'}
-            </p>
+            <p className="text-sm font-semibold text-white">{meta.title}</p>
             <p className="text-[11px] text-zinc-500 truncate">
               @{user?.handle || 'creator'} · {posts.length} posts · {formatCount(views)} views
               {verified ? ' · Verified' : verifyStatus === 'pending' ? ' · ID in review' : ''}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="h-7 px-2 inline-flex items-center text-[10px] font-semibold border border-zinc-800 text-zinc-400">
-              {vods.length} VODs
-            </span>
-            <span className="h-7 px-2 inline-flex items-center text-[10px] font-semibold border border-zinc-800 text-zinc-400">
-              {live?.isLive ? 'Lobby live' : 'Lobby off'}
-            </span>
-            {approved ? (
-              <span className="h-7 px-2 inline-flex items-center text-[10px] font-semibold bg-emerald-950/40 border border-emerald-900/50 text-emerald-200">
-                Earn approved
-              </span>
-            ) : (
-              <button
-                type="button"
-                onClick={() => onNavigate?.('creator-apply')}
-                className="h-7 px-2 text-[10px] font-semibold border border-zinc-700 text-zinc-300"
-              >
-                Apply to earn
-              </button>
-            )}
+            <SettingsButton onClick={onOpenUpload} className="h-8 px-3 text-xs inline-flex items-center gap-1.5">
+              <Upload className="h-3.5 w-3.5" /> Upload
+            </SettingsButton>
+            <SettingsButton variant="ghost" onClick={onOpenImport} className="h-8 px-3 text-xs inline-flex items-center gap-1.5">
+              <Link2 className="h-3.5 w-3.5" /> Import
+            </SettingsButton>
+            <SettingsButton variant="ghost" onClick={() => onNavigate?.('live')} className="h-8 px-3 text-xs inline-flex items-center gap-1.5">
+              <Radio className="h-3.5 w-3.5" /> Live
+            </SettingsButton>
+            <button
+              type="button"
+              onClick={onRestore}
+              disabled={restoreBusy}
+              className="h-8 w-8 inline-flex items-center justify-center border border-zinc-700 text-zinc-400 hover:text-white disabled:opacity-50"
+              title="Restore missing posts"
+            >
+              <RotateCcw className={cn('h-3.5 w-3.5', restoreBusy && 'animate-spin')} />
+            </button>
           </div>
         </header>
+        {restoreNote ? (
+          <div className="px-4 py-2 border-b border-zinc-900 text-[11px] text-zinc-400">
+            {restoreNote}
+            {restoreNote.includes("Couldn't") || restoreNote.toLowerCase().includes('error') ? (
+              <ErrorReportPrompt message={restoreNote} context="restore-uploads" />
+            ) : null}
+          </div>
+        ) : null}
 
-        <div className="flex-1 min-h-0 overflow-hidden p-3">
+        <div className="flex-1 min-h-0 overflow-hidden p-3 md:p-4">
           {section === 'overview' ? (
-            <div className="h-full min-h-0 flex flex-col gap-3 overflow-y-auto">
+            <div className="h-full min-h-0 flex flex-col gap-4 overflow-y-auto">
               {showOnboarding ? (
                 <CreatorOnboarding
                   onOpenImport={onOpenImport}
@@ -441,24 +492,49 @@ export default function CreatorStudio({
                   onNavigate={onNavigate}
                 />
               ) : null}
-              <OverviewStats
-                posts={posts.length}
-                views={views}
-                vods={vods.length}
-                live={!!live?.isLive}
-                approved={approved}
-                paid={balance.paid}
+              <SettingsKpiGrid
+                items={[
+                  { label: 'Posts', value: String(posts.length) },
+                  { label: 'Views', value: formatCount(views) },
+                  { label: 'VODs', value: String(vods.length) },
+                  { label: 'Lobby', value: live?.isLive ? 'Live' : 'Off', hint: approved ? `$${balance.paid.toFixed(2)} paid` : 'Apply to earn' },
+                ]}
               />
-              <div className="flex-1 min-h-0">
-                <InteractionBubbleMap
-                  nodes={bubbles}
-                  range={range}
-                  onRangeChange={setRange}
-                  selectedPostId={selectedPostId}
-                  onSelectPost={setSelectedPostId}
-                  postTitle={selectedPost?.title}
-                />
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowHub(true)}
+                  className={cn('h-8 px-3 text-xs font-semibold', showHub ? 'bg-white text-black' : 'border border-zinc-700 text-zinc-300')}
+                >
+                  <span className="inline-flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5" /> Hub</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowHub(false)}
+                  className={cn('h-8 px-3 text-xs font-semibold', !showHub ? 'bg-white text-black' : 'border border-zinc-700 text-zinc-300')}
+                >
+                  Activity map
+                </button>
               </div>
+              {showHub ? (
+                <StudioHub
+                  onNavigate={onNavigate}
+                  onOpenUpload={onOpenUpload}
+                  onOpenImport={onOpenImport}
+                  approved={approved}
+                />
+              ) : (
+                <div className="min-h-[320px] flex-1">
+                  <InteractionBubbleMap
+                    nodes={bubbles}
+                    range={range}
+                    onRangeChange={setRange}
+                    selectedPostId={selectedPostId}
+                    onSelectPost={setSelectedPostId}
+                    postTitle={selectedPost?.title}
+                  />
+                </div>
+              )}
             </div>
           ) : null}
 
@@ -469,7 +545,7 @@ export default function CreatorStudio({
           ) : null}
 
           {section === 'wallet' ? (
-            <div className="h-full overflow-y-auto p-4 space-y-8">
+            <div className="h-full overflow-y-auto space-y-8 max-w-3xl">
               <CalabiCashShop />
               <RevenueSettings onNavigate={onNavigate} />
             </div>
@@ -482,8 +558,8 @@ export default function CreatorStudio({
           ) : null}
 
           {section === 'verify' ? (
-            <div className="h-full overflow-y-auto">
-              <VerifyPanel onOpenAuth={onOpenAuth} onNavigate={onNavigate} />
+            <div className="h-full overflow-y-auto max-w-xl">
+              <VerifyPage onOpenAuth={onOpenAuth} onNavigate={onNavigate} />
             </div>
           ) : null}
         </div>
