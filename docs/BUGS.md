@@ -111,8 +111,8 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 
 | ID | Issue | PR | Date |
 |----|-------|-----|------|
-| BUG-113 | Next SEO finish: all known routes have App Router pages + metadata | (this PR) | 2026-08-26 |
-| BUG-005 | SpaShell route peel / Next SEO rebuild | #103–#108 + finish | 2026-08-26 |
+| BUG-113 | Next SEO finish: all known routes have App Router pages + metadata | #109 | 2026-08-26 |
+| BUG-005 | SpaShell route peel / Next SEO rebuild | #103–#109 | 2026-08-26 |
 | BUG-112 | Next SEO Phase 3: section routes + NextNavContext | #107 | 2026-08-26 |
 | BUG-006 | Client nav synced to Next App Router | #107 | 2026-08-26 |
 | BUG-111 | Next SEO Phase 2: SSR About/Help/Legal + content article HTML + sitemap ids | #106 | 2026-08-26 |
