@@ -14,6 +14,7 @@ export const CREATOR_STUDIO_GROUPS = [
       { id: 'calabi-studio', label: 'Calabi Studio', route: { view: 'calabi-studio' }, status: 'partial' },
       { id: 'studio-tools', label: 'Drafts & schedule', route: { view: 'studio-tools' }, status: 'partial' },
       { id: 'vods', label: 'VOD channel', route: { view: 'dashboard', section: 'vods' }, status: 'live' },
+      { id: 'socials', label: 'Post to socials', route: { view: 'dashboard', section: 'socials' }, status: 'partial' },
     ],
   },
   {

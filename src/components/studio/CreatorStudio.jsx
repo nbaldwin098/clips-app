@@ -14,6 +14,7 @@ import {
   RotateCcw,
   Trash2,
   Clapperboard,
+  Share2,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import CreatorOnboarding from '../CreatorOnboarding'
@@ -32,6 +33,7 @@ import InteractionBubbleMap from './InteractionBubbleMap'
 import StudioRealtimeAnalytics from './StudioRealtimeAnalytics'
 import ErrorReportPrompt from '../ErrorReportPrompt'
 import CreatorEarningsPanel from './CreatorEarningsPanel'
+import StudioSocialsPanel from './StudioSocialsPanel'
 import StreamSettings from '../settings/StreamSettings'
 import VerifyPage from '../VerifyPage'
 import {
@@ -55,6 +57,7 @@ import {
 const STUDIO_NAV = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard, group: 'Studio' },
   { id: 'analytics', label: 'Analytics', icon: BarChart3, group: 'Studio' },
+  { id: 'socials', label: 'Socials', icon: Share2, group: 'Studio' },
   { id: 'earnings', label: 'Earnings', icon: CircleDollarSign, group: 'Money' },
   { id: 'vods', label: 'VODs', icon: Video, group: 'Live' },
   { id: 'stream', label: 'Stream', icon: Radio, group: 'Live' },
@@ -64,6 +67,7 @@ const STUDIO_NAV = [
 const SECTION_META = {
   overview: { title: 'Creator Studio', subtitle: 'Posts, audience, and shortcuts' },
   analytics: { title: 'Analytics', subtitle: 'Pick a post → its bubble map + live stats under it' },
+  socials: { title: 'Socials', subtitle: 'Connect accounts and post videos, clips, pics, or VODs out' },
   earnings: { title: 'Earnings', subtitle: 'Tips, withdrawals, and income chart' },
   vods: { title: 'VOD library', subtitle: 'Past lives — manage visibility here' },
   stream: { title: 'Stream settings', subtitle: 'Key, quality, and VOD channel — stays in the dashboard' },
@@ -622,6 +626,12 @@ export default function CreatorStudio({
                   forcePostTab
                 />
               </div>
+            </div>
+          ) : null}
+
+          {section === 'socials' ? (
+            <div className="h-full overflow-hidden">
+              <StudioSocialsPanel onNavigate={onNavigate} />
             </div>
           ) : null}
 
