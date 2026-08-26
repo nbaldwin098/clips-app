@@ -99,7 +99,7 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
     if (!isSelf || !creatorId || !contentId) return
     const label = String(title || '').trim() || 'this post'
     if (!window.confirm(`Delete "${label}"? This cannot be undone.`)) return
-    await deleteCatalogItem(contentId, user)
+    await deleteCatalogItem(contentId, user, { intentional: true })
     setTick((t) => t + 1)
   }
 

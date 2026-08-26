@@ -20,7 +20,7 @@ export default function StudioToolsPage({ onNavigate }) {
   }
 
   const remove = async (id) => {
-    await deleteCatalogItem(id, user)
+    await deleteCatalogItem(id, user, { intentional: true })
     setTick((n) => n + 1)
   }
 

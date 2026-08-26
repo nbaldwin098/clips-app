@@ -551,7 +551,7 @@ export default function CreatorStudio({
     if (!window.confirm(`Delete "${label}"? This removes it everywhere and cannot be undone.`)) return
     setDeletingId(post.id)
     try {
-      await deleteCatalogItem(post.id, user)
+      await deleteCatalogItem(post.id, user, { intentional: true })
       if (selectedPostId === post.id) setSelectedPostId(null)
     } finally {
       setDeletingId(null)

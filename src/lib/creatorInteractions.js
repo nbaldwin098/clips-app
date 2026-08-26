@@ -54,6 +54,7 @@ export const SURFACE_LABELS = {
   pics: 'Pics feed',
   home: 'Home / card',
   channel: 'Channel',
+  stats: 'Site bubble / stats',
   unknown: 'App',
 }
 
@@ -334,6 +335,50 @@ export function listCreatorInteractions(creatorId, {
       return true
     })
     .slice(0, limit)
+}
+
+/**
+ * Site bubble: one row per contentId that has logged interactions (weight = event count).
+ */
+export function aggregateInteractionsByContent(limit = 400) {
+  const by = new Map()
+  for (const r of all()) {
+    if (!r?.contentId) continue
+    const cur = by.get(r.contentId) || {
+      id: r.contentId,
+      contentId: r.contentId,
+      contentType: r.contentType || null,
+      title: r.title || 'Post',
+      handle: '',
+      thumbUrl: null,
+      weight: 0,
+      creatorId: r.creatorId || null,
+    }
+    cur.weight += 1
+    if (r.title) cur.title = r.title
+    if (r.contentType) cur.contentType = r.contentType
+    if (r.creatorId) cur.creatorId = r.creatorId
+    by.set(r.contentId, cur)
+  }
+  const catalog = new Map()
+  try {
+    for (const raw of getImports()) {
+      if (raw?.id) catalog.set(raw.id, raw)
+    }
+  } catch { /* ok */ }
+  const rows = [...by.values()].map((row) => {
+    const item = catalog.get(row.contentId)
+    return {
+      ...row,
+      title: item?.title || row.title,
+      handle: item?.handle || row.handle || '',
+      thumbUrl: item?.thumbUrl || item?.mediaUrl || null,
+      contentType: item?.type || row.contentType,
+      weight: Math.max(1, row.weight),
+    }
+  })
+  rows.sort((a, b) => b.weight - a.weight)
+  return rows.slice(0, limit)
 }
 
 function rangeCutoff(range) {

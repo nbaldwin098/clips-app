@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Users,
   ThumbsUp,
@@ -9,20 +9,31 @@ import {
   Clapperboard,
   Radio,
   Image as ImageIcon,
+  Download,
+  RotateCcw,
 } from 'lucide-react'
 import { listIndexedUsers } from '../lib/moderation'
-import { listImportsNormalized } from '../lib/contentService'
+import { listImportsNormalized, listPopularCreators } from '../lib/contentService'
 import { lsGet } from '../lib/storage'
 import { useContentSyncTick } from '../lib/useContentSync'
+import { aggregateInteractionsByContent } from '../lib/creatorInteractions'
+import {
+  getCatalogBackupMeta,
+  restoreCatalogBackup,
+  downloadCatalogBackup,
+  snapshotCatalogBackup,
+} from '../lib/catalogBackup'
 import PageHeader from './PageHeader'
 import SiteBubbleMap from './studio/SiteBubbleMap'
 
 export default function StatsPage({ onNavigate }) {
   const syncTick = useContentSyncTick()
+  const [backupTick, setBackupTick] = useState(0)
   const users = useMemo(() => listIndexedUsers(), [syncTick])
   const allItems = useMemo(() => listImportsNormalized(), [syncTick])
   const likesMap = useMemo(() => lsGet('engagement_likes', {}) || {}, [syncTick])
   const liveBoard = useMemo(() => (lsGet('live_board', []) || []).filter((b) => b.isLive), [syncTick])
+  const backupMeta = useMemo(() => getCatalogBackupMeta(), [syncTick, backupTick])
 
   const totalUsers = users.length
 
@@ -57,10 +68,14 @@ export default function StatsPage({ onNavigate }) {
   const clips = useMemo(() => allItems.filter((i) => i.type === 'short'), [allItems])
   const videos = useMemo(() => allItems.filter((i) => i.type === 'video'), [allItems])
   const pics = useMemo(() => allItems.filter((i) => i.type === 'pic'), [allItems])
+  const popularCreators = useMemo(() => listPopularCreators(120), [syncTick, allItems])
+  const interactionRows = useMemo(() => aggregateInteractionsByContent(400), [syncTick])
   const numClips = clips.length
   const numVideos = videos.length
   const numPics = pics.length
   const numLives = liveBoard.length
+  const numCreators = popularCreators.length
+  const numInteractions = interactionRows.length
 
   const bubbleBuckets = useMemo(() => {
     const toRow = (item, weight, contentType) => ({
@@ -70,6 +85,7 @@ export default function StatsPage({ onNavigate }) {
       title: item.title || 'Untitled',
       handle: item.handle || '',
       thumbUrl: item.thumbUrl || item.mediaUrl || null,
+      creatorId: item.creatorId || item.userId || null,
       weight: Math.max(1, Number(weight) || 1),
     })
 
@@ -90,7 +106,21 @@ export default function StatsPage({ onNavigate }) {
       title: s.title || s.displayName || s.handle || 'Live',
       handle: s.handle || '',
       thumbUrl: s.thumbUrl || null,
+      creatorId: s.userId || null,
       weight: 1,
+    }))
+
+    const creatorRows = popularCreators.map((c) => ({
+      id: c.id,
+      contentId: null,
+      contentType: 'creator',
+      title: c.displayName || c.handle || 'Creator',
+      displayName: c.displayName || c.handle || 'Creator',
+      handle: c.handle || '',
+      thumbUrl: c.avatarUrl || null,
+      avatarUrl: c.avatarUrl || null,
+      creatorId: c.id,
+      weight: Math.max(1, Number(c.postCount) || Number(c.views) || 1),
     }))
 
     return {
@@ -100,6 +130,8 @@ export default function StatsPage({ onNavigate }) {
       lives: liveRows,
       likes: liked,
       dislikes: disliked,
+      creators: creatorRows,
+      interactions: interactionRows,
       counts: {
         videos: numVideos,
         clips: numClips,
@@ -107,9 +139,14 @@ export default function StatsPage({ onNavigate }) {
         lives: numLives,
         likes: liked.length,
         dislikes: disliked.length,
+        creators: numCreators,
+        interactions: numInteractions,
       },
     }
-  }, [allItems, likesMap, liveBoard, videos, clips, pics, numVideos, numClips, numPics, numLives])
+  }, [
+    allItems, likesMap, liveBoard, videos, clips, pics, popularCreators, interactionRows,
+    numVideos, numClips, numPics, numLives, numCreators, numInteractions,
+  ])
 
   const stats = [
     { label: 'Users', value: totalUsers.toLocaleString(), icon: Users, hint: 'Registered accounts' },
@@ -123,6 +160,24 @@ export default function StatsPage({ onNavigate }) {
     { label: 'Premium subscribers', value: totalPremiumSubs.toLocaleString(), icon: Crown, hint: 'Marked paid after Stripe return' },
   ]
 
+  const onSnapshotNow = () => {
+    snapshotCatalogBackup('manual')
+    setBackupTick((n) => n + 1)
+  }
+
+  const onRestore = () => {
+    if (!backupMeta?.count) return
+    if (!window.confirm(`Restore ${backupMeta.count} posts from backup (${backupMeta.at})? This replaces the session catalog only — cloud is unchanged.`)) return
+    const res = restoreCatalogBackup()
+    if (res?.ok) setBackupTick((n) => n + 1)
+    else window.alert(res?.error || 'Restore failed')
+  }
+
+  const onDownload = () => {
+    const res = downloadCatalogBackup()
+    if (!res?.ok) window.alert(res?.error || 'No backup to download')
+  }
+
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-8">
       <PageHeader title="Platform Stats" onBack={() => onNavigate?.('home')} />
@@ -135,9 +190,50 @@ export default function StatsPage({ onNavigate }) {
         lives={numLives}
         likes={totalLikes}
         dislikes={totalDislikes}
+        creators={numCreators}
+        interactions={numInteractions}
         buckets={bubbleBuckets}
         onNavigate={onNavigate}
       />
+
+      <div className="rounded-2xl border border-zinc-800 bg-[#121218] p-5 space-y-3">
+        <div>
+          <p className="text-sm font-semibold text-white">Catalog safety backup</p>
+          <p className="text-xs text-zinc-500 mt-1">
+            Local last-known-good snapshot. Taken after cloud sync and before intentional deletes. Not a full cloud backup.
+          </p>
+        </div>
+        <p className="text-xs text-zinc-400">
+          {backupMeta?.count
+            ? `Latest: ${backupMeta.count} posts · ${backupMeta.at} · ${backupMeta.reason || 'snapshot'}`
+            : 'No backup yet — sync the catalog or snapshot manually.'}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={onSnapshotNow}
+            className="h-8 px-3 border border-zinc-700 text-xs text-zinc-200 hover:border-white hover:text-white"
+          >
+            Snapshot now
+          </button>
+          <button
+            type="button"
+            onClick={onRestore}
+            disabled={!backupMeta?.count}
+            className="h-8 px-3 inline-flex items-center gap-1.5 border border-zinc-700 text-xs text-zinc-200 hover:border-white hover:text-white disabled:opacity-40"
+          >
+            <RotateCcw className="h-3.5 w-3.5" /> Restore session
+          </button>
+          <button
+            type="button"
+            onClick={onDownload}
+            disabled={!backupMeta?.count}
+            className="h-8 px-3 inline-flex items-center gap-1.5 border border-zinc-700 text-xs text-zinc-200 hover:border-white hover:text-white disabled:opacity-40"
+          >
+            <Download className="h-3.5 w-3.5" /> Download JSON
+          </button>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
         {stats.map(({ label, value, icon: Icon, hint }) => (

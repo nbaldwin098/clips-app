@@ -380,7 +380,7 @@ export async function adminRemoveContent(id, actorId = 'admin') {
   if (!id) return { ok: false, error: 'Missing post.' }
   try {
     const { deleteCatalogItem } = await import('./contentService.js')
-    const res = await deleteCatalogItem(id, null)
+    const res = await deleteCatalogItem(id, null, { intentional: true })
     log({ userId: '', actorId, action: 'remove-content', reason: id })
     return { ok: true, cloudOk: res?.cloudOk }
   } catch (err) {
