@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import {
   getCreatorEarnings,
-  getCalabiCashBalance,
   getCoinBalance,
   earningsSeriesByDay,
   listWithdrawMethods,
@@ -12,7 +11,6 @@ import {
   requestWithdrawal,
   refreshEarningsFromCloud,
   refreshWalletFromCloud,
-  formatCashDollars,
 } from '../../lib/calabiCash'
 import { creatorBalance } from '../../lib/payouts'
 import {
@@ -107,7 +105,6 @@ export default function CreatorEarningsPanel() {
   const requests = listWithdrawRequests(uid, 10) || []
   // Legacy ledger is { views, paid } — never treat as pending/available cash.
   const payout = creatorBalance(uid, user?.handle) || { views: 0, paid: 0 }
-  const cash = Number(getCalabiCashBalance(uid)) || 0
   const coins = Number(getCoinBalance(uid)) || 0
 
   useEffect(() => {
@@ -143,7 +140,7 @@ export default function CreatorEarningsPanel() {
           { label: 'Available', value: usd(earnings.availableUsd) },
           { label: 'Pending', value: usd(earnings.pendingUsd) },
           { label: 'Lifetime', value: usd(earnings.lifetimeUsd) },
-          { label: 'Your Cash', value: formatCashDollars(cash), hint: `${coins} coins` },
+          { label: 'Your Coins', value: String(coins) },
         ]}
       />
       <IncomeChart series={series} />

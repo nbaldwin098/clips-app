@@ -3,7 +3,7 @@ import { addDonation, postLiveChat, markContentPurchased } from './engagement'
 import { membershipReturnPaid } from './stripeConfig'
 import { startPremiumCheckout } from './checkout'
 import { createNotification } from './notifications'
-import { creditCalabiCash, getTierById, spendCalabiCash, creatorCashShare, usdToCashUnits, hasUsedFirstBuy } from './calabiCash'
+import { creditCoins, getTierById, spendCalabiCash, creatorCashShare, usdToCashUnits } from './calabiCash'
 import { CREATOR_REV_SHARE } from './revenueSplit'
 import { createDonationRequest } from './donationEscrow'
 
@@ -87,36 +87,33 @@ export async function startTipCheckout({ user, kind, creatorId, contentId, amoun
   return { ok: !!result.url, url: result.url || '', message: result.message, granted: false }
 }
 
-/** Buy a Calabi Cash tier via own Stripe Checkout. */
+/** Buy a Coin pack via own Stripe Checkout. */
 export async function startCalabiCashCheckout({ user, tierId }) {
   if (!user?.id) return { ok: false, url: '', message: 'Sign in first.' }
   const tier = getTierById(tierId)
-  if (!tier) return { ok: false, url: '', message: 'Pick a Cash pack.' }
-  if (tier.once) {
-    if (hasUsedFirstBuy(user.id)) return { ok: false, url: '', message: 'First-Time deal already used.' }
-  }
+  if (!tier) return { ok: false, url: '', message: 'Pick a Coin pack.' }
   stashPendingStripe({
-    kind: 'calabi_cash',
+    kind: 'coin_pack',
     donorId: user.id,
     handle: user.handle,
     tierId: tier.id,
-    units: tier.units,
+    coins: tier.coins,
     amount: tier.usd,
   })
   const result = await startPremiumCheckout({
     already: false,
     email: user.email || '',
-    reference: `cash:${tier.id}:${tier.units}:${user.id}`.slice(0, 200),
+    reference: `coins:${tier.id}:${tier.coins}:${user.id}`.slice(0, 200),
     amountCents: Math.round(Number(tier.usd) * 100),
-    kind: 'calabi_cash',
-    productName: tier.label || `Calabi Cash · $${tier.usd}`,
+    kind: 'coin_pack',
+    productName: tier.label || `${tier.coins} Coins`,
     tierId: tier.id,
   })
   return { ok: !!result.url, url: result.url || '', message: result.message, granted: false }
 }
 
 /**
- * Tip with Calabi Cash balance (instant, no Stripe).
+ * Instant tip from Coins balance (legacy Cash tip path).
  * Optional requestText holds funds in escrow until fulfilled + admin release.
  */
 export function tipWithCalabiCash({
@@ -130,7 +127,7 @@ export function tipWithCalabiCash({
   if (!user?.id) return { ok: false, error: 'Sign in first.' }
   if (!creatorId) return { ok: false, error: 'Missing creator.' }
   const n = Math.floor(Number(units) || 0)
-  if (n < 1) return { ok: false, error: 'Enter Cash amount.' }
+  if (n < 1) return { ok: false, error: 'Enter coin amount.' }
   if (requestText) {
     return createDonationRequest({
       donor: user,
@@ -148,7 +145,7 @@ export function tipWithCalabiCash({
   })
   if (!spent.ok) return spent
   const share = creatorCashShare(n, CREATOR_REV_SHARE)
-  creditCalabiCash(creatorId, share.creator, {
+  creditCoins(creatorId, share.creator, {
     kind: 'tip_earn',
     note: `@${user.handle || 'viewer'}`,
   })
@@ -166,14 +163,14 @@ export function tipWithCalabiCash({
       handle: user.handle,
       kind: 'donation',
       amount: n / 100,
-      text: `tipped ${n} Calabi Cash`,
+      text: `tipped ${n} Coins`,
     })
   }
   createNotification({
     userId: creatorId,
     type: 'premium',
-    title: `@${user.handle || 'someone'} tipped ${n} Cash`,
-    body: 'Calabi Cash tip',
+    title: `@${user.handle || 'someone'} tipped ${n} Coins`,
+    body: 'Coin tip',
     view: kind === 'live_cash' ? 'live' : 'watch',
     contentId,
   })
@@ -234,18 +231,19 @@ export function claimStripeReturn(user, params = {}, search = '') {
     applyTip(pending)
     return { ok: true, kind: pending.kind, amount: pending.amount }
   }
-  if (pending?.kind === 'calabi_cash') {
+  if (pending?.kind === 'calabi_cash' || pending?.kind === 'coin_pack') {
     if (pending.donorId !== user.id) return { ok: false, kind: '' }
     const tier = getTierById(pending.tierId)
-    const units = Math.floor(Number(pending.units) || tier?.units || usdToCashUnits(pending.amount))
-    creditCalabiCash(user.id, units, {
-      kind: 'purchase',
-      tierId: pending.tierId,
-      usd: pending.amount,
-      note: 'Calabi Cash pack',
-      coins: tier?.coins || 0,
-    })
-    return { ok: true, kind: 'calabi_cash', units, coins: tier?.coins || 0 }
+    const coins = Math.floor(Number(pending.coins) || tier?.coins || 0)
+    if (coins > 0) {
+      creditCoins(user.id, coins, {
+        kind: 'purchase',
+        tierId: pending.tierId,
+        usd: pending.amount,
+        note: 'Coin pack',
+      })
+    }
+    return { ok: true, kind: 'coin_pack', coins }
   }
   if (pending?.kind === 'post_purchase') {
     if (pending.donorId === user.id && pending.contentId) markContentPurchased(user.id, pending.contentId)

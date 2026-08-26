@@ -25,7 +25,7 @@ export default function MonetizationSettings({ onNavigate }) {
     <div className="space-y-8 pb-8">
       <SettingsPageHeader
         title="Monetization"
-        subtitle="Follow is free. Premium memberships and Calabi Cash tips use an 80/20 creator split. Stripe Payment Link amounts are separate until Connect ships."
+        subtitle="Follow is free. Premium memberships and card tips use an 80/20 creator split. Coins are for chat cosmetics."
       />
 
       <SettingsSection title={REV_SPLIT_COPY.title} description={REV_SPLIT_COPY.body} />
@@ -44,7 +44,7 @@ export default function MonetizationSettings({ onNavigate }) {
         <SettingsSaveHint />
       </SettingsSection>
 
-      <SettingsSection title="Earn" divider description="Tips, premium memberships, and Calabi Cash are how creators get paid. Site ads are off — not a creator share and not a payout source.">
+      <SettingsSection title="Earn" divider description="Card tips, premium memberships, and creator-set pricing are how creators get paid. Coins are for chat. Site ads are off — not a creator share.">
         {!approved ? (
           <SettingsNotice>
             <p>Anyone can create. You have to apply to earn.</p>
@@ -58,10 +58,10 @@ export default function MonetizationSettings({ onNavigate }) {
                 Revenue dashboard
               </SettingsButton>
               <SettingsButton variant="ghost" onClick={() => onNavigate?.('settings', 'wallet')}>
-                Wallet
+                Wallet & Coins
               </SettingsButton>
               <SettingsButton variant="ghost" onClick={() => onNavigate?.('calabi-cash')}>
-                Calabi Cash
+                Buy Coins
               </SettingsButton>
             </div>
           </SettingsNotice>

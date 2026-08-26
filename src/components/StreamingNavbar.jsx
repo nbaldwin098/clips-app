@@ -13,7 +13,8 @@ import { isPlatformOwner } from '../lib/moderation'
 import BrandMark from './BrandMark'
 import ChannelAvatar from './ChannelAvatar'
 import NotificationsMenu from './NotificationsMenu'
-import { getCalabiCashBalance, getCoinBalance, formatCash, refreshWalletFromCloud } from '../lib/calabiCash'
+import { getCoinBalance, refreshWalletFromCloud } from '../lib/calabiCash'
+import CoinIcon from './CoinIcon'
 
 export default function StreamingNavbar({
   onNavigate,
@@ -26,7 +27,6 @@ export default function StreamingNavbar({
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
   const [, setWalletTick] = useState(0)
-  const cash = getCalabiCashBalance(user?.id)
   const coins = getCoinBalance(user?.id)
 
   useEffect(() => {
@@ -114,8 +114,9 @@ export default function StreamingNavbar({
                       <p className="text-xs font-semibold text-white truncate">{user?.displayName || 'User'}</p>
                       <p className="text-[11px] text-zinc-400 truncate">@{user?.handle || 'viewer'}</p>
                       <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
-                        <span className="text-emerald-400 font-semibold">{formatCash(cash)} Cash</span>
-                        <span className="text-amber-400 font-semibold">{coins} Coins</span>
+                        <span className="inline-flex items-center gap-1 text-amber-400 font-semibold">
+                          <CoinIcon className="h-3.5 w-3.5" /> {coins} Coins
+                        </span>
                       </div>
                     </div>
                     <button
@@ -146,7 +147,7 @@ export default function StreamingNavbar({
                       }}
                       className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-zinc-200 hover:bg-[#1f1f2a] hover:text-white"
                     >
-                      <Wallet className="h-4 w-4 text-zinc-400" /> Wallet & Cash
+                      <Wallet className="h-4 w-4 text-zinc-400" /> Wallet & Coins
                     </button>
                     {isPlatformOwner(user) && (
                       <button

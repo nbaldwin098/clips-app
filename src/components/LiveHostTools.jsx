@@ -23,10 +23,11 @@ import {
 import { raidToStream } from '../lib/liveRaids'
 import { listEscrow, markRequestFulfilled } from '../lib/donationEscrow'
 import { VIEWER_ACTIONS, triggerViewerAction, listViewerActions } from '../lib/viewerActions'
-import { getCalabiCashBalance } from '../lib/calabiCash'
+import { getCoinBalance } from '../lib/calabiCash'
 import { getMultiStreamDest, setMultiStreamDest, queueAiHighlight } from '../lib/socialConnects'
 import { getStreamFilter, setStreamFilter, STREAM_FILTERS } from '../lib/streamFilters'
 import { lsGet } from '../lib/storage'
+import CoinIcon from './CoinIcon'
 
 export default function LiveHostTools({ focusedStream, liveNow = [], onOpenCash }) {
   const { user, isAuthenticated } = useAuth()
@@ -51,7 +52,7 @@ export default function LiveHostTools({ focusedStream, liveNow = [], onOpenCash 
   const queue = listChallengeQueue()
   const escrow = isHost ? listEscrow({ creatorId: user?.id, limit: 8 }) : []
   const actions = hostId ? listViewerActions(hostId, 6) : []
-  const cash = getCalabiCashBalance(user?.id)
+  const coins = getCoinBalance(user?.id)
   const multi = getMultiStreamDest(user?.id)
   const filter = getStreamFilter(user?.id)
 
@@ -72,10 +73,10 @@ export default function LiveHostTools({ focusedStream, liveNow = [], onOpenCash 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="text-sm font-semibold text-white">Live tools</p>
-          <p className="text-[11px] text-zinc-500">Pools · challenges · group · raids · Cash actions · multi-stream</p>
+          <p className="text-[11px] text-zinc-500">Pools · challenges · group · raids · coin actions · multi-stream</p>
         </div>
-        <button type="button" onClick={onOpenCash} className="text-xs text-zinc-300 underline">
-          Cash: {cash}
+        <button type="button" onClick={onOpenCash} className="text-xs text-zinc-300 underline inline-flex items-center gap-1">
+          <CoinIcon className="h-3.5 w-3.5" /> {coins} Coins
         </button>
       </div>
 
@@ -86,7 +87,7 @@ export default function LiveHostTools({ focusedStream, liveNow = [], onOpenCash 
         <p className="text-xs font-semibold text-zinc-300">Pool challenge</p>
         {pool ? (
           <div className="text-xs text-zinc-400 space-y-2">
-            <p className="text-white">{pool.title} — {pool.raisedUnits}/{pool.targetUnits} Cash ({pool.status})</p>
+            <p className="text-white">{pool.title} — {pool.raisedUnits}/{pool.targetUnits} Coins ({pool.status})</p>
             {pool.promise ? <p>{pool.promise}</p> : null}
             <div className="flex flex-wrap gap-2">
               <input value={poolGift} onChange={(e) => setPoolGift(e.target.value)} className="h-8 w-20 rounded border border-zinc-700 bg-black px-2 text-white" />
@@ -100,7 +101,7 @@ export default function LiveHostTools({ focusedStream, liveNow = [], onOpenCash 
                   refresh()
                 }}
               >
-                Add Cash
+                Add Coins
               </button>
               {isHost ? (
                 <button type="button" className="h-8 px-3 rounded border border-zinc-700 text-xs" onClick={() => { closePool(hostId); refresh() }}>
@@ -112,7 +113,7 @@ export default function LiveHostTools({ focusedStream, liveNow = [], onOpenCash 
         ) : isHost ? (
           <div className="grid gap-2 sm:grid-cols-2">
             <input value={poolTitle} onChange={(e) => setPoolTitle(e.target.value)} placeholder="Title" className="h-9 rounded border border-zinc-700 bg-black px-2 text-sm text-white" />
-            <input value={poolTarget} onChange={(e) => setPoolTarget(e.target.value)} placeholder="Target Cash" className="h-9 rounded border border-zinc-700 bg-black px-2 text-sm text-white" />
+            <input value={poolTarget} onChange={(e) => setPoolTarget(e.target.value)} placeholder="Target Coins" className="h-9 rounded border border-zinc-700 bg-black px-2 text-sm text-white" />
             <input value={poolPromise} onChange={(e) => setPoolPromise(e.target.value)} placeholder="When hit I will…" className="h-9 rounded border border-zinc-700 bg-black px-2 text-sm text-white sm:col-span-2" />
             <button
               type="button"
@@ -346,13 +347,13 @@ export default function LiveHostTools({ focusedStream, liveNow = [], onOpenCash 
           <p className="text-xs font-semibold text-zinc-300">Request tips (escrow)</p>
           {escrow.map((r) => (
             <div key={r.id} className="text-[11px] text-zinc-400 flex flex-wrap gap-2 items-center">
-              <span>{r.units} Cash · {r.status} · {r.requestText}</span>
+              <span>{r.units} Coins · {r.status} · {r.requestText}</span>
               {r.status === 'held' ? (
                 <button type="button" className="underline" onClick={() => { markRequestFulfilled(r.id, user.id); refresh() }}>Mark fulfilled</button>
               ) : null}
             </div>
           ))}
-          <p className="text-[11px] text-zinc-600">Admin releases Cash after fulfillment.</p>
+          <p className="text-[11px] text-zinc-600">Admin releases Coins after fulfillment.</p>
         </section>
       ) : null}
 

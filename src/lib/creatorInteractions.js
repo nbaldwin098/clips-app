@@ -23,8 +23,10 @@ export function subscribeInteractionsChanged(fn) {
   return () => window.removeEventListener(INTERACTION_EVENT, handler)
 }
 
+export const VIEW_ONLY_COLOR = '#92400e' // brown — visited, no like/follow/share/etc.
+
 export const INTERACTION_TYPES = [
-  { id: 'view', label: 'Opened / viewed', color: '#60a5fa', short: 'View' },
+  { id: 'view', label: 'Viewed only', color: VIEW_ONLY_COLOR, short: 'View' },
   { id: 'like', label: 'Liked', color: '#f472b6', short: 'Like' },
   { id: 'subscribe', label: 'Followed', color: '#34d399', short: 'Fol' },
   { id: 'share', label: 'Shared', color: '#a78bfa', short: 'Share' },
@@ -162,7 +164,9 @@ export function logCreatorInteraction({
     return recent
   }
   const row = {
-    id: `ci_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    id: kind === 'view' && (actorId || contentId)
+      ? `civ_${contentId || 'ch'}_${actorId || 'guest'}_view`.slice(0, 180)
+      : `ci_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     creatorId: cid,
     contentId: contentId || null,
     type: kind,
@@ -317,8 +321,10 @@ export function buildInteractionNetwork(creatorId, posts = [], { contentId = nul
   const people = []
   for (const bucket of byActor.values()) {
     const types = Object.entries(bucket.byType).sort((a, b) => b[1] - a[1])
-    const primaryType = types[0]?.[0] || 'view'
+    const actionTypes = types.filter(([id]) => id !== 'view')
+    const primaryType = actionTypes[0]?.[0] || types[0]?.[0] || 'view'
     const meta = typeMeta(primaryType)
+    const viewOnly = actionTypes.length === 0
     const topEv = [...bucket.events].sort((a, b) => (Number(b.weight) || 1) - (Number(a.weight) || 1))[0]
     const post = topEv?.contentId ? postById.get(topEv.contentId) : null
     people.push({
@@ -333,9 +339,9 @@ export function buildInteractionNetwork(creatorId, posts = [], { contentId = nul
       byType: { ...bucket.byType },
       types: types.map(([id]) => id),
       primaryType,
-      primaryLabel: meta.label,
-      color: meta.color,
-      short: meta.short,
+      primaryLabel: viewOnly ? 'Viewed only' : meta.label,
+      color: viewOnly ? '#92400e' : meta.color,
+      short: viewOnly ? 'View' : meta.short,
       primarySurface: topEv?.surface || 'unknown',
       primaryContentType: topEv?.contentType || contentTypeForItem(post) || null,
       contentIds: [...bucket.contentIds],

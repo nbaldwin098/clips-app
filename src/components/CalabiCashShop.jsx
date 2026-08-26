@@ -1,55 +1,24 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import {
-  listCashTiersForUser,
-  getCalabiCashBalance,
+  listCoinPacks,
   getCoinBalance,
-  listCashLedger,
-  CALABI_CASH_PER_USD,
-  formatCash,
   refreshWalletFromCloud,
   COIN_REDEEMS,
   spendCoins,
 } from '../lib/calabiCash'
 import { startCalabiCashCheckout } from '../lib/tips'
 import { redirectSafeUrl } from '../lib/safeUrl'
-import { REV_SPLIT_COPY } from '../lib/revenueSplit'
 import { cn } from '../lib/utils'
-
-function CashStack({ stack = 1 }) {
-  const n = Math.max(1, Math.min(6, Number(stack) || 1))
-  return (
-    <div className="relative mx-auto h-24 w-28 flex items-end justify-center">
-      <div className="absolute inset-0 rounded-full bg-emerald-500/15 blur-2xl" />
-      {Array.from({ length: n }).map((_, i) => (
-        <div
-          key={i}
-          className="absolute w-16 h-10 rounded-md border border-emerald-400/40 bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-lg"
-          style={{
-            bottom: 8 + i * 7,
-            left: `calc(50% - 2rem + ${(i - (n - 1) / 2) * 4}px)`,
-            transform: `rotate(${(i - (n - 1) / 2) * 4}deg)`,
-            zIndex: i,
-          }}
-        >
-          <span className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-white/90 tracking-widest">
-            C
-          </span>
-        </div>
-      ))}
-    </div>
-  )
-}
+import CoinIcon from './CoinIcon'
 
 export default function CalabiCashShop({ compact = false }) {
   const { user, isAuthenticated } = useAuth()
   const [busy, setBusy] = useState('')
   const [note, setNote] = useState('')
   const [, bump] = useState(0)
-  const bal = getCalabiCashBalance(user?.id)
   const coins = getCoinBalance(user?.id)
-  const tiers = listCashTiersForUser(user?.id)
-  const ledger = listCashLedger(user?.id, 8)
+  const packs = listCoinPacks()
 
   useEffect(() => {
     if (!user?.id) return
@@ -58,7 +27,7 @@ export default function CalabiCashShop({ compact = false }) {
 
   const buy = async (tierId) => {
     if (!isAuthenticated) {
-      setNote('Sign in with your calabi cloud account to buy Cash.')
+      setNote('Sign in with your calabi cloud account to buy Coins.')
       return
     }
     setBusy(tierId)
@@ -85,52 +54,43 @@ export default function CalabiCashShop({ compact = false }) {
   return (
     <div className={cn(compact ? 'space-y-3' : 'space-y-6')}>
       <div>
-        <h2 className="text-lg font-semibold text-white">Calabi Cash</h2>
+        <h2 className="text-lg font-semibold text-white inline-flex items-center gap-2">
+          <CoinIcon className="h-5 w-5" /> Coins
+        </h2>
         <p className="text-sm text-zinc-400 mt-1">
-          {CALABI_CASH_PER_USD} Cash = $1.00. Packs come with Gold Coins too.
-        </p>
-        <p className="text-xs text-zinc-500 mt-1.5">
-          <span className="text-emerald-400/90 font-medium">Cash</span> — donations, TTS, premium, and paid features.
-          {' '}
-          <span className="text-amber-400/90 font-medium">Coins</span> — chat: bigger messages, creator emojis &amp; GIFs, and more later.
+          Buy Coins for chat — bigger messages, creator emojis &amp; GIFs, highlights. Tips / TTS use card checkout or creator pricing.
         </p>
         <div className="mt-3 flex flex-wrap gap-3 text-sm">
-          <span className="rounded-lg border border-emerald-800/60 bg-emerald-950/40 px-3 py-1.5 text-emerald-300 font-semibold">
-            {formatCash(bal)} Cash
-          </span>
-          <span className="rounded-lg border border-amber-800/60 bg-amber-950/40 px-3 py-1.5 text-amber-300 font-semibold">
-            {coins} Gold Coins
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-amber-800/60 bg-amber-950/40 px-3 py-1.5 text-amber-300 font-semibold">
+            <CoinIcon className="h-4 w-4" />
+            {coins} Coins
           </span>
         </div>
-        <p className="text-xs text-zinc-500 mt-2">{REV_SPLIT_COPY.body}</p>
-        <p className="text-[11px] text-zinc-600 mt-1">Balances sync through your cloud account — not this device alone.</p>
+        <p className="text-[11px] text-zinc-600 mt-1">Balances sync through your cloud account.</p>
       </div>
 
       <div className="grid gap-3 grid-cols-2">
-        {tiers.map((t) => (
+        {packs.map((t) => (
           <button
             key={t.id}
             type="button"
             disabled={!!busy}
             onClick={() => buy(t.id)}
-            className="relative text-center rounded-2xl border border-slate-700/80 bg-slate-900/90 p-4 hover:border-emerald-500/50 transition disabled:opacity-60"
+            className="relative text-center rounded-2xl border border-zinc-700/80 bg-zinc-900/90 p-4 hover:border-amber-500/50 transition disabled:opacity-60"
           >
-            {t.badge || t.once ? (
+            {t.badge ? (
               <span className="absolute top-2 left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-wide text-zinc-300 bg-black/50 px-2 py-0.5 rounded-md">
-                {t.badge || 'Free deal'}
+                {t.badge}
               </span>
             ) : null}
-            <CashStack stack={t.stack || 1} />
+            <div className="mx-auto flex h-16 w-16 items-center justify-center">
+              <CoinIcon className="h-12 w-12" />
+            </div>
             <p className="mt-2 text-sm font-bold text-white leading-snug">{t.label}</p>
-            {(t.coins || 0) > 0 ? (
-              <p className="text-[11px] text-amber-300/90 mt-1">+{t.coins} Gold Coins</p>
-            ) : null}
-            <div className="mt-3 w-full rounded-xl bg-slate-800/90 py-2.5 text-base font-bold text-emerald-400">
+            <div className="mt-3 w-full rounded-xl bg-zinc-800/90 py-2.5 text-base font-bold text-amber-300">
               {busy === t.id ? '…' : `$${Number(t.usd).toFixed(2)}`}
             </div>
-            <p className="text-[10px] text-zinc-500 mt-1.5">
-              Card checkout
-            </p>
+            <p className="text-[10px] text-zinc-500 mt-1.5">Card checkout</p>
           </button>
         ))}
       </div>
@@ -139,8 +99,10 @@ export default function CalabiCashShop({ compact = false }) {
 
       {!compact ? (
         <div className="space-y-3">
-          <p className="text-xs font-semibold text-zinc-400">Spend Gold Coins (chat)</p>
-          <p className="text-[11px] text-zinc-500 -mt-1">Bigger chat, creator custom emojis/GIFs, highlights — more chat perks later.</p>
+          <p className="text-xs font-semibold text-zinc-400 inline-flex items-center gap-1.5">
+            <CoinIcon className="h-3.5 w-3.5" /> Spend Coins (chat)
+          </p>
+          <p className="text-[11px] text-zinc-500 -mt-1">Bigger chat, creator custom emojis/GIFs, highlights.</p>
           <div className="grid gap-2 sm:grid-cols-2">
             {COIN_REDEEMS.map((r) => (
               <button
@@ -150,23 +112,12 @@ export default function CalabiCashShop({ compact = false }) {
                 className="text-left rounded-xl border border-zinc-800 bg-[#121218] px-3 py-2.5 hover:border-amber-700/50"
               >
                 <p className="text-sm text-white">{r.label}</p>
-                <p className="text-[11px] text-amber-400 mt-0.5">{r.coins} coins</p>
+                <p className="text-[11px] text-amber-400 mt-0.5 inline-flex items-center gap-1">
+                  <CoinIcon className="h-3 w-3" /> {r.coins} coins
+                </p>
               </button>
             ))}
           </div>
-        </div>
-      ) : null}
-
-      {!compact && ledger.length ? (
-        <div>
-          <p className="text-xs font-semibold text-zinc-400 mb-2">Recent Cash activity</p>
-          <ul className="space-y-1 text-xs text-zinc-500">
-            {ledger.map((r, i) => (
-              <li key={`${r.at}-${i}`}>
-                {r.delta > 0 ? '+' : ''}{r.delta} · {r.kind} · bal {r.balance}
-              </li>
-            ))}
-          </ul>
         </div>
       ) : null}
     </div>

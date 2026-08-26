@@ -6,6 +6,7 @@ import {
 } from '../lib/youtubeParity'
 import ChannelAvatar from './ChannelAvatar'
 import PostedStamp from './PostedStamp'
+import CoinIcon from './CoinIcon'
 import { canComment } from '../lib/trustSafety'
 import { donatedToPost } from '../lib/tips'
 
@@ -60,13 +61,18 @@ export default function CommentsPanel({ contentId, creatorId }) {
         <form onSubmit={submit} className="flex gap-3 mb-6">
           <ChannelAvatar src={user?.avatarUrl} name={user?.displayName || user?.handle} size={40} />
           <div className="flex-1 min-w-0">
-            <input
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder={replyTo ? 'Write a reply…' : 'Add a comment…'}
-              className="w-full h-10 bg-transparent border-b border-[#3f3f3f] text-sm text-zinc-100 placeholder:text-[#aaa] focus:outline-none focus:border-white"
-              maxLength={5000}
-            />
+            <div className="relative">
+              <span className="absolute left-0 bottom-2.5 pointer-events-none">
+                <CoinIcon className="h-3.5 w-3.5" title="Coins" />
+              </span>
+              <input
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder={replyTo ? 'Write a reply…' : 'Add a comment…'}
+                className="w-full h-10 bg-transparent border-b border-[#3f3f3f] pl-6 text-sm text-zinc-100 placeholder:text-[#aaa] focus:outline-none focus:border-white"
+                maxLength={5000}
+              />
+            </div>
             <div className="flex justify-end gap-2 mt-2">
               {replyTo && <button type="button" onClick={() => setReplyTo(null)} className="h-9 px-3 rounded-full text-xs text-zinc-300">Cancel</button>}
               <button type="submit" disabled={!text.trim()} className="h-9 px-4 rounded-full bg-white text-black text-xs font-semibold disabled:bg-[#272727] disabled:text-[#717171]">Post</button>

@@ -20,7 +20,7 @@ export default function HelpPage() {
     },
     {
       q: 'Where is Studio, Wallet, and analytics?',
-      a: 'Open your profile picture → Creator dashboard (Analytics, Earnings, VODs, Stream, Verify). Under Site settings: Account and Wallet & Cash. Create (upload / go live) is in the left menu.',
+      a: 'Open your profile picture → Creator dashboard (Analytics, Earnings, VODs, Stream, Verify). Under Site settings: Account and Wallet & Coins. Create (upload / go live) is in the left menu.',
     },
     {
       q: 'Can I watch without an account?',

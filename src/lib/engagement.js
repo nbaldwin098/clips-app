@@ -11,6 +11,17 @@ const USER_VOTES = 'engagement_votes'
 const VIEWS = 'engagement_views'
 const SUBS = 'engagement_subs'
 const WATCH = 'engagement_watch'
+const UNIQUE_VIEWS_MIGRATED = 'clips_unique_views_migrated_v1'
+
+/** Drop legacy rewatch tallies once — unique viewer sets + cloud counts rebuild truth. */
+function ensureUniqueViewMigration() {
+  try {
+    if (lsGet(UNIQUE_VIEWS_MIGRATED, false)) return
+    lsSet(VIEWS, {})
+    lsSet(UNIQUE_VIEWS_MIGRATED, true)
+  } catch {}
+}
+ensureUniqueViewMigration()
 
 export function getVotes(contentId) {
   const all = lsGet(LIKES, {})
@@ -120,18 +131,23 @@ export function recordView(contentId, meta = {}) {
   if (!contentId) return 0
   const all = lsGet(VIEWS, {}) || {}
   const map = all && typeof all === 'object' && !Array.isArray(all) ? all : {}
-  map[contentId] = (map[contentId] || 0) + 1
-  lsSet(VIEWS, map)
-  recordHourView(contentId)
+
   queueMicrotask(() => {
     Promise.all([
       import('./creatorInteractions'),
       import('./graphSync').catch(() => ({ getGraphActor: () => null })),
-    ]).then(([{ logCreatorInteraction, creatorIdForContent }, graph]) => {
+      import('./uniqueViews'),
+    ]).then(async ([{ logCreatorInteraction, creatorIdForContent }, graph, unique]) => {
       const creatorId = meta.creatorId || creatorIdForContent(contentId)
       if (!creatorId) return
-      // Prefer explicit actor; fall back to signed-in cloud session so self-views still map.
       const actorId = meta.actorId || graph?.getGraphActor?.()?.id || null
+      const viewerKey = unique.resolveViewerKey(actorId)
+      unique.markUniqueViewer(contentId, viewerKey)
+      const uniqueCount = unique.uniqueViewerCount(contentId)
+      map[contentId] = uniqueCount
+      lsSet(VIEWS, map)
+      recordHourView(contentId)
+
       logCreatorInteraction({
         creatorId,
         contentId,
@@ -141,24 +157,60 @@ export function recordView(contentId, meta = {}) {
         surface: meta.surface || 'unknown',
         contentType: meta.contentType || null,
       })
+
+      try {
+        const { getSupabase, isSupabaseConfigured } = await import('./supabaseClient')
+        if (isSupabaseConfigured()) {
+          const sb = await getSupabase()
+          if (sb) {
+            const { data, error } = await sb.functions.invoke('record-content-view', {
+              body: {
+                contentId,
+                creatorId,
+                surface: meta.surface || 'unknown',
+                contentType: meta.contentType || null,
+                title: meta.title || '',
+              },
+            })
+            if (!error && data?.views != null) {
+              map[contentId] = Math.max(uniqueCount, Number(data.views) || 0)
+              lsSet(VIEWS, map)
+              return
+            }
+          }
+        }
+      } catch {}
+
       import('./economySync').then(({ pushContentView }) => {
         pushContentView({
           contentId,
           creatorId,
           actorId,
+          viewerKey,
           surface: meta.surface || 'unknown',
           contentType: meta.contentType || null,
         }).catch(() => {})
       }).catch(() => {})
     }).catch(() => {})
   })
-  return map[contentId]
+
+  return getViews(contentId)
 }
 
 export function getViews(contentId) {
+  if (!contentId) return 0
+  try {
+    const UNIQUE_KEY = 'clips_unique_viewers_v1'
+    const uniq = lsGet(UNIQUE_KEY, {}) || {}
+    // Once unique tracking exists for this post, never fall back to legacy rewatch counters.
+    if (Object.prototype.hasOwnProperty.call(uniq, contentId)) {
+      const bucket = uniq[contentId]
+      return bucket && typeof bucket === 'object' ? Object.keys(bucket).length : 0
+    }
+  } catch {}
   const all = lsGet(VIEWS, {}) || {}
   const map = all && typeof all === 'object' && !Array.isArray(all) ? all : {}
-  return map[contentId] || 0
+  return Number(map[contentId]) || 0
 }
 
 export function getSubscriptionsForUser(userId) {

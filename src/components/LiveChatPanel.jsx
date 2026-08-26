@@ -14,9 +14,9 @@ import { cn } from '../lib/utils'
 import { trySendLiveChat, removeLiveChatMessage } from '../lib/liveChat'
 import { subscribeLiveChat, GLOBAL_LIVE_CHANNEL_ID, isGlobalLiveChannel } from '../lib/liveChatSync'
 import { isChannelMod, timeoutChatUser, banChatUser } from '../lib/channelStaff'
-import { startTipCheckout, tipWithCalabiCash, TIP_AMOUNTS, TIP_AMOUNT_MIN, TIP_AMOUNT_MAX } from '../lib/tips'
+import { startTipCheckout, TIP_AMOUNTS, TIP_AMOUNT_MIN, TIP_AMOUNT_MAX } from '../lib/tips'
 import { ownCheckoutConfigured } from '../lib/stripeCheckout'
-import { getCalabiCashBalance } from '../lib/calabiCash'
+import CoinIcon from './CoinIcon'
 import { redirectSafeUrl } from '../lib/safeUrl'
 
 const QUICK_EMOTES = [
@@ -64,8 +64,6 @@ export default function LiveChatPanel({
   const [chatError, setChatError] = useState('')
   const [tipBusy, setTipBusy] = useState('')
   const [customTip, setCustomTip] = useState('')
-  const [cashTip, setCashTip] = useState('100')
-  const [requestText, setRequestText] = useState('')
   const [timestampsEnabled, setTimestampsEnabled] = useState(false)
   const [chatSettingsOpen, setChatSettingsOpen] = useState(false)
   const [liveRegion, setLiveRegion] = useState('')
@@ -141,23 +139,6 @@ export default function LiveChatPanel({
     setTipBusy('')
     setChatError(result.message || '')
     if (result.url) redirectSafeUrl(result.url)
-  }
-
-  const donateCash = () => {
-    if (!isAuthenticated) { onOpenAuth?.(); return }
-    if (isGlobal || !channel?.userId) {
-      setChatError('Open a creator stream to tip with Cash.')
-      return
-    }
-    const result = tipWithCalabiCash({
-      user,
-      creatorId: streamUserId,
-      units: cashTip,
-      kind: 'live_cash',
-      requestText: requestText.trim(),
-    })
-    setChatError(result.ok ? (requestText.trim() ? 'Request tip held in escrow.' : `Sent ${result.units} Cash.`) : (result.error || 'Could not tip.'))
-    if (result.ok) setRequestText('')
   }
 
   const canMod = isAuthenticated && !isGlobal && streamUserId && isChannelMod(streamUserId, user)
@@ -397,41 +378,18 @@ export default function LiveChatPanel({
             ) : (
               <p className="text-[10px] text-zinc-600">Live donate needs own Stripe Checkout (deploy create-checkout-session).</p>
             )}
-            <div className="space-y-1 border-t border-zinc-800 pt-2">
-              <p className="text-[10px] text-zinc-500">Calabi Cash · bal {getCalabiCashBalance(user?.id)}</p>
-              <div className="flex items-center gap-1">
-                <input
-                  type="number"
-                  min={1}
-                  value={cashTip}
-                  onChange={(e) => setCashTip(e.target.value)}
-                  className="h-7 w-20 rounded-md border border-zinc-800 bg-black px-2 text-[11px] text-white"
-                />
-                <button
-                  type="button"
-                  disabled={streamUserId === user?.id}
-                  onClick={donateCash}
-                  className="h-7 px-2 rounded-md bg-white text-[11px] font-semibold text-black disabled:opacity-40"
-                >
-                  Tip Cash
-                </button>
-              </div>
-              <input
-                value={requestText}
-                onChange={(e) => setRequestText(e.target.value)}
-                placeholder="Optional request (escrow until fulfilled)"
-                className="h-7 w-full rounded-md border border-zinc-800 bg-black px-2 text-[11px] text-white"
-              />
-            </div>
             {chatError ? <p className="text-[11px] text-red-400">{chatError}</p> : null}
             <div className="relative flex items-center gap-1">
+              <span className="absolute left-2.5 z-10 pointer-events-none">
+                <CoinIcon className="h-3.5 w-3.5" title="Coins" />
+              </span>
               <input
                 type="text"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder="Send a message..."
                 maxLength={500}
-                className="w-full h-10 rounded-lg border border-[#272734] bg-[#181822] pl-3 pr-20 text-xs text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-white"
+                className="w-full h-10 rounded-lg border border-[#272734] bg-[#181822] pl-8 pr-20 text-xs text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-white"
               />
               <button
                 type="button"
