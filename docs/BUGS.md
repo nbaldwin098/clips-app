@@ -51,8 +51,8 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 |----|------|-------|-------|--------|
 | BUG-010 | Live | Live ingest not connected — lobby only | Gate on `VITE_LIVE_INGEST_CONNECTED`; OBS/RTMP/HLS still missing | `open` |
 | BUG-011 | Live | Host ad controls / liveAds stubs after ads removal | LiveView + Stream settings controls removed; thin stubs kept for advertise portal | `done` |
-| BUG-012 | Ads | Decide monetization path: AdSense vs none vs later video ads | Head script PR #102; keep tiny stream PiP during ads (`ADSENSE_KEEP_STREAM_PIP`) | `open` |
-| BUG-013 | Ads | Wire AdSense units for clip-feed + pic-feed if keeping AdSense | Need slot IDs; Auto ads off | `blocked` |
+| BUG-012 | Ads | Decide monetization path: AdSense vs none vs later video ads | Head script via `NEXT_PUBLIC_ADSENSE_CLIENT`; units still TBD | `doing` |
+| BUG-013 | Ads | Wire AdSense units for clip-feed + pic-feed if keeping AdSense | Need slot IDs after site approved; Auto ads off preferred | `open` |
 | BUG-014 | Creator Studio | Setup hub / earnings / apply badge not on `main` | Draft PR #93 stale; re-land on current main | `open` |
 | BUG-015 | Creator Studio | Orphan AnalyticsPage / channel branding duplication | Consolidate Account + Channel settings | `open` |
 | BUG-016 | Payouts | Manual payouts only; no Stripe Connect | Honest copy exists; Connect still planned | `open` |

@@ -28,6 +28,10 @@ const CLIENT_ENV = {
   VITE_SUPABASE_SQL_EDITOR: (typeof process !== 'undefined' && process.env.VITE_SUPABASE_SQL_EDITOR) || '',
   VITE_APPS_OPEN_FROM: (typeof process !== 'undefined' && process.env.VITE_APPS_OPEN_FROM) || '',
   VITE_APPS_OPEN_UNTIL: (typeof process !== 'undefined' && process.env.VITE_APPS_OPEN_UNTIL) || '',
+  VITE_ADSENSE_CLIENT:
+    (typeof process !== 'undefined' && (process.env.VITE_ADSENSE_CLIENT || process.env.NEXT_PUBLIC_ADSENSE_CLIENT)) || '',
+  NEXT_PUBLIC_ADSENSE_CLIENT:
+    (typeof process !== 'undefined' && (process.env.NEXT_PUBLIC_ADSENSE_CLIENT || process.env.VITE_ADSENSE_CLIENT)) || '',
   NODE_ENV: (typeof process !== 'undefined' && process.env.NODE_ENV) || '',
 }
 

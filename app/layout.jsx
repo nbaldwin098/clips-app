@@ -1,4 +1,5 @@
 import './globals.css'
+import Script from 'next/script'
 
 export const metadata = {
   metadataBase: new URL('https://calabi.us'),
@@ -35,7 +36,18 @@ export const viewport = {
   initialScale: 1,
 }
 
+function adsenseClientId() {
+  const raw = (
+    process.env.NEXT_PUBLIC_ADSENSE_CLIENT
+    || process.env.VITE_ADSENSE_CLIENT
+    || ''
+  ).trim()
+  if (/^ca-pub-\d{10,20}$/.test(raw)) return raw
+  return ''
+}
+
 export default function RootLayout({ children }) {
+  const adsense = adsenseClientId()
   return (
     <html lang="en">
       <head>
@@ -46,6 +58,15 @@ export default function RootLayout({ children }) {
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap"
           rel="stylesheet"
         />
+        {adsense ? (
+          <Script
+            id="adsense-client"
+            async
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsense}`}
+            crossOrigin="anonymous"
+            strategy="afterInteractive"
+          />
+        ) : null}
       </head>
       <body className="bg-[#000000] text-zinc-100 antialiased selection:bg-white/30 selection:text-white">
         {children}

@@ -1,6 +1,6 @@
 /**
  * Platform owner identity — CS1 signs in through Supabase like any other user.
- * Aliases (cs1, sa6sysn, cs1@calabi.local) resolve to real cloud emails.
+ * Aliases (cs1, sa6sysn, cs1@calabi.local) resolve to cs1@calabi.us only.
  * Local password hashes are only for the admin portal code check, not site login.
  */
 export const OWNER_LOGIN = {
@@ -25,7 +25,6 @@ const OWNER_HANDLES = new Set(['cs1', 'sa6sysn'])
 const OWNER_EMAILS = new Set([
   'cs1@calabi.us',
   'cs1@calabi.local',
-  'kiddnixk@gmail.com',
 ])
 
 const OWNER_ALIASES = new Set([...OWNER_HANDLES, ...OWNER_EMAILS])
@@ -43,18 +42,17 @@ export function findOwnerLogin(value) {
   return null
 }
 
-/** Cloud emails to try for an owner alias (never *.local). */
+/** Cloud emails to try for an owner alias (never *.local, never personal Gmail). */
 export function ownerCloudEmails(typed = '') {
   const t = String(typed || '').trim().toLowerCase()
   const list = []
-  if (t.includes('@') && !t.endsWith('.local')) list.push(t)
-  list.push(OWNER_LOGIN.email, 'kiddnixk@gmail.com')
+  if (t.includes('@') && !t.endsWith('.local') && !t.endsWith('@gmail.com')) list.push(t)
+  list.push(OWNER_LOGIN.email)
   return [...new Set(list.filter((e) => e.includes('@') && !e.endsWith('.local')))]
 }
 
 export function isOwnerAccount(user) {
   if (!user || typeof user !== 'object') return false
-  // Legacy local id should not grant owner once cloud-only — only real emails/handles / configured id
   if (findOwnerLogin(user.email) || findOwnerLogin(user.handle)) return true
   return false
 }
