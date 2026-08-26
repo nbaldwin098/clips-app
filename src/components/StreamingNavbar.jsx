@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import {
   Search,
-  Menu,
   Settings,
   LogOut,
   SlidersHorizontal,
@@ -17,23 +16,13 @@ import NotificationsMenu from './NotificationsMenu'
 export default function StreamingNavbar({
   onNavigate,
   onOpenAuth,
-  onToggleSidebar,
-  sidebarOpen,
   searchQuery,
   onSearchChange,
   onOpenWatch,
 }) {
   const { user, isAuthenticated, logout } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
-  const [menuDeg, setMenuDeg] = useState(0)
-  const lastOpen = useRef(!!sidebarOpen)
   const menuRef = useRef(null)
-
-  useEffect(() => {
-    if (lastOpen.current === !!sidebarOpen) return
-    lastOpen.current = !!sidebarOpen
-    setMenuDeg((d) => d + 90)
-  }, [sidebarOpen])
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -56,24 +45,12 @@ export default function StreamingNavbar({
         <div className="flex items-center shrink-0">
           <button
             type="button"
-            onClick={onToggleSidebar}
-            className="flex h-14 w-11 sm:w-14 items-center justify-center text-zinc-200 shrink-0"
-            aria-label={sidebarOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={!!sidebarOpen}
-            title={sidebarOpen ? 'Close menu' : 'Open menu'}
-          >
-            <Menu
-              className="h-5 w-5 origin-center transition-transform duration-300 ease-in-out"
-              style={{ transform: `rotate(${menuDeg}deg)` }}
-            />
-          </button>
-
-          <button
-            type="button"
             onClick={() => handleNav('home')}
-            className="flex items-center text-left focus:outline-none pl-0.5 shrink-0"
+            className="flex h-14 w-11 sm:w-14 items-center justify-center shrink-0"
+            aria-label="Home"
+            title="Home"
           >
-            <BrandMark size={32} withWord />
+            <BrandMark size={32} />
           </button>
         </div>
 
