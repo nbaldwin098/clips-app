@@ -43,6 +43,7 @@ export default function AdminPortal() {
   const [tab, setTab] = useState('people')
   const [, bump] = useState(0)
   const refresh = () => bump((n) => n + 1)
+  const [payMsg, setPayMsg] = useState('')
 
   const [payUser, setPayUser] = useState('')
   const [payAmt, setPayAmt] = useState('')
@@ -182,21 +183,37 @@ export default function AdminPortal() {
           )}
           {tab === 'payouts' && (
             <div className="p-5 space-y-4">
+              <p className="text-[11px] text-zinc-500">
+                Storage cost is admin-only. When you record a payout, due storage is deducted first;
+                creators only see the net amount paid.
+              </p>
               <div className="rounded-xl border border-white/10 bg-[#111113] p-4 space-y-2">
                 <p className="text-sm font-medium">Manual payout</p>
                 <input value={payUser} onChange={(e) => setPayUser(e.target.value)} placeholder="User id" className="w-full h-9 rounded bg-black border border-white/10 px-2 text-sm" />
-                <input value={payAmt} onChange={(e) => setPayAmt(e.target.value)} placeholder="Amount" className="w-full h-9 rounded bg-black border border-white/10 px-2 text-sm" />
+                <input value={payAmt} onChange={(e) => setPayAmt(e.target.value)} placeholder="Gross amount (before storage)" className="w-full h-9 rounded bg-black border border-white/10 px-2 text-sm" />
                 <input value={payNote} onChange={(e) => setPayNote(e.target.value)} placeholder="Note" className="w-full h-9 rounded bg-black border border-white/10 px-2 text-sm" />
                 <select value={payVia} onChange={(e) => setPayVia(e.target.value)} className="w-full h-9 rounded bg-black border border-white/10 px-2 text-sm">
                   <option value="paypal">PayPal</option>
                   <option value="bank">Bank</option>
                 </select>
+                {payMsg ? <p className="text-xs text-zinc-400">{payMsg}</p> : null}
                 <button
                   type="button"
                   className="h-9 px-3 rounded bg-white text-black text-sm font-semibold"
                   onClick={() => {
-                    recordManualPayout({ userId: payUser, amount: Number(payAmt), note: payNote, via: payVia })
-                    setPayUser(''); setPayAmt(''); setPayNote('')
+                    const res = recordManualPayout({
+                      userId: payUser,
+                      amount: Number(payAmt),
+                      note: payNote,
+                      sentVia: payVia,
+                      handle: payUser,
+                    })
+                    setPayMsg(res?.message || res?.error || '')
+                    if (res?.ok) {
+                      setPayUser('')
+                      setPayAmt('')
+                      setPayNote('')
+                    }
                     refresh()
                   }}
                 >
@@ -204,16 +221,31 @@ export default function AdminPortal() {
                 </button>
               </div>
               <div className="space-y-2">
+                <p className="text-xs font-medium text-zinc-400">Creators (storage admin-only)</p>
                 {balances.map((b) => (
-                  <div key={b.userId} className="text-sm flex justify-between border border-white/10 rounded-lg px-3 py-2">
-                    <span>{b.userId} {getPayoutContact(b.userId) || ''}</span>
-                    <span>{b.balance}</span>
+                  <div key={b.userId} className="text-sm border border-white/10 rounded-lg px-3 py-2 space-y-0.5">
+                    <div className="flex justify-between gap-2">
+                      <span className="truncate">@{b.handle || b.userId}</span>
+                      <span className="text-zinc-400">paid ${Number(b.paid || 0).toFixed(2)}</span>
+                    </div>
+                    <p className="text-[11px] text-zinc-500">
+                      Storage {b.storageBytesLabel || '0 B'} · ~${Number(b.storageMonthlyUsd || 0).toFixed(2)}/mo
+                      {Number(b.storageDueUsd) > 0 ? ` · due $${Number(b.storageDueUsd).toFixed(2)}` : ''}
+                    </p>
                   </div>
                 ))}
               </div>
               <div className="space-y-1">
-                {ledger.slice(0, 20).map((row) => (
-                  <p key={row.id} className="text-xs text-zinc-500">{row.userId} · {row.amount} · {row.note}</p>
+                <p className="text-xs font-medium text-zinc-400">Ledger</p>
+                {ledger.slice(0, 30).map((row) => (
+                  <p key={row.id} className="text-xs text-zinc-500">
+                    {row.handle || row.userId}
+                    {' · '}
+                    {row.kind === 'storage' ? 'storage' : 'paid'}
+                    {' $'}{Number(row.amount || 0).toFixed(2)}
+                    {row.storageDeducted ? ` (storage −$${Number(row.storageDeducted).toFixed(2)})` : ''}
+                    {row.note ? ` · ${row.note}` : ''}
+                  </p>
                 ))}
               </div>
             </div>
