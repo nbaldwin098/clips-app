@@ -156,6 +156,8 @@ export function normalizeItem(raw) {
     scheduledFor: raw.scheduledFor || null,
     status: raw.status || 'published',
     category: raw.category || null,
+    filterId: raw.filterId || raw.engagement?.filterId || null,
+    visibility: raw.visibility || 'public',
     publishedAt: raw.publishedAt || null,
     firstPublishedAt: raw.firstPublishedAt || null,
   }
@@ -550,7 +552,7 @@ export function importUserLink(url, actor = null) {
 export async function publishLocalMedia(file, actor = null, {
   type = null, title = null, description = null, sound = null, tags = [],
   stitchOf = null, chapters = [], captionsText = '', scheduledFor = null, status = 'published',
-  priceUsd = 0,
+  priceUsd = 0, filterId = 'none', visibility = 'public',
 } = {}) {
   if (!file) return { ok: false, item: null, error: 'Choose a video file.' }
   if (!actor?.id) return { ok: false, item: null, error: signInToUploadMessage() }
@@ -634,10 +636,13 @@ export async function publishLocalMedia(file, actor = null, {
         completionRate: 0, loops: 0, shares: 0, comments: 0, saves: 0, earlySkips: 0, likes: 0,
         soundId: sound?.id || null,
         soundTitle: sound?.title || null,
+        filterId: filterId && filterId !== 'none' ? filterId : null,
       },
       views: 0,
       soundId: sound?.id || null,
       soundTitle: sound?.title || null,
+      filterId: filterId && filterId !== 'none' ? filterId : null,
+      visibility: visibility === 'unlisted' ? 'unlisted' : 'public',
       stitchOf: stitchOf || null,
       chapters: cleanChapters,
       captionsText: String(captionsText || '').slice(0, 20000),

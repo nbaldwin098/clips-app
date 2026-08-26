@@ -284,7 +284,9 @@ function AppShell() {
       setSidebarOpen(false)
       dockWatchIfNeeded(view === 'watch' && dest !== 'watch')
       setView(dest)
-      const nextId = dest === 'profile' ? (id || profileTarget.handle) : id
+      // Never stash objects in routeId — that broke clips focus and sideways layout jumps.
+      const rawId = dest === 'profile' ? (id || profileTarget.handle) : id
+      const nextId = rawId && typeof rawId === 'object' ? String(rawId.id || '') : String(rawId || '')
       setRouteId(nextId || '')
       if (dest === 'profile') {
         const uid = profileTarget.userId

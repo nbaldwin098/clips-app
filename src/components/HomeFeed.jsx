@@ -3,11 +3,9 @@ import { Sparkles } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getStableHomeFeed, getStableFollowingFeed, getWatchItem } from '../lib/contentService'
 import { listContinueWatching } from '../lib/watchProgress'
-import { hasPickedTopics } from '../lib/tasteOnboarding'
 import { getActivePromotion, recordPromoClick } from '../lib/promotions'
 import MediaShelves from './MediaShelves'
 import ContentCard from './ContentCard'
-import TastePicker from './TastePicker'
 import Footer from './Footer'
 import HourlyHitsCarousel from './HourlyHitsCarousel'
 import { preloadPostedItem, preloadPostedItems } from '../lib/preloadMedia'
@@ -18,9 +16,8 @@ import { syncContentFromCloud } from '../lib/contentSync'
 export default function HomeFeed({ onPlayItem, onOpenPic, onOpenProfile, onNavigate }) {
   const { user } = useAuth()
   const syncTick = useContentSyncTick()
-  const [picked, setPicked] = useState(() => hasPickedTopics())
   const hydrated = isCatalogHydrated()
-  const items = useMemo(() => getStableHomeFeed(user?.id || null), [user?.id, picked, syncTick])
+  const items = useMemo(() => getStableHomeFeed(user?.id || null), [user?.id, syncTick])
   const following = useMemo(() => getStableFollowingFeed(user?.id || null), [user?.id, syncTick])
   const promo = useMemo(() => getActivePromotion(), [syncTick])
   const featured = useMemo(() => {
@@ -47,8 +44,6 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onOpenProfile, onNavig
     <div className="w-full">
       <HourlyHitsCarousel onPlayItem={onPlayItem} onOpenPic={onOpenPic} onOpenProfile={onOpenProfile} />
       <div className="px-4 md:px-6 py-4 max-w-[1600px] mx-auto w-full space-y-6">
-      {!picked && <TastePicker userId={user?.id} onDone={() => setPicked(true)} />}
-
       {promo && promo.placement === 'home' && (
         <button
           type="button"

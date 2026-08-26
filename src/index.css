@@ -46,6 +46,8 @@ html, body, #root {
   background-color: var(--color-bg);
   color: var(--color-text);
   overflow-x: hidden;
+  /* Avoid sideways jump when Clips locks overflow and the scrollbar disappears */
+  scrollbar-gutter: stable;
 }
 
 body {
