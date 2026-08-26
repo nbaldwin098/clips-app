@@ -582,7 +582,7 @@ function AppShell() {
       case 'playlists': return <PlaylistsPage onNavigate={navigate} onOpenAuth={openAuth} onPlayItem={openWatch} onOpenPic={openPic} playlistId={routeId} />
       case 'community': return <CommunityPage onNavigate={navigate} onOpenAuth={openAuth} />
       case 'studio-tools': return <StudioToolsPage onNavigate={navigate} />
-      case 'calabi-studio': return <CalabiStudioPage onNavigate={navigate} initialMode={routeId || 'edit'} />
+      case 'calabi-studio': return <CalabiStudioPage onNavigate={navigate} onOpenAuth={openAuth} initialMode={routeId || 'edit'} />
       case 'settings': return <SettingsHub section={routeId} onNavigate={navigate} />
       case 'explore': return <ExplorePage onPlayItem={openWatch} onOpenPic={openPic} onOpenTag={openTag} initialQuery={searchQuery} onApplyQuery={setSearchQuery} />
       case 'pics': return <PicsPage onOpenAuth={openAuth} onOpenProfile={openProfile} initialPicId={routeId} />

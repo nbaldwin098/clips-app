@@ -219,113 +219,117 @@ function PicSlide({ pic, active, onOpenProfile, onOpenAuth, eager = true }) {
 }
 
 /**
- * Mosaic under the header. Wheel zooms the photo under the cursor only
- * (not the whole page). Zoom stops when that photo fills the view;
- * then zoom out or return to the mosaic and scroll.
+ * Mosaic under the header. Wheel zooms the whole grid (camera).
+ * Zooming toward the center of the screen focuses that photo and opens the reel.
  */
-function ZoomMosaic({ items, onOpenAuth, onUnplayable }) {
+function ZoomMosaic({ items, onOpenAuth, onEnterPic, onUnplayable }) {
   const wrapRef = useRef(null)
+  const gridRef = useRef(null)
   const tileRefs = useRef(new Map())
   const { user } = useAuth()
   const syncTick = useContentSyncTick()
-  // focus: photo under cursor being zoomed
-  const [focus, setFocus] = useState(null) // { id, zoom, ox, oy }
-  const MAX_ZOOM = 2.75
+  const [cam, setCam] = useState({ zoom: 1, x: 0, y: 0 })
+  const camRef = useRef(cam)
+  camRef.current = cam
+  const ENTER_ZOOM = 2.35
+  const MAX_ZOOM = 3.2
 
   const setTileRef = (id, el) => {
     if (!el) tileRefs.current.delete(id)
     else tileRefs.current.set(id, el)
   }
 
-  const tileUnderPoint = (clientX, clientY) => {
+  const tileAtViewportCenter = useCallback(() => {
+    const wrap = wrapRef.current
+    if (!wrap) return null
+    const wr = wrap.getBoundingClientRect()
+    const cx = wr.left + wr.width / 2
+    const cy = wr.top + wr.height / 2
+    let best = null
+    let bestDist = Infinity
     for (const [id, el] of tileRefs.current.entries()) {
       const r = el.getBoundingClientRect()
-      if (clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom) {
-        const ox = ((clientX - r.left) / Math.max(1, r.width)) * 100
-        const oy = ((clientY - r.top) / Math.max(1, r.height)) * 100
-        return { id, ox, oy, rect: r }
+      const tx = r.left + r.width / 2
+      const ty = r.top + r.height / 2
+      const d = Math.hypot(tx - cx, ty - cy)
+      if (d < bestDist) {
+        bestDist = d
+        best = id
       }
     }
-    return null
-  }
+    return best
+  }, [])
 
   useEffect(() => {
     const el = wrapRef.current
     if (!el) return undefined
     const onWheel = (e) => {
-      const hit = tileUnderPoint(e.clientX, e.clientY)
+      e.preventDefault()
       const zoomingOut = e.deltaY > 0
-
-      // Zooming a photo under the cursor — never scale the whole mosaic.
-      if (focus || hit) {
-        const targetId = focus?.id || hit?.id
-        if (!targetId) return
-
-        // If zooming in with no focus, must be over a tile
-        if (!focus && zoomingOut) return // let page scroll
-        if (!focus && !hit) return
-
-        e.preventDefault()
-        const factor = zoomingOut ? 0.88 : 1.14
-        const ox = hit?.ox ?? focus?.ox ?? 50
-        const oy = hit?.oy ?? focus?.oy ?? 50
-
-        setFocus((prev) => {
-          const base = prev?.id === targetId ? prev.zoom : 1
-          let next = base * factor
-          if (next <= 1.04) return null
-          // Stop when the photo fills the view — no endless 5× page zoom
-          next = Math.min(MAX_ZOOM, next)
-          if (!zoomingOut && base >= MAX_ZOOM - 0.01) {
-            return { id: targetId, zoom: MAX_ZOOM, ox, oy }
-          }
-          return { id: targetId, zoom: next, ox, oy }
-        })
+      const factor = zoomingOut ? 0.9 : 1.12
+      const prev = camRef.current
+      let nextZoom = Math.min(MAX_ZOOM, Math.max(1, prev.zoom * factor))
+      if (nextZoom <= 1.02) {
+        setCam({ zoom: 1, x: 0, y: 0 })
         return
       }
-      // Not over a focused/hovered tile — normal mosaic scroll
+
+      const rect = el.getBoundingClientRect()
+      const px = e.clientX - rect.left
+      const py = e.clientY - rect.top
+      // Zoom toward pointer (usually mid-screen when scrolling there)
+      const wx = (px - prev.x) / prev.zoom
+      const wy = (py - prev.y) / prev.zoom
+      const next = {
+        zoom: nextZoom,
+        x: px - wx * nextZoom,
+        y: py - wy * nextZoom,
+      }
+      setCam(next)
+
+      if (!zoomingOut && nextZoom >= ENTER_ZOOM) {
+        const id = tileAtViewportCenter()
+        if (id) {
+          const idx = items.findIndex((p) => p.id === id)
+          if (idx >= 0) {
+            onEnterPic?.(idx, id)
+          }
+        }
+      }
     }
     el.addEventListener('wheel', onWheel, { passive: false })
     return () => el.removeEventListener('wheel', onWheel)
-  }, [focus])
+  }, [items, onEnterPic, tileAtViewportCenter])
 
-  const focusedPic = focus ? items.find((p) => p.id === focus.id) : null
-  const atPhoto = Boolean(focus && focus.zoom >= MAX_ZOOM - 0.05)
-
-  const gridClass = 'grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-0.5 p-0.5'
+  const gridClass = 'grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-0.5 p-0.5 origin-top-left will-change-transform'
 
   return (
-    <div ref={wrapRef} className="h-full min-h-0 overflow-y-auto bg-black relative">
+    <div ref={wrapRef} className="h-full min-h-0 overflow-hidden bg-black relative touch-none">
       {items.length === 0 ? (
         <div className="px-6 py-24 text-center">
           <p className="text-sm text-zinc-500">No pics yet — post from Create (+)</p>
         </div>
       ) : (
-        <div className={gridClass}>
+        <div
+          ref={gridRef}
+          className={gridClass}
+          style={{
+            transform: `translate(${cam.x}px, ${cam.y}px) scale(${cam.zoom})`,
+          }}
+        >
           {items.map((pic) => {
             const hearted = isPicHearted(pic.id)
-            const isFocus = focus?.id === pic.id
-            const z = isFocus ? focus.zoom : 1
-            const ox = isFocus ? focus.ox : 50
-            const oy = isFocus ? focus.oy : 50
             return (
               <div
                 key={pic.id}
                 ref={(node) => setTileRef(pic.id, node)}
-                className={cn(
-                  'relative aspect-square overflow-hidden bg-zinc-900',
-                  isFocus && z > 1.2 ? 'z-10 ring-1 ring-white/40' : ''
-                )}
+                className="relative aspect-square overflow-hidden bg-zinc-900 cursor-pointer"
+                onClick={() => {
+                  const idx = items.findIndex((p) => p.id === pic.id)
+                  if (idx >= 0) onEnterPic?.(idx, pic.id)
+                }}
               >
-                <div
-                  className="absolute inset-0 will-change-transform"
-                  style={{
-                    transform: `scale(${z})`,
-                    transformOrigin: `${ox}% ${oy}%`,
-                  }}
-                >
-                  <PicImage pic={pic} fill onUnplayable={onUnplayable} />
-                </div>
+                <PicImage pic={pic} fill onUnplayable={onUnplayable} />
                 <AttachmentBadge attachments={pic.attachments} />
                 <button
                   type="button"
@@ -353,50 +357,15 @@ function ZoomMosaic({ items, onOpenAuth, onUnplayable }) {
         </div>
       )}
 
-      {/* Arrived at photo — fill the view; scroll mosaic is paused until zoom out */}
-      {focusedPic && atPhoto ? (
-        <div
-          className="fixed inset-0 z-40 bg-black/95 flex items-center justify-center"
-          onWheel={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            if (e.deltaY > 0) {
-              setFocus((prev) => {
-                if (!prev) return null
-                const next = prev.zoom * 0.85
-                if (next <= 1.04) return null
-                return { ...prev, zoom: next }
-              })
-            }
-            // Zoom-in blocked — already at the photo
-          }}
-        >
-          <div className="relative max-h-[100dvh] max-w-[100vw] w-full h-full">
-            <PicImage
-              pic={focusedPic}
-              full
-              eager
-              className="absolute inset-0 h-full w-full object-contain"
-            />
-            <p className="absolute bottom-4 left-1/2 -translate-x-1/2 text-[11px] text-zinc-400 bg-black/60 px-3 py-1">
-              Scroll to zoom out · or
-              <button
-                type="button"
-                className="ml-1 underline text-zinc-200"
-                onClick={() => setFocus(null)}
-              >
-                back to mosaic
-              </button>
-            </p>
-          </div>
-        </div>
-      ) : null}
-
-      {focus && !atPhoto ? (
+      {cam.zoom > 1.05 ? (
         <div className="pointer-events-none fixed bottom-3 left-1/2 -translate-x-1/2 z-30 px-3 py-1 bg-black/70 text-[11px] text-zinc-300">
-          Zoom into photo · scroll out to leave
+          Zoom the mosaic · keep zooming center to open a photo · then scroll
         </div>
-      ) : null}
+      ) : (
+        <div className="pointer-events-none fixed bottom-3 left-1/2 -translate-x-1/2 z-30 px-3 py-1 bg-black/50 text-[11px] text-zinc-400">
+          Scroll to zoom all pics · click a photo to open
+        </div>
+      )}
     </div>
   )
 }
@@ -408,13 +377,16 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
   const [openedAt, setOpenedAt] = useState(0)
   const goToRef = useRef(null)
   const skipAutoOpen = useRef(false)
+  const selfNav = useRef(false)
 
+  // Stable catalog order — do not reshuffle on every URL change.
   const scrollItems = useMemo(() => {
     const list = (items || []).filter(isFeedable)
     if (!initialPicId) return list
+    if (list.some((p) => p.id === initialPicId)) return list
     const focused = list.find((p) => p.id === initialPicId)
-    const rest = list.filter((p) => p.id !== initialPicId)
-    return focused && isFeedable(focused) ? [focused, ...rest] : list
+    if (focused) return list
+    return list
   }, [items, initialPicId])
 
   const refresh = useCallback(() => setItems(getPicsFeed()), [])
@@ -432,6 +404,10 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
 
   useEffect(() => {
     if (!initialPicId || skipAutoOpen.current) return
+    if (selfNav.current) {
+      selfNav.current = false
+      return
+    }
     const idx = scrollItems.findIndex((p) => p.id === initialPicId)
     if (idx >= 0) {
       setOpenedAt(idx)
@@ -444,6 +420,16 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
     setViewerIndex(null)
     replaceHash('pics')
   }
+
+  const enterPic = useCallback((idx, id) => {
+    skipAutoOpen.current = false
+    setOpenedAt(idx)
+    setViewerIndex(idx)
+    if (id) {
+      selfNav.current = true
+      replaceHash('content', id)
+    }
+  }, [])
 
   useEffect(() => {
     if (viewerIndex == null) return
@@ -467,12 +453,12 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [viewerIndex])
 
-  // Deep-link / share opens the reel; mosaic itself is zoom-first (no title, no upload).
+  // Deep-link / mosaic zoom-enter opens the reel; then scroll between pics.
   if (viewerIndex != null && scrollItems.length > 0) {
     return (
       <div className="h-full min-h-0 flex flex-col bg-black">
         <ShortsStage
-          key={`pic-reel-${openedAt}`}
+          key="pic-reel"
           count={scrollItems.length}
           activeIndex={viewerIndex}
           goToRef={goToRef}
@@ -480,7 +466,10 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
           onActiveIndex={(i) => {
             setViewerIndex(i)
             const pic = scrollItems[i]
-            if (pic && typeof window !== 'undefined') replaceHash('content', pic.id)
+            if (pic?.id) {
+              selfNav.current = true
+              replaceHash('content', pic.id)
+            }
           }}
           initialIndex={openedAt}
           header={(
@@ -504,7 +493,12 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
 
   return (
     <div className="h-full min-h-0 bg-black">
-      <ZoomMosaic items={scrollItems} onOpenAuth={onOpenAuth} onUnplayable={dropBroken} />
+      <ZoomMosaic
+        items={scrollItems}
+        onOpenAuth={onOpenAuth}
+        onEnterPic={enterPic}
+        onUnplayable={dropBroken}
+      />
     </div>
   )
 }

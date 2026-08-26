@@ -10,7 +10,7 @@ import { recordView, toggleVote, getVotes, getUserVote, isSubscribed, toggleSubs
 import { getWatchProgress, recordWatchProgress } from '../lib/watchProgress'
 import { listComments } from '../lib/youtubeParity'
 import { recordInteraction } from '../lib/algorithmEngine'
-import { copyShareUrl } from '../lib/routes'
+import { copyShareUrl, replaceHash } from '../lib/routes'
 import CommentsPanel from './CommentsPanel'
 import ShortsStage, { ShortsCard } from './ShortsStage'
 import { preloadPostedItems } from '../lib/preloadMedia'
@@ -441,28 +441,24 @@ export default function ShortsFeed({
   const { user } = useAuth()
   const syncTick = useContentSyncTick()
   const recommended = useMemo(() => getStableShortsFeed(user?.id || null), [user?.id, syncTick])
+  // Keep catalog order stable — never reshuffle on every scroll/URL change (that remounts/jumps the reel).
   const items = useMemo(() => {
     const base = recommended.filter(isFeedable)
     if (!focusId) return base
-
+    if (base.some((i) => i.id === focusId)) return base
     const focused = getWatchItem(focusId)
-    if (!focused || focused.type !== 'short' || !isFeedable(focused)) {
-      if (base.some((i) => i.id === focusId)) return base
-      return base
-    }
-
+    if (!focused || focused.type !== 'short' || !isFeedable(focused)) return base
     const creatorId = focused.creatorId || focused.userId
     const creatorClips = getCreatorPublicContent(creatorId, focused.handle)
-      .filter((i) => i.type === 'short' && isFeedable(i))
-    const pool = creatorClips.length ? creatorClips : base
-    const rest = pool.filter((i) => i.id !== focused.id)
-    return [focused, ...rest]
+      .filter((i) => i.type === 'short' && isFeedable(i) && i.id !== focused.id)
+    return [focused, ...creatorClips, ...base.filter((i) => i.id !== focused.id && !creatorClips.some((c) => c.id === i.id))]
   }, [recommended, focusId, syncTick])
   const [activeIdx, setActiveIdx] = useState(0)
   const [muted, setMuted] = useState(true)
   const goToRef = useRef(null)
   const prevIdx = useRef(0)
   const shownAt = useRef(Date.now())
+  const selfNav = useRef(false)
   // Clips tab opens straight into the reel — no Recommended grid gate.
 
   const startIdx = useMemo(() => {
@@ -472,9 +468,14 @@ export default function ShortsFeed({
   }, [items, focusId])
 
   useEffect(() => {
+    if (selfNav.current) {
+      selfNav.current = false
+      return
+    }
     setActiveIdx(startIdx)
     prevIdx.current = startIdx
     shownAt.current = Date.now()
+    goToRef.current?.(startIdx, 'auto')
   }, [startIdx, focusId])
 
   // Land on a real clip URL when opening /clips with no id.
@@ -482,6 +483,7 @@ export default function ShortsFeed({
     if (focusId) return
     const first = items[0]?.id
     if (!first) return
+    selfNav.current = true
     onNavigate?.('clips', first)
   }, [focusId, items[0]?.id, onNavigate])
 
@@ -489,6 +491,30 @@ export default function ShortsFeed({
     const from = Math.max(0, activeIdx)
     preloadPostedItems(items.slice(from), 5)
   }, [activeIdx, items])
+
+  const onActiveIndex = useCallback((i) => {
+    const prev = items[prevIdx.current]
+    const waited = Date.now() - shownAt.current
+    if (prev && user?.id && i !== prevIdx.current) {
+      recordInteraction(user.id, {
+        contentId: prev.id,
+        type: waited < 2000 ? 'early_skip' : 'skip',
+        tags: prev.tags || [],
+        creatorId: prev.creatorId || prev.userId,
+        title: prev.title,
+        surface: 'clips',
+        contentType: 'short',
+      })
+    }
+    shownAt.current = Date.now()
+    prevIdx.current = i
+    setActiveIdx(i)
+    const next = items[i]
+    if (next?.id && next.id !== focusId) {
+      selfNav.current = true
+      replaceHash('content', next.id)
+    }
+  }, [items, user?.id, focusId])
 
   const backHome = () => {
     onNavigate?.('home')
@@ -513,31 +539,12 @@ export default function ShortsFeed({
 
   return (
     <ShortsStage
-      key={`clips-player-${focusId || items[0]?.id || 'reel'}`}
+      key="clips-reel"
       count={items.length}
       activeIndex={activeIdx}
       goToRef={goToRef}
       loop={items.length >= 1}
-      onActiveIndex={(i) => {
-        const prev = items[prevIdx.current]
-        const waited = Date.now() - shownAt.current
-        if (prev && user?.id && i !== prevIdx.current) {
-          recordInteraction(user.id, {
-            contentId: prev.id,
-            type: waited < 2000 ? 'early_skip' : 'skip',
-            tags: prev.tags || [],
-            creatorId: prev.creatorId || prev.userId,
-            title: prev.title,
-            surface: 'clips',
-            contentType: 'short',
-          })
-        }
-        shownAt.current = Date.now()
-        prevIdx.current = i
-        setActiveIdx(i)
-        const next = items[i]
-        if (next?.id) onNavigate?.('clips', next.id)
-      }}
+      onActiveIndex={onActiveIndex}
       initialIndex={startIdx}
       bleedMobile
       empty={(
