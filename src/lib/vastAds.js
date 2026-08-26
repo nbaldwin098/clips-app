@@ -30,12 +30,18 @@ export function videoVastAdsEnabled() {
   }
 }
 
+export const EXOCLICK_FEED_VAST_URL = vastUrlFor('feed')
+
 export function vastFetchUrl(kind = 'video') {
-  const remote = kind === 'live-creator' ? EXOCLICK_LIVE_CREATOR_VAST_URL : EXOCLICK_VAST_URL
+  let remote = EXOCLICK_VAST_URL
+  if (kind === 'live-creator') remote = EXOCLICK_LIVE_CREATOR_VAST_URL
+  else if (kind === 'feed') remote = EXOCLICK_FEED_VAST_URL
   if (typeof window === 'undefined') return remote
   const host = window.location.hostname
   if (host === 'localhost' || host === '127.0.0.1') {
-    return kind === 'live-creator' ? '/__vast/exo-live' : '/__vast/exo'
+    if (kind === 'live-creator') return '/__vast/exo-live'
+    if (kind === 'feed') return '/__vast/exo-feed'
+    return '/__vast/exo'
   }
   return remote
 }
@@ -202,8 +208,14 @@ async function fetchVastOnce(fetchKind) {
 
 export async function loadExoClickVast({ depth = 0, kind = 'video', attempts = 2 } = {}) {
   if (depth > 3) return null
-  if (kind === 'video' && !videoVastAdsEnabled()) return null
-  const fetchKind = kind === 'live-creator' ? 'live-creator' : 'video'
+  if ((kind === 'video' || !kind) && !videoVastAdsEnabled()) return null
+  if (kind === 'feed') {
+    try {
+      const stored = typeof localStorage !== 'undefined' ? JSON.parse(localStorage.getItem('clips_ad_settings') || '{}') || {} : {}
+      if (stored.clipInFeed === false && stored.picInFeed === false) return null
+    } catch { /* allow */ }
+  }
+  const fetchKind = kind === 'live-creator' ? 'live-creator' : kind === 'feed' ? 'feed' : 'video'
   const tries = Math.max(1, Number(attempts) || 1)
 
   for (let i = 0; i < tries; i += 1) {
@@ -240,16 +252,29 @@ export async function loadExoClickVast({ depth = 0, kind = 'video', attempts = 2
 /**
  * Long-form videos:
  * - Preroll at 0:00 (handled by useVideoVastAds on mount).
- * - If longer than 8 minutes, exactly one additional mid-roll at a random
- *   time after the 8-minute mark (sticky per video; never fixed, never repeating).
- * Videos <= 8 minutes only get the preroll.
+ * - Mid-roll about every 8 minutes for the length of the video, with light
+ *   random jitter so breaks are not robotic. Videos under 8 minutes: preroll only.
  */
 export function videoInStreamBreaks(durationSec) {
   const d = Number(durationSec)
   if (!Number.isFinite(d) || d <= YT_MIDROLL_MIN_SEC) return []
-  const earliest = YT_MIDROLL_MIN_SEC
-  const latest = Math.max(earliest, d - 15)
-  const span = latest - earliest
-  const t = earliest + (span > 0 ? Math.random() * span : 0)
-  return [Math.floor(t)]
+  const breaks = []
+  let t = YT_MIDROLL_MIN_SEC
+  while (t < d - 15) {
+    const jitter = Math.floor((Math.random() * 40) - 20) // ±20s
+    const at = Math.max(YT_MIDROLL_MIN_SEC, Math.min(Math.floor(d - 15), t + jitter))
+    if (!breaks.length || at > breaks[breaks.length - 1] + 60) breaks.push(at)
+    t += YT_MIDROLL_MIN_SEC
+  }
+  return breaks
+}
+
+/** Prefetch a VAST tag so the first ad is warmer when the user opens content. */
+export function warmVastTag(kind = 'video') {
+  if (typeof fetch === 'undefined') return
+  try {
+    const url = vastFetchUrl(kind)
+    const sep = url.includes('?') ? '&' : '?'
+    fetch(url + sep + 'r=warm' + Date.now(), { credentials: 'omit', cache: 'no-store' }).catch(() => {})
+  } catch { /* best-effort */ }
 }
