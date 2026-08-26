@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { getHourlyHits, nextFeaturedRefreshAt } from '../lib/hourlyHits'
 import { creatorDisplayName, viewsLabel } from '../lib/uiFormat'
 import ChannelAvatar from './ChannelAvatar'
+import { useContentSyncTick } from '../lib/useContentSync'
 
 function Thumb({ item, className }) {
   const src = item?.thumbUrl || item?.mosaicThumb || item?.mediaUrl || ''
@@ -25,9 +26,10 @@ function Peek({ item, side, onClick }) {
 }
 
 export default function HourlyHitsCarousel({ onPlayItem, onOpenPic, onOpenProfile }) {
+  const syncTick = useContentSyncTick()
   const [now, setNow] = useState(() => Date.now())
   const [index, setIndex] = useState(0)
-  const pack = useMemo(() => getHourlyHits(now), [now])
+  const pack = useMemo(() => getHourlyHits(now), [now, syncTick])
   const items = pack.items || []
 
   useEffect(() => {
