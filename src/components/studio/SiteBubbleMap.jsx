@@ -567,14 +567,6 @@ export default function SiteBubbleMap({
           </div>
         </div>
       ) : null}
-
-      {!expandedId ? (
-        <div className="border-t border-zinc-800 px-4 py-3 bg-[#0c0c12]">
-          <p className="text-[11px] text-zinc-500">
-            Tip: click any section bubble (even at 0) to expand it into individual bubbles.
-          </p>
-        </div>
-      ) : null}
     </div>
   )
 }

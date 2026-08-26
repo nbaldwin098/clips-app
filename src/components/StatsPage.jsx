@@ -166,7 +166,6 @@ export default function StatsPage({ onNavigate }) {
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-8">
       <PageHeader title="Platform Stats" onBack={() => onNavigate?.('home')} />
-      <p className="text-xs text-zinc-500">Counts from this catalog — nothing invented.</p>
 
       <SiteBubbleMap
         videos={numVideos}

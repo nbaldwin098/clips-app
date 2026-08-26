@@ -15,6 +15,8 @@ import {
   Film,
   Image as ImageIcon,
   Radio,
+  FolderOpen,
+  Newspaper,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import CreatorOnboarding from '../CreatorOnboarding'
@@ -46,6 +48,7 @@ import {
   isVerifiedChannel,
 } from '../../lib/verification'
 import { isOfficialCreator } from '../../lib/uiFormat'
+import { listNewspaper } from '../../lib/newspaper'
 import {
   CREATOR_STUDIO_GROUPS,
   navigateStudioItem,
@@ -61,12 +64,10 @@ import {
 const STUDIO_NAV = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard, group: 'Studio' },
   { id: 'lab', label: 'Calabi Studio', icon: Clapperboard, group: 'Studio' },
+  { id: 'content', label: 'Content', icon: FolderOpen, group: 'Studio' },
   { id: 'analytics', label: 'Analytics', icon: BarChart3, group: 'Studio' },
-  { id: 'controls', label: 'Controls', icon: SlidersHorizontal, group: 'Studio' },
   { id: 'socials', label: 'Socials', icon: Share2, group: 'Studio' },
   { id: 'earnings', label: 'Earnings', icon: CircleDollarSign, group: 'Money' },
-  { id: 'vods', label: 'VODs', icon: Video, group: 'Live' },
-  { id: 'stream', label: 'Stream', icon: Radio, group: 'Live' },
   { id: 'verify', label: 'Get verified', icon: BadgeCheck, group: 'Account' },
 ]
 
@@ -74,12 +75,13 @@ const SECTION_META = {
   overview: { title: 'Creator Studio' },
   lab: { title: 'Calabi Studio' },
   post: { title: 'Calabi Studio' },
+  content: { title: 'Content' },
   analytics: { title: 'Analytics' },
-  controls: { title: 'Controls' },
+  controls: { title: 'Calabi Studio' },
   socials: { title: 'Socials' },
   earnings: { title: 'Earnings' },
-  vods: { title: 'VOD library' },
-  stream: { title: 'Stream settings' },
+  vods: { title: 'Content' },
+  stream: { title: 'Calabi Studio' },
   verify: { title: 'Verification' },
 }
 
@@ -317,23 +319,46 @@ function StudioControls({
   onNavigate,
   onOpenUpload,
   approved,
+  compact = false,
 }) {
   const handlers = { onOpenUpload }
+  const buttons = CREATOR_STUDIO_GROUPS
+    .filter((g) => g.id !== 'account')
+    .flatMap((group) => group.items)
+    .filter((item) => item.status !== 'planned' && item.route && item.id !== 'import')
+
+  if (compact) {
+    return (
+      <div className="flex flex-wrap gap-1.5">
+        {buttons.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => navigateStudioItem(onNavigate, item, handlers)}
+            className="h-8 px-2.5 border border-zinc-700 bg-[#0e0e14] text-[11px] font-medium text-zinc-300 hover:border-white hover:text-white"
+          >
+            {item.label}
+          </button>
+        ))}
+        {!approved ? (
+          <button
+            type="button"
+            onClick={() => onNavigate?.('creator-apply')}
+            className="h-8 px-2.5 border border-zinc-700 text-[11px] text-zinc-400 hover:border-white hover:text-white"
+          >
+            Apply to earn
+          </button>
+        ) : null}
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-8 max-w-4xl">
-      <div>
-        <h2 className="text-xl font-semibold text-white tracking-tight">Controls</h2>
-        <p className="mt-2 text-sm text-zinc-500 leading-relaxed max-w-lg">
-          Shortcuts for content, stream, community, growth, and money.
-        </p>
-      </div>
       <div className="space-y-8">
         {CREATOR_STUDIO_GROUPS.filter((g) => g.id !== 'account').map((group) => (
           <div key={group.id} className="space-y-3">
-            <div>
-              <p className="text-sm font-semibold text-white">{group.label}</p>
-              <p className="mt-0.5 text-xs text-zinc-500 leading-relaxed">{group.description}</p>
-            </div>
+            <p className="text-sm font-semibold text-white">{group.label}</p>
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {group.items
                 .filter((item) => item.status !== 'planned' && item.route && item.id !== 'import')
@@ -360,6 +385,174 @@ function StudioControls({
           <SettingsButton onClick={() => onNavigate?.('creator-apply')}>Apply to earn</SettingsButton>
         </SettingsNotice>
       ) : null}
+    </div>
+  )
+}
+
+function ContentLibrary({
+  user,
+  posts,
+  onPlayItem,
+  onOpenUpload,
+  onNavigate,
+  onDeletePost,
+  deletingId,
+  onVisibility,
+}) {
+  const [filter, setFilter] = useState('all')
+  const vods = useMemo(() => listVods(user?.id), [user?.id])
+  const news = useMemo(
+    () => listNewspaper(80).filter((n) => n.authorId === user?.id || n.userId === user?.id),
+    [user?.id]
+  )
+
+  const rows = useMemo(() => {
+    const media = (posts || []).map((p) => ({
+      id: p.id,
+      kind: p.type === 'pic' ? 'pic' : p.type === 'video' ? 'video' : 'clip',
+      title: p.title || 'Untitled',
+      at: postedAtOf(p) || p.createdAt,
+      raw: p,
+    }))
+    const vodRows = (vods || []).map((v) => ({
+      id: v.id,
+      kind: 'vod',
+      title: v.title || 'VOD',
+      at: v.createdAt || v.endedAt,
+      raw: v,
+    }))
+    const newsRows = news.map((n) => ({
+      id: n.id,
+      kind: 'news',
+      title: String(n.body || '').trim().slice(0, 80) || 'News post',
+      at: n.publishedAt || n.createdAt,
+      raw: n,
+    }))
+    const all = [...media, ...vodRows, ...newsRows].sort(
+      (a, b) => Date.parse(b.at || 0) - Date.parse(a.at || 0)
+    )
+    if (filter === 'all') return all
+    return all.filter((r) => r.kind === filter)
+  }, [posts, vods, news, filter])
+
+  const tabs = [
+    { id: 'all', label: 'All' },
+    { id: 'video', label: 'Videos' },
+    { id: 'clip', label: 'Clips' },
+    { id: 'pic', label: 'Pics' },
+    { id: 'vod', label: 'VODs' },
+    { id: 'news', label: 'News' },
+  ]
+
+  const openRow = (row) => {
+    if (row.kind === 'news') {
+      onNavigate?.('news')
+      return
+    }
+    if (row.kind === 'vod') {
+      onNavigate?.('vods')
+      return
+    }
+    onPlayItem?.(row.raw)
+  }
+
+  return (
+    <div className="h-full min-h-0 overflow-y-auto space-y-4 max-w-3xl">
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => onOpenUpload?.('video')}
+          className="h-8 px-3 border border-zinc-700 text-[11px] text-zinc-200 hover:border-white"
+        >
+          Upload video
+        </button>
+        <button
+          type="button"
+          onClick={() => onOpenUpload?.('short')}
+          className="h-8 px-3 border border-zinc-700 text-[11px] text-zinc-200 hover:border-white"
+        >
+          Upload clip
+        </button>
+        <button
+          type="button"
+          onClick={() => onNavigate?.('create')}
+          className="h-8 px-3 border border-zinc-700 text-[11px] text-zinc-200 hover:border-white"
+        >
+          Post pic
+        </button>
+        <button
+          type="button"
+          onClick={() => onNavigate?.('news')}
+          className="h-8 px-3 border border-zinc-700 text-[11px] text-zinc-200 hover:border-white"
+        >
+          News
+        </button>
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setFilter(t.id)}
+            className={cn(
+              'h-7 px-2.5 text-[11px] font-semibold',
+              filter === t.id ? 'bg-white text-black' : 'bg-[#18181f] text-zinc-400'
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <ul className="space-y-2">
+        {rows.length === 0 ? (
+          <li className="text-sm text-zinc-500 py-8 text-center">No content yet.</li>
+        ) : rows.map((row) => (
+          <li key={`${row.kind}_${row.id}`} className="border border-zinc-800 bg-[#0c0c10] p-3">
+            <button type="button" onClick={() => openRow(row)} className="w-full text-left">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-[10px] uppercase tracking-wider text-zinc-500">
+                    {row.kind === 'clip' ? 'Clip' : row.kind === 'pic' ? 'Pic' : row.kind === 'vod' ? 'VOD' : row.kind === 'news' ? 'News' : 'Video'}
+                  </p>
+                  <p className="text-sm font-semibold text-white truncate mt-0.5">{row.title}</p>
+                </div>
+                <span className="shrink-0 text-[10px] text-zinc-500">{formatPostedAt(row.at) || '—'}</span>
+              </div>
+            </button>
+            {row.kind !== 'news' && row.kind !== 'vod' ? (
+              <div className="mt-2 flex gap-1">
+                <button
+                  type="button"
+                  onClick={() => openRow(row)}
+                  className="h-8 flex-1 inline-flex items-center justify-center gap-1.5 border border-zinc-700 text-xs text-white hover:bg-white hover:text-black"
+                >
+                  <Play className="h-3.5 w-3.5" /> Open
+                </button>
+                {onVisibility ? (
+                  <select
+                    value={row.raw.visibility === 'private' || row.raw.status === 'draft' ? 'private' : (row.raw.visibility || 'public')}
+                    onChange={(e) => onVisibility(row.raw, e.target.value)}
+                    className="h-8 border border-zinc-700 bg-black px-1 text-[10px] text-white"
+                  >
+                    <option value="public">Public</option>
+                    <option value="private">Private</option>
+                  </select>
+                ) : null}
+                {onDeletePost ? (
+                  <button
+                    type="button"
+                    onClick={() => onDeletePost(row.raw)}
+                    disabled={deletingId === row.id}
+                    className="h-8 px-3 border border-red-900/60 text-xs text-red-300 hover:bg-red-950 disabled:opacity-50"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }
@@ -420,6 +613,7 @@ export default function CreatorStudio({
   const [deletingId, setDeletingId] = useState(null)
   const [cloudSyncBusy, setCloudSyncBusy] = useState(false)
   const [untilMs, setUntilMs] = useState(null)
+  const [labTool, setLabTool] = useState(null) // 'controls' | 'stream' | null
 
   const refreshAudienceFromCloud = async () => {
     if (!user?.id || user.provider !== 'supabase') return
@@ -447,6 +641,17 @@ export default function CreatorStudio({
 
   useEffect(() => {
     lsSet('calabi_studio_section', section)
+  }, [section])
+
+  // Legacy nav targets fold into Calabi Studio / Content.
+  useEffect(() => {
+    if (section === 'controls' || section === 'stream' || section === 'post') {
+      setSection('lab')
+      if (section === 'controls') setLabTool('controls')
+      if (section === 'stream') setLabTool('stream')
+    } else if (section === 'vods') {
+      setSection('content')
+    }
   }, [section])
 
   useEffect(() => {
@@ -674,10 +879,6 @@ export default function CreatorStudio({
       <main className="flex-1 min-w-0 min-h-0 flex flex-col max-sm:pt-12">
         <header className="shrink-0 px-6 md:px-8 py-5 border-b border-zinc-800/80 bg-[#050506]">
           <p className="text-lg font-semibold text-white tracking-tight">{meta.title}</p>
-          <p className="mt-1 text-sm text-zinc-500">
-            @{user?.handle || 'creator'}
-            {verified ? ' · Verified' : verifyStatus === 'pending' ? ' · ID in review' : ''}
-          </p>
         </header>
 
         <div className="flex-1 min-h-0 overflow-hidden px-6 md:px-8 py-6 md:py-8">
@@ -706,17 +907,17 @@ export default function CreatorStudio({
                 </button>
                 <button
                   type="button"
+                  onClick={() => setSection('content')}
+                  className="h-11 px-5 border border-zinc-700 text-sm text-zinc-200 hover:border-white"
+                >
+                  Content
+                </button>
+                <button
+                  type="button"
                   onClick={() => setSection('analytics')}
                   className="h-11 px-5 border border-zinc-700 text-sm text-zinc-200 hover:border-white"
                 >
                   Analytics
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSection('controls')}
-                  className="h-11 px-5 border border-zinc-700 text-sm text-zinc-200 hover:border-white"
-                >
-                  Controls
                 </button>
               </div>
               {posts.length > 0 ? (
@@ -741,8 +942,43 @@ export default function CreatorStudio({
             </div>
           ) : null}
 
-          {section === 'post' || section === 'lab' ? (
-            <div className="h-full overflow-y-auto space-y-8">
+          {section === 'post' || section === 'lab' || section === 'controls' || section === 'stream' ? (
+            <div className="h-full overflow-y-auto space-y-6">
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setLabTool((t) => (t === 'controls' ? null : 'controls'))}
+                  className={cn(
+                    'h-8 px-2.5 text-[11px] font-semibold border inline-flex items-center gap-1.5',
+                    labTool === 'controls' ? 'border-white text-white' : 'border-zinc-700 text-zinc-400 hover:text-white'
+                  )}
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5" /> Controls
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLabTool((t) => (t === 'stream' ? null : 'stream'))}
+                  className={cn(
+                    'h-8 px-2.5 text-[11px] font-semibold border inline-flex items-center gap-1.5',
+                    labTool === 'stream' ? 'border-white text-white' : 'border-zinc-700 text-zinc-400 hover:text-white'
+                  )}
+                >
+                  <Radio className="h-3.5 w-3.5" /> Stream
+                </button>
+              </div>
+              {labTool === 'controls' ? (
+                <StudioControls
+                  onNavigate={onNavigate}
+                  onOpenUpload={onOpenUpload}
+                  approved={approved}
+                  compact
+                />
+              ) : null}
+              {labTool === 'stream' ? (
+                <div className="max-w-2xl border border-zinc-800 p-4">
+                  <StreamSettings />
+                </div>
+              ) : null}
               <MakePostPanel onOpenUpload={onOpenUpload} onNavigate={onNavigate} compact />
               <div className="border-t border-zinc-800 pt-6">
                 <CreatorLab onNavigate={onNavigate} onOpenAuth={onOpenAuth} compact />
@@ -750,35 +986,33 @@ export default function CreatorStudio({
             </div>
           ) : null}
 
-          {section === 'controls' ? (
-            <div className="h-full overflow-y-auto">
-              <StudioControls
-                onNavigate={onNavigate}
-                onOpenUpload={onOpenUpload}
-                approved={approved}
-              />
-            </div>
+          {section === 'content' || section === 'vods' ? (
+            <ContentLibrary
+              user={user}
+              posts={posts}
+              onPlayItem={onPlayItem}
+              onOpenUpload={onOpenUpload}
+              onNavigate={onNavigate}
+              onDeletePost={onDeletePost}
+              deletingId={deletingId}
+              onVisibility={(p, vis) => setContentVisibility(p.id, vis, user)}
+            />
           ) : null}
 
           {section === 'analytics' ? (
-            <div className="h-full min-h-0 flex flex-col gap-4 overflow-hidden">
-              <div className="shrink-0 space-y-3">
-                <div>
-                  <h2 className="text-xl font-semibold text-white tracking-tight">Channel stats</h2>
-                </div>
-                <SettingsKpiGrid
-                  columns={3}
-                  items={[
-                    { label: 'Posts', value: String(posts.length) },
-                    { label: 'Views', value: formatCount(views) },
-                    { label: 'Likes', value: formatCount(likes) },
-                    { label: 'Followers', value: formatCount(followers), hint: `${formatCount(premiumSubs)} premium` },
-                    { label: 'VODs', value: String(vods.length) },
-                    { label: 'Lobby', value: live?.isLive ? 'Live' : 'Off', hint: approved ? `$${balance.paid.toFixed(2)} paid` : 'Apply to earn' },
-                  ]}
-                />
-              </div>
-              <div className="flex-1 min-h-[320px] overflow-hidden rounded-xl border border-zinc-800">
+            <div className="h-full min-h-0 overflow-y-auto space-y-4 pr-1">
+              <SettingsKpiGrid
+                columns={3}
+                items={[
+                  { label: 'Posts', value: String(posts.length) },
+                  { label: 'Views', value: formatCount(views) },
+                  { label: 'Likes', value: formatCount(likes) },
+                  { label: 'Followers', value: formatCount(followers), hint: `${formatCount(premiumSubs)} premium` },
+                  { label: 'VODs', value: String(vods.length) },
+                  { label: 'Lobby', value: live?.isLive ? 'Live' : 'Off', hint: approved ? `$${balance.paid.toFixed(2)} paid` : 'Apply to earn' },
+                ]}
+              />
+              <div className="h-[min(58vh,560px)] min-h-[380px] overflow-hidden rounded-xl border border-zinc-800">
                 <InteractionBubbleMap
                   network={network}
                   selectedPostId={selectedPostId}
@@ -786,14 +1020,12 @@ export default function CreatorStudio({
                   onSelectPost={setSelectedPostId}
                   postTitle={selectedPost?.title}
                   creator={user}
-                  onRefresh={refreshAudienceFromCloud}
-                  refreshing={cloudSyncBusy}
                   untilMs={untilMs ?? Date.now()}
                   onUntilChange={setUntilMs}
                   postStartMs={postStartMs}
                 />
               </div>
-              <div className="shrink-0 max-h-[36%] min-h-[160px] overflow-y-auto border-t border-zinc-800 pt-4">
+              <div className="min-h-[180px] border border-zinc-800">
                 <StudioRealtimeAnalytics
                   creatorId={user?.id}
                   posts={posts}
@@ -801,8 +1033,6 @@ export default function CreatorStudio({
                   onSelectPost={setSelectedPostId}
                   range={range}
                   onRangeChange={setRange}
-                  refreshing={cloudSyncBusy}
-                  onRefresh={refreshAudienceFromCloud}
                   tick={interactionTick + syncTick}
                   untilMs={untilMs ?? Date.now()}
                   forcePostTab
@@ -820,18 +1050,6 @@ export default function CreatorStudio({
           {section === 'earnings' ? (
             <div className="h-full overflow-hidden">
               <CreatorEarningsPanel />
-            </div>
-          ) : null}
-
-          {section === 'vods' ? (
-            <div className="h-full overflow-y-auto">
-              <VodsPanel user={user} />
-            </div>
-          ) : null}
-
-          {section === 'stream' ? (
-            <div className="h-full overflow-y-auto max-w-2xl">
-              <StreamSettings />
             </div>
           ) : null}
 
