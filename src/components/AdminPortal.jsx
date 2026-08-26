@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
   LayoutDashboard, Users, Film, ShieldAlert, Wallet, Flag,
-  Radio, LifeBuoy, Settings, ClipboardList, ShoppingBag, BarChart3,
+  Radio, LifeBuoy, Settings, ClipboardList, ShoppingBag, BarChart3, Newspaper,
 } from 'lucide-react'
 import {
   isAdminSession, adminLogin, adminLogout, listApplications, setApplicationStatus,
@@ -72,6 +72,7 @@ const NAV = [
   { id: 'shop', label: 'Marketplace', icon: ShoppingBag, roles: ['owner', 'admin', 'cs'] },
   { id: 'payouts', label: 'Payouts', icon: Wallet, roles: ['owner', 'admin'] },
   { id: 'promos', label: 'Promos', icon: Flag, roles: ['owner', 'admin'] },
+  { id: 'news', label: 'News', icon: Newspaper, roles: ['owner', 'admin'] },
   { id: 'live', label: 'Live', icon: Radio, roles: ['owner', 'admin', 'mod'] },
   { id: 'applications', label: 'Creator apps', icon: ClipboardList, roles: ['owner', 'admin', 'cs'] },
   { id: 'setup', label: 'Setup', icon: Settings, roles: ['owner', 'admin'] },
@@ -352,6 +353,7 @@ export default function AdminPortal() {
           {tab === 'content' && <div className="p-5"><AdminContent onChange={refresh} /></div>}
           {tab === 'safety' && <div className="p-5"><AdminSafety onChange={refresh} /></div>}
           {tab === 'promos' && <div className="p-5"><AdminPromos /></div>}
+          {tab === 'news' && <div className="p-5"><AdminNews /></div>}
           {tab === 'setup' && <div className="p-5"><AdminSetup /></div>}
           {tab === 'applications' && (
             <div className="p-5 space-y-2">
