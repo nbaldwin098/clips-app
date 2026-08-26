@@ -134,19 +134,23 @@ export function logCreatorInteraction({
   const resolved = contentId ? resolveContentMeta(contentId) : null
   const cid = creatorId || resolved?.creatorId
   if (!cid) return null
+  // Creators still count as audience when they watch their own posts (maps must show every viewer).
   const postTitle = title || resolved?.title || (kind === 'subscribe' ? 'Channel' : 'Post')
   const cType = contentType || resolved?.contentType || (kind === 'subscribe' ? 'channel' : null)
   const surf = SURFACE_LABELS[surface] ? surface : 'unknown'
 
   const list = all()
   const now = at || new Date().toISOString()
+  // Longer coalesce for views so rapid revisits stay one person node;
+  // distinct actors are never dropped from the map.
+  const windowMs = kind === 'view' ? 60_000 : 8000
   const recent = list.find(
     (r) =>
       r.creatorId === cid
       && r.contentId === (contentId || null)
       && r.type === kind
       && r.actorId === (actorId || null)
-      && Math.abs(Date.parse(r.at) - Date.parse(now)) < 8000
+      && Math.abs(Date.parse(r.at) - Date.parse(now)) < windowMs
   )
   if (recent) {
     recent.weight = Math.min(99, (Number(recent.weight) || 1) + (Number(weight) || 1))

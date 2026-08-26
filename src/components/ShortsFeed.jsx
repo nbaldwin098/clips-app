@@ -482,7 +482,7 @@ export default function ShortsFeed({
 
   useEffect(() => {
     const from = Math.max(0, activeIdx)
-    preloadPostedItems(items.slice(from), inPlayer ? 3 : 2)
+    preloadPostedItems(items.slice(from), inPlayer ? 5 : 4)
   }, [activeIdx, items, inPlayer])
 
   const openClip = (itemOrId) => {

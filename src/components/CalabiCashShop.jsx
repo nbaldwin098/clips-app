@@ -97,7 +97,12 @@ export default function CalabiCashShop({ compact = false }) {
       <div>
         <h2 className="text-lg font-semibold text-white">Calabi Cash</h2>
         <p className="text-sm text-zinc-400 mt-1">
-          {CALABI_CASH_PER_USD} Cash = $1.00. Packs include Gold Coins (Twitch-style points).
+          {CALABI_CASH_PER_USD} Cash = $1.00. Packs come with Gold Coins too.
+        </p>
+        <p className="text-xs text-zinc-500 mt-1.5">
+          <span className="text-emerald-400/90 font-medium">Cash</span> — donations, TTS, premium, and paid features.
+          {' '}
+          <span className="text-amber-400/90 font-medium">Coins</span> — chat: bigger messages, creator emojis &amp; GIFs, and more later.
         </p>
         <div className="mt-3 flex flex-wrap gap-3 text-sm">
           <span className="rounded-lg border border-emerald-800/60 bg-emerald-950/40 px-3 py-1.5 text-emerald-300 font-semibold">
@@ -144,7 +149,8 @@ export default function CalabiCashShop({ compact = false }) {
 
       {!compact ? (
         <div className="space-y-3">
-          <p className="text-xs font-semibold text-zinc-400">Spend Gold Coins</p>
+          <p className="text-xs font-semibold text-zinc-400">Spend Gold Coins (chat)</p>
+          <p className="text-[11px] text-zinc-500 -mt-1">Bigger chat, creator custom emojis/GIFs, highlights — more chat perks later.</p>
           <div className="grid gap-2 sm:grid-cols-2">
             {COIN_REDEEMS.map((r) => (
               <button

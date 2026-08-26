@@ -1,6 +1,10 @@
 /**
  * Cloud catalog sync. Supabase is the source of truth.
  * Session memory holds the latest pull; catalog is not written to localStorage.
+ *
+ * Media priority: videos, clips (shorts), and pics are #1 load priority for feeds.
+ * Near-term we keep hosted URLs + CDN preload. Cloudflare Stream is a strong later
+ * upgrade for adaptive HLS/VOD at scale — not required until ingest/transcode volume grows.
  */
 import { replaceImportsFromCloud, removeImport, purgeLegacyLocalCatalog, getImports } from './storage'
 import { isUserUploadRecord, stampFirstPublished, olderIso } from './mediaMeta'
@@ -11,7 +15,31 @@ import { markCatalogHydrated } from './catalogStore'
 
 const TABLE = 'videos'
 const SYNC_EVENT = 'clips-content-sync'
-const PULL_LIMIT = 400
+/** Pull enough media first; shop/admin/etc. are secondary to this catalog. */
+const PULL_LIMIT = 500
+
+const MEDIA_TYPES = new Set(['video', 'short', 'pic', 'clip'])
+
+/** Lower = higher priority. Videos / clips / pics always beat everything else. */
+export function mediaLoadRank(row) {
+  const t = String(row?.type || '').toLowerCase()
+  if (t === 'video') return 0
+  if (t === 'short' || t === 'clip') return 1
+  if (t === 'pic') return 2
+  return 9
+}
+
+export function prioritizeMediaCatalog(rows = []) {
+  return [...(rows || [])].sort((a, b) => {
+    const d = mediaLoadRank(a) - mediaLoadRank(b)
+    if (d !== 0) return d
+    return (Date.parse(b.createdAt || b.publishedAt || 0) || 0) - (Date.parse(a.createdAt || a.publishedAt || 0) || 0)
+  })
+}
+
+export function isPriorityMedia(row) {
+  return MEDIA_TYPES.has(String(row?.type || '').toLowerCase())
+}
 
 export function notifyContentChanged() {
   try { clearFrozenFeeds() } catch {}
@@ -157,7 +185,8 @@ export async function pullContentRecords(limit = PULL_LIMIT) {
       .order('created_at', { ascending: false })
       .limit(limit)
     if (error || !data) return []
-    return data.map(fromRow).filter(keepCloudRow)
+    // Videos / clips / pics first — rest of site waits on this catalog.
+    return prioritizeMediaCatalog(data.map(fromRow).filter(keepCloudRow))
   } catch {
     return []
   }

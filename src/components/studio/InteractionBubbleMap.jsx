@@ -69,6 +69,52 @@ function typeChips(byType = {}) {
     })
 }
 
+/** Ordered action colors for a person — used as concentric rings (like + follow + share = 3 rings). */
+function actionRingColors(person) {
+  const entries = Object.entries(person?.byType || {})
+    .filter(([, n]) => Number(n) > 0)
+    .sort((a, b) => b[1] - a[1])
+  if (entries.length) {
+    return entries.map(([id]) => {
+      const meta = INTERACTION_TYPES.find((t) => t.id === id)
+      return { id, color: meta?.color || person.color || '#a1a1aa', label: meta?.short || id }
+    })
+  }
+  if (person?.primaryType) {
+    const meta = INTERACTION_TYPES.find((t) => t.id === person.primaryType)
+    return [{ id: person.primaryType, color: meta?.color || person.color || '#a1a1aa', label: meta?.short || person.primaryType }]
+  }
+  return [{ id: 'view', color: person?.color || '#60a5fa', label: 'View' }]
+}
+
+function ActionRings({ radius, rings, active }) {
+  const list = rings?.length ? rings : [{ id: 'x', color: '#a1a1aa' }]
+  const band = Math.max(2.2, Math.min(3.6, 10 / list.length))
+  return (
+    <g>
+      {list.map((ring, idx) => (
+        <circle
+          key={ring.id}
+          r={radius + 2 + idx * (band + 0.8)}
+          fill="none"
+          stroke={ring.color}
+          strokeOpacity={active ? 1 : 0.88}
+          strokeWidth={active ? band + 0.6 : band}
+        />
+      ))}
+      {active ? (
+        <circle
+          r={radius + 2 + list.length * (band + 0.8) + 2}
+          fill="none"
+          stroke="#ffffff"
+          strokeOpacity={0.55}
+          strokeWidth={1.2}
+        />
+      ) : null}
+    </g>
+  )
+}
+
 export default function InteractionBubbleMap({
   network = null,
   nodes: legacyNodes = [],
@@ -262,7 +308,7 @@ export default function InteractionBubbleMap({
             Audience network{postTitle ? ` · ${postTitle}` : ''}
           </p>
           <p className="text-[11px] text-zinc-500">
-            Real accounts who viewed, liked, followed, shared, commented, or skipped
+            Every signed-in viewer appears — including you on your own posts. Multi-color rings = like, follow, share, and more.
             {summary.people ? ` · ${summary.people} people` : ''}
             {summary.total ? ` · ${summary.total} actions` : ''}
           </p>
@@ -364,9 +410,9 @@ export default function InteractionBubbleMap({
           {!laid.nodes.length ? (
             <div className="absolute inset-0 flex items-center justify-center p-6 text-center">
               <div>
-                <p className="text-sm text-zinc-300">No real audience activity in this range yet</p>
+                <p className="text-sm text-zinc-300">No viewers synced yet</p>
                 <p className="text-xs text-zinc-500 mt-1 max-w-sm">
-                  When signed-in people open, like, follow, share, comment, or skip your posts, they appear here as connected nodes — drag to pan, scroll to zoom.
+                  Open one of your posts while signed in — you should appear as a viewer node. Likes, follows, and shares add colored rings. Drag to pan, scroll to zoom.
                 </p>
               </div>
             </div>
@@ -448,6 +494,8 @@ export default function InteractionBubbleMap({
               {laid.nodes.map((b) => {
                 const label = personLabel(b)
                 const active = hover?.id === b.id
+                const rings = actionRingColors(b)
+                const ringPad = 2 + rings.length * 4.2
                 return (
                   <g
                     key={b.id}
@@ -460,13 +508,7 @@ export default function InteractionBubbleMap({
                       if (b.topContentId) onSelectPost?.(b.topContentId)
                     }}
                   >
-                    <circle
-                      r={b.size / 2 + (active ? 3 : 1)}
-                      fill="none"
-                      stroke={b.color}
-                      strokeOpacity={active ? 1 : 0.7}
-                      strokeWidth={active ? 2.5 : 1.5}
-                    />
+                    <ActionRings radius={b.size / 2} rings={rings} active={active} />
                     <circle r={b.size / 2} fill="#121218" />
                     {b.avatarUrl ? (
                       <image
@@ -491,7 +533,7 @@ export default function InteractionBubbleMap({
                     )}
                     {b.size > 26 ? (
                       <text
-                        y={b.size / 2 + 11}
+                        y={b.size / 2 + ringPad + 8}
                         textAnchor="middle"
                         fill="#d4d4d8"
                         fontSize="8"
@@ -529,12 +571,15 @@ export default function InteractionBubbleMap({
                   <span
                     key={c.id}
                     className="text-[10px] px-1.5 py-0.5 border border-zinc-700 text-zinc-300"
-                    style={{ borderColor: c.color }}
+                    style={{ borderColor: c.color, boxShadow: `inset 0 0 0 1px ${c.color}` }}
                   >
                     {c.label} {c.n}
                   </span>
                 ))}
               </div>
+              {Object.keys(hover.byType || {}).length > 1 ? (
+                <p className="text-[10px] text-zinc-500 mt-1">Multi-color rings on the node match these actions.</p>
+              ) : null}
               <p className="text-[11px] text-zinc-500 mt-1.5">
                 {hover.eventCount} events · last {formatWhen(hover.lastAt)}
               </p>

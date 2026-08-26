@@ -7,7 +7,7 @@ export default function WalletSettings() {
     <div className="space-y-6">
       <SettingsPageHeader
         title="Wallet"
-        subtitle="Buy Calabi Cash and Gold Coins. Synced to your cloud account."
+        subtitle="Cash for tips, TTS & premium · Coins for chat cosmetics. Synced to your cloud account."
       />
       <CalabiCashShop />
     </div>

@@ -109,15 +109,45 @@ export async function syncCreatorInteractionsFromCloud() {
   const sb = await client()
   if (!sb) return false
   try {
-    const { data, error } = await sb
-      .from('creator_interactions')
-      .select('*')
-      .eq('creator_id', actor.id)
-      .order('at', { ascending: false })
-      .limit(1500)
-    if (error || !data) return false
     const { mergeCreatorInteractionsFromCloud } = await import('./creatorInteractions')
-    mergeCreatorInteractionsFromCloud(data)
+
+    // Interactions table may be missing/empty — still pull content_views so every viewer shows.
+    try {
+      const { data, error } = await sb
+        .from('creator_interactions')
+        .select('*')
+        .eq('creator_id', actor.id)
+        .order('at', { ascending: false })
+        .limit(1500)
+      if (!error && Array.isArray(data) && data.length) {
+        mergeCreatorInteractionsFromCloud(data)
+      }
+    } catch {}
+
+    // Every signed-in viewer of the creator's posts must appear on the bubble map (incl. the creator).
+    try {
+      const { pullContentViewsForCreator } = await import('./economySync')
+      const views = await pullContentViewsForCreator(actor.id)
+      if (views?.length) {
+        const asInteractions = views
+          .filter((v) => v.actor_id)
+          .map((v) => ({
+            id: `cv_${v.id || `${v.content_id}_${v.actor_id}_${v.created_at}`}`,
+            creator_id: v.creator_id,
+            content_id: v.content_id,
+            type: 'view',
+            actor_id: v.actor_id,
+            title: '',
+            weight: 1,
+            surface: v.surface || 'unknown',
+            content_type: v.content_type || null,
+            source: 'live',
+            at: v.created_at,
+          }))
+        mergeCreatorInteractionsFromCloud(asInteractions)
+      }
+    } catch {}
+
     return true
   } catch {
     return false

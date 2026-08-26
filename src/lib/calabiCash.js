@@ -2,6 +2,10 @@
  * Calabi Cash + Gold Coins.
  * Cloud (Supabase wallets) is source of truth via economySync.
  * Cache is display-only after pull/push — never invent balances offline.
+ *
+ * Roles:
+ * - Calabi Cash → donations/tips, TTS, premium subscriptions, paid features later
+ * - Gold Coins → chat cosmetics (bigger messages, creator emotes/GIFs, highlights)
  */
 
 import { lsGet } from './storage'
@@ -290,8 +294,9 @@ export async function requestWithdrawal(creatorId, amountUsd, methodId) {
 }
 
 export const COIN_REDEEMS = [
-  { id: 'emote_slot', coins: 50, label: 'Channel emote reaction' },
+  { id: 'chat_bigger', coins: 75, label: 'Bigger chat message' },
+  { id: 'emote_slot', coins: 100, label: 'Creator custom emoji' },
+  { id: 'gif_slot', coins: 150, label: 'Creator custom GIF' },
   { id: 'highlight', coins: 200, label: 'Highlight my chat message' },
   { id: 'raid_cheer', coins: 500, label: 'Raid cheer burst' },
-  { id: 'vip_day', coins: 2000, label: '1-day VIP badge' },
 ]

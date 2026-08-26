@@ -9,7 +9,10 @@ function remember(url) {
   return true
 }
 
-/** Warm the next clip / pic / watch file so swipe and Next are not a blank wait. */
+/**
+ * Warm the next clip / pic / watch file so swipe and Next are not a blank wait.
+ * Videos, clips, and pics are site #1 load priority — preload aggressively vs shop/admin.
+ */
 export function preloadMediaUrl(raw, kind = 'video') {
   if (typeof document === 'undefined') return
   const asImage = kind === 'image'
@@ -21,6 +24,7 @@ export function preloadMediaUrl(raw, kind = 'video') {
   if (asImage || /^data:image\//.test(url)) {
     const img = new Image()
     img.decoding = 'async'
+    img.fetchPriority = 'high'
     img.src = url
     return
   }
@@ -28,6 +32,7 @@ export function preloadMediaUrl(raw, kind = 'video') {
   link.rel = 'preload'
   link.as = 'video'
   link.href = url
+  try { link.fetchPriority = 'high' } catch {}
   document.head.appendChild(link)
   preloadLinks.add(link)
 }
@@ -54,7 +59,7 @@ export function preloadPostedItem(item) {
   preloadMediaUrl(item.mediaUrl || item.sourceUrl, 'video')
 }
 
-export function preloadPostedItems(list, limit = 4) {
+export function preloadPostedItems(list, limit = 6) {
   const rows = Array.isArray(list) ? list : []
   let n = 0
   for (const row of rows) {
@@ -67,7 +72,7 @@ export function preloadPostedItems(list, limit = 4) {
 }
 
 /** Warm content ahead in a mixed reel. */
-export function preloadReelAhead(mixed, fromIndex = 0, count = 3) {
+export function preloadReelAhead(mixed, fromIndex = 0, count = 4) {
   const rows = Array.isArray(mixed) ? mixed : []
   const slice = rows.slice(Math.max(0, fromIndex), Math.max(0, fromIndex) + count + 2)
   preloadPostedItems(slice, count)

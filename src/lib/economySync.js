@@ -571,6 +571,24 @@ export async function pullPremiumSubs() {
   }
 }
 
+export async function pullContentViewsForCreator(creatorId) {
+  if (!creatorId || !isSupabaseConfigured()) return []
+  const client = await sb()
+  if (!client) return []
+  try {
+    const { data, error } = await client
+      .from('content_views')
+      .select('id, content_id, creator_id, actor_id, surface, content_type, created_at')
+      .eq('creator_id', creatorId)
+      .order('created_at', { ascending: false })
+      .limit(2000)
+    if (error || !Array.isArray(data)) return []
+    return data
+  } catch {
+    return []
+  }
+}
+
 export async function pullViewCounts(contentIds = []) {
   if (!isSupabaseConfigured() || !contentIds.length) return false
   const client = await sb()

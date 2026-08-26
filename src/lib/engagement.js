@@ -124,10 +124,14 @@ export function recordView(contentId, meta = {}) {
   lsSet(VIEWS, map)
   recordHourView(contentId)
   queueMicrotask(() => {
-    import('./creatorInteractions').then(({ logCreatorInteraction, creatorIdForContent }) => {
+    Promise.all([
+      import('./creatorInteractions'),
+      import('./graphSync').catch(() => ({ getGraphActor: () => null })),
+    ]).then(([{ logCreatorInteraction, creatorIdForContent }, graph]) => {
       const creatorId = meta.creatorId || creatorIdForContent(contentId)
       if (!creatorId) return
-      const actorId = meta.actorId || null
+      // Prefer explicit actor; fall back to signed-in cloud session so self-views still map.
+      const actorId = meta.actorId || graph?.getGraphActor?.()?.id || null
       logCreatorInteraction({
         creatorId,
         contentId,
