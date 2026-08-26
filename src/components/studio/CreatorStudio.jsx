@@ -29,8 +29,8 @@ import { cn } from '../../lib/utils'
 import { restoreLostUploads } from '../../lib/restoreUploads'
 import { useContentSyncTick, useInteractionSyncTick } from '../../lib/useContentSync'
 import InteractionBubbleMap from './InteractionBubbleMap'
+import StudioRealtimeAnalytics from './StudioRealtimeAnalytics'
 import ErrorReportPrompt from '../ErrorReportPrompt'
-import CreatorAnalyticsPanel from '../settings/CreatorAnalyticsPanel'
 import CreatorEarningsPanel from './CreatorEarningsPanel'
 import StreamSettings from '../settings/StreamSettings'
 import VerifyPage from '../VerifyPage'
@@ -63,7 +63,7 @@ const STUDIO_NAV = [
 
 const SECTION_META = {
   overview: { title: 'Creator Studio', subtitle: 'Posts, audience, and shortcuts' },
-  analytics: { title: 'Analytics', subtitle: 'Every signed-in visitor on your posts — brown = view only, color = action' },
+  analytics: { title: 'Analytics', subtitle: 'Live audience map + channel & per-post stats (cloud)' },
   earnings: { title: 'Earnings', subtitle: 'Tips, withdrawals, and income chart' },
   vods: { title: 'VOD library', subtitle: 'Past lives — manage visibility here' },
   stream: { title: 'Stream settings', subtitle: 'Key, quality, and VOD channel — stays in the dashboard' },
@@ -565,14 +565,14 @@ export default function CreatorStudio({
                 onClick={() => setSection('analytics')}
                 className="self-start h-9 px-3 border border-zinc-700 text-xs text-white hover:bg-white hover:text-black"
               >
-                Open interaction map in Analytics →
+                Open live analytics & bubble map →
               </button>
             </div>
           ) : null}
 
           {section === 'analytics' ? (
-            <div className="h-full min-h-0 flex flex-col gap-4 overflow-hidden">
-              <div className="min-h-0 flex-1 min-h-[320px]">
+            <div className="h-full min-h-0 flex flex-col xl:flex-row gap-3 overflow-hidden">
+              <div className="min-h-0 flex-1 min-h-[280px] xl:min-w-0">
                 <InteractionBubbleMap
                   network={network}
                   range={range}
@@ -585,8 +585,18 @@ export default function CreatorStudio({
                   refreshing={cloudSyncBusy}
                 />
               </div>
-              <div className="shrink-0 max-h-[40%] overflow-y-auto border-t border-zinc-800 pt-3">
-                <CreatorAnalyticsPanel embedded onNavigate={onNavigate} />
+              <div className="min-h-0 h-[42%] xl:h-auto xl:w-[min(420px,40%)] xl:shrink-0">
+                <StudioRealtimeAnalytics
+                  creatorId={user?.id}
+                  posts={posts}
+                  selectedPost={selectedPost}
+                  onSelectPost={setSelectedPostId}
+                  range={range}
+                  onRangeChange={setRange}
+                  refreshing={cloudSyncBusy}
+                  onRefresh={refreshAudienceFromCloud}
+                  tick={interactionTick + syncTick}
+                />
               </div>
             </div>
           ) : null}

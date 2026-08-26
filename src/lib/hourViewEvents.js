@@ -3,7 +3,7 @@ import { lastHourRange } from './hourWindow'
 
 const EVENTS_KEY = 'clips_hour_view_events'
 const MAX_EVENTS_PER_ID = 400
-const KEEP_MS = 4 * 60 * 60 * 1000
+const KEEP_MS = 26 * 60 * 60 * 1000
 
 export function recordHourView(contentId, at = Date.now()) {
   if (!contentId) return
