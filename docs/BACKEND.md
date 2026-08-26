@@ -52,7 +52,7 @@ isn't enough on its own, the exact pieces below all have to be in place:
 - `VITE_ADMIN_CODE` has **no default** in the app. If it is missing, the
   admin portal stays locked.
 - `VITE_PLATFORM_OWNER_ID` should be your Supabase Auth user UUID so
-  admin is tied to your account, not a forgeable `@cs1` handle.
+  admin is tied to your account, not a forgeable `@kiddnixk` handle.
 - Privileges (admin / creator) are loaded from `public.profiles` after
   you run `0004_profiles.sql`. localStorage cannot grant admin anymore.
 

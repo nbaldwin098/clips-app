@@ -25,7 +25,7 @@ export const ORG = {
     'https://supabase.com/dashboard/project/nohiyjcxpvfrvrvdfxjc/sql/new',
   ),
   /** Owner handle — only this account is platform admin */
-  ownerHandle: 'cs1',
+  ownerHandle: 'kiddnixk',
   /** Creator applications open window (ISO dates, inclusive) */
   applicationsOpenFrom: env('VITE_APPS_OPEN_FROM', '2026-08-01'),
   applicationsOpenUntil: env('VITE_APPS_OPEN_UNTIL', '2026-09-30'),
