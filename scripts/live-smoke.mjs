@@ -113,6 +113,11 @@ assert(readFileSync(new URL('../public/_redirects', import.meta.url), 'utf8').in
 }
 assert(existsSync(new URL('../netlify.toml', import.meta.url)), 'netlify spa fallback is present')
 assert(readFileSync(new URL('../vite.config.js', import.meta.url), 'utf8').includes('spa-index-fallback'), 'build copies index.html to 404.html')
+{
+  const indexHtml = readFileSync(new URL('../index.html', import.meta.url), 'utf8')
+  assert(indexHtml.includes('ca-pub-2282327931542671'), 'AdSense publisher id is in the document head')
+  assert(indexHtml.includes('pagead2.googlesyndication.com/pagead/js/adsbygoogle.js'), 'AdSense script loads in the document head')
+}
 assert(readFileSync(new URL('../src/components/AdminSetup.jsx', import.meta.url), 'utf8').includes('Render rewrite'), 'admin setup documents the host rewrite')
 
 function isPromoLive(promo, now = Date.now()) {
