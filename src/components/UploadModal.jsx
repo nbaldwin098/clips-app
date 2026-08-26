@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { X, Upload, Loader2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { publishLocalMedia, stashWatchItem } from '../lib/contentService'
 import { canPost, postDeniedMessage } from '../lib/trustSafety'
-import { STREAM_FILTERS, filterCss } from '../lib/streamFilters'
 import { LIVE_CATEGORIES, mergeTags } from '../lib/mediaMeta'
+import HashtagInput from './HashtagInput'
 import { cn } from '../lib/utils'
 
 const VISIBILITY = [
@@ -21,7 +21,6 @@ export default function UploadModal({ open, onClose, onDone, initialKind = 'vide
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState('')
   const [tagsText, setTagsText] = useState('')
-  const [filterId, setFilterId] = useState('none')
   const [visibility, setVisibility] = useState('public')
   const [priceUsd, setPriceUsd] = useState('')
   const [busy, setBusy] = useState(false)
@@ -38,7 +37,6 @@ export default function UploadModal({ open, onClose, onDone, initialKind = 'vide
     setDescription('')
     setCategory('')
     setTagsText('')
-    setFilterId('none')
     setVisibility('public')
     setPriceUsd('')
     setErr('')
@@ -56,7 +54,6 @@ export default function UploadModal({ open, onClose, onDone, initialKind = 'vide
     return () => URL.revokeObjectURL(url)
   }, [file])
 
-  const previewFilter = useMemo(() => filterCss(filterId), [filterId])
 
   if (!open) return null
 
@@ -67,7 +64,6 @@ export default function UploadModal({ open, onClose, onDone, initialKind = 'vide
     setDescription('')
     setCategory('')
     setTagsText('')
-    setFilterId('none')
     setVisibility('public')
     setPriceUsd('')
     setErr('')
@@ -113,7 +109,6 @@ export default function UploadModal({ open, onClose, onDone, initialKind = 'vide
         status: 'published',
         priceUsd: priceUsd ? Number(priceUsd) : 0,
         tags: mergeTags(tagBits, description),
-        filterId,
         visibility,
       })
       if (!published.ok || !published.item) {
@@ -155,7 +150,7 @@ export default function UploadModal({ open, onClose, onDone, initialKind = 'vide
                   <video
                     src={previewUrl}
                     className="h-full w-full object-contain"
-                    style={previewFilter ? { filter: previewFilter } : undefined}
+                   
                     controls
                     muted
                     playsInline
@@ -171,24 +166,6 @@ export default function UploadModal({ open, onClose, onDone, initialKind = 'vide
                     <span className="text-xs">Select video file</span>
                   </button>
                 )}
-              </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-wider text-zinc-500 mb-2">Look filters</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {STREAM_FILTERS.map((f) => (
-                    <button
-                      key={f.id}
-                      type="button"
-                      onClick={() => setFilterId(f.id)}
-                      className={cn(
-                        'h-8 px-2.5 text-[11px] font-medium border',
-                        filterId === f.id ? 'border-white text-white' : 'border-zinc-800 text-zinc-500 hover:text-zinc-300'
-                      )}
-                    >
-                      {f.label}
-                    </button>
-                  ))}
-                </div>
               </div>
             </div>
 
@@ -257,14 +234,10 @@ export default function UploadModal({ open, onClose, onDone, initialKind = 'vide
                 </div>
               </div>
 
-              <label className="block text-xs text-zinc-400">Tags
-                <input
-                  value={tagsText}
-                  onChange={(e) => setTagsText(e.target.value)}
-                  className="mt-1 w-full h-10 bg-black border border-zinc-800 px-3 text-sm text-white"
-                  placeholder="gaming, funny, tutorial"
-                />
-              </label>
+              <div>
+                <p className="text-xs text-zinc-400 mb-1.5">Hashtags</p>
+                <HashtagInput value={tagsText} onChange={setTagsText} description={description} />
+              </div>
 
               <div>
                 <p className="text-xs text-zinc-400 mb-1.5">Visibility</p>

@@ -425,10 +425,8 @@ export function getByTag(tag) {
   const t = String(tag || '').trim().toLowerCase().replace(/^#/, '')
   if (!t) return []
   const all = onlyReleased(withViewCounts(getImports().map(normalizeItem)))
-  return all.filter((i) => {
-    if ((i.tags || []).some((x) => String(x).toLowerCase() === t)) return true
-    return String(i.title || '').toLowerCase().includes(t)
-  })
+  // Exact tag match only — never fuzzy title substring (that polluted #tag pages).
+  return all.filter((i) => (i.tags || []).some((x) => String(x).toLowerCase() === t))
 }
 
 export function getFollowingFeed(userId, { shortsOnly = false } = {}) {

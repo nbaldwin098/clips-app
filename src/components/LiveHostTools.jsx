@@ -25,7 +25,6 @@ import { listEscrow, markRequestFulfilled } from '../lib/donationEscrow'
 import { VIEWER_ACTIONS, triggerViewerAction, listViewerActions } from '../lib/viewerActions'
 import { getCoinBalance } from '../lib/calabiCash'
 import { getMultiStreamDest, setMultiStreamDest, queueAiHighlight } from '../lib/socialConnects'
-import { getStreamFilter, setStreamFilter, STREAM_FILTERS } from '../lib/streamFilters'
 import { lsGet } from '../lib/storage'
 import CoinIcon from './CoinIcon'
 
@@ -54,7 +53,6 @@ export default function LiveHostTools({ focusedStream, liveNow = [], onOpenCash 
   const actions = hostId ? listViewerActions(hostId, 6) : []
   const coins = getCoinBalance(user?.id)
   const multi = getMultiStreamDest(user?.id)
-  const filter = getStreamFilter(user?.id)
 
   const othersLive = useMemo(
     () => (liveNow || []).filter((s) => s.userId && s.userId !== hostId && s.isLive),
@@ -379,31 +377,11 @@ export default function LiveHostTools({ focusedStream, liveNow = [], onOpenCash 
             className="h-8 px-3 rounded border border-zinc-600 text-xs"
             onClick={() => {
               const r = queueAiHighlight({ userId: user.id, streamId: hostId, label: 'Auto clip' })
-              setNote(r.ok ? 'AI clip queued for connected socials' : r.error)
+              setNote(r.ok ? 'Clip queued for connected socials' : r.error)
             }}
           >
-            AI clip → socials
+            Clip → socials
           </button>
-          <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-[11px] text-zinc-500">Filter</span>
-            <select
-              value={filter.filterId}
-              onChange={(e) => { setStreamFilter(user.id, { filterId: e.target.value }); refresh() }}
-              className="h-8 rounded border border-zinc-700 bg-black px-2 text-xs text-white"
-            >
-              {STREAM_FILTERS.map((f) => (
-                <option key={f.id} value={f.id}>{f.label}</option>
-              ))}
-            </select>
-            <label className="flex items-center gap-1 text-[11px] text-zinc-400">
-              <input
-                type="checkbox"
-                checked={!!filter.bodyAvatar}
-                onChange={(e) => { setStreamFilter(user.id, { bodyAvatar: e.target.checked }); refresh() }}
-              />
-              Full-body AI avatar overlay
-            </label>
-          </div>
         </section>
       ) : null}
     </div>

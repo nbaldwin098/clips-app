@@ -14,11 +14,9 @@ import {
   Upload,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
-import { STREAM_FILTERS, filterCss } from '../../lib/streamFilters'
 import {
   ASPECTS,
   LIVE_LAYOUTS,
-  applyCssFilter,
   containDraw,
   coverDraw,
   downloadBlob,
@@ -26,6 +24,8 @@ import {
   stopStream,
 } from '../../lib/creatorLabMedia'
 import { cn } from '../../lib/utils'
+import HashtagInput, { tagsFromHashtagField } from '../HashtagInput'
+import StudioSocialsPanel from './StudioSocialsPanel'
 
 function fmtTime(sec) {
   const s = Math.max(0, Number(sec) || 0)
@@ -48,7 +48,7 @@ function AspectPreview({ aspectId, children, className }) {
 }
 
 /**
- * CapCut-like editor: import → scrub/trim → text + filter → export WebM from canvas.
+ * CapCut-like editor: import → scrub/trim → text + hashtags → export WebM from canvas.
  */
 function EditLab({ onOpenCreate }) {
   const canvasRef = useRef(null)
@@ -67,15 +67,14 @@ function EditLab({ onOpenCreate }) {
   const [trimOut, setTrimOut] = useState(0)
   const [playing, setPlaying] = useState(false)
   const [aspectId, setAspectId] = useState('9:16')
-  const [filterId, setFilterId] = useState('none')
   const [text, setText] = useState('')
   const [textSize, setTextSize] = useState(42)
+  const [hashtags, setHashtags] = useState('')
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState('')
   const [exportUrl, setExportUrl] = useState('')
 
   const aspect = ASPECTS.find((a) => a.id === aspectId) || ASPECTS[0]
-  const css = filterCss(filterId)
 
   const clearMedia = useCallback(() => {
     cancelAnimationFrame(rafRef.current)
@@ -112,14 +111,11 @@ function EditLab({ onOpenCreate }) {
     ctx.fillStyle = '#000'
     ctx.fillRect(0, 0, w, h)
 
-    const drawMedia = () => {
-      if (mediaKind === 'video' && videoRef.current) {
-        containDraw(ctx, videoRef.current, 0, 0, w, h)
-      } else if (mediaKind === 'image' && imgRef.current?.complete) {
-        containDraw(ctx, imgRef.current, 0, 0, w, h)
-      }
+    if (mediaKind === 'video' && videoRef.current) {
+      containDraw(ctx, videoRef.current, 0, 0, w, h)
+    } else if (mediaKind === 'image' && imgRef.current?.complete) {
+      containDraw(ctx, imgRef.current, 0, 0, w, h)
     }
-    applyCssFilter(ctx, css, w, h, drawMedia)
 
     if (text.trim()) {
       ctx.fillStyle = 'rgba(0,0,0,0.45)'
@@ -136,7 +132,7 @@ function EditLab({ onOpenCreate }) {
       ctx.textBaseline = 'middle'
       ctx.fillText(text.trim(), w / 2, ty + th / 2)
     }
-  }, [aspect, css, mediaKind, text, textSize])
+  }, [aspect, mediaKind, text, textSize])
 
   useEffect(() => {
     paint()
@@ -296,7 +292,8 @@ function EditLab({ onOpenCreate }) {
       const url = URL.createObjectURL(blob)
       setExportUrl(url)
       downloadBlob(blob, `calabi-edit-${Date.now()}.webm`)
-      setNote(`Exported ${(blob.size / 1024 / 1024).toFixed(1)} MB WebM — upload from Create when ready.`)
+      const tagBits = tagsFromHashtagField(hashtags)
+      setNote(`Exported ${(blob.size / 1024 / 1024).toFixed(1)} MB WebM${tagBits.length ? ` · ${tagBits.map((t) => '#' + t).join(' ')}` : ''} — upload from Create or post via Socials.`)
     } catch (err) {
       setNote(err?.message || 'Export failed.')
     } finally {
@@ -443,25 +440,6 @@ function EditLab({ onOpenCreate }) {
           </div>
         </div>
 
-        <div>
-          <p className="text-[11px] uppercase tracking-wider text-zinc-500 mb-2">Filter</p>
-          <div className="flex flex-wrap gap-1.5">
-            {STREAM_FILTERS.map((f) => (
-              <button
-                key={f.id}
-                type="button"
-                onClick={() => setFilterId(f.id)}
-                className={cn(
-                  'h-8 px-2.5 text-[11px] border',
-                  filterId === f.id ? 'bg-white text-black border-white' : 'border-zinc-700 text-zinc-300'
-                )}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
         <label className="block">
           <span className="text-[11px] uppercase tracking-wider text-zinc-500 inline-flex items-center gap-1">
             <Type className="h-3 w-3" /> Text overlay
@@ -481,6 +459,12 @@ function EditLab({ onOpenCreate }) {
             className="mt-2 w-full accent-white"
           />
         </label>
+
+
+        <div>
+          <p className="text-[11px] uppercase tracking-wider text-zinc-500 mb-2">Hashtags</p>
+          <HashtagInput value={hashtags} onChange={setHashtags} description={text} />
+        </div>
 
         <button
           type="button"
@@ -529,7 +513,6 @@ function LiveLab({ onNavigate }) {
 
   const [layout, setLayout] = useState('pip')
   const [aspectId, setAspectId] = useState('16:9')
-  const [filterId, setFilterId] = useState('none')
   const [camOn, setCamOn] = useState(false)
   const [screenOn, setScreenOn] = useState(false)
   const [overlayUrl, setOverlayUrl] = useState('')
@@ -541,7 +524,6 @@ function LiveLab({ onNavigate }) {
   const startedAtRef = useRef(0)
 
   const aspect = ASPECTS.find((a) => a.id === aspectId) || ASPECTS[0]
-  const css = filterCss(filterId)
 
   const paint = useCallback(() => {
     const canvas = canvasRef.current
@@ -598,7 +580,7 @@ function LiveLab({ onNavigate }) {
       }
     }
 
-    applyCssFilter(ctx, css, w, h, drawScene)
+    drawScene()
 
     if (overlayUrl && overlayImgRef.current?.complete) {
       const img = overlayImgRef.current
@@ -625,7 +607,7 @@ function LiveLab({ onNavigate }) {
       ctx.fillText('Add camera and/or screen — mix like OBS on calabi', w / 2, h / 2)
       ctx.textAlign = 'left'
     }
-  }, [aspect, camOn, screenOn, layout, css, overlayUrl, text])
+  }, [aspect, camOn, screenOn, layout, overlayUrl, text])
 
   useEffect(() => {
     let alive = true
@@ -870,21 +852,6 @@ function LiveLab({ onNavigate }) {
               </button>
             ))}
           </div>
-          <div className="flex flex-wrap gap-1.5">
-            {STREAM_FILTERS.map((f) => (
-              <button
-                key={f.id}
-                type="button"
-                onClick={() => setFilterId(f.id)}
-                className={cn(
-                  'h-8 px-2 text-[10px] border',
-                  filterId === f.id ? 'bg-white text-black border-white' : 'border-zinc-700 text-zinc-400'
-                )}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
         </div>
 
         <label className="block">
@@ -956,13 +923,14 @@ function LiveLab({ onNavigate }) {
  */
 export default function CreatorLab({ onNavigate, initialMode = 'edit', compact = false }) {
   const { isAuthenticated } = useAuth()
-  const [mode, setMode] = useState(initialMode === 'live' ? 'live' : 'edit')
+  const start = initialMode === 'live' ? 'live' : initialMode === 'socials' ? 'socials' : 'edit'
+  const [mode, setMode] = useState(start)
 
   if (!isAuthenticated) {
     return (
       <div className={cn('p-6', compact ? '' : 'max-w-3xl mx-auto')}>
-        <h1 className="text-xl font-semibold text-white">Creator Lab</h1>
-        <p className="text-sm text-zinc-400 mt-2">Sign in to edit clips and mix live sources on calabi.</p>
+        <h1 className="text-xl font-semibold text-white">Calabi Studio</h1>
+        <p className="text-sm text-zinc-400 mt-2">Sign in to edit, go live, and post to socials on calabi.</p>
       </div>
     )
   }
@@ -972,15 +940,15 @@ export default function CreatorLab({ onNavigate, initialMode = 'edit', compact =
       {!compact ? (
         <div>
           <h1 className="text-2xl font-semibold text-white tracking-tight flex items-center gap-2">
-            <Clapperboard className="h-6 w-6" /> Creator Lab
+            <Clapperboard className="h-6 w-6" /> Calabi Studio
           </h1>
           <p className="text-sm text-zinc-400 mt-1">
-            CapCut-style edit and OBS-style live mixer — in your browser on calabi.
+            Edit like CapCut, mix live like OBS, connect socials and post — all on calabi.
           </p>
         </div>
       ) : null}
 
-      <div className="inline-flex border border-zinc-800 p-0.5 bg-[#0c0c10]">
+      <div className="inline-flex flex-wrap border border-zinc-800 p-0.5 bg-[#0c0c10]">
         <button
           type="button"
           onClick={() => setMode('edit')}
@@ -999,14 +967,26 @@ export default function CreatorLab({ onNavigate, initialMode = 'edit', compact =
             mode === 'live' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
           )}
         >
-          <Radio className="h-3.5 w-3.5" /> Live studio
+          <Radio className="h-3.5 w-3.5" /> Live
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode('socials')}
+          className={cn(
+            'h-9 px-4 text-xs font-semibold inline-flex items-center gap-1.5',
+            mode === 'socials' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
+          )}
+        >
+          Socials
         </button>
       </div>
 
       {mode === 'edit' ? (
         <EditLab onOpenCreate={() => onNavigate?.('create')} />
-      ) : (
+      ) : mode === 'live' ? (
         <LiveLab onNavigate={onNavigate} />
+      ) : (
+        <StudioSocialsPanel onNavigate={onNavigate} />
       )}
     </div>
   )

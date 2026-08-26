@@ -58,7 +58,7 @@ import {
 
 const STUDIO_NAV = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard, group: 'Studio' },
-  { id: 'lab', label: 'Creator Lab', icon: Sparkles, group: 'Studio' },
+  { id: 'lab', label: 'Calabi Studio', icon: Sparkles, group: 'Studio' },
   { id: 'analytics', label: 'Analytics', icon: BarChart3, group: 'Studio' },
   { id: 'socials', label: 'Socials', icon: Share2, group: 'Studio' },
   { id: 'earnings', label: 'Earnings', icon: CircleDollarSign, group: 'Money' },
@@ -69,7 +69,7 @@ const STUDIO_NAV = [
 
 const SECTION_META = {
   overview: { title: 'Creator Studio', subtitle: 'Posts, audience, and shortcuts' },
-  lab: { title: 'Creator Lab', subtitle: 'CapCut-style edit + OBS-style live mixer on calabi' },
+  lab: { title: 'Calabi Studio', subtitle: 'Edit · Live · Socials — CapCut + OBS on calabi' },
   analytics: { title: 'Analytics', subtitle: 'Pick a post → its bubble map + live stats under it' },
   socials: { title: 'Socials', subtitle: 'Connect accounts and post videos, clips, pics, or VODs out' },
   earnings: { title: 'Earnings', subtitle: 'Tips, withdrawals, and income chart' },
@@ -452,7 +452,7 @@ export default function CreatorStudio({
             onClick={() => setSection('lab')}
             className="w-full flex items-center gap-2.5 px-2.5 py-2 text-sm text-zinc-400 hover:bg-[#18181f] hover:text-white"
           >
-            <Clapperboard className="h-4 w-4" /> Creator Lab
+            <Clapperboard className="h-4 w-4" /> Calabi Studio
           </button>
           <button
             type="button"

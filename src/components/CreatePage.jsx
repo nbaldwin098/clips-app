@@ -9,7 +9,7 @@ const MODES = [
   { id: 'clip', label: 'Clip', hint: 'Vertical · max 60s', Icon: Clapperboard },
   { id: 'pic', label: 'Pic', hint: 'Photo post', Icon: ImageIcon },
   { id: 'live', label: 'Go live', hint: 'Open live lobby', Icon: Radio },
-  { id: 'lab', label: 'Creator Lab', hint: 'CapCut + OBS on site', Icon: Clapperboard },
+  { id: 'lab', label: 'Calabi Studio', hint: 'Edit · Live · Socials', Icon: Clapperboard },
 ]
 
 export default function CreatePage({ onCreate, onOpenAuth, onNavigate }) {
@@ -102,14 +102,14 @@ export default function CreatePage({ onCreate, onOpenAuth, onNavigate }) {
               {mode === 'clip' && 'Upload a clip'}
               {mode === 'pic' && 'Upload a pic'}
               {mode === 'live' && 'Start a live lobby'}
-              {mode === 'lab' && 'Open Creator Lab'}
+              {mode === 'lab' && 'Open Calabi Studio'}
             </p>
             <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
-              {mode === 'video' && 'Add title, description, category, and look filters before you publish.'}
-              {mode === 'clip' && 'Vertical short · 60s max. You’ll pick filters on the next step.'}
+              {mode === 'video' && 'Add title, description, category, and hashtags before you publish.'}
+              {mode === 'clip' && 'Vertical short · 60s max. Add hashtags on the next step.'}
               {mode === 'pic' && 'Opens your photo picker and posts straight to Pics.'}
-              {mode === 'live' && 'Opens Live. Use camera or share an OBS window on our site; full RTMP ingest when connected.'}
-              {mode === 'lab' && 'In-browser CapCut-style edit (trim, filters, text, export) and OBS-style live mixer (camera + screen + layouts).'}
+              {mode === 'live' && 'Opens Live. Use Calabi Studio Live to mix camera + screen on-site.'}
+              {mode === 'lab' && 'CapCut-grade edit, OBS-grade live mixer, and connect socials to post — all inside Calabi Studio.'}
             </p>
             {picError ? <p className="mt-2 text-sm text-red-400">{picError}</p> : null}
           </div>
