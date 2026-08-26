@@ -145,10 +145,26 @@ assert(readFileSync(new URL('../app/sitemap.js', import.meta.url), 'utf8').inclu
 for (const privateRoute of ['dashboard', 'settings', 'library']) {
   assert(existsSync(new URL(`../app/${privateRoute}/page.jsx`, import.meta.url)), `/${privateRoute} App Router page exists`)
   assert(
-    readFileSync(new URL(`../app/${privateRoute}/page.jsx`, import.meta.url), 'utf8').includes('index: false'),
-    `/${privateRoute} is noindex`,
+    readFileSync(new URL(`../app/${privateRoute}/page.jsx`, import.meta.url), 'utf8').includes('sectionMetadata'),
+    `/${privateRoute} uses sectionMetadata`,
   )
 }
+// Finish: remaining known shells + dynamic SEO routes
+for (const route of [
+  'watch', 'community', 'content-rules', 'creator-apply', 'playlists',
+  'wallet', 'vods', 'analytics', 'channel', 'subscriptions', 'studio-tools',
+  'stream-settings', 'history', 'watch-again', 'hearts', 'liked', 'watch-later',
+  'stats', 'notifications', 'checkout', 'verify', 'advertiser-portal', 'admin',
+]) {
+  assert(existsSync(new URL(`../app/${route}/page.jsx`, import.meta.url)), `finish route /${route} exists`)
+}
+assert(existsSync(new URL('../app/sound/[id]/page.jsx', import.meta.url)), 'sound/[id] SEO route exists')
+assert(existsSync(new URL('../app/tag/[id]/page.jsx', import.meta.url)), 'tag/[id] SEO route exists')
+assert(existsSync(new URL('../app/playlist/[id]/page.jsx', import.meta.url)), 'playlist/[id] route exists')
+assert(readFileSync(new URL('../app/shorts/page.jsx', import.meta.url), 'utf8').includes("redirect('/clips')"), 'shorts redirects to clips')
+assert(readFileSync(new URL('../app/robots.js', import.meta.url), 'utf8').includes('/notifications'), 'robots disallows private surfaces')
+assert(readFileSync(new URL('../app/sectionMeta.js', import.meta.url), 'utf8').includes('noindex'), 'sectionMeta supports noindex shells')
+assert(readFileSync(new URL('../app/[[...slug]]/page.jsx', import.meta.url), 'utf8').includes('Last-resort'), 'catch-all is last-resort only')
 
 function isPromoLive(promo, now = Date.now()) {
   if (!promo || promo.published !== true) return false

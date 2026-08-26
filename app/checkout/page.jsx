@@ -1,8 +1,8 @@
 import SpaShell from '../SpaShell'
 import { sectionMetadata } from '../sectionMeta'
 
-export const metadata = sectionMetadata('dashboard')
+export const metadata = sectionMetadata('checkout')
 
-export default function DashboardRoute() {
+export default function CheckoutRoute() {
   return <SpaShell />
 }
