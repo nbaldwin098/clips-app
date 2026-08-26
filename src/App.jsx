@@ -619,7 +619,7 @@ function AppShell() {
         )}
       </div>
 
-      <ImportShortModal open={importOpen} onClose={() => setImportOpen(false)} />
+      <ImportShortModal open={importOpen} onClose={() => setImportOpen(false)} onOpenAuth={openAuth} />
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
       {mfaPending ? <MfaGate /> : null}
       {passwordRecovery ? <PasswordRecoveryGate /> : null}

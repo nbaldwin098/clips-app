@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { X, Link2, CheckCircle2, AlertTriangle } from 'lucide-react'
 import { importUserLink } from '../lib/contentService'
 import { useAuth } from '../context/AuthContext'
+import ErrorReportPrompt from './ErrorReportPrompt'
 
-export default function ImportShortModal({ open, onClose }) {
+export default function ImportShortModal({ open, onClose, onOpenAuth }) {
   const { user } = useAuth()
   const [url, setUrl] = useState('')
   const [result, setResult] = useState(null)
@@ -74,7 +75,17 @@ export default function ImportShortModal({ open, onClose }) {
               className="w-full h-10 rounded-lg border border-zinc-700 bg-[#000000] pl-9 pr-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white focus:border-white/40"
             />
           </div>
-          {error && <p className="text-sm text-red-400">{error}</p>}
+          {error && (
+            <>
+              <p className="text-sm text-red-400">{error}</p>
+              <ErrorReportPrompt
+                message={error}
+                context="import"
+                detail={url.trim() ? `url=${url.trim().slice(0, 240)}` : ''}
+                onOpenAuth={onOpenAuth}
+              />
+            </>
+          )}
           {result && (
             <div className="rounded-lg border border-zinc-700 bg-[#18181b] p-3 space-y-2">
               <div className="flex items-center gap-2 text-sm font-medium text-white">
