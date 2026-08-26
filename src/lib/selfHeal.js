@@ -1,10 +1,8 @@
 /**
- * Boot-time repair so a stale or tampered browser cache cannot brick the app
- * after months without a deploy.
+ * Boot-time repair so a stale or tampered browser cache cannot brick the app.
  */
 import { isOwnerAccount } from '../data/ownerLogin'
 import { lsGet, lsSet, lsRemove } from './storage'
-import { safeHttpUrl } from './safeUrl'
 import { purgeDeadCatalog, isBlobUrl } from './catalogHealth'
 import { normalizeTaste } from './algorithmEngine'
 import { seedOfficialCatalog } from '../data/publicMediaSeed'
@@ -44,16 +42,29 @@ function stripPrivileges(user) {
   }
 }
 
-function healCampaigns(list) {
-  if (!Array.isArray(list)) return []
-  return list.map((c) => {
-    if (!isRecord(c)) return null
-    const targetUrl = safeHttpUrl(c.targetUrl)
-    return { ...c, targetUrl: targetUrl || '' }
-  }).filter(Boolean)
+/** Wipe legacy local catalog + all ad keys so nothing ghosts from old devices. */
+export function wipeLegacyLocalMedia() {
+  if (typeof localStorage === 'undefined') return
+  const keys = [
+    'clips_imports', 'user_clips', 'imports', 'clips_ad_campaigns', 'clips_ad_settings',
+    'clips_ads_running', 'clips_ad_stats', 'clips_ad_prefs', 'clips_vast_cache',
+    'hidden_broken_media', 'clips_hidden_broken_media',
+  ]
+  for (const k of keys) {
+    try { localStorage.removeItem(k) } catch {}
+  }
+  try {
+    const drop = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i)
+      if (!k) continue
+      if (/^(clips_ad|exo|vast|ad_campaign)/i.test(k)) drop.push(k)
+    }
+    for (const k of drop) localStorage.removeItem(k)
+  } catch {}
 }
 
-/** Clear dead blob: URLs. Only mark localStored for legacy rows still without an http link. */
+/** Clear dead blob: URLs on in-memory catalog only (no disk write for catalog). */
 export function healUploadCatalog() {
   const imports = lsGet('imports', []) || []
   if (!Array.isArray(imports) || !imports.length) return 0
@@ -77,10 +88,6 @@ export function healUploadCatalog() {
       r.hosted = true
       r.localStored = false
       dirty = true
-    } else if (!hasHttp && isUserUploadRecord(r) && Number(r.storedBytes) > 0 && r.localStored !== true) {
-      // Legacy device-only row awaiting promoteDeviceUploadsToCloud.
-      r.localStored = true
-      dirty = true
     }
     if (dirty) changed += 1
     return r
@@ -90,6 +97,8 @@ export function healUploadCatalog() {
 }
 
 export function healLocalState() {
+  try { wipeLegacyLocalMedia() } catch {}
+
   try {
     const user = lsGet('user', null)
     if (user) {
@@ -110,42 +119,12 @@ export function healLocalState() {
     try { lsSet('clips_admin_session', null) } catch {}
   }
 
-  try {
-    const campaigns = lsGet('clips_ad_campaigns', [])
-    lsSet('clips_ad_campaigns', healCampaigns(campaigns))
-  } catch {}
+  // Never restore ad campaigns from disk
+  try { localStorage.removeItem('clips_ad_campaigns') } catch {}
 
   try {
-    const imports = lsGet('imports', [])
-    if (!Array.isArray(imports)) lsSet('imports', [])
-    else {
-      healUploadCatalog()
-      purgeDeadCatalog()
-    }
-  } catch {
-    try { lsSet('imports', []) } catch {}
-  }
-
-  try {
-    const imports = lsGet('imports', []) || []
-    const users = lsGet('users_index', {}) || {}
-    for (const item of imports) {
-      const id = item?.creatorId || item?.userId
-      if (!id || String(id).startsWith('ref-')) continue
-      const handle = String(item.handle || item.creatorHandle || '').replace(/^@/, '').toLowerCase()
-      const prev = users[id] && typeof users[id] === 'object' ? users[id] : {}
-      users[id] = {
-        ...prev,
-        id,
-        handle: handle || prev.handle || '',
-        displayName: prev.displayName || item.displayName || item.creatorName || handle || prev.handle,
-        avatarUrl: prev.avatarUrl || item.avatarUrl || null,
-        bannerUrl: prev.bannerUrl || null,
-        bio: prev.bio || '',
-        updatedAt: prev.updatedAt || new Date().toISOString(),
-      }
-    }
-    lsSet('users_index', users)
+    healUploadCatalog()
+    purgeDeadCatalog()
   } catch {}
 
   try {
@@ -162,10 +141,6 @@ export function healLocalState() {
   } catch {
     try { lsSet('taste_profiles', {}) } catch {}
   }
-
-  try {
-    lsRemove('clips_ads_running')
-  } catch {}
 
   try {
     seedOfficialCatalog()
