@@ -10,7 +10,7 @@ import {
   formatUsdFromCents,
 } from '../lib/marketplaceSync'
 import { redirectSafeUrl } from '../lib/safeUrl'
-import { getStripePaymentLink } from '../lib/stripeConfig'
+import { ownCheckoutConfigured } from '../lib/stripeCheckout'
 
 export default function ShopPage({ onNavigate, onOpenAuth }) {
   const { user, isAuthenticated } = useAuth()
@@ -57,9 +57,9 @@ export default function ShopPage({ onNavigate, onOpenAuth }) {
         </button>
       </div>
 
-      {!getStripePaymentLink() ? (
+      {!ownCheckoutConfigured() ? (
         <p className="text-xs text-amber-400">
-          Stripe Payment Link is not set yet (VITE_STRIPE_PAYMENT_LINK). Checkout will not charge until it is configured on Render.
+          Own Stripe Checkout needs Supabase env vars + the create-checkout-session Edge Function deployed.
         </p>
       ) : null}
 

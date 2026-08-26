@@ -5,7 +5,8 @@
 import { lsGet, lsSet } from './storage'
 import { getSupabase, isSupabaseConfigured } from './supabaseClient'
 import { getGraphActor } from './graphSync'
-import { getStripePaymentLink, buildPaymentLink } from './stripeConfig'
+import { createCheckoutSession } from './stripeCheckout'
+import { stashPendingStripe } from './tips'
 
 const PRODUCTS_CACHE = 'marketplace_products_cache'
 const SELLERS_CACHE = 'marketplace_sellers_cache'
@@ -211,7 +212,6 @@ export async function startMarketplaceCheckout({ buyer, product }) {
   const fee = calcPlatformFeeCents(subtotal + shipping)
   const total = subtotal + shipping + fee
   const id = `ord_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
-  const linkBase = getStripePaymentLink()
   const row = {
     id,
     buyer_id: buyer.id,
@@ -224,7 +224,7 @@ export async function startMarketplaceCheckout({ buyer, product }) {
     platform_fee_cents: fee,
     total_cents: total,
     status: 'pending_payment',
-    stripe_payment_link: linkBase || null,
+    stripe_payment_link: null,
     meta: { buyerHandle: buyer.handle || '' },
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -232,18 +232,30 @@ export async function startMarketplaceCheckout({ buyer, product }) {
   const { error } = await client.from('marketplace_orders').insert(row)
   if (error) return { ok: false, error: error.message }
 
-  if (!linkBase) {
+  stashPendingStripe({
+    kind: 'marketplace',
+    donorId: buyer.id,
+    handle: buyer.handle,
+    orderId: id,
+    amount: total / 100,
+  })
+
+  const checkout = await createCheckoutSession({
+    kind: 'marketplace',
+    amountCents: total,
+    productName: product.title || 'Shop order',
+    email: buyer.email || '',
+    orderId: id,
+    reference: `marketplace:${id}:${total}`,
+  })
+  if (!checkout.ok || !checkout.url) {
     return {
       ok: false,
-      error: 'Stripe Payment Link is not configured (VITE_STRIPE_PAYMENT_LINK). Order saved as pending — set the link to charge cards.',
+      error: checkout.message || 'Could not start Stripe Checkout. Deploy create-checkout-session and sign in.',
       order: mapOrder(row),
     }
   }
-  const url = buildPaymentLink(linkBase, {
-    email: buyer.email || '',
-    reference: `marketplace:${id}:${total}`,
-  })
-  return { ok: true, url, order: mapOrder(row), totalCents: total, platformFeeCents: fee }
+  return { ok: true, url: checkout.url, order: mapOrder(row), totalCents: total, platformFeeCents: fee }
 }
 
 export async function markOrderPaid(orderId) {

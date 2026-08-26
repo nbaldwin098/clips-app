@@ -1,6 +1,6 @@
 import { lsGet, lsSet } from './storage'
 import { addDonation, postLiveChat, markContentPurchased } from './engagement'
-import { membershipReturnPaid, getCalabiCashPaymentLink } from './stripeConfig'
+import { membershipReturnPaid } from './stripeConfig'
 import { startPremiumCheckout } from './checkout'
 import { createNotification } from './notifications'
 import { creditCalabiCash, getTierById, spendCalabiCash, creatorCashShare, usdToCashUnits, hasUsedFirstBuy } from './calabiCash'
@@ -78,11 +78,16 @@ export async function startTipCheckout({ user, kind, creatorId, contentId, amoun
     already: false,
     email: user.email || '',
     reference: `${kind}:${creatorId}:${contentId || ''}:${dollars}:${user.id}`.slice(0, 200),
+    amountCents: Math.round(dollars * 100),
+    kind,
+    productName: kind === 'live_tip' ? `Live tip $${dollars}` : `Tip $${dollars}`,
+    creatorId: creatorId || '',
+    contentId: contentId || '',
   })
   return { ok: !!result.url, url: result.url || '', message: result.message, granted: false }
 }
 
-/** Buy a Calabi Cash tier via the same Payment Link return flow. */
+/** Buy a Calabi Cash tier via own Stripe Checkout. */
 export async function startCalabiCashCheckout({ user, tierId }) {
   if (!user?.id) return { ok: false, url: '', message: 'Sign in first.' }
   const tier = getTierById(tierId)
@@ -102,7 +107,10 @@ export async function startCalabiCashCheckout({ user, tierId }) {
     already: false,
     email: user.email || '',
     reference: `cash:${tier.id}:${tier.units}:${user.id}`.slice(0, 200),
-    paymentLink: getCalabiCashPaymentLink(tier.id),
+    amountCents: Math.round(Number(tier.usd) * 100),
+    kind: 'calabi_cash',
+    productName: tier.label || `Calabi Cash · $${tier.usd}`,
+    tierId: tier.id,
   })
   return { ok: !!result.url, url: result.url || '', message: result.message, granted: false }
 }
@@ -246,6 +254,14 @@ export function claimStripeReturn(user, params = {}, search = '') {
   }
   if (pending?.kind === 'premium') {
     return { ok: true, kind: 'premium', creatorId: pending.creatorId || '' }
+  }
+  if (pending?.kind === 'marketplace') {
+    if (pending.donorId === user.id && pending.orderId) {
+      import('./marketplaceSync').then(({ markOrderPaid }) => {
+        markOrderPaid(pending.orderId).catch(() => {})
+      }).catch(() => {})
+    }
+    return { ok: true, kind: 'marketplace', orderId: pending.orderId || '' }
   }
   try {
     const leftover = sessionStorage.getItem('clips_pending_purchase')

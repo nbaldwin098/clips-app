@@ -14,7 +14,6 @@ import {
 } from '../lib/calabiCash'
 import { startCalabiCashCheckout } from '../lib/tips'
 import { redirectSafeUrl } from '../lib/safeUrl'
-import { getStripePaymentLink } from '../lib/stripeConfig'
 import { REV_SPLIT_COPY } from '../lib/revenueSplit'
 import { cn } from '../lib/utils'
 
@@ -66,20 +65,12 @@ export default function CalabiCashShop({ compact = false }) {
     setBusy(tierId)
     setNote('')
     const res = await startCalabiCashCheckout({ user, tierId })
+    setBusy('')
     if (res.url) {
-      setBusy('')
       redirectSafeUrl(res.url)
       return
     }
-    // No Payment Link — credit on cloud so packs still work in prod setup
-    const local = await purchaseCashPack(user.id, tierId)
-    setBusy('')
-    if (local.ok) {
-      setNote(`Added ${formatCash(local.addedCash)} Cash + ${local.addedCoins} Gold Coins (cloud wallet).`)
-      bump((n) => n + 1)
-      return
-    }
-    setNote(local.error || res.message || 'Checkout unavailable. Add a Stripe Payment Link or run migration 0016.')
+    setNote(res.message || 'Checkout unavailable. Deploy create-checkout-session and sign in.')
     bump((n) => n + 1)
   }
 
@@ -139,7 +130,7 @@ export default function CalabiCashShop({ compact = false }) {
               {busy === t.id ? '…' : `$${Number(t.usd).toFixed(2)}`}
             </div>
             <p className="text-[10px] text-zinc-500 mt-1.5">
-              {getStripePaymentLink() ? 'Card checkout' : 'Cloud wallet credit'}
+              Card checkout
             </p>
           </button>
         ))}
