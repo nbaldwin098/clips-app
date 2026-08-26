@@ -84,6 +84,7 @@ function toRow(record, actor) {
     status: record.status || 'published',
     scheduled_for: record.scheduledFor || null,
     price_usd: Number(record.priceUsd) > 0 ? Number(record.priceUsd) : 0,
+    visibility: record.visibility === 'private' || record.visibility === 'unlisted' ? record.visibility : 'public',
   }
 }
 
@@ -119,6 +120,7 @@ function fromRow(row) {
     status: row.status || 'published',
     scheduledFor: row.scheduled_for || null,
     priceUsd: Number(row.price_usd) > 0 ? Number(row.price_usd) : 0,
+    visibility: row.visibility === 'private' || row.visibility === 'unlisted' ? row.visibility : 'public',
   }
 }
 
@@ -128,7 +130,7 @@ function catalogSyncErrorMessage(error) {
   const msg = String(error?.message || error || '').trim()
   if (!msg) return "Couldn't save to the catalog."
   if (/Could not find the .* column/i.test(msg)) {
-    return 'Site database is out of date — run the latest Supabase migration (0015_videos_first_published_at.sql / 0012).'
+    return 'Site database is out of date — run the latest Supabase migration (0021_visibility_payout_secrets.sql / 0015).'
   }
   if (LEAKED_DB_ERROR.test(msg)) return "Couldn't publish — sign in with the account that owns this upload."
   return msg

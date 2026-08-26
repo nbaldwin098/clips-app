@@ -12,8 +12,7 @@ import {
   refreshEarningsFromCloud,
   refreshWalletFromCloud,
 } from '../../lib/calabiCash'
-import { creatorBalance } from '../../lib/payouts'
-import { buildMethodSummary, storePayoutSecret, removePayoutSecret } from '../../lib/payoutVault'
+import { buildMethodSummary, storePayoutSecret, removePayoutSecret, pullPayoutSecretsCloud } from '../../lib/payoutVault'
 import {
   SettingsCard,
   SettingsKpiGrid,
@@ -87,7 +86,11 @@ export default function CreatorEarningsPanel() {
 
   useEffect(() => {
     if (!uid) return
-    Promise.all([refreshEarningsFromCloud(uid), refreshWalletFromCloud(uid)])
+    Promise.all([
+      refreshEarningsFromCloud(uid),
+      refreshWalletFromCloud(uid),
+      pullPayoutSecretsCloud(uid),
+    ])
       .then(() => bump((n) => n + 1))
       .catch(() => {})
   }, [uid])
@@ -108,7 +111,6 @@ export default function CreatorEarningsPanel() {
   )
   const methods = listWithdrawMethods(uid) || []
   const requests = listWithdrawRequests(uid, 10) || []
-  const payout = creatorBalance(uid, user?.handle) || { views: 0, paid: 0 }
   const coins = Number(getCoinBalance(uid)) || 0
 
   useEffect(() => {
@@ -203,9 +205,8 @@ export default function CreatorEarningsPanel() {
       </div>
       <SettingsNotice>
         <p>
-          Legacy payout ledger: {usd(payout?.paid)} paid
-          {payout?.views != null ? ` · ${Number(payout.views) || 0} tracked views` : ''}.
-          Bank and crypto details are stored in a secure payout vault (masked on screen).
+          Available balance is cloud earnings (tips, memberships, packs). Manual admin hand-payouts are tracked separately for ops — they are not double-counted here.
+          Bank and crypto details sync to the secure payout_secrets table when cloud is signed in.
         </p>
       </SettingsNotice>
 

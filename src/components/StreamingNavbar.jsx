@@ -147,7 +147,7 @@ export default function StreamingNavbar({
                       }}
                       className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-zinc-200 hover:bg-[#1f1f2a] hover:text-white"
                     >
-                      <Wallet className="h-4 w-4 text-zinc-400" /> Wallet & Coins
+                      <Wallet className="h-4 w-4 text-zinc-400" /> Your Coins
                     </button>
                     {isPlatformOwner(user) && (
                       <button

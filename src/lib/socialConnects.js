@@ -1,20 +1,32 @@
 /**
  * Social account connects + queue posts to YouTube / TikTok / Instagram / X / Facebook.
- * OAuth tokens are mocked until provider API keys ship — destinations + job queue are local SOT for UI.
+ * Real OAuth publish only when provider client IDs are configured.
+ * Without keys: allow handle + show-on-profile; do not fake a live publish queue.
  */
 import { lsGet, lsSet } from './storage'
+import { runtimeEnv } from './runtimeEnv'
 
 const SOCIAL = 'social_connects'
 const MULTI = 'multi_stream_dest'
 const CLIP_JOBS = 'auto_clip_jobs'
 
 export const SOCIAL_PROVIDERS = [
-  { id: 'youtube', label: 'YouTube', short: 'YT', accepts: ['video', 'short', 'vod'] },
-  { id: 'tiktok', label: 'TikTok', short: 'TT', accepts: ['short', 'video', 'vod'] },
-  { id: 'instagram', label: 'Instagram', short: 'IG', accepts: ['pic', 'short', 'video'] },
-  { id: 'x', label: 'X', short: 'X', accepts: ['pic', 'short', 'video'] },
-  { id: 'facebook', label: 'Facebook', short: 'FB', accepts: ['video', 'pic', 'short', 'vod'] },
+  { id: 'youtube', label: 'YouTube', short: 'YT', accepts: ['video', 'short', 'vod'], envKey: 'VITE_OAUTH_YOUTUBE_CLIENT_ID' },
+  { id: 'tiktok', label: 'TikTok', short: 'TT', accepts: ['short', 'video', 'vod'], envKey: 'VITE_OAUTH_TIKTOK_CLIENT_ID' },
+  { id: 'instagram', label: 'Instagram', short: 'IG', accepts: ['pic', 'short', 'video'], envKey: 'VITE_OAUTH_INSTAGRAM_CLIENT_ID' },
+  { id: 'x', label: 'X', short: 'X', accepts: ['pic', 'short', 'video'], envKey: 'VITE_OAUTH_X_CLIENT_ID' },
+  { id: 'facebook', label: 'Facebook', short: 'FB', accepts: ['video', 'pic', 'short', 'vod'], envKey: 'VITE_OAUTH_FACEBOOK_CLIENT_ID' },
 ]
+
+export function socialOAuthConfigured(providerId) {
+  const meta = SOCIAL_PROVIDERS.find((p) => p.id === providerId)
+  if (!meta?.envKey) return false
+  return !!String(runtimeEnv(meta.envKey) || '').trim()
+}
+
+export function anySocialOAuthConfigured() {
+  return SOCIAL_PROVIDERS.some((p) => socialOAuthConfigured(p.id))
+}
 
 export function getSocialConnects(userId) {
   if (!userId) return {}
@@ -36,7 +48,8 @@ export function connectSocial(userId, provider, handle = '', opts = {}) {
   row[provider] = {
     connected: true,
     handle: String(handle || '').replace(/^@/, '').slice(0, 64),
-    mock: true,
+    mock: !socialOAuthConfigured(provider),
+    oauthReady: socialOAuthConfigured(provider),
     showOnProfile: opts.showOnProfile != null ? !!opts.showOnProfile : (prev.showOnProfile !== false),
     connectedAt: prev.connectedAt || new Date().toISOString(),
   }
@@ -133,13 +146,21 @@ export function queueSocialPost({
   const want = (providers || []).filter((p) => connects[p]?.connected)
   if (!want.length) return { ok: false, error: 'Connect at least one social account first.' }
 
+  const oauthReady = want.filter((id) => socialOAuthConfigured(id) && connects[id]?.oauthReady)
+  if (!oauthReady.length) {
+    return {
+      ok: false,
+      error: 'Social publish APIs are not connected yet. You can still save handles and show icons on your profile.',
+    }
+  }
+
   const kind = String(contentType || 'short')
-  const compatible = want.filter((id) => {
+  const compatible = oauthReady.filter((id) => {
     const meta = SOCIAL_PROVIDERS.find((p) => p.id === id)
     return !meta?.accepts || meta.accepts.includes(kind)
   })
   if (!compatible.length) {
-    return { ok: false, error: `None of your connected accounts accept ${kind}s.` }
+    return { ok: false, error: `None of your OAuth-ready accounts accept ${kind}s.` }
   }
 
   const job = {
@@ -153,7 +174,7 @@ export function queueSocialPost({
     startSec: Math.max(0, Number(startSec) || 0),
     endSec: endSec == null ? null : Math.max(0, Number(endSec) || 0),
     status: 'queued',
-    note: 'Queued on this device. Live OAuth publish ships when YouTube / TikTok / IG / X / Facebook API keys are connected.',
+    note: 'Queued for live OAuth publish (provider client IDs are configured).',
     at: new Date().toISOString(),
   }
   saveJob(job)

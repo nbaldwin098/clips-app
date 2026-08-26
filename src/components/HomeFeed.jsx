@@ -106,6 +106,16 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onOpenProfile, onNavig
             <Sparkles className="h-6 w-6 text-white" />
           </div>
           <p className="mt-4 text-sm font-medium text-zinc-200">No posts yet</p>
+          <p className="mt-2 text-xs text-zinc-500">When creators publish, they show up here. Try Create (+) or Following.</p>
+          {onNavigate ? (
+            <button
+              type="button"
+              onClick={() => onNavigate('create')}
+              className="mt-4 h-9 px-4 rounded-lg bg-white text-black text-xs font-semibold"
+            >
+              Create
+            </button>
+          ) : null}
         </div>
       ) : (
         <MediaShelves items={items} onPlayItem={onPlayItem} onOpenPic={onOpenPic} onOpenProfile={onOpenProfile} />
