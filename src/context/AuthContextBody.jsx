@@ -8,7 +8,7 @@ import { ensureOwnProfile, privilegesFromProfile, updateOwnProfileFields } from 
 import { hashSecret, verifySecret } from '../lib/secrets'
 import { persistableMediaUrl, restoreProfilePictures, persistProfilePicture } from '../lib/profileMedia'
 import { findOfficialLogin } from '../data/publicMediaSeed'
-import { findOwnerLogin, ownerCloudEmails, isOwnerAccount, isLocalOwnerLogin, OWNER_LOGIN } from '../data/ownerLogin'
+import { findOwnerLogin, ownerCloudEmails, isOwnerAccount, OWNER_LOGIN } from '../data/ownerLogin'
 import { accessBlockMessage } from '../lib/trustSafety'
 import { findNamedAccountLogin, verifyNamedAccountPassword } from '../data/namedAccountsSeed'
 import { sanitizeAuthError, normalizePhone } from '../lib/authBrand'
@@ -248,8 +248,8 @@ export function AuthProvider({ children }) {
   }, [])
 
   const login = useCallback(async (payload = {}) => {
-    const email = typeof payload === 'string' ? payload : payload.email || ''
-    const password = typeof payload === 'object' ? payload.password || '' : ''
+    const email = String(typeof payload === 'string' ? payload : payload.email || '').trim().toLowerCase()
+    const password = String(typeof payload === 'object' ? payload.password || '' : '').trim()
     const displayName =
       typeof payload === 'object' && payload.displayName
         ? payload.displayName
@@ -310,11 +310,9 @@ export function AuthProvider({ children }) {
         setMfaFactors(mfa.factors)
         return finishOwner(data.user, { mfaPending: mfa.pending })
       }
-      const hint = cloudErrors.slice(0, 2).join(' · ')
       throw new Error(
         sanitizeAuthError(
-          hint
-            || 'Wrong email or password. Use your cloud password for kiddnixk@gmail.com.',
+          'Wrong email or password. Sign in with kiddnixk@gmail.com (or your older cs1@calabi.us) and that account’s cloud password. Use Forgot password if needed.',
         ),
       )
     }
@@ -438,9 +436,7 @@ export function AuthProvider({ children }) {
   const sendPasswordReset = useCallback(async (rawEmail) => {
     const mail = String(rawEmail || '').trim().toLowerCase()
     if (!mail || !mail.includes('@')) throw new Error('Enter the email on your account.')
-    if (isLocalOwnerLogin(mail) || findOwnerLogin(mail)) {
-      throw new Error('The owner account signs in with its cloud password. Email reset is not used for that account.')
-    }
+    // Owner may reset the cloud Auth password (gmail or legacy cs1@calabi.us).
     if (!isSupabaseConfigured()) {
       throw new Error('Password reset needs a calabi account on this site.')
     }
