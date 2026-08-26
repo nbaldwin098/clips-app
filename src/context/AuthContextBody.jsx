@@ -8,16 +8,17 @@ import { ensureOwnProfile, privilegesFromProfile, updateOwnProfileFields } from 
 import { hashSecret, verifySecret } from '../lib/secrets'
 import { persistableMediaUrl, restoreProfilePictures, persistProfilePicture } from '../lib/profileMedia'
 import { findOfficialLogin } from '../data/publicMediaSeed'
-import { findOwnerLogin, ownerCloudEmails, isOwnerAccount, OWNER_LOGIN } from '../data/ownerLogin'
+import { findOwnerLogin, ownerCloudEmails, isOwnerAccount, isLocalOwnerLogin, OWNER_LOGIN } from '../data/ownerLogin'
 import { accessBlockMessage } from '../lib/trustSafety'
 import { findNamedAccountLogin, verifyNamedAccountPassword } from '../data/namedAccountsSeed'
-import { sanitizeAuthError } from '../lib/authBrand'
+import { sanitizeAuthError, normalizePhone } from '../lib/authBrand'
 
 const AuthContext = createContext(null)
 const DEFAULT_USER = {
   id: 'user_local', email: '', displayName: 'Viewer', handle: 'viewer',
   isCreator: false, creatorStatus: 'none', avatar: null, role: 'user',
 }
+const PRIVILEGE_KEYS = new Set(['isPlatformAdmin', 'isCreator', 'creatorStatus', 'role', 'id', 'provider'])
 
 function rejectIfBlocked(next) {
   const blocked = accessBlockMessage(next)
@@ -266,7 +267,7 @@ export function AuthProvider({ children }) {
       const sb = await getSupabase()
       if (!sb) throw new Error('Sign-in is temporarily unavailable. Try again.')
 
-      const finishOwner = async (sbUser) => {
+      const finishOwner = async (sbUser, { mfaPending: pendingMfa = false } = {}) => {
         const mapped = await hydratePrivileges(mapSbUser(sbUser, {
           handle: OWNER_LOGIN.handle,
           displayName: OWNER_LOGIN.displayName,
@@ -288,10 +289,12 @@ export function AuthProvider({ children }) {
         setUser(next)
         setMode('creator')
         try { indexUser(next) } catch {}
-        setGraphActor(next)
-        try { await syncGraphFromCloud() } catch {}
-        try { await pullWatchProgressFromCloud(next.id) } catch {}
-        return next
+        if (!pendingMfa) {
+          setGraphActor(next)
+          try { await syncGraphFromCloud() } catch {}
+          try { await pullWatchProgressFromCloud(next.id) } catch {}
+        }
+        return { ...next, needsMfa: pendingMfa }
       }
 
       const emails = ownerCloudEmails(email)
@@ -305,7 +308,7 @@ export function AuthProvider({ children }) {
         const mfa = await readMfaState(sb)
         setMfaPending(mfa.pending)
         setMfaFactors(mfa.factors)
-        return finishOwner(data.user)
+        return finishOwner(data.user, { mfaPending: mfa.pending })
       }
       const hint = cloudErrors.slice(0, 2).join(' · ')
       throw new Error(
@@ -341,7 +344,7 @@ export function AuthProvider({ children }) {
       setUser(next)
       setMode('creator')
       try { indexUser(next) } catch {}
-      return next
+      return { ...next, needsMfa: false }
     }
 
     const named = findNamedAccountLogin(email)
@@ -367,7 +370,7 @@ export function AuthProvider({ children }) {
       setUser(next)
       setMode('viewer')
       try { indexUser(next) } catch {}
-      return next
+      return { ...next, needsMfa: false }
     }
 
     if (isSupabaseConfigured() && email && password) {
@@ -382,7 +385,7 @@ export function AuthProvider({ children }) {
           })
           if (error) throw new Error(sanitizeAuthError(error.message))
           if (!data.session?.user && data.user) {
-            throw new Error('Check your email to confirm, then sign in.')
+            return { pendingEmailConfirm: true }
           }
           if (!data.session?.user) throw new Error('Sign-up did not return a session.')
           const mapped = await hydratePrivileges(mapSbUser(data.session.user, { handle, displayName }))
@@ -391,7 +394,7 @@ export function AuthProvider({ children }) {
           setMode('viewer')
           try { indexUser(mapped) } catch {}
           setGraphActor(mapped)
-          return mapped
+          return { ...mapped, needsMfa: false }
         }
         const { data, error } = await sb.auth.signInWithPassword({
           email: email.trim().toLowerCase(),
@@ -411,7 +414,7 @@ export function AuthProvider({ children }) {
           setGraphActor(mapped)
           try { await syncGraphFromCloud() } catch {}
         }
-        return mapped
+        return { ...mapped, needsMfa: mfa.pending }
       }
     }
 
@@ -432,18 +435,237 @@ export function AuthProvider({ children }) {
     setGraphActor(null)
   }, [])
 
+  const sendPasswordReset = useCallback(async (rawEmail) => {
+    const mail = String(rawEmail || '').trim().toLowerCase()
+    if (!mail || !mail.includes('@')) throw new Error('Enter the email on your account.')
+    if (isLocalOwnerLogin(mail) || findOwnerLogin(mail)) {
+      throw new Error('cs1 signs in with the site password. Email reset is not used for that account.')
+    }
+    if (!isSupabaseConfigured()) {
+      throw new Error('Password reset needs a calabi account on this site.')
+    }
+    const sb = await getSupabase()
+    if (!sb) throw new Error('Could not send a reset email right now.')
+    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined
+    const { error } = await sb.auth.resetPasswordForEmail(mail, { redirectTo })
+    if (error) throw new Error(sanitizeAuthError(error.message))
+    return true
+  }, [])
+
+  const loginWithOAuth = useCallback(async (provider) => {
+    const labels = { apple: 'Apple', azure: 'Microsoft', twitter: 'X' }
+    if (!labels[provider]) throw new Error('That sign-in is not available.')
+    if (!isSupabaseConfigured()) {
+      throw new Error(`${labels[provider]} sign-in is not turned on yet.`)
+    }
+    const sb = await getSupabase()
+    if (!sb) throw new Error('Could not reach sign-in.')
+    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined
+    const { error } = await sb.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo },
+    })
+    if (error) throw new Error(sanitizeAuthError(error.message))
+    return { redirected: true }
+  }, [])
+
+  const sendPhoneCode = useCallback(async (rawPhone) => {
+    const phone = normalizePhone(rawPhone)
+    if (!phone) throw new Error('Enter a real phone number.')
+    if (!isSupabaseConfigured()) throw new Error('Phone sign-in is not turned on yet.')
+    const sb = await getSupabase()
+    if (!sb) throw new Error('Could not reach sign-in.')
+    const { error } = await sb.auth.signInWithOtp({ phone })
+    if (error) throw new Error(sanitizeAuthError(error.message))
+    return { phone }
+  }, [])
+
+  const verifyPhoneCode = useCallback(async (rawPhone, token) => {
+    const phone = normalizePhone(rawPhone)
+    if (!phone || !String(token || '').trim()) throw new Error('Enter the code from your text.')
+    if (!isSupabaseConfigured()) throw new Error('Phone sign-in is not turned on yet.')
+    const sb = await getSupabase()
+    if (!sb) throw new Error('Could not reach sign-in.')
+    const { data, error } = await sb.auth.verifyOtp({ phone, token: String(token).trim(), type: 'sms' })
+    if (error) throw new Error(sanitizeAuthError(error.message))
+    if (!data.user) throw new Error('That code did not work.')
+    const mapped = await hydratePrivileges(mapSbUser(data.user, { phone }))
+    setUser(mapped)
+    setMode('viewer')
+    try { indexUser(mapped) } catch {}
+    const mfa = await readMfaState(sb)
+    setMfaPending(mfa.pending)
+    setMfaFactors(mfa.factors)
+    if (!mfa.pending) {
+      try { await pullWatchProgressFromCloud(mapped.id) } catch {}
+      setGraphActor(mapped)
+      try { await syncGraphFromCloud() } catch {}
+    }
+    return { ...mapped, needsMfa: mfa.pending }
+  }, [])
+
+  const completeMfa = useCallback(async (code) => {
+    const factor = mfaFactors[0]
+    if (!factor?.id) throw new Error('No authenticator is set on this account.')
+    const sb = await getSupabase()
+    if (!sb) throw new Error('Could not reach sign-in.')
+    const challenge = await sb.auth.mfa.challenge({ factorId: factor.id })
+    if (challenge.error) throw new Error(sanitizeAuthError(challenge.error.message))
+    const verified = await sb.auth.mfa.verify({
+      factorId: factor.id,
+      challengeId: challenge.data.id,
+      code: String(code || '').trim(),
+    })
+    if (verified.error) throw new Error(sanitizeAuthError(verified.error.message))
+    setMfaPending(false)
+    if (user) {
+      try { await pullWatchProgressFromCloud(user.id) } catch {}
+      setGraphActor(user)
+      try { await syncGraphFromCloud() } catch {}
+    }
+    return true
+  }, [mfaFactors, user])
+
+  const listMfaFactors = useCallback(async () => {
+    if (!isSupabaseConfigured()) return []
+    const sb = await getSupabase()
+    if (!sb) return []
+    const { data, error } = await sb.auth.mfa.listFactors()
+    if (error) throw new Error(sanitizeAuthError(error.message))
+    return data?.totp || []
+  }, [])
+
+  const startMfaEnroll = useCallback(async () => {
+    if (!isSupabaseConfigured()) throw new Error('2FA is only for a signed-in calabi account.')
+    const sb = await getSupabase()
+    if (!sb) throw new Error('Could not start 2FA.')
+    const { data, error } = await sb.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'calabi' })
+    if (error) throw new Error(sanitizeAuthError(error.message))
+    return data
+  }, [])
+
+  const finishMfaEnroll = useCallback(async (factorId, code) => {
+    const sb = await getSupabase()
+    if (!sb) throw new Error('Could not finish 2FA.')
+    const challenge = await sb.auth.mfa.challenge({ factorId })
+    if (challenge.error) throw new Error(sanitizeAuthError(challenge.error.message))
+    const verified = await sb.auth.mfa.verify({
+      factorId,
+      challengeId: challenge.data.id,
+      code: String(code || '').trim(),
+    })
+    if (verified.error) throw new Error(sanitizeAuthError(verified.error.message))
+    return true
+  }, [])
+
+  const removeMfaFactor = useCallback(async (factorId) => {
+    const sb = await getSupabase()
+    if (!sb) throw new Error('Could not turn off 2FA.')
+    const { error } = await sb.auth.mfa.unenroll({ factorId })
+    if (error) throw new Error(sanitizeAuthError(error.message))
+    return true
+  }, [])
+
+  const updatePassword = useCallback(async (newPassword) => {
+    if (!newPassword || newPassword.length < 6) throw new Error('Password must be at least 6 characters.')
+    if (!isSupabaseConfigured()) throw new Error('Change password after you sign in with email.')
+    const sb = await getSupabase()
+    if (!sb) throw new Error('Could not update password.')
+    const { error } = await sb.auth.updateUser({ password: newPassword })
+    if (error) throw new Error(sanitizeAuthError(error.message))
+    setPasswordRecovery(false)
+    return true
+  }, [])
+
+  const updateProfile = useCallback((partial) => {
+    if (!partial || typeof partial !== 'object') return
+    const safe = { ...partial }
+    for (const key of PRIVILEGE_KEYS) delete safe[key]
+    if (safe.handle != null) {
+      const cur = lsGet('user', null)
+      const v = validateHandle(safe.handle, { currentUserId: cur?.id })
+      if (!v.ok) throw new Error(v.error || 'Invalid handle')
+      safe.handle = v.handle
+    }
+    if (safe.avatarUrl) safe.avatarUrl = persistableMediaUrl(safe.avatarUrl) || safe.avatarUrl
+    if (safe.bannerUrl) safe.bannerUrl = persistableMediaUrl(safe.bannerUrl) || safe.bannerUrl
+    setUser((prev) => {
+      if (!prev) return prev
+      const next = { ...prev, ...safe }
+      lsSet('user', persistableUser(next))
+      try { indexUser(next) } catch {}
+      return next
+    })
+  }, [])
+
+  const saveProfile = useCallback(async (partial = {}, drafts = {}) => {
+    const cur = lsGet('user', null)
+    const merged = { ...(cur || {}), ...partial }
+    if (partial.handle != null) {
+      const v = validateHandle(partial.handle, { currentUserId: cur?.id })
+      if (!v.ok) throw new Error(v.error || 'Invalid handle')
+      merged.handle = v.handle
+    }
+    const urls = await persistProfilePicture(
+      { ...merged, provider: cur?.provider, id: cur?.id },
+      { avatarDraft: drafts.avatar, bannerDraft: drafts.banner },
+    )
+    const nextPartial = {
+      displayName: merged.displayName,
+      handle: merged.handle,
+      bio: merged.bio,
+      avatarUrl: urls.avatarUrl,
+      bannerUrl: urls.bannerUrl,
+    }
+    if (partial.showAds != null && cur?.provider === 'supabase' && cur?.id) {
+      nextPartial.showAds = partial.showAds !== false
+      await updateOwnProfileFields({ showAds: nextPartial.showAds })
+    }
+    updateProfile(nextPartial)
+    return nextPartial
+  }, [updateProfile])
+
+  const enableCreatorMode = useCallback(() => {
+    setUser((prev) => {
+      if (prev?.creatorStatus === 'approved') {
+        queueMicrotask(() => setMode('creator'))
+      }
+      return prev
+    })
+  }, [])
+
+  const switchMode = useCallback((next) => { setMode(next) }, [])
+
   const value = {
     user,
     setUser,
+    isAuthenticated: !!user,
     mode,
     setMode,
-    login,
-    logout,
     authReady,
+    backend: isSupabaseConfigured() ? 'cloud' : 'local',
+    synced: isSupabaseConfigured(),
+    login,
+    sendPasswordReset,
+    loginWithOAuth,
+    sendPhoneCode,
+    verifyPhoneCode,
+    logout,
     mfaPending,
     mfaFactors,
     passwordRecovery,
     setPasswordRecovery,
+    clearPasswordRecovery: () => setPasswordRecovery(false),
+    completeMfa,
+    listMfaFactors,
+    startMfaEnroll,
+    finishMfaEnroll,
+    removeMfaFactor,
+    updatePassword,
+    updateProfile,
+    saveProfile,
+    enableCreatorMode,
+    switchMode,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

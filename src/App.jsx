@@ -86,7 +86,7 @@ const KNOWN_VIEWS = new Set([
 ])
 
 function AppShell() {
-  const { user, isAuthenticated, mfaPending, passwordRecovery } = useAuth()
+  const { user, isAuthenticated, authReady, mfaPending, passwordRecovery } = useAuth()
   const nextNav = useNextNav()
   const pathname = nextNav?.pathname || (typeof window !== 'undefined' ? window.location.pathname : '/')
   const [view, setView] = useState('home')
@@ -435,24 +435,36 @@ function AppShell() {
 
   const renderMain = () => {
     if (!KNOWN_VIEWS.has(view)) return <NotFoundPage onNavigate={navigate} />
-    if (view === 'dashboard' && !isAuthenticated)
-      return <AuthRequired title="Creator Studio" description="Sign in." onOpenAuth={openAuth} />
-    if (view === 'wallet' && !isAuthenticated)
-      return <AuthRequired title="Wallet" description="Sign in." onOpenAuth={openAuth} />
-    if (view === 'settings' && !isAuthenticated)
-      return <AuthRequired title="Settings" description="Sign in." onOpenAuth={openAuth} />
-    if (view === 'channel' && !isAuthenticated)
-      return <AuthRequired title="Channel" description="Sign in." onOpenAuth={openAuth} />
-    if (view === 'analytics' && !isAuthenticated)
-      return <AuthRequired title="Analytics" description="Sign in." onOpenAuth={openAuth} />
-    if (view === 'studio-tools' && !isAuthenticated)
-      return <AuthRequired title="Studio" description="Sign in." onOpenAuth={openAuth} />
-    if (view === 'calabi-studio' && !isAuthenticated)
-      return <AuthRequired title="Calabi Studio" description="Sign in." onOpenAuth={openAuth} />
-    if (view === 'calabi-cash' && !isAuthenticated)
-      return <AuthRequired title="Calabi Cash" description="Sign in." onOpenAuth={openAuth} />
-    if (view === 'vods' && !isAuthenticated)
-      return <AuthRequired title="VODs" description="Sign in." onOpenAuth={openAuth} />
+    const needsAuth = (
+      view === 'dashboard'
+      || view === 'wallet'
+      || view === 'settings'
+      || view === 'channel'
+      || view === 'analytics'
+      || view === 'studio-tools'
+      || view === 'calabi-studio'
+      || view === 'calabi-cash'
+      || view === 'vods'
+      || view === 'verify'
+    )
+    if (needsAuth && !authReady) {
+      return <div className="p-8 text-sm text-zinc-500">Checking sign-in…</div>
+    }
+    if (needsAuth && !isAuthenticated) {
+      const titles = {
+        dashboard: 'Creator Studio',
+        wallet: 'Wallet',
+        settings: 'Settings',
+        channel: 'Channel',
+        analytics: 'Analytics',
+        'studio-tools': 'Studio',
+        'calabi-studio': 'Calabi Studio',
+        'calabi-cash': 'Calabi Cash',
+        vods: 'VODs',
+        verify: 'Verification',
+      }
+      return <AuthRequired title={titles[view] || 'Sign in'} description="Sign in." onOpenAuth={openAuth} />
+    }
     if (view === 'admin' && !isAdminSession(user))
       return <AdminPortal onNavigate={navigate} />
 
@@ -603,7 +615,8 @@ function AppShell() {
   }
 
   const isLiveView = view === 'live'
-  const lockStage = view === 'clips' || view === 'shorts' || view === 'pics' || view === 'dashboard' || view === 'analytics' || view === 'wallet' || view === 'vods' || view === 'verify'
+  const studioChrome = view === 'dashboard' || view === 'analytics' || view === 'wallet' || view === 'vods' || view === 'verify' || view === 'settings'
+  const lockStage = view === 'clips' || view === 'shorts' || view === 'pics' || studioChrome
 
   return (
     <div className={`${lockStage ? 'h-dvh overflow-hidden' : 'min-h-screen'} bg-[#000000] text-zinc-100 flex flex-col selection:bg-white selection:text-black`}>
@@ -621,14 +634,16 @@ function AppShell() {
       <PromoBanner onNavigate={navigate} onOpenWatch={openWatch} />
 
       <div className="flex flex-1 min-h-0 relative">
-        <CollapsibleSidebar
-          open={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-          currentView={view}
-          onNavigate={navigate}
-          onSelectLiveStream={selectLiveStreamFromSidebar}
-          focusedStreamUserId={focusedLiveStream?.userId}
-        />
+        {!studioChrome ? (
+          <CollapsibleSidebar
+            open={sidebarOpen}
+            onClose={() => setSidebarOpen(false)}
+            currentView={view}
+            onNavigate={navigate}
+            onSelectLiveStream={selectLiveStreamFromSidebar}
+            focusedStreamUserId={focusedLiveStream?.userId}
+          />
+        ) : null}
 
         <main className={`flex-1 min-h-0 min-w-0 bg-[#000000] ${lockStage ? 'overflow-hidden' : 'overflow-y-auto'}`}>
           <Suspense fallback={<div className="p-8 text-sm text-zinc-500">Loading…</div>}>

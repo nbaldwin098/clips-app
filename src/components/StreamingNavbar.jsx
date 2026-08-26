@@ -20,7 +20,7 @@ export default function StreamingNavbar({
   onSearchChange,
   onOpenWatch,
 }) {
-  const { user, isAuthenticated, logout } = useAuth()
+  const { user, isAuthenticated, authReady, logout } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
 
@@ -78,7 +78,9 @@ export default function StreamingNavbar({
         </form>
 
         <div className="flex items-center gap-0.5 sm:gap-1.5 shrink-0 flex-nowrap">
-          {isAuthenticated ? (
+          {!authReady ? (
+            <span className="h-9 px-3 inline-flex items-center text-xs text-zinc-500">…</span>
+          ) : isAuthenticated ? (
             <>
               <NotificationsMenu
                 onNavigate={handleNav}
