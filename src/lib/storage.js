@@ -1,12 +1,17 @@
 /**
- * Storage helpers + local persistence.
- * Primary path: Zero-Storage Smart Reference — store only metadata + external URL.
- * Optional later path: owned copies on object storage + Cloudflare delivery.
- * localStorage holds client-side user state until a backend is wired.
+ * Storage helpers.
+ * Catalog (imports) is cloud-only via catalogStore — not localStorage.
+ * Liked/saved/history/settings remain device prefs until those move to cloud too.
  */
 
 import { attachCrossPostMeta, detectPlatformFromUrl } from './crossPostDetector'
-import { olderIso, isLibraryRecord, isUserUploadRecord } from './mediaMeta'
+import {
+  getCatalog,
+  setCatalog,
+  upsertCatalogRecord,
+  patchCatalogRecord,
+  removeCatalogRecord,
+} from './catalogStore'
 
 export const STORAGE_TARGETS = {
   ZERO_REF: 'zero-storage-reference',
@@ -17,7 +22,7 @@ export const STORAGE_TARGETS = {
 const LS_KEYS = {
   user: 'clips_user',
   mode: 'clips_mode',
-  imports: 'clips_imports',
+  // imports intentionally NOT persisted
   liked: 'clips_liked',
   saved: 'clips_saved',
   settings: 'clips_settings',
@@ -34,6 +39,11 @@ function safeParse(raw, fallback) {
 
 export function lsGet(key, fallback = null) {
   if (typeof localStorage === 'undefined') return fallback
+  // Never serve a persisted catalog — wipe legacy key if present
+  if (key === 'imports' || key === LS_KEYS.imports) {
+    try { localStorage.removeItem('clips_imports') } catch { /* ok */ }
+    return Array.isArray(fallback) ? fallback : []
+  }
   const parsed = safeParse(localStorage.getItem(LS_KEYS[key] || key), fallback)
   if (Array.isArray(fallback) && !Array.isArray(parsed)) return fallback
   if (
@@ -49,6 +59,8 @@ export function lsGet(key, fallback = null) {
 
 export function lsSet(key, value) {
   if (typeof localStorage === 'undefined') return
+  // Block catalog writes to disk
+  if (key === 'imports' || key === 'clips_imports') return
   try {
     localStorage.setItem(LS_KEYS[key] || key, JSON.stringify(value))
   } catch {
@@ -61,10 +73,16 @@ export function lsRemove(key) {
   localStorage.removeItem(LS_KEYS[key] || key)
 }
 
-/**
- * Parse a public short URL into a lightweight metadata record.
- * Attaches cross-post assessment. Does not download binary video data.
- */
+/** One-time wipe of legacy local catalog mirrors. */
+export function purgeLegacyLocalCatalog() {
+  if (typeof localStorage === 'undefined') return
+  try {
+    localStorage.removeItem('clips_imports')
+    localStorage.removeItem('user_clips')
+    localStorage.removeItem('imports')
+  } catch { /* ok */ }
+}
+
 export function parseExternalShort(url) {
   try {
     const platformInfo = detectPlatformFromUrl(url)
@@ -75,7 +93,7 @@ export function parseExternalShort(url) {
       platform,
       sourceUrl: url,
       title: platformInfo ? `Imported from ${platformInfo.label}` : 'Imported short',
-      description: 'Zero-storage reference. Binary remains at origin.',
+      description: 'External reference. Binary remains at origin.',
       storedBytes: 0,
       createdAt: new Date().toISOString(),
       type: 'short',
@@ -97,118 +115,35 @@ export function parseExternalShort(url) {
   }
 }
 
-/**
- * Persist an imported reference into the local library.
- * User uploads are never dropped by the size cap — that was wiping clips
- * whenever seedOfficialCatalog / another saveImport rewrote the list.
- */
+/** Optimistic memory update only — cloud is source of truth after sync. */
 export function saveImport(record) {
   if (!record?.id) return getImports()
-  const list = getImports()
-  const without = list.filter((r) => r.id !== record.id)
-  const nextAll = [record, ...without]
-  const IMPORT_CAP = 500
-  const protectedRows = nextAll.filter(isUserUploadRecord)
-  const protectedIds = new Set(protectedRows.map((r) => r.id))
-  const rest = nextAll.filter((r) => !protectedIds.has(r.id))
-  const slots = Math.max(0, IMPORT_CAP - protectedRows.length)
-  const keepRest = new Set(rest.slice(0, slots).map((r) => r.id))
-  const next = nextAll.filter((r) => protectedIds.has(r.id) || keepRest.has(r.id))
-  lsSet('imports', next)
-  return next
+  return upsertCatalogRecord(record)
 }
 
 export function getImports() {
-  const list = lsGet('imports', [])
-  return Array.isArray(list) ? list.filter((row) => row && typeof row === 'object') : []
+  return getCatalog()
 }
 
 export function updateImport(id, patch) {
-  if (!id) return null
-  const list = getImports()
-  let found = null
-  const next = list.map((r) => {
-    if (r.id !== id) return r
-    found = { ...r, ...patch }
-    return found
-  })
-  if (!found) return null
-  lsSet('imports', next)
-  return found
+  return patchCatalogRecord(id, patch)
 }
 
 export function removeImport(id) {
-  if (!id) return
-  lsSet('imports', getImports().filter((r) => r.id !== id))
+  removeCatalogRecord(id)
 }
 
 /**
- * Merge a batch of records (typically pulled from the cloud catalog) into
- * the local import cache. Existing local fields are preserved unless the
- * incoming record overrides them, so a record this device is still
- * mid-publish on never gets clobbered by a stale/partial cloud copy.
+ * Replace memory catalog with cloud rows (not a merge with disk).
+ * Call after every successful cloud pull.
  */
-function isStableUrl(url) {
-  const u = String(url || '')
-  return u.startsWith('https://') || u.startsWith('http://') || u.startsWith('data:')
+export function replaceImportsFromCloud(records) {
+  return setCatalog(Array.isArray(records) ? records : [])
 }
 
-function isDeadUrl(url) {
-  const u = String(url || '')
-  return !u || u.startsWith('blob:')
-}
-
-function pickMergedUrl(incoming, existing) {
-  if (isDeadUrl(incoming) && isStableUrl(existing)) return existing
-  if (String(existing || '').startsWith('data:image/') && String(incoming || '').startsWith('http')) {
-    return existing
-  }
-  return incoming || existing || ''
-}
-
-
+/** @deprecated use replaceImportsFromCloud — kept so old callers compile */
 export function mergeImports(records) {
-  if (!records?.length) return getImports()
-  const local = getImports()
-  const byId = new Map(local.map((r) => [r.id, r]))
-  for (const rec of records) {
-    if (!rec?.id) continue
-    const prev = byId.get(rec.id) || {}
-    const next = { ...prev, ...rec }
-    next.mediaUrl = pickMergedUrl(rec.mediaUrl, prev.mediaUrl)
-    next.sourceUrl = pickMergedUrl(rec.sourceUrl, prev.sourceUrl || prev.mediaUrl)
-    next.thumbUrl = pickMergedUrl(rec.thumbUrl, prev.thumbUrl)
-    const localMosaic = prev.mosaicThumb || (String(prev.thumbUrl || '').startsWith('data:image/') ? prev.thumbUrl : '')
-    next.mosaicThumb = localMosaic || next.mosaicThumb || ''
-    if (isLibraryRecord(next) || isLibraryRecord(rec) || isLibraryRecord(prev)) {
-      // Do not bump library posts to "now" on every cloud pull — that was
-      // evicting real user uploads from the 500-row local cache cap.
-      next.createdAt = prev.createdAt || rec.createdAt || new Date().toISOString()
-      next.publishedAt = prev.publishedAt || rec.publishedAt || next.createdAt
-    } else {
-      next.createdAt = olderIso(prev.createdAt, rec.createdAt)
-      next.publishedAt = olderIso(prev.publishedAt, rec.publishedAt)
-    }
-    byId.set(rec.id, next)
-  }
-  const IMPORT_CAP = 500
-  const all = [...byId.values()]
-  const protectedRows = all.filter(isUserUploadRecord)
-  const protectedIds = new Set(protectedRows.map((r) => r.id))
-  const library = all.filter((r) => isLibraryRecord(r) && !protectedIds.has(r.id))
-  const rest = all.filter((r) => !protectedIds.has(r.id) && !isLibraryRecord(r))
-  rest.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
-  library.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
-  const slots = Math.max(0, IMPORT_CAP - protectedRows.length)
-  const librarySlots = Math.min(library.length, Math.floor(slots * 0.55))
-  const restSlots = Math.max(0, slots - librarySlots)
-  const merged = [
-    ...protectedRows,
-    ...library.slice(0, librarySlots),
-    ...rest.slice(0, restSlots),
-  ]
-  lsSet('imports', merged)
-  return merged
+  return replaceImportsFromCloud(records)
 }
 
 export function toggleLiked(id) {

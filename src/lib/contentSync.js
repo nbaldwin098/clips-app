@@ -1,13 +1,8 @@
 /**
- * Cross-device content sync.
- *
- * Publishing uploads the binary to Supabase Storage (public URL) and upserts
- * metadata into the shared `videos` table. The local `imports` cache is only a
- * mirror for fast reads — hosted posts must not depend on this device.
- *
- * Without Supabase configured, uploads are rejected (no silent device-only save).
+ * Cloud catalog sync. Supabase is the only source of truth for content.
+ * Session memory holds the latest pull; nothing is written to localStorage.
  */
-import { mergeImports, getImports, removeImport, lsGet, lsSet } from './storage'
+import { replaceImportsFromCloud, removeImport, purgeLegacyLocalCatalog } from './storage'
 import { isUserUploadRecord } from './mediaMeta'
 import { getSupabase, isSupabaseConfigured } from './supabaseClient'
 import { isFeedable, isReferenceItem, hasStableImage, purgeDeadCatalog } from './catalogHealth'
@@ -17,14 +12,12 @@ const TABLE = 'videos'
 const SYNC_EVENT = 'clips-content-sync'
 const PULL_LIMIT = 400
 
-/** Notify any mounted page (this tab) that the local content cache changed. */
 export function notifyContentChanged() {
   try { clearFrozenFeeds() } catch {}
   if (typeof window === 'undefined') return
   window.dispatchEvent(new CustomEvent(SYNC_EVENT))
 }
 
-/** Cloud catalog can only usefully store http(s) links — blob: dies per-tab. */
 function cloudUrl(url) {
   const u = String(url || '')
   return u.startsWith('https://') || u.startsWith('http://') ? u : ''
@@ -131,7 +124,6 @@ function keepCloudRow(row) {
   return isFeedable(row)
 }
 
-/** Pull the most recent catalog rows from Supabase (read is public, no sign-in required). */
 export async function pullContentRecords(limit = PULL_LIMIT) {
   if (!isSupabaseConfigured()) return []
   try {
@@ -176,62 +168,13 @@ async function deleteOwnedDeadRows(actor) {
   } catch {}
 }
 
-/**
- * Drop local mirror rows that no longer exist in the cloud catalog.
- * Only runs when the pull looks complete (< PULL_LIMIT) so we do not
- * mass-delete older rows that simply fell outside the page window.
- */
-function reconcileLocalWithCloud(cloudRows) {
-  if (!Array.isArray(cloudRows) || cloudRows.length === 0) return 0
-  if (cloudRows.length >= PULL_LIMIT) return 0
-  const cloudIds = new Set(cloudRows.map((r) => r.id).filter(Boolean))
-  let removed = 0
-  for (const rec of getImports()) {
-    if (!rec?.id || cloudIds.has(rec.id)) continue
-    if (rec.status === 'draft') continue
-    if (rec.localStored === true && !rec.hosted) continue
-    if (isReferenceItem(rec)) continue
-    const media = String(rec.mediaUrl || rec.sourceUrl || '')
-    const wasCloudHosted =
-      rec.hosted === true
-      || media.includes('/storage/v1/object/')
-      || media.includes('supabase')
-    if (!wasCloudHosted && !isUserUploadRecord(rec)) continue
-    removeImport(rec.id)
-    removed += 1
-  }
-  try {
-    const legacy = lsGet('user_clips', []) || []
-    if (Array.isArray(legacy) && legacy.length) {
-      const cleaned = legacy.filter((r) => !r?.id || cloudIds.has(r.id) || r.status === 'draft')
-      if (cleaned.length !== legacy.length) lsSet('user_clips', cleaned)
-    }
-  } catch { /* ok */ }
-  if (removed) {
-    try { clearFrozenFeeds() } catch { /* ok */ }
-  }
-  return removed
-}
-
-function dropLocalId(id) {
-  if (!id) return
-  removeImport(id)
-  try {
-    const legacy = lsGet('user_clips', []) || []
-    if (Array.isArray(legacy)) lsSet('user_clips', legacy.filter((r) => r?.id !== id))
-  } catch { /* ok */ }
-  try { clearFrozenFeeds() } catch { /* ok */ }
-}
-
-/** Pull + merge into the local cache, then notify any subscribed pages. Returns rows pulled. */
+/** Pull cloud catalog and replace session memory entirely. */
 export async function syncContentFromCloud(actor = null) {
-  purgeDeadCatalog()
+  purgeLegacyLocalCatalog()
   if (actor) await deleteOwnedDeadRows(actor)
   const rows = await pullContentRecords()
-  if (rows.length) {
-    mergeImports(rows)
-    reconcileLocalWithCloud(rows)
-  }
+  // Always replace — even empty — so deletes in Supabase cannot linger in memory
+  replaceImportsFromCloud(rows)
   purgeDeadCatalog()
   notifyContentChanged()
   return rows
@@ -239,7 +182,6 @@ export async function syncContentFromCloud(actor = null) {
 
 let liveSub = null
 
-/** Live catalog updates so other people's uploads show up without a full reload. */
 export async function subscribeCloudCatalog(onChange) {
   if (!isSupabaseConfigured() || typeof window === 'undefined') return () => {}
   try {
@@ -256,7 +198,7 @@ export async function subscribeCloudCatalog(onChange) {
         { event: 'DELETE', schema: 'public', table: TABLE },
         (payload) => {
           const id = payload?.old?.id
-          if (id) dropLocalId(id)
+          if (id) removeImport(id)
           notifyContentChanged()
           onChange?.()
         },
@@ -280,7 +222,6 @@ export async function subscribeCloudCatalog(onChange) {
   }
 }
 
-/** Subscribe to both cross-tab localStorage updates and same-tab sync events. */
 export function subscribeContentUpdates(onChange) {
   if (typeof window === 'undefined') return () => {}
   const handler = () => onChange?.()
