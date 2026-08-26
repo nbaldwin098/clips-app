@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import App from '../src/App.jsx'
 import { healLocalState } from '../src/lib/selfHeal'
 import { restoreLostUploads } from '../src/lib/restoreUploads'
+import { syncContentFromCloud } from '../src/lib/contentSync'
 import { NextNavContext } from '../src/lib/NextNavContext'
 
 /**
@@ -18,6 +19,8 @@ export default function SpaShell() {
   useEffect(() => {
     try { healLocalState() } catch {}
     restoreLostUploads().catch(() => {})
+    // Pull catalog ASAP so home/clips aren't stuck on an empty first paint.
+    syncContentFromCloud().catch(() => {})
   }, [])
 
   return (

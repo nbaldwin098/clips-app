@@ -10,6 +10,11 @@ export function isCatalogHydrated() {
   return hydrated
 }
 
+/** Mark the session catalog ready (even if empty) so UI can leave the loading state. */
+export function markCatalogHydrated() {
+  hydrated = true
+}
+
 export function getCatalog() {
   return catalog.slice()
 }
