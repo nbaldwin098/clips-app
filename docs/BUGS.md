@@ -40,8 +40,8 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 | BUG-002 | Storage | Confirm public bucket named exactly `clips` exists | Migration `0003_clips_storage_bucket.sql`; policies for public read + owner write | `open` |
 | BUG-003 | Catalog | Confirm `videos` table still has rows after migrate | If empty, investigate wipe/purge; restore from backup if any | `open` |
 | BUG-004 | Auth | CS1 / owner cloud login edge cases still fragile | Recent URGENT restores; add regression test for owner + Supabase session | `open` |
-| BUG-005 | Next / SEO | SpaShell still owns most routes | Phase 2 in progress (`cursor/nextjs-seo-phase2-09e7`): marketing/legal SSR + content SEO HTML; Home/Clips/Pics still SpaShell | `doing` |
-| BUG-006 | Next / nav | Client `pushState` routing vs Next App Router | Replace with Next navigation so SSR + client stay in sync | `open` |
+| BUG-005 | Next / SEO | SpaShell still owns most routes | Phase 3 PR #107: dedicated `/clips`…`/support` + metadata; home/dashboard/watch still SpaShell | `doing` |
+| BUG-006 | Next / nav | Client `pushState` routing vs Next App Router | Phase 3 PR #107: `NextNavContext` + `router.push` + pathname sync (Vite keeps `pushHash`) | `doing` |
 | BUG-007 | Deploy | Old Static Render service must stay deleted/suspended | Domain only on Node web service | `open` |
 | BUG-008 | Smoke | `live-smoke.mjs` still asserts removed ExoClick/VAST behavior | ~many FAIL after ads strip; rewrite smoke for no-ad / Next world | `open` |
 
@@ -56,9 +56,9 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 | BUG-014 | Creator Studio | Setup hub / earnings / apply badge not on `main` | Draft PR #93 stale; re-land on current main | `open` |
 | BUG-015 | Creator Studio | Orphan AnalyticsPage / channel branding duplication | Consolidate Account + Channel settings | `open` |
 | BUG-016 | Payouts | Manual payouts only; no Stripe Connect | Honest copy exists; Connect still planned | `open` |
-| BUG-017 | SEO | Dynamic sitemap for public content ids | Phase 2 adds recent ids via `fetchRecentContentIds` | `doing` |
-| BUG-018 | SEO | Server-render real HTML for About/Help/Legal bodies | Phase 2: SiteChrome + real page components | `doing` |
-| BUG-019 | Watch | Share OG tags depend on Supabase row fetch | Phase 2: article fallback in HTML + metadata; soft unavailable copy | `doing` |
+| BUG-017 | SEO | Dynamic sitemap for public content ids | Done in #106 | `done` |
+| BUG-018 | SEO | Server-render real HTML for About/Help/Legal bodies | Done in #106 | `done` |
+| BUG-019 | Watch | Share OG tags depend on Supabase row fetch | Soft unavailable + article HTML in #106 | `done` |
 | BUG-020 | Uploads | Clip 60s / video 24h limits — confirm UX errors are clear | Limits enforced in `publishLocalMedia` | `open` |
 | BUG-021 | iOS | Keep original-file upload path (no WebM re-encode) | Fixed once; add regression test so it doesn’t return | `open` |
 | BUG-022 | Delete | Cloud delete path for admin/creator — verify on Node deploy | Recent fixes around `deleteCatalogItem` + storage remove | `open` |
@@ -83,7 +83,7 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 | BUG-048 | Security | Review RLS on `videos` + storage policies after bucket recreate | | `open` |
 | BUG-049 | Perf | First Load JS ~255kB SpaShell — code-split peeled routes | | `open` |
 | BUG-050 | A11y | Live chat `aria-live` — spot-check after Next | | `open` |
-| BUG-051 | Legal | Terms still say “Clips” in places — brand to calabi | Fixed in Phase 2 PR | `doing` |
+| BUG-051 | Legal | Terms still say “Clips” in places — brand to calabi | Done in #106 | `done` |
 | BUG-052 | Product | Notifications: no push/email yet | In-app only | `open` |
 | BUG-053 | Product | 2FA / MFA gate — verify import + flow on Next | Past missing-import bug | `open` |
 | BUG-054 | Product | VOD library is device-local metadata | Server VODs when ingest exists | `open` |
@@ -111,6 +111,7 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 
 | ID | Issue | PR | Date |
 |----|-------|-----|------|
+| BUG-111 | Next SEO Phase 2: SSR About/Help/Legal + content article HTML + sitemap ids | #106 | 2026-08-26 |
 | BUG-100 | Supabase env empty in browser after Next migrate (uploads looked unsaved) | #104 | 2026-08-26 |
 | BUG-101 | Next.js App Router Phase 1 (SEO foundation, Node Render) | #103 | 2026-08-26 |
 | BUG-102 | AdSense client script in `index.html` head | #102 (draft/open) | — |
@@ -135,11 +136,11 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 
 ## Next 5 to pull (suggested order)
 
-1. **BUG-005 / 017 / 018 / 019** — Finish & merge Next SEO Phase 2 (this branch)  
+1. **BUG-005 / BUG-006** — Land Phase 3 PR, then peel home / watch chrome (Phase 4)  
 2. **BUG-001** — Prove uploads work on production Node deploy  
 3. **BUG-002** / **BUG-003** — Bucket + `videos` table health  
 4. **BUG-008** — Fix smoke suite so CI means something again  
-5. **BUG-006** — Replace client pushState with Next navigation sitewide
+5. **BUG-027** — Close/rebase stale open PRs
 
 ---
 

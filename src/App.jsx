@@ -57,7 +57,8 @@ import { installRuntimeGuards } from './lib/selfHeal'
 import { pushLibraryCatalogToCloud } from './data/publicMediaSeed'
 import { isAdminSession } from './lib/moderation'
 import { getById, getWatchItem, stashWatchItem, flushScheduledPublishes, resolvePublicCreator } from './lib/contentService'
-import { parseRoute, pushHash, migrateHashToPath } from './lib/routes'
+import { parseRoute, pushHash, migrateHashToPath, buildHash } from './lib/routes'
+import { useNextNav } from './lib/NextNavContext'
 import { syncPromotionsFromCloud } from './lib/promotions'
 import PromoBanner from './components/PromoBanner'
 import { claimStripeReturn } from './lib/tips'
@@ -82,6 +83,8 @@ const KNOWN_VIEWS = new Set([
 
 function AppShell() {
   const { user, isAuthenticated, mfaPending, passwordRecovery } = useAuth()
+  const nextNav = useNextNav()
+  const pathname = nextNav?.pathname || (typeof window !== 'undefined' ? window.location.pathname : '/')
   const [view, setView] = useState('home')
   const [routeId, setRouteId] = useState('')
   const [importOpen, setImportOpen] = useState(false)
@@ -249,6 +252,22 @@ function AppShell() {
     }
   }, [])
 
+  // Keep SpaShell view in sync when Next App Router changes the path.
+  useEffect(() => {
+    applyRoute()
+  }, [pathname])
+
+  const goPath = (kind, id = '', params = null) => {
+    const path = buildHash(kind, id, params)
+    try {
+      if (nextNav?.router?.push) nextNav.router.push(path)
+      else pushHash(kind, id, params)
+    } catch {
+      pushHash(kind, id, params)
+    }
+    return path
+  }
+
   const dockWatchIfNeeded = (leavingWatch) => {
     if (!leavingWatch) return
     const current = getWatchItem(routeId)
@@ -265,12 +284,12 @@ function AppShell() {
       setRouteId(nextId || '')
       if (dest === 'profile') {
         const uid = profileTarget.userId
-        pushHash('profile', nextId, uid ? { u: uid } : null)
+        goPath('profile', nextId, uid ? { u: uid } : null)
       } else if ((dest === 'clips' || dest === 'watch' || dest === 'pics') && nextId) {
         // Posts use bare /{id} share URLs; clip/pic/watch lists stay /clips etc.
-        pushHash('content', nextId)
+        goPath('content', nextId)
       } else {
-        pushHash(dest, nextId)
+        goPath(dest, nextId)
       }
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch {
@@ -295,7 +314,7 @@ function AppShell() {
     setMiniItem(null)
     setRouteId(item.id)
     setView('watch')
-    pushHash('content', item.id)
+    goPath('content', item.id)
     try { window.scrollTo({ top: 0, behavior: 'smooth' }) } catch {}
   }
 
@@ -304,7 +323,7 @@ function AppShell() {
     const id = String(key || '')
     setRouteId(id)
     setView('sound')
-    pushHash('sound', id)
+    goPath('sound', id)
   }
 
   const openTag = (tag) => {
@@ -312,7 +331,7 @@ function AppShell() {
     const id = String(tag || '').replace(/^#/, '')
     setRouteId(id)
     setView('tag')
-    pushHash('tag', id)
+    goPath('tag', id)
   }
 
   const openPic = (pic) => {
@@ -320,7 +339,7 @@ function AppShell() {
     if (!id) return
     setRouteId(id)
     setView('pics')
-    pushHash('content', id)
+    goPath('content', id)
   }
 
   const openAuth = () => setAuthOpen(true)
@@ -356,7 +375,7 @@ function AppShell() {
     const found = resolvePublicCreator(h, userId)
     setProfileTarget({ handle: h || found?.handle || '', userId: found?.id || userId || null })
     setView('profile')
-    pushHash('profile', h || found?.handle || '', (found?.id || userId) ? { u: found?.id || userId } : null)
+    goPath('profile', h || found?.handle || '', (found?.id || userId) ? { u: found?.id || userId } : null)
     try { window.scrollTo({ top: 0, behavior: 'smooth' }) } catch {}
   }
   useEffect(() => {
@@ -581,7 +600,7 @@ function AppShell() {
         onSearchChange={(q) => {
           setSearchQuery(q)
           setView('explore')
-          pushHash('explore', '', q?.trim() ? { q: q.trim() } : null)
+          goPath('explore', '', q?.trim() ? { q: q.trim() } : null)
         }}
       />
       <PromoBanner onNavigate={navigate} onOpenWatch={openWatch} />
