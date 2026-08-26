@@ -7,6 +7,7 @@ import {
   CircleUserRound,
   ShieldCheck,
   Wallet,
+  MessageSquare,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { isPlatformOwner } from '../lib/moderation'
@@ -125,6 +126,13 @@ export default function StreamingNavbar({
                       className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-zinc-200 hover:bg-[#1f1f2a] hover:text-white"
                     >
                       <SlidersHorizontal className="h-4 w-4 text-zinc-400" /> Creator dashboard
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleNav('messages')}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-zinc-200 hover:bg-[#1f1f2a] hover:text-white"
+                    >
+                      <MessageSquare className="h-4 w-4 text-zinc-400" /> Messages
                     </button>
                     <p className="px-3.5 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
                       Site settings
