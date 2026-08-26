@@ -19,7 +19,7 @@ function ChromeInner({ children }) {
   const router = useRouter()
   const pathname = usePathname() || '/'
   const [authOpen, setAuthOpen] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false) // unused expand — rail is icons-only
   const [searchQuery, setSearchQuery] = useState('')
 
   const currentView = useMemo(() => {

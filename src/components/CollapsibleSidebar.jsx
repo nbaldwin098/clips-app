@@ -22,6 +22,8 @@ import {
   Plus,
   RotateCcw,
   Heart,
+  ShoppingBag,
+  Store,
 } from 'lucide-react'
 import { lsGet } from '../lib/storage'
 import { listSidebarCreators } from '../lib/contentService'
@@ -70,13 +72,21 @@ export default function CollapsibleSidebar({
   onSelectLiveStream,
   focusedStreamUserId,
 }) {
-  const collapsed = !open
+  const collapsed = true // Icons-only forever — never expand the left rail
   const [moreOpen, setMoreOpen] = useState(false)
   const [liveNow, setLiveNow] = useState(() => (lsGet('live_board', []) || []).filter((b) => b.isLive))
   const [recommendedCreators, setRecommendedCreators] = useState(() => listSidebarCreators(8))
 
   const refreshLiveBoard = useCallback(() => {
-    setLiveNow((lsGet('live_board', []) || []).filter((b) => b.isLive))
+    import('../lib/graphSync').then(({ syncPublicEngagementFromCloud }) => {
+      syncPublicEngagementFromCloud?.().then(() => {
+        setLiveNow((lsGet('live_board', []) || []).filter((b) => b.isLive))
+      }).catch(() => {
+        setLiveNow((lsGet('live_board', []) || []).filter((b) => b.isLive))
+      })
+    }).catch(() => {
+      setLiveNow((lsGet('live_board', []) || []).filter((b) => b.isLive))
+    })
   }, [])
 
   useEffect(() => {
@@ -121,6 +131,7 @@ export default function CollapsibleSidebar({
           <NavBtn collapsed={collapsed} active={currentView === 'clips' || currentView === 'shorts'} onClick={() => go('clips')} icon={Clapperboard} label="Clips" />
           <NavBtn collapsed={collapsed} active={currentView === 'pics'} onClick={() => go('pics')} icon={ImageIcon} label="Pics" />
           <NavBtn collapsed={collapsed} active={currentView === 'live'} onClick={() => go('live')} icon={Radio} label="Live" />
+          <NavBtn collapsed={collapsed} active={currentView === 'shop' || currentView === 'marketplace'} onClick={() => go('shop')} icon={ShoppingBag} label="Shop" />
           <NavBtn collapsed={collapsed} active={currentView === 'create'} onClick={() => go('create')} icon={Plus} label="Create" />
         </nav>
 
@@ -226,6 +237,7 @@ export default function CollapsibleSidebar({
           )}
           {moreOpen && (
             <div className={cn('space-y-0.5', collapsed ? '' : 'ml-2 border-l border-[#23232c] pl-2')}>
+              <NavBtn collapsed={collapsed} active={currentView === 'seller' || currentView === 'seller-portal'} onClick={() => go('seller')} icon={Store} label="Seller portal" />
               <NavBtn collapsed={collapsed} active={currentView === 'stats'} onClick={() => go('stats')} icon={Activity} label="Stats" />
               <NavBtn collapsed={collapsed} active={currentView === 'support'} onClick={() => go('support')} icon={LifeBuoy} label="Support" />
               <NavBtn collapsed={collapsed} active={currentView === 'advertise' || currentView === 'advertiser-portal'} onClick={() => go('advertise')} icon={Megaphone} label="Advertise with us" />
@@ -246,8 +258,7 @@ export default function CollapsibleSidebar({
     <>
       <aside
         className={cn(
-          'flex flex-col shrink-0 h-[calc(100dvh-3.5rem)] sticky top-14 bg-[#000000] border-r border-[#23232c] transition-all duration-200 z-30 overflow-hidden',
-          collapsed ? 'w-14' : 'w-60'
+          'flex flex-col shrink-0 h-[calc(100dvh-3.5rem)] sticky top-14 bg-[#000000] border-r border-[#23232c] z-30 overflow-hidden w-14'
         )}
       >
         {body}

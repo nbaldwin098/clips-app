@@ -1,7 +1,6 @@
 /**
  * Creator-facing interaction timeline for the studio bubble map.
- * Records when viewers click (open), like, follow, share, comment, or skip a post.
- * Local storage is the UI source; cloud rows sync so creators see other devices.
+ * Cloud (creator_interactions) is source of truth; local cache is display-only after pull/push.
  */
 import { lsGet, lsSet, getImports } from './storage'
 

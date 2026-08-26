@@ -4,10 +4,10 @@ import { setCreatorStatus } from './profiles'
 import { verifySecret } from './secrets'
 import { OWNER_ADMIN_CODE_HASH, isOwnerAccount, ownerPasswordHashes } from '../data/ownerLogin'
 import { runtimeEnv } from './runtimeEnv'
+import { cachedTickets, createSupportTicketCloud, updateSupportTicketCloud, pullSupportTickets } from './supportSync'
 
 const ADMIN_KEY = 'clips_admin_session'
 const APPS_KEY = 'creator_applications'
-const TICKETS_KEY = 'support_tickets'
 const USERS_INDEX = 'users_index'
 
 export const PLATFORM_OWNER_HANDLE = 'kiddnixk'
@@ -172,21 +172,31 @@ export function getApplicationForUser(userId) {
 }
 
 export function listTickets() {
-  return lsGet(TICKETS_KEY, [])
+  return cachedTickets()
 }
 
 export function createTicket(ticket) {
-  const list = listTickets()
-  const row = { id: `tix_${Date.now()}`, status: 'open', createdAt: new Date().toISOString(), messages: [], ...ticket }
-  list.unshift(row)
-  lsSet(TICKETS_KEY, list)
+  const row = {
+    id: `tix_${Date.now()}`,
+    status: 'open',
+    createdAt: new Date().toISOString(),
+    messages: [],
+    ...ticket,
+  }
+  createSupportTicketCloud({
+    userId: ticket.userId,
+    email: ticket.email,
+    handle: ticket.handle,
+    subject: ticket.subject,
+    body: ticket.body,
+    category: ticket.category || 'general',
+  }).then(() => pullSupportTickets()).catch(() => {})
   return row
 }
 
 export function updateTicket(id, partial) {
-  const list = listTickets().map((t) => (t.id === id ? { ...t, ...partial } : t))
-  lsSet(TICKETS_KEY, list)
-  return list.find((t) => t.id === id)
+  updateSupportTicketCloud(id, partial).then(() => pullSupportTickets()).catch(() => {})
+  return { id, ...partial }
 }
 
 export function indexUser(user) {

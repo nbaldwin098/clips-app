@@ -149,6 +149,29 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
     endLiveLobby(user.id)
   }
 
+  const shareCamera = async () => {
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      setScreenError('Camera is not supported in this browser.')
+      return
+    }
+    setScreenError('')
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      const el = screenRef.current
+      if (el) {
+        el.srcObject = stream
+        el.play?.().catch(() => {})
+      }
+      setSharing(true)
+      stream.getVideoTracks()[0].addEventListener('ended', () => {
+        setSharing(false)
+        if (screenRef.current) screenRef.current.srcObject = null
+      })
+    } catch (err) {
+      setScreenError(err?.name === 'NotAllowedError' ? 'Camera permission denied.' : 'Could not open camera.')
+    }
+  }
+
   const selectStream = (entry) => {
     onFocusStream?.(entry)
   }
@@ -179,12 +202,24 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
   const subCount = focusedStream?.userId ? getSubscriberCount(focusedStream.userId) : 0
   const filterStyle = user?.id ? filterCss(getStreamFilter(user.id).filterId) : ''
   return (
-    <div className="p-4 md:p-6 max-w-[1400px] mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Live</h1>
-        <p className="mt-1 text-sm text-[#aaa]">
-          Live video ingest is not connected yet. Lobby listings and watcher counts are approximate on this device.
-        </p>
+    <div className="w-full">
+      <div className="px-4 md:px-6 py-4 max-w-[1600px] mx-auto w-full space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Live</h1>
+          <p className="mt-1 text-sm text-[#aaa]">
+            Live lobby from the cloud. Go live from Create (+) with camera, screen, or OBS when ingest is connected.
+          </p>
+        </div>
+        {canHost ? (
+          <button
+            type="button"
+            onClick={() => onOpenAuth && !isAuthenticated ? onOpenAuth() : document.getElementById('live-host-panel')?.scrollIntoView({ behavior: 'smooth' })}
+            className="h-10 px-4 bg-[#eb0400] text-white text-sm font-bold"
+          >
+            Go live
+          </button>
+        ) : null}
       </div>
 
       {/* Focused Stage — only renders for a real selected live stream */}
@@ -240,14 +275,28 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
                 <>
                 <button
                   type="button"
+                  onClick={shareCamera}
+                  className="h-9 px-3 rounded-full bg-white/10 text-xs font-semibold text-white inline-flex items-center gap-1.5"
+                >
+                  Camera
+                </button>
+                <button
+                  type="button"
                   onClick={shareScreen}
                   className="h-9 px-3 rounded-full bg-white/10 text-xs font-semibold text-white inline-flex items-center gap-1.5"
                 >
-                  <MonitorUp className="h-4 w-4" /> {sharing ? 'Sharing this PC' : 'Share this screen'}
+                  <MonitorUp className="h-4 w-4" /> {sharing ? 'Sharing' : 'Screen / OBS window'}
                 </button>
                 {screenError ? <p className="w-full text-[11px] text-red-400">{screenError}</p> : null}
                 </>
               )}
+              <button
+                type="button"
+                onClick={() => onFocusStream?.(null)}
+                className="h-9 px-3 rounded-full border border-zinc-700 text-xs text-zinc-300"
+              >
+                ✕ Back to lobby
+              </button>
               <FollowButton creatorId={focusedStream.userId} handle={focusedStream.handle} onOpenAuth={onOpenAuth} />
             </div>
           </div>
@@ -322,9 +371,9 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
       </div>
 
       {isAuthenticated && canHost && (
-        <section className="rounded-2xl border border-[#23232c] bg-[#121218] p-5 space-y-3">
+        <section id="live-host-panel" className="rounded-2xl border border-[#23232c] bg-[#121218] p-5 space-y-3">
           <h2 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
-            <Key className="h-4 w-4 text-white" /> List me in the lobby
+            <Key className="h-4 w-4 text-white" /> Go live — camera, screen, or OBS
           </h2>
           <input
             value={title}
@@ -373,6 +422,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
           )}
         </section>
       )}
+      </div>
     </div>
   )
 }

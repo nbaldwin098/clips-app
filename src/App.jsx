@@ -71,7 +71,8 @@ const WatchPage = lazy(() => import('./components/WatchPage'))
 const AdminPortal = lazy(() => import('./components/AdminPortal'))
 const AdvertiserPortal = lazy(() => import('./components/AdvertiserPortal'))
 const CalabiStudioPage = lazy(() => import('./components/CalabiStudioPage'))
-const CalabiCashShopPage = lazy(() => import('./components/CalabiCashShop'))
+const ShopPage = lazy(() => import('./components/ShopPage'))
+const SellerPortal = lazy(() => import('./components/SellerPortal'))
 
 const KNOWN_VIEWS = new Set([
   'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
@@ -79,7 +80,7 @@ const KNOWN_VIEWS = new Set([
   'notifications', 'pics', 'checkout', 'creator-apply', 'verify', 'advertise', 'advertiser-portal', 'support', 'admin',
   'analytics', 'channel', 'profile', 'content-rules', 'vods',
   'subscriptions', 'playlists', 'community', 'studio-tools', 'stream-settings',
-  'calabi-studio', 'calabi-cash',
+  'calabi-studio', 'calabi-cash', 'shop', 'marketplace', 'seller', 'seller-portal',
   'legal-tos', 'legal-privacy', 'legal-creator', 'legal-community',
   'watch', 'sound', 'tag', 'create',
 ])
@@ -591,6 +592,12 @@ function AppShell() {
       case 'advertise': return <AdvertisePage onNavigate={navigate} />
       case 'advertiser-portal': return <AdvertiserPortal onNavigate={navigate} />
       case 'support': return <SupportPage onOpenAuth={openAuth} />
+      case 'shop':
+      case 'marketplace':
+        return <ShopPage onNavigate={navigate} onOpenAuth={openAuth} />
+      case 'seller':
+      case 'seller-portal':
+        return <SellerPortal onNavigate={navigate} onOpenAuth={openAuth} />
       case 'admin': return null
       case 'content-rules': return <ContentRulesPage />
       case 'history': return <HistoryPage onNavigate={navigate} onPlayItem={openWatch} />

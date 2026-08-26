@@ -13,6 +13,7 @@ import { isPlatformOwner } from '../lib/moderation'
 import BrandMark from './BrandMark'
 import ChannelAvatar from './ChannelAvatar'
 import NotificationsMenu from './NotificationsMenu'
+import { getCalabiCashBalance, getCoinBalance, formatCash, refreshWalletFromCloud } from '../lib/calabiCash'
 
 export default function StreamingNavbar({
   onNavigate,
@@ -24,6 +25,14 @@ export default function StreamingNavbar({
   const { user, isAuthenticated, authReady, logout } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
+  const [, setWalletTick] = useState(0)
+  const cash = getCalabiCashBalance(user?.id)
+  const coins = getCoinBalance(user?.id)
+
+  useEffect(() => {
+    if (!user?.id) return
+    refreshWalletFromCloud(user.id).then(() => setWalletTick((n) => n + 1)).catch(() => {})
+  }, [user?.id])
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -104,6 +113,10 @@ export default function StreamingNavbar({
                     <div className="px-3.5 py-2.5 border-b border-[#23232d]">
                       <p className="text-xs font-semibold text-white truncate">{user?.displayName || 'User'}</p>
                       <p className="text-[11px] text-zinc-400 truncate">@{user?.handle || 'viewer'}</p>
+                      <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
+                        <span className="text-emerald-400 font-semibold">{formatCash(cash)} Cash</span>
+                        <span className="text-amber-400 font-semibold">{coins} Coins</span>
+                      </div>
                     </div>
                     <button
                       type="button"

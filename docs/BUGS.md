@@ -94,9 +94,10 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 | BUG-055 | Product | Concurrent viewer graph missing | Audience network map in Analytics (#123); concurrent live graph still open | `partial` |
 | BUG-088 | Studio | Bubble map invented tally bubbles / no pan / no people | Shipped in #123 | `done` |
 | BUG-089 | Catalog | Post “posted at” drifted on updates | `first_published_at` + 0015 in #123 — run SQL in Supabase | `done` |
-| BUG-093 | Studio | Creator dashboard empty / wallet wrong place / no earnings | Earnings + stream/VODs in studio; wallet under Site settings; cloud economy 0016–0017 | `doing` |
-| BUG-094 | Engagement | Likes/views/premium not updating tallies / bubble map empty | Vote→tally trigger + content_views + premium_subs in 0016; ensureUpvote logs | `doing` |
-| BUG-095 | Live | Global chat vs creator chat | global_live_chat 0017; LiveChatPanel switches on focus | `doing` |
+| BUG-096 | Cloud | Remaining local-first domains (payouts, channel staff, youtubeParity extras) | Migrate next; no new local SOT allowed | `open` |
+| BUG-097 | Nav | Left menu expanded with no close | Forced icons-only rail | `doing` |
+| BUG-098 | Shop | Marketplace + seller portal + Stripe escrow | Cloud tables 0018 | `doing` |
+| BUG-099 | Admin | CS/mod template + support desk + analytics | Admin portal reorganized | `doing` |
 | BUG-056 | Product | Custom emotes partial | | `open` |
 | BUG-057 | Product | Stream schedule partial | | `open` |
 | BUG-058 | CI | Align smoke suite with ads-removed + Next | Block merge on green subset | `open` |

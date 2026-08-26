@@ -102,7 +102,7 @@ export default function CreatePage({ onCreate, onOpenAuth, onNavigate }) {
               {mode === 'video' && 'Add title, description, category, and look filters before you publish.'}
               {mode === 'clip' && 'Vertical short · 60s max. You’ll pick filters on the next step.'}
               {mode === 'pic' && 'Opens your photo picker and posts straight to Pics.'}
-              {mode === 'live' && 'Opens Live. Stream ingest is separate from this upload desk.'}
+              {mode === 'live' && 'Opens Live. Use camera or share an OBS window on our site; full RTMP ingest when connected.'}
             </p>
             {picError ? <p className="mt-2 text-sm text-red-400">{picError}</p> : null}
           </div>
