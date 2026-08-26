@@ -219,144 +219,184 @@ function PicSlide({ pic, active, onOpenProfile, onOpenAuth, eager = true }) {
 }
 
 /**
- * Mosaic wall: smaller tiles from under the site header, endless scroll,
- * wheel/pinch zoom into photos without requiring a click.
+ * Mosaic under the header. Wheel zooms the photo under the cursor only
+ * (not the whole page). Zoom stops when that photo fills the view;
+ * then zoom out or return to the mosaic and scroll.
  */
 function ZoomMosaic({ items, onOpenAuth, onUnplayable }) {
   const wrapRef = useRef(null)
-  const [zoom, setZoom] = useState(1)
-  const [pan, setPan] = useState({ x: 0, y: 0 })
-  const dragRef = useRef(null)
+  const tileRefs = useRef(new Map())
   const { user } = useAuth()
   const syncTick = useContentSyncTick()
+  // focus: photo under cursor being zoomed
+  const [focus, setFocus] = useState(null) // { id, zoom, ox, oy }
+  const MAX_ZOOM = 2.75
 
-  const clampZoom = (z) => {
-    if (!Number.isFinite(z) || z <= 0) return 1
-    return Math.min(12, Math.max(1, z))
+  const setTileRef = (id, el) => {
+    if (!el) tileRefs.current.delete(id)
+    else tileRefs.current.set(id, el)
   }
 
-  const zoomAt = useCallback((factor, clientX, clientY) => {
-    const el = wrapRef.current
-    if (!el) {
-      setZoom((z) => clampZoom(z * factor))
-      return
+  const tileUnderPoint = (clientX, clientY) => {
+    for (const [id, el] of tileRefs.current.entries()) {
+      const r = el.getBoundingClientRect()
+      if (clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom) {
+        const ox = ((clientX - r.left) / Math.max(1, r.width)) * 100
+        const oy = ((clientY - r.top) / Math.max(1, r.height)) * 100
+        return { id, ox, oy, rect: r }
+      }
     }
-    const rect = el.getBoundingClientRect()
-    const cx = clientX - rect.left
-    const cy = clientY - rect.top
-    setZoom((z) => {
-      const next = clampZoom(z * factor)
-      setPan((p) => {
-        const wx = (cx - p.x) / z
-        const wy = (cy - p.y) / z
-        return { x: cx - wx * next, y: cy - wy * next }
-      })
-      return next
-    })
-  }, [])
+    return null
+  }
 
   useEffect(() => {
     const el = wrapRef.current
     if (!el) return undefined
     const onWheel = (e) => {
-      // Always zoom the wall — no click required
-      e.preventDefault()
-      const factor = e.deltaY > 0 ? 0.9 : 1 / 0.9
-      zoomAt(factor, e.clientX, e.clientY)
+      const hit = tileUnderPoint(e.clientX, e.clientY)
+      const zoomingOut = e.deltaY > 0
+
+      // Zooming a photo under the cursor — never scale the whole mosaic.
+      if (focus || hit) {
+        const targetId = focus?.id || hit?.id
+        if (!targetId) return
+
+        // If zooming in with no focus, must be over a tile
+        if (!focus && zoomingOut) return // let page scroll
+        if (!focus && !hit) return
+
+        e.preventDefault()
+        const factor = zoomingOut ? 0.88 : 1.14
+        const ox = hit?.ox ?? focus?.ox ?? 50
+        const oy = hit?.oy ?? focus?.oy ?? 50
+
+        setFocus((prev) => {
+          const base = prev?.id === targetId ? prev.zoom : 1
+          let next = base * factor
+          if (next <= 1.04) return null
+          // Stop when the photo fills the view — no endless 5× page zoom
+          next = Math.min(MAX_ZOOM, next)
+          if (!zoomingOut && base >= MAX_ZOOM - 0.01) {
+            return { id: targetId, zoom: MAX_ZOOM, ox, oy }
+          }
+          return { id: targetId, zoom: next, ox, oy }
+        })
+        return
+      }
+      // Not over a focused/hovered tile — normal mosaic scroll
     }
     el.addEventListener('wheel', onWheel, { passive: false })
     return () => el.removeEventListener('wheel', onWheel)
-  }, [zoomAt])
+  }, [focus])
 
-  const onPointerDown = (e) => {
-    if (e.button !== 0) return
-    if (zoom <= 1.02) return
-    dragRef.current = { px: e.clientX, py: e.clientY, ox: pan.x, oy: pan.y }
-    e.currentTarget.setPointerCapture?.(e.pointerId)
-  }
-  const onPointerMove = (e) => {
-    const d = dragRef.current
-    if (!d) return
-    setPan({ x: d.ox + (e.clientX - d.px), y: d.oy + (e.clientY - d.py) })
-  }
-  const onPointerUp = () => { dragRef.current = null }
+  const focusedPic = focus ? items.find((p) => p.id === focus.id) : null
+  const atPhoto = Boolean(focus && focus.zoom >= MAX_ZOOM - 0.05)
 
-  // ~1.5× smaller tiles → more columns
   const gridClass = 'grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-0.5 p-0.5'
 
   return (
-    <div
-      ref={wrapRef}
-      className={cn(
-        'h-full min-h-0 bg-black',
-        zoom > 1.02 ? 'overflow-hidden cursor-grab active:cursor-grabbing touch-none' : 'overflow-y-auto'
-      )}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerUp}
-    >
-      <div
-        className="origin-top-left will-change-transform min-h-full"
-        style={{
-          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-          width: zoom > 1 ? `${100 / zoom}%` : '100%',
-        }}
-      >
-        {items.length === 0 ? (
-          <div className="px-6 py-24 text-center">
-            <p className="text-sm text-zinc-500">No pics yet — post from Create (+)</p>
-          </div>
-        ) : (
-          <div className={gridClass}>
-            {items.map((pic) => {
-              const hearted = isPicHearted(pic.id)
-              return (
+    <div ref={wrapRef} className="h-full min-h-0 overflow-y-auto bg-black relative">
+      {items.length === 0 ? (
+        <div className="px-6 py-24 text-center">
+          <p className="text-sm text-zinc-500">No pics yet — post from Create (+)</p>
+        </div>
+      ) : (
+        <div className={gridClass}>
+          {items.map((pic) => {
+            const hearted = isPicHearted(pic.id)
+            const isFocus = focus?.id === pic.id
+            const z = isFocus ? focus.zoom : 1
+            const ox = isFocus ? focus.ox : 50
+            const oy = isFocus ? focus.oy : 50
+            return (
+              <div
+                key={pic.id}
+                ref={(node) => setTileRef(pic.id, node)}
+                className={cn(
+                  'relative aspect-square overflow-hidden bg-zinc-900',
+                  isFocus && z > 1.2 ? 'z-10 ring-1 ring-white/40' : ''
+                )}
+              >
                 <div
-                  key={pic.id}
-                  className="relative aspect-square overflow-hidden bg-zinc-900"
+                  className="absolute inset-0 will-change-transform"
+                  style={{
+                    transform: `scale(${z})`,
+                    transformOrigin: `${ox}% ${oy}%`,
+                  }}
                 >
                   <PicImage pic={pic} fill onUnplayable={onUnplayable} />
-                  <AttachmentBadge attachments={pic.attachments} />
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      if (!user?.id) { onOpenAuth?.(); return }
-                      togglePicHeart(pic.id, {
-                        creatorId: pic.creatorId || pic.userId,
-                        actorId: user.id,
-                        title: pic.title,
-                      })
-                    }}
-                    className={cn(
-                      'absolute top-1 right-1 z-10 h-6 w-6 flex items-center justify-center text-white',
-                      hearted ? 'opacity-100' : 'opacity-0 hover:opacity-100'
-                    )}
-                    aria-label={hearted ? 'Unheart' : 'Heart'}
-                  >
-                    <Heart className={cn('h-3.5 w-3.5 drop-shadow', hearted && 'fill-red-500 text-red-500')} />
-                  </button>
-                  {/* syncTick keeps hearts fresh */}
-                  <span className="sr-only">{syncTick}</span>
                 </div>
-              )
-            })}
+                <AttachmentBadge attachments={pic.attachments} />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (!user?.id) { onOpenAuth?.(); return }
+                    togglePicHeart(pic.id, {
+                      creatorId: pic.creatorId || pic.userId,
+                      actorId: user.id,
+                      title: pic.title,
+                    })
+                  }}
+                  className={cn(
+                    'absolute top-1 right-1 z-10 h-6 w-6 flex items-center justify-center text-white',
+                    hearted ? 'opacity-100' : 'opacity-0 hover:opacity-100'
+                  )}
+                  aria-label={hearted ? 'Unheart' : 'Heart'}
+                >
+                  <Heart className={cn('h-3.5 w-3.5 drop-shadow', hearted && 'fill-red-500 text-red-500')} />
+                </button>
+                <span className="sr-only">{syncTick}</span>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Arrived at photo — fill the view; scroll mosaic is paused until zoom out */}
+      {focusedPic && atPhoto ? (
+        <div
+          className="fixed inset-0 z-40 bg-black/95 flex items-center justify-center"
+          onWheel={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            if (e.deltaY > 0) {
+              setFocus((prev) => {
+                if (!prev) return null
+                const next = prev.zoom * 0.85
+                if (next <= 1.04) return null
+                return { ...prev, zoom: next }
+              })
+            }
+            // Zoom-in blocked — already at the photo
+          }}
+        >
+          <div className="relative max-h-[100dvh] max-w-[100vw] w-full h-full">
+            <PicImage
+              pic={focusedPic}
+              full
+              eager
+              className="absolute inset-0 h-full w-full object-contain"
+            />
+            <p className="absolute bottom-4 left-1/2 -translate-x-1/2 text-[11px] text-zinc-400 bg-black/60 px-3 py-1">
+              Scroll to zoom out · or
+              <button
+                type="button"
+                className="ml-1 underline text-zinc-200"
+                onClick={() => setFocus(null)}
+              >
+                back to mosaic
+              </button>
+            </p>
           </div>
-        )}
-      </div>
-      {zoom > 1.02 ? (
-        <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 z-20 px-3 py-1 bg-black/70 text-[11px] text-zinc-300 tabular-nums">
-          {zoom.toFixed(1)}× · scroll to zoom · drag to pan
         </div>
       ) : null}
-      <button
-        type="button"
-        className="absolute bottom-3 right-3 z-20 h-8 px-2 border border-zinc-700 bg-black/80 text-[11px] text-zinc-300"
-        onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }) }}
-      >
-        Reset
-      </button>
+
+      {focus && !atPhoto ? (
+        <div className="pointer-events-none fixed bottom-3 left-1/2 -translate-x-1/2 z-30 px-3 py-1 bg-black/70 text-[11px] text-zinc-300">
+          Zoom into photo · scroll out to leave
+        </div>
+      ) : null}
     </div>
   )
 }

@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useState, useRef, useCallback } from 'react'
 import { ChevronLeft, Clapperboard, Heart, MessageCircle, Search, Share2, Volume2, VolumeX, X, RotateCcw } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { getStableShortsFeed, getStableFollowingFeed, getWatchItem, getCreatorPublicContent } from '../lib/contentService'
+import { getStableShortsFeed, getWatchItem, getCreatorPublicContent } from '../lib/contentService'
 import { isFeedable } from '../lib/catalogHealth'
 import { getMediaBlobUrl } from '../lib/videoStorage'
 import { parseEmbedUrl } from '../lib/videoEmbed'
@@ -13,7 +13,6 @@ import { recordInteraction } from '../lib/algorithmEngine'
 import { copyShareUrl } from '../lib/routes'
 import CommentsPanel from './CommentsPanel'
 import ShortsStage, { ShortsCard } from './ShortsStage'
-import ShortsGrid from './ShortsGrid'
 import { preloadPostedItems } from '../lib/preloadMedia'
 import { useContentSyncTick } from '../lib/useContentSync'
 import { filterCss } from '../lib/streamFilters'
@@ -441,11 +440,9 @@ export default function ShortsFeed({
 }) {
   const { user } = useAuth()
   const syncTick = useContentSyncTick()
-  const [tab, setTab] = useState('recommended')
   const recommended = useMemo(() => getStableShortsFeed(user?.id || null), [user?.id, syncTick])
-  const following = useMemo(() => getStableFollowingFeed(user?.id, { shortsOnly: true }), [user?.id, syncTick])
   const items = useMemo(() => {
-    const base = (tab === 'following' ? following : recommended).filter(isFeedable)
+    const base = recommended.filter(isFeedable)
     if (!focusId) return base
 
     const focused = getWatchItem(focusId)
@@ -460,13 +457,13 @@ export default function ShortsFeed({
     const pool = creatorClips.length ? creatorClips : base
     const rest = pool.filter((i) => i.id !== focused.id)
     return [focused, ...rest]
-  }, [tab, following, recommended, focusId, syncTick])
+  }, [recommended, focusId, syncTick])
   const [activeIdx, setActiveIdx] = useState(0)
   const [muted, setMuted] = useState(true)
   const goToRef = useRef(null)
   const prevIdx = useRef(0)
   const shownAt = useRef(Date.now())
-  const inPlayer = Boolean(focusId)
+  // Clips tab opens straight into the reel — no Recommended grid gate.
 
   const startIdx = useMemo(() => {
     if (!focusId) return 0
@@ -480,45 +477,35 @@ export default function ShortsFeed({
     shownAt.current = Date.now()
   }, [startIdx, focusId])
 
+  // Land on a real clip URL when opening /clips with no id.
+  useEffect(() => {
+    if (focusId) return
+    const first = items[0]?.id
+    if (!first) return
+    onNavigate?.('clips', first)
+  }, [focusId, items[0]?.id, onNavigate])
+
   useEffect(() => {
     const from = Math.max(0, activeIdx)
-    preloadPostedItems(items.slice(from), inPlayer ? 5 : 4)
-  }, [activeIdx, items, inPlayer])
+    preloadPostedItems(items.slice(from), 5)
+  }, [activeIdx, items])
 
-  const openClip = (itemOrId) => {
-    const id = typeof itemOrId === 'string' ? itemOrId : itemOrId?.id
-    if (!id) return
-    onNavigate?.('clips', id)
-  }
-
-  const backToGrid = () => {
-    setTab('recommended')
-    onNavigate?.('clips')
-  }
-
-  if (!inPlayer) {
-    return (
-      <ShortsGrid
-        items={tab === 'following' ? following : recommended}
-        onOpen={openClip}
-        tab={tab}
-        onTab={setTab}
-        onOpenAuth={onOpenAuth}
-        isAuthenticated={Boolean(user?.id)}
-      />
-    )
+  const backHome = () => {
+    onNavigate?.('home')
   }
 
   if (!items.length) {
     return (
       <div className="h-full min-h-0 flex flex-col items-center justify-center gap-4 bg-[#000000] px-6 text-center">
-        <p className="text-sm text-zinc-300">This clip was removed or is no longer available.</p>
+        <p className="text-sm text-zinc-300">
+          {focusId ? 'This clip was removed or is no longer available.' : 'No clips yet.'}
+        </p>
         <button
           type="button"
-          onClick={backToGrid}
+          onClick={backHome}
           className="h-10 px-5 rounded-full bg-white text-black text-sm font-semibold"
         >
-          Back to clips
+          Back home
         </button>
       </div>
     )
@@ -526,7 +513,7 @@ export default function ShortsFeed({
 
   return (
     <ShortsStage
-      key={`clips-player-${tab}-${focusId}`}
+      key={`clips-player-${focusId || items[0]?.id || 'reel'}`}
       count={items.length}
       activeIndex={activeIdx}
       goToRef={goToRef}
@@ -548,6 +535,8 @@ export default function ShortsFeed({
         shownAt.current = Date.now()
         prevIdx.current = i
         setActiveIdx(i)
+        const next = items[i]
+        if (next?.id) onNavigate?.('clips', next.id)
       }}
       initialIndex={startIdx}
       bleedMobile
@@ -568,7 +557,7 @@ export default function ShortsFeed({
             onOpenProfile={onOpenProfile}
             onOpenSound={onOpenSound}
             onStitch={onStitch}
-            onBack={backToGrid}
+            onBack={backHome}
             onSearch={() => onNavigate?.('explore')}
           />
         ) : null
