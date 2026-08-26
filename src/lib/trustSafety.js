@@ -354,7 +354,7 @@ export function addStrike(userId, { kind = 'community', reason = '' } = {}, acto
   if (active.length === 1) extra = { noPost: true, noLive: true, status: 'limited', until: new Date(now() + 7 * 864e5).toISOString() }
   if (active.length === 2) extra = { noPost: true, noLive: true, noComment: true, status: 'limited', until: new Date(now() + 14 * 864e5).toISOString() }
   patchEnforcement(userId, { strikes, reason: strike.reason, ...extra }, { actorId })
-  return { ok: true, strike, status }
+  return { ok: true, strike }
 }
 
 export function clearStrike(userId, strikeId, actorId = 'admin') {
@@ -366,10 +366,9 @@ export function clearStrike(userId, strikeId, actorId = 'admin') {
 
 export function listAllContent() {
   const imports = getImports() || []
-  const clips = lsGet('user_clips', []) || []
   const seen = new Set()
   const out = []
-  for (const row of [...imports, ...clips]) {
+  for (const row of imports) {
     if (!row?.id || seen.has(row.id)) continue
     seen.add(row.id)
     out.push(row)
@@ -377,11 +376,21 @@ export function listAllContent() {
   return out
 }
 
-export function adminRemoveContent(id, actorId = 'admin') {
+export async function adminRemoveContent(id, actorId = 'admin') {
   if (!id) return { ok: false, error: 'Missing post.' }
-  hideBrokenMedia(id)
-  log({ userId: '', actorId, action: 'remove-content', reason: id })
-  return { ok: true }
+  try {
+    const { deleteCatalogItem } = await import('./contentService.js')
+    const res = await deleteCatalogItem(id, null)
+    log({ userId: '', actorId, action: 'remove-content', reason: id })
+    return { ok: true, cloudOk: res?.cloudOk }
+  } catch (err) {
+    try {
+      const { removeImport } = await import('./storage.js')
+      removeImport(id)
+    } catch { /* ok */ }
+    log({ userId: '', actorId, action: 'remove-content', reason: id })
+    return { ok: false, error: err?.message || 'Delete failed' }
+  }
 }
 
 export function adminOverview() {
