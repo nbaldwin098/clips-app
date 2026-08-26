@@ -67,15 +67,20 @@ const NAV = [
   { id: 'setup', label: 'Setup', icon: Settings },
 ]
 
+const ADMIN_UNLOCK_KEY = 'clips_admin_ui_unlocked'
+
 export default function AdminPortal() {
   const { user, login } = useAuth()
-  const [unlocked, setUnlocked] = useState(false)
-  const [identifier, setIdentifier] = useState('')
+  const [unlocked, setUnlocked] = useState(() => {
+    try { return sessionStorage.getItem(ADMIN_UNLOCK_KEY) === '1' } catch { return false }
+  })
+  const [identifier, setIdentifier] = useState('kiddnixk@gmail.com')
   const [password, setPassword] = useState('')
   const [code, setCode] = useState('')
-  const authed = unlocked || isAdminSession(user) || isPlatformOwner(user)
+  const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
-  const [tab, setTab] = useState('people')
+  const authed = unlocked || isAdminSession(user) || isPlatformOwner(user)
+  const [tab, setTab] = useState('setup')
   const [, bump] = useState(0)
   const refresh = () => bump((n) => n + 1)
   const [payMsg, setPayMsg] = useState('')
@@ -85,14 +90,70 @@ export default function AdminPortal() {
   const [payNote, setPayNote] = useState('')
   const [payVia, setPayVia] = useState('paypal')
 
+  const markUnlocked = () => {
+    try { sessionStorage.setItem(ADMIN_UNLOCK_KEY, '1') } catch {}
+    setUnlocked(true)
+  }
+
+  const onUnlock = async (e) => {
+    e?.preventDefault?.()
+    setErr('')
+    setBusy(true)
+    try {
+      let u = user
+      if (!isPlatformOwner(u)) {
+        const id = identifier.trim()
+        const pass = password
+        if (!id || !pass) {
+          setErr('Enter kiddnixk@gmail.com (or kiddnixk) and your cloud password, then press Unlock.')
+          return
+        }
+        if (String(pass).trim().length < 6) {
+          setErr('Password must be at least 6 characters.')
+          return
+        }
+        const next = await Promise.race([
+          login({ email: id, password: pass }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Sign-in timed out. Check your connection and try again.')), 20000)),
+        ])
+        u = next || null
+      }
+      if (!u) {
+        setErr('Sign-in failed. Use Forgot password on the main site sign-in if needed.')
+        return
+      }
+      if (!isPlatformOwner(u)) {
+        setErr('Signed in, but that account is not the owner. Use kiddnixk@gmail.com / kiddnixk.')
+        return
+      }
+      const result = await adminLogin(String(code || '').trim(), u)
+      if (!result.ok) {
+        setErr(result.error || 'Access denied')
+        return
+      }
+      markUnlocked()
+    } catch (ex) {
+      setErr(ex?.message || 'Sign-in failed')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   if (!authed) {
     return (
-      <div className="min-h-[calc(100vh-3.5rem)] grid place-items-center bg-[#09090b]">
-        <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#111113] p-6">
+      <div className="min-h-[calc(100vh-3.5rem)] grid place-items-center bg-[#09090b] p-4">
+        <form
+          onSubmit={onUnlock}
+          className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#111113] p-6"
+        >
           <h1 className="text-lg font-semibold text-white">Admin</h1>
           <p className="text-xs text-zinc-500 mt-1 mb-4">
-            Sign in as <span className="text-zinc-300">kiddnixk</span> with your cloud password.
-            Admin code is optional if that account is already the owner.
+            Sign in as <span className="text-zinc-300">kiddnixk</span> with your Supabase cloud password.
+            {user ? (
+              <span className="block mt-1 text-zinc-600">
+                Currently signed in as @{user.handle || 'user'} — switch to the owner account below.
+              </span>
+            ) : null}
           </p>
           <label className="block text-xs text-zinc-400 mb-1">Owner email or handle</label>
           <input
@@ -101,6 +162,7 @@ export default function AdminPortal() {
             className="w-full h-10 rounded-lg bg-black border border-white/10 px-3 text-sm text-white mb-3"
             placeholder="kiddnixk@gmail.com"
             autoComplete="username"
+            disabled={busy}
           />
           <label className="block text-xs text-zinc-400 mb-1">Cloud password</label>
           <input
@@ -108,8 +170,9 @@ export default function AdminPortal() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="w-full h-10 rounded-lg bg-black border border-white/10 px-3 text-sm text-white mb-3"
-            placeholder="Supabase Auth password"
+            placeholder="Your Supabase Auth password"
             autoComplete="current-password"
+            disabled={busy}
           />
           <label className="block text-xs text-zinc-400 mb-1">Admin code (optional)</label>
           <input
@@ -117,52 +180,23 @@ export default function AdminPortal() {
             value={code}
             onChange={(e) => setCode(e.target.value)}
             className="w-full h-10 rounded-lg bg-black border border-white/10 px-3 text-sm text-white mb-3"
-            placeholder="Leave blank if signed in as owner"
+            placeholder="Usually leave blank"
             autoComplete="off"
+            disabled={busy}
           />
-          {err ? <p className="text-xs text-red-400 mb-2">{err}</p> : null}
+          {err ? <p className="text-xs text-red-400 mb-2 whitespace-pre-wrap">{err}</p> : null}
           <button
-            type="button"
-            onClick={async () => {
-              setErr('')
-              let u = user
-              try {
-                if (!isPlatformOwner(u)) {
-                  const id = identifier.trim()
-                  const pass = password.trim()
-                  if (!id || !pass) {
-                    setErr('Enter kiddnixk@gmail.com (or kiddnixk) and your cloud password.')
-                    return
-                  }
-                  const next = await login?.({ email: id, password: pass })
-                  u = next || null
-                }
-                if (!u) {
-                  setErr('Sign-in failed. Check email/password, or use Forgot password on the main sign-in modal.')
-                  return
-                }
-                if (!isPlatformOwner(u) && !isPlatformOwner(user)) {
-                  setErr('That account is not the platform owner. Use kiddnixk@gmail.com.')
-                  return
-                }
-                const result = await adminLogin(code.trim(), u || user)
-                if (!result.ok) {
-                  setErr(result.error || 'Access denied')
-                  return
-                }
-                setUnlocked(true)
-              } catch (e) {
-                setErr(e?.message || 'Sign-in failed')
-              }
-            }}
-            className="w-full h-10 rounded-lg bg-white text-black text-sm font-semibold"
+            type="submit"
+            disabled={busy}
+            className="w-full h-10 rounded-lg bg-white text-black text-sm font-semibold disabled:opacity-60"
           >
-            Unlock
+            {busy ? 'Signing in…' : 'Unlock'}
           </button>
           <p className="text-[11px] text-zinc-600 mt-3 leading-relaxed">
-            Tip: you can also sign in on the site first as kiddnixk, then open /admin — owner sessions unlock automatically.
+            If password fails: main Sign in → Forgot password for kiddnixk@gmail.com
+            (or cs1@calabi.us), then come back here.
           </p>
-        </div>
+        </form>
       </div>
     )
   }
@@ -200,7 +234,11 @@ export default function AdminPortal() {
       <div className="flex-1 min-w-0 flex flex-col">
         <header className="h-14 shrink-0 border-b border-white/10 flex items-center justify-between px-5 bg-[#0b0b0d]">
           <p className="text-sm font-medium">{NAV.find((n) => n.id === tab)?.label || 'Admin'}</p>
-          <button type="button" onClick={() => { adminLogout(); setUnlocked(false) }} className="text-xs text-zinc-500 hover:text-white">Close session</button>
+          <button type="button" onClick={() => {
+            adminLogout()
+            try { sessionStorage.removeItem(ADMIN_UNLOCK_KEY) } catch {}
+            setUnlocked(false)
+          }} className="text-xs text-zinc-500 hover:text-white">Close session</button>
         </header>
         <div className="flex-1 min-h-0 overflow-y-auto">
           {tab === 'overview' && (

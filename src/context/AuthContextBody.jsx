@@ -126,15 +126,25 @@ async function hydratePrivileges(mapped) {
     const profile = await ensureOwnProfile(mapped)
     const owner = isPlatformOwner({ ...mapped, role: profile?.role })
     const priv = privilegesFromProfile(profile, owner)
+    const handle = owner
+      ? (OWNER_LOGIN.handle || mapped.handle)
+      : (profile?.handle || mapped.handle)
     return {
       ...mapped,
       ...priv,
-      displayName: profile?.display_name || mapped.displayName,
-      handle: profile?.handle || mapped.handle,
+      displayName: owner
+        ? (mapped.displayName || OWNER_LOGIN.displayName || profile?.display_name)
+        : (profile?.display_name || mapped.displayName),
+      handle,
       bio: profile?.bio || mapped.bio || local?.bio || '',
       avatarUrl: persistableMediaUrl(profile?.avatar_url) || persistableMediaUrl(local?.avatarUrl) || mapped.avatarUrl || '',
       bannerUrl: persistableMediaUrl(local?.bannerUrl) || mapped.bannerUrl || '',
       showAds: profile?.show_ads !== false,
+      // Owner must stay admin even if profiles.role is still "user"
+      isPlatformAdmin: owner || priv.isPlatformAdmin,
+      role: owner ? 'admin' : priv.role,
+      isCreator: owner || priv.isCreator,
+      creatorStatus: owner ? 'approved' : priv.creatorStatus,
     }
   } catch {
     const owner = isPlatformOwner(mapped)
@@ -144,6 +154,7 @@ async function hydratePrivileges(mapped) {
       isCreator: owner,
       creatorStatus: owner ? 'approved' : 'none',
       role: owner ? 'admin' : 'user',
+      handle: owner ? OWNER_LOGIN.handle : mapped.handle,
       avatarUrl: persistableMediaUrl(mapped.avatarUrl) || persistableMediaUrl(local?.avatarUrl) || '',
       bannerUrl: persistableMediaUrl(mapped.bannerUrl) || persistableMediaUrl(local?.bannerUrl) || '',
     }
@@ -289,10 +300,13 @@ export function AuthProvider({ children }) {
         setUser(next)
         setMode('creator')
         try { indexUser(next) } catch {}
+        // Do not await cloud sync here — Admin unlock was hanging forever on slow/failed sync.
         if (!pendingMfa) {
-          setGraphActor(next)
-          try { await syncGraphFromCloud() } catch {}
-          try { await pullWatchProgressFromCloud(next.id) } catch {}
+          queueMicrotask(() => {
+            setGraphActor(next)
+            syncGraphFromCloud().catch(() => {})
+            pullWatchProgressFromCloud(next.id).catch(() => {})
+          })
         }
         return { ...next, needsMfa: pendingMfa }
       }

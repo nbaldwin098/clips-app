@@ -56,7 +56,7 @@ import { setGraphActor, syncGraphFromCloud, syncPublicEngagementFromCloud } from
 import { promoteDeviceUploadsToCloud } from './lib/promoteUploads'
 import { installRuntimeGuards } from './lib/selfHeal'
 import { pushLibraryCatalogToCloud } from './data/publicMediaSeed'
-import { isAdminSession } from './lib/moderation'
+import { isOwnerAccount } from './data/ownerLogin'
 import { getById, getWatchItem, stashWatchItem, flushScheduledPublishes, resolvePublicCreator } from './lib/contentService'
 import { parseRoute, pushHash, migrateHashToPath, buildHash } from './lib/routes'
 import { useNextNav } from './lib/NextNavContext'
@@ -65,7 +65,6 @@ import PromoBanner from './components/PromoBanner'
 import { claimStripeReturn } from './lib/tips'
 import { membershipReturnPaid } from './lib/stripeConfig'
 import { addPremiumSub } from './lib/engagement'
-import { isOwnerAccount } from './data/ownerLogin'
 
 const CreatorStudio = lazy(() => import('./components/studio/CreatorStudio'))
 const WatchPage = lazy(() => import('./components/WatchPage'))
@@ -465,8 +464,7 @@ function AppShell() {
       }
       return <AuthRequired title={titles[view] || 'Sign in'} description="Sign in." onOpenAuth={openAuth} />
     }
-    if (view === 'admin' && !isAdminSession(user))
-      return <AdminPortal onNavigate={navigate} />
+    if (view === 'admin') return <AdminPortal onNavigate={navigate} />
 
     switch (view) {
       case 'home': return <HomeFeed onPlayItem={openWatch} onOpenPic={openPic} onOpenProfile={openProfile} onNavigate={navigate} />
@@ -593,7 +591,7 @@ function AppShell() {
       case 'advertise': return <AdvertisePage onNavigate={navigate} />
       case 'advertiser-portal': return <AdvertiserPortal onNavigate={navigate} />
       case 'support': return <SupportPage onOpenAuth={openAuth} />
-      case 'admin': return <AdminPortal onNavigate={navigate} />
+      case 'admin': return null
       case 'content-rules': return <ContentRulesPage />
       case 'history': return <HistoryPage onNavigate={navigate} onPlayItem={openWatch} />
       case 'watch-again': return <WatchAgainPage onNavigate={navigate} onPlayItem={openWatch} />
