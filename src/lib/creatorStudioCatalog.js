@@ -10,8 +10,8 @@ export const CREATOR_STUDIO_GROUPS = [
     description: 'Upload, drafts, and VOD library',
     items: [
       { id: 'upload', label: 'Upload', route: { view: 'dashboard', action: 'upload' }, status: 'live' },
-      { id: 'calabi-studio', label: 'Calabi Studio', route: { view: 'calabi-studio' }, status: 'partial' },
-      { id: 'make-post', label: 'Make a post', route: { view: 'dashboard', section: 'post' }, status: 'live' },
+      { id: 'calabi-studio', label: 'Calabi Studio', route: { view: 'dashboard', section: 'lab' }, status: 'live' },
+      { id: 'make-post', label: 'Make a post', route: { view: 'dashboard', section: 'lab' }, status: 'live' },
       { id: 'studio-tools', label: 'Drafts & schedule', route: { view: 'studio-tools' }, status: 'partial' },
       { id: 'vods', label: 'VOD channel', route: { view: 'dashboard', section: 'vods' }, status: 'live' },
       { id: 'socials', label: 'Post to socials', route: { view: 'dashboard', section: 'socials' }, status: 'partial' },

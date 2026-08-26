@@ -217,7 +217,7 @@ export default function InteractionBubbleMap({
     if (!el) return
     const measure = () => {
       const r = el.getBoundingClientRect()
-      setSize({ w: Math.max(280, r.width), h: Math.max(280, r.height) })
+      setSize({ w: Math.max(1, Math.floor(r.width)), h: Math.max(1, Math.floor(r.height)) })
     }
     measure()
     const ro = new ResizeObserver(measure)
@@ -453,7 +453,7 @@ export default function InteractionBubbleMap({
       <div className="min-h-0 flex-1 flex flex-col">
         <div
           ref={wrapRef}
-          className="relative flex-1 min-h-[480px] overflow-hidden cursor-grab active:cursor-grabbing touch-none"
+          className="relative flex-1 min-h-0 overflow-hidden cursor-grab active:cursor-grabbing touch-none"
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
