@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { getHourlyHits, nextFeaturedRefreshAt } from '../lib/hourlyHits'
-import { creatorDisplayName, viewsLabel } from '../lib/uiFormat'
-import ChannelAvatar from './ChannelAvatar'
+import { creatorDisplayName } from '../lib/uiFormat'
 import { useContentSyncTick } from '../lib/useContentSync'
 
 function Thumb({ item, className }) {
@@ -101,24 +100,19 @@ export default function HourlyHitsCarousel({ onPlayItem, onOpenPic, onOpenProfil
               type="button"
               onClick={() => open(current)}
               className="absolute inset-0 w-full h-full text-left group"
-              aria-label={current.title || 'Play featured'}
+              aria-label={current.handle ? `@${String(current.handle).replace(/^@/, '')}` : 'Play featured'}
             >
               <Thumb item={current} className="absolute inset-0 h-full w-full group-hover:scale-[1.02] transition-transform duration-500" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent pointer-events-none" />
-              <div className="absolute bottom-0 inset-x-0 p-4 sm:p-5 pointer-events-none">
-                <p className="text-lg sm:text-2xl font-semibold text-white leading-tight line-clamp-2">{current.title || 'Untitled'}</p>
-              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
             </button>
-            <div className="absolute bottom-0 inset-x-0 p-4 sm:p-5 pt-16 flex items-center gap-2 min-w-0 z-10">
-              <button type="button" onClick={openProfile} className="shrink-0" aria-label={`Open ${creatorDisplayName(current)}'s channel`}>
-                <ChannelAvatar src={current.avatarUrl} name={creatorDisplayName(current)} size={28} />
+            <div className="absolute bottom-0 inset-x-0 p-4 sm:p-5 flex items-center gap-2 min-w-0 z-10 pointer-events-none">
+              <button
+                type="button"
+                onClick={openProfile}
+                className="pointer-events-auto text-sm sm:text-base font-semibold text-white truncate hover:text-zinc-200 drop-shadow"
+              >
+                @{String(current.handle || creatorDisplayName(current) || 'creator').replace(/^@/, '')}
               </button>
-              <button type="button" onClick={openProfile} className="text-sm text-zinc-200 truncate hover:text-white min-w-0 flex-1 text-left">
-                {creatorDisplayName(current)}
-              </button>
-              {current.views > 0 ? (
-                <p className="text-sm text-zinc-400 shrink-0 pointer-events-none ml-auto">{viewsLabel(current.views)}</p>
-              ) : null}
             </div>
           </div>
 
