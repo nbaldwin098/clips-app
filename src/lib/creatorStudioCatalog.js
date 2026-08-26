@@ -13,9 +13,9 @@ export const CREATOR_STUDIO_GROUPS = [
       { id: 'calabi-studio', label: 'Calabi Studio', route: { view: 'dashboard', section: 'lab' }, status: 'live' },
       { id: 'make-post', label: 'Make a post', route: { view: 'dashboard', section: 'lab' }, status: 'live' },
       { id: 'studio-tools', label: 'Drafts & schedule', route: { view: 'studio-tools' }, status: 'partial' },
-      { id: 'vods', label: 'VOD channel', route: { view: 'dashboard', section: 'vods' }, status: 'live' },
+      { id: 'vods', label: 'VOD channel', route: { view: 'dashboard', section: 'content' }, status: 'live' },
       { id: 'socials', label: 'Post to socials', route: { view: 'dashboard', section: 'socials' }, status: 'partial' },
-      { id: 'controls', label: 'Controls', route: { view: 'dashboard', section: 'controls' }, status: 'live' },
+      { id: 'controls', label: 'Controls', route: { view: 'dashboard', section: 'lab' }, status: 'live' },
     ],
   },
   {
@@ -23,8 +23,8 @@ export const CREATOR_STUDIO_GROUPS = [
     label: 'Live',
     description: 'Stream settings and OBS',
     items: [
-      { id: 'stream-settings', label: 'Stream & OBS', route: { view: 'dashboard', section: 'stream' }, status: 'live' },
-      { id: 'stream-key', label: 'OBS connect', route: { view: 'dashboard', section: 'stream' }, status: 'live' },
+      { id: 'stream-settings', label: 'Stream & OBS', route: { view: 'dashboard', section: 'lab' }, status: 'live' },
+      { id: 'stream-key', label: 'OBS connect', route: { view: 'dashboard', section: 'lab' }, status: 'live' },
       { id: 'go-live-studio', label: 'Go live (Calabi Studio)', route: { view: 'calabi-studio' }, status: 'partial' },
     ],
   },

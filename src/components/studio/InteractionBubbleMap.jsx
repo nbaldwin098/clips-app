@@ -388,16 +388,6 @@ export default function InteractionBubbleMap({
             Post bubble · {title}
           </p>
         </div>
-        {onRefresh ? (
-          <button
-            type="button"
-            disabled={refreshing}
-            onClick={() => onRefresh()}
-            className="h-7 px-2.5 text-[11px] font-semibold border border-zinc-700 text-zinc-300 hover:text-white disabled:opacity-50"
-          >
-            {refreshing ? 'Syncing…' : 'Sync cloud'}
-          </button>
-        ) : null}
       </div>
 
       <div className="shrink-0 px-3 py-2 border-b border-zinc-800 space-y-2">

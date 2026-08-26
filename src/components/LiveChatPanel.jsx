@@ -214,80 +214,71 @@ export default function LiveChatPanel({
         </div>
       )}
 
-      {!channel ? (
-        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-2">
-          <MessageSquare className="h-6 w-6 text-zinc-600" />
-          {isGlobal ? (
-            <p className="text-[11px] text-zinc-500 px-1 pb-2">
-              Site-wide lobby. Open a live creator to switch into their chat.
-            </p>
-          ) : null}
-        </div>
-      ) : (
-        <>
-          <div aria-live="polite" aria-atomic="true" className="sr-only">{liveRegion}</div>
-          <div ref={chatContainerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto px-3 py-2 space-y-2.5 text-xs" role="log" aria-label="Live chat messages">
-            {messages.length === 0 ? (
-              <div className="p-3 rounded-lg bg-[#181824] border border-[#252536] text-[11px] text-zinc-400 flex items-center gap-1.5">
-                <Shield className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
-                <span>No messages yet. Be the first to say something!</span>
-              </div>
-            ) : (
-              messages.map((m) => {
-                const isHost = m.userId === channel.userId
-                const isSelf = isAuthenticated && m.userId === user?.id
-                const isGift = m.kind === 'donation'
-                const isBot = m.kind === 'bot'
-                return (
-                  <div
-                    key={m.id}
-                    className={cn(
-                      'chat-message-text leading-relaxed hover:bg-[#161622] rounded px-1.5 py-0.5 -mx-1.5 transition-colors',
-                      isSelf && 'bg-[#181826]',
-                      isGift && 'bg-white/10 border border-white/20 py-1.5'
-                    )}
-                  >
-                    {timestampsEnabled && (
-                      <span className="text-[10px] text-zinc-500 font-mono mr-1.5">
-                        {new Date(m.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    )}
-                    {isHost && (
-                      <span className="px-1 py-0.5 rounded text-[9px] font-bold uppercase mr-1.5 align-middle bg-white/10 text-white border border-white/25">
-                        Host
-                      </span>
-                    )}
-                    {isBot && (
-                      <span className="px-1 py-0.5 rounded text-[9px] font-bold uppercase mr-1.5 align-middle bg-white/10 text-zinc-200">
-                        Bot
-                      </span>
-                    )}
-                    {isGift && (
-                      <span className="px-1 py-0.5 rounded text-[9px] font-bold uppercase mr-1.5 align-middle bg-white text-black">
-                        ${Number(m.amount || 0).toFixed(2)}
-                      </span>
-                    )}
-                    <span className={cn('font-bold mr-1.5', isSelf ? 'text-white' : 'text-zinc-300')}>
-                      {m.handle || 'viewer'}:
-                    </span>
-                    <ChatBody text={m.text} />
-                    {canMod && m.kind !== 'bot' && m.userId !== channel.userId && (
-                      <span className="ml-2 inline-flex gap-1">
-                        <button type="button" className="text-[10px] text-zinc-500 hover:text-white" onClick={() => { timeoutChatUser(streamUserId, m.userId, 60); setChatError('Timed out 60s.') }}>Timeout</button>
-                        <button type="button" className="text-[10px] text-zinc-500 hover:text-white" onClick={() => { banChatUser(streamUserId, m.userId, true); setChatError('Banned.') }}>Ban</button>
-                        <button type="button" className="text-[10px] text-zinc-500 hover:text-white" onClick={() => { removeLiveChatMessage(streamUserId, m.id) }}>Delete</button>
-                      </span>
-                    )}
-                  </div>
-                )
-              })
-            )}
-            <div ref={messagesEndRef} />
+      <div aria-live="polite" aria-atomic="true" className="sr-only">{liveRegion}</div>
+      <div ref={chatContainerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto px-3 py-2 space-y-2.5 text-xs" role="log" aria-label="Live chat messages">
+        {messages.length === 0 ? (
+          <div className="p-3 rounded-lg bg-[#181824] border border-[#252536] text-[11px] text-zinc-400 flex items-center gap-1.5">
+            <Shield className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
+            <span>
+              {isGlobal
+                ? 'Global chat — say something, or open a live creator for their room.'
+                : 'No messages yet. Be the first to say something!'}
+            </span>
           </div>
-        </>
-      )}
+        ) : (
+          messages.map((m) => {
+            const isHost = !isGlobal && m.userId === channel?.userId
+            const isSelf = isAuthenticated && m.userId === user?.id
+            const isGift = m.kind === 'donation'
+            const isBot = m.kind === 'bot'
+            return (
+              <div
+                key={m.id}
+                className={cn(
+                  'chat-message-text leading-relaxed hover:bg-[#161622] rounded px-1.5 py-0.5 -mx-1.5 transition-colors',
+                  isSelf && 'bg-[#181826]',
+                  isGift && 'bg-white/10 border border-white/20 py-1.5'
+                )}
+              >
+                {timestampsEnabled && (
+                  <span className="text-[10px] text-zinc-500 font-mono mr-1.5">
+                    {new Date(m.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                )}
+                {isHost && (
+                  <span className="px-1 py-0.5 rounded text-[9px] font-bold uppercase mr-1.5 align-middle bg-white/10 text-white border border-white/25">
+                    Host
+                  </span>
+                )}
+                {isBot && (
+                  <span className="px-1 py-0.5 rounded text-[9px] font-bold uppercase mr-1.5 align-middle bg-white/10 text-zinc-200">
+                    Bot
+                  </span>
+                )}
+                {isGift && (
+                  <span className="px-1 py-0.5 rounded text-[9px] font-bold uppercase mr-1.5 align-middle bg-white text-black">
+                    ${Number(m.amount || 0).toFixed(2)}
+                  </span>
+                )}
+                <span className={cn('font-bold mr-1.5', isSelf ? 'text-white' : 'text-zinc-300')}>
+                  {m.handle || 'viewer'}:
+                </span>
+                <ChatBody text={m.text} />
+                {canMod && m.kind !== 'bot' && m.userId !== channel?.userId && (
+                  <span className="ml-2 inline-flex gap-1">
+                    <button type="button" className="text-[10px] text-zinc-500 hover:text-white" onClick={() => { timeoutChatUser(streamUserId, m.userId, 60); setChatError('Timed out 60s.') }}>Timeout</button>
+                    <button type="button" className="text-[10px] text-zinc-500 hover:text-white" onClick={() => { banChatUser(streamUserId, m.userId, true); setChatError('Banned.') }}>Ban</button>
+                    <button type="button" className="text-[10px] text-zinc-500 hover:text-white" onClick={() => { removeLiveChatMessage(streamUserId, m.id) }}>Delete</button>
+                  </span>
+                )}
+              </div>
+            )
+          })
+        )}
+        <div ref={messagesEndRef} />
+      </div>
 
-      {picker && channel && (
+      {picker ? (
         <div className="p-2 border-t border-[#23232c] bg-[#161620] animate-in slide-in-from-bottom-2">
           <div className="flex items-center justify-between pb-1.5 px-1">
             <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
@@ -326,10 +317,10 @@ export default function LiveChatPanel({
             </div>
           )}
         </div>
-      )}
+      ) : null}
 
       <div className="p-2.5 border-t border-[#23232c] bg-[#14141c]">
-        {!channel ? null : !isAuthenticated ? (
+        {!isAuthenticated ? (
           <button
             type="button"
             onClick={onOpenAuth}
@@ -339,7 +330,7 @@ export default function LiveChatPanel({
           </button>
         ) : (
           <form onSubmit={handleSendMessage} className="space-y-2">
-            {ownCheckoutConfigured() ? (
+            {!isGlobal && ownCheckoutConfigured() ? (
               <div className="space-y-1">
                 <div className="flex flex-wrap gap-1">
                   {TIP_AMOUNTS.map((n) => (
@@ -375,9 +366,9 @@ export default function LiveChatPanel({
                   </button>
                 </div>
               </div>
-            ) : (
+            ) : !isGlobal ? (
               <p className="text-[10px] text-zinc-600">Live donate needs own Stripe Checkout (deploy create-checkout-session).</p>
-            )}
+            ) : null}
             {chatError ? <p className="text-[11px] text-red-400">{chatError}</p> : null}
             <div className="relative flex items-center gap-1">
               <span className="absolute left-2.5 z-10 pointer-events-none">
