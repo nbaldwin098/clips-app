@@ -1,6 +1,9 @@
 /**
  * Upload video/image to Supabase Storage → durable public URL.
  * Duration limits: clips 60s, videos 24h. No public size caps (safety ceiling only).
+ *
+ * REQUIRES a public Storage bucket named exactly "clips".
+ * Create it in Supabase → Storage, or run supabase/migrations/0003_clips_storage_bucket.sql
  */
 import { getSupabase, isSupabaseConfigured } from './supabaseClient'
 
@@ -83,6 +86,10 @@ export function videoLimitsMessage() {
   return `Videos must be ${MAX_VIDEO_DURATION_SEC / 3600} hours or shorter.`
 }
 
+function bucketMissingMessage() {
+  return 'Storage bucket "clips" is missing. In Supabase → Storage, create a PUBLIC bucket named exactly clips (or run migration 0003_clips_storage_bucket.sql in the SQL editor).'
+}
+
 async function uploadToBucket(file, userId, { maxBytes, kind }) {
   if (!file) return { ok: false, error: 'No file' }
   if (!isSupabaseConfigured()) {
@@ -110,13 +117,21 @@ async function uploadToBucket(file, userId, { maxBytes, kind }) {
       contentType: file.type || (kind === 'pics' ? 'image/jpeg' : 'video/mp4'),
     })
     if (upErr) {
-      return { ok: false, error: upErr.message || 'Upload failed.' }
+      const msg = String(upErr.message || upErr.error || 'Upload failed.')
+      if (/bucket not found|NoSuchBucket/i.test(msg)) {
+        return { ok: false, error: bucketMissingMessage() }
+      }
+      return { ok: false, error: msg }
     }
     const { data } = sb.storage.from(BUCKET).getPublicUrl(path)
     if (!data?.publicUrl) return { ok: false, error: 'No public URL returned.' }
     return { ok: true, publicUrl: data.publicUrl, path }
   } catch (e) {
-    return { ok: false, error: e?.message || 'Upload failed.' }
+    const msg = e?.message || 'Upload failed.'
+    if (/bucket not found|NoSuchBucket/i.test(msg)) {
+      return { ok: false, error: bucketMissingMessage() }
+    }
+    return { ok: false, error: msg }
   }
 }
 
