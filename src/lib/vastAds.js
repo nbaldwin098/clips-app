@@ -59,13 +59,13 @@ function cdata(text) {
 }
 
 function tagText(xml, tag) {
-  const re = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`, 'i')
+  const re = new RegExp('<' + tag + '[^>]*>([\\s\\S]*?)</' + tag + '>', 'i')
   const m = String(xml || '').match(re)
   return m ? cdata(m[1]) : ''
 }
 
 function attr(xml, name) {
-  const m = String(xml || '').match(new RegExp(`${name}="([^"]+)"`, 'i'))
+  const m = String(xml || '').match(new RegExp(name + '="([^"]+)"', 'i'))
   return m ? m[1] : ''
 }
 
@@ -76,10 +76,11 @@ export function parseVastXml(xml) {
   if (wrapperUri) {
     return { wrapper: true, wrapperUrl: safeHttpUrl(wrapperUri) }
   }
-  const linear = raw.match(/<Linear\b[^>]*>[\s\S]*?<\/Linear>/i)?.[0] || ''
+  const linearMatch = raw.match(/<Linear\\b[^>]*>[\\s\\S]*?<\\/Linear>/i)
+  const linear = linearMatch ? linearMatch[0] : ''
   if (!linear) return null
   const files = []
-  const fileRe = /<MediaFile\b([^>]*)>([\s\S]*?)<\/MediaFile>/gi
+  const fileRe = /<MediaFile\\b([^>]*)>([\\s\\S]*?)<\\/MediaFile>/gi
   let fm
   while ((fm = fileRe.exec(linear))) {
     const url = safeMediaUrl(cdata(fm[2]))
@@ -92,19 +93,20 @@ export function parseVastXml(xml) {
       bitrate: Number(attr(fm[1], 'bitrate')) || 0,
     })
   }
-  const mp4 = files.filter((f) => /mp4/i.test(f.type) || /\.mp4(\?|$)/i.test(f.url))
+  const mp4 = files.filter((f) => /mp4/i.test(f.type) || /\\.mp4(\\?|$)/i.test(f.url))
   const pool = mp4.length ? mp4 : files
   pool.sort((a, b) => (b.width - a.width) || (b.bitrate - a.bitrate))
   const media = pool[0]
-  if (!media?.url) return null
+  if (!media || !media.url) return null
   const durationSec = parseVastClock(tagText(linear, 'Duration'))
-  const skipRaw = attr(linear.match(/<Linear\b[^>]*>/i)?.[0] || '', 'skipoffset')
+  const openMatch = linear.match(/<Linear\\b[^>]*>/i)
+  const skipRaw = attr(openMatch ? openMatch[0] : '', 'skipoffset')
   const skipAfterSec = skipRaw ? parseVastClock(skipRaw) : YT_SKIP_AFTER_SEC
   const clickThrough = safeHttpUrl(tagText(linear, 'ClickThrough'))
   const impression = safeHttpUrl(tagText(raw, 'Impression'))
   const errorUrl = tagText(raw, 'Error')
   const tracking = {}
-  const tr = /<Tracking\b([^>]*)>([\s\S]*?)<\/Tracking>/gi
+  const tr = /<Tracking\\b([^>]*)>([\\s\\S]*?)<\\/Tracking>/gi
   let tm
   while ((tm = tr.exec(linear))) {
     const event = attr(tm[1], 'event')
@@ -142,11 +144,9 @@ export function fireVastPixel(url) {
 async function fetchVastOnce(fetchKind) {
   let xml = ''
   try {
-    // Bust ExoClick frequency-cap cookies that sometimes return an empty
-    // ~157-byte VAST after a few hits in the same browser session.
     const base = vastFetchUrl(fetchKind)
     const sep = base.includes('?') ? '&' : '?'
-    const res = await fetch(`${base}${sep}r=${Date.now()}${Math.random().toString(36).slice(2, 6)}`, {
+    const res = await fetch(base + sep + 'r=' + Date.now() + Math.random().toString(36).slice(2, 6), {
       credentials: 'omit',
       cache: 'no-store',
     })
@@ -182,7 +182,7 @@ export async function loadExoClickVast({ depth = 0, kind = 'video', attempts = 2
           continue
         }
         const inner = parseVastXml(await res.text())
-        if (inner?.mediaUrl) return inner
+        if (inner && inner.mediaUrl) return inner
       } catch {
         /* try again */
       }
@@ -196,21 +196,18 @@ export async function loadExoClickVast({ depth = 0, kind = 'video', attempts = 2
 }
 
 /**
- * Long-form videos: preroll at 0:00 (handled separately), then mid-roll at 30s,
- * another at 8 minutes if the video is that long, then every 8 minutes after.
- * Videos shorter than 30 seconds still get the preroll but no mid-roll break.
+ * Long-form videos:
+ * - Preroll at 0:00 (handled by useVideoVastAds on mount).
+ * - If longer than 8 minutes, exactly one additional mid-roll at a random
+ *   time after the 8-minute mark (sticky per video; never fixed, never repeating).
+ * Videos <= 8 minutes only get the preroll.
  */
 export function videoInStreamBreaks(durationSec) {
   const d = Number(durationSec)
-  if (!Number.isFinite(d) || d <= VIDEO_FIRST_AD_SEC) return []
-  const points = [VIDEO_FIRST_AD_SEC]
-  if (d >= YT_MIDROLL_MIN_SEC) {
-    let t = YT_MIDROLL_MIN_SEC
-    while (t <= d) {
-      points.push(t)
-      t += YT_MIDROLL_MIN_SEC
-    }
-  }
-  return points
+  if (!Number.isFinite(d) || d <= YT_MIDROLL_MIN_SEC) return []
+  const earliest = YT_MIDROLL_MIN_SEC
+  const latest = Math.max(earliest, d - 15)
+  const span = latest - earliest
+  const t = earliest + (span > 0 ? Math.random() * span : 0)
+  return [Math.floor(t)]
 }
-
