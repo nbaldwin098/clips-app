@@ -148,11 +148,15 @@ function AppShell() {
   }, [user?.id, routeParams, checkoutTarget.id])
 
   useEffect(() => {
-    const pull = () => {
+    const pull = async () => {
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
-      syncContentFromCloud(user)
-      pullLiveFeatureState().catch(() => {})
+      // #1: videos / clips / pics catalog before live features, graph, promotions.
+      try {
+        await syncContentFromCloud(user)
+      } catch {}
       flushScheduledPublishes()
+      // Secondary (non-blocking): live state, shop-adjacent graph, promos.
+      pullLiveFeatureState().catch(() => {})
       syncPromotionsFromCloud()
       syncGraphFromCloud().catch(() => {})
       syncPublicEngagementFromCloud().catch(() => {})

@@ -36,8 +36,8 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onOpenProfile, onNavig
 
   useEffect(() => {
     preloadPostedItem(featured)
-    preloadPostedItems(continueItems, 1)
-    preloadPostedItems(items, 3)
+    preloadPostedItems(continueItems, 2)
+    preloadPostedItems(items, 6)
   }, [featured, continueItems, items])
 
   return (
