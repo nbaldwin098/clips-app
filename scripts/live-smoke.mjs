@@ -799,6 +799,8 @@ assert(readFileSync(new URL('../src/components/ProfilePage.jsx', import.meta.url
 assert(readFileSync(new URL('../src/lib/creatorInteractions.js', import.meta.url), 'utf8').includes('stats:'), 'stats surface is tracked in analytics')
 assert(readFileSync(new URL('../src/lib/creatorInteractions.js', import.meta.url), 'utf8').includes('aggregateInteractionsByContent'), 'site interactions facet aggregates real events')
 const apiPage = readFileSync(new URL('../src/components/BubbleApiPage.jsx', import.meta.url), 'utf8')
+assert(apiPage.includes("from '../context/AuthContext'") || apiPage.includes('from "../context/AuthContext"'), 'Bubble API page imports useAuth from AuthContext')
+assert(!apiPage.includes("from '../lib/auth'"), 'Bubble API page does not import missing lib/auth')
 assert(apiPage.includes('Embed Widget') && apiPage.includes('REST Graph Snapshot'), 'API page documents embed + REST')
 assert(apiPage.includes('Live Event Stream') && apiPage.includes('Webhook'), 'API page documents stream + webhooks')
 assert(apiPage.includes('White-label') && apiPage.includes('Batch Analytics') && apiPage.includes('Graph Query'), 'API page documents SDK export query')
