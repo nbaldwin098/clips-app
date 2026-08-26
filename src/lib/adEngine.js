@@ -1,15 +1,23 @@
 /** AdSense bootstrap — units place later. ExoClick/VAST removed.
  * When display ads run: keep a tiny PiP of the creator stream, then restore full size.
  */
-import { runtimeEnv } from './runtimeEnv'
 
 export const ADSENSE_KEEP_STREAM_PIP = true
 
 /** Publisher client id from env (ca-pub-…). Empty = AdSense script not loaded. */
 export function getAdSenseClientId() {
-  const raw = String(
-    runtimeEnv('NEXT_PUBLIC_ADSENSE_CLIENT') || runtimeEnv('VITE_ADSENSE_CLIENT') || '',
-  ).trim()
+  let raw = ''
+  try {
+    raw = String(
+      (typeof process !== 'undefined' && (process.env.NEXT_PUBLIC_ADSENSE_CLIENT || process.env.VITE_ADSENSE_CLIENT))
+      || '',
+    ).trim()
+  } catch {}
+  try {
+    if (!raw && typeof import.meta !== 'undefined' && import.meta.env) {
+      raw = String(import.meta.env.VITE_ADSENSE_CLIENT || import.meta.env.NEXT_PUBLIC_ADSENSE_CLIENT || '').trim()
+    }
+  } catch {}
   if (/^ca-pub-\d{10,20}$/.test(raw)) return raw
   return ''
 }
