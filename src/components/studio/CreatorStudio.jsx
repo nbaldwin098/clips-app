@@ -789,7 +789,7 @@ export default function CreatorStudio({
                   ]}
                 />
               </div>
-              <div className="min-h-[520px] h-[min(70vh,720px)] shrink-0">
+              <div className="h-[min(72vh,760px)] min-h-[560px] shrink-0 overflow-hidden rounded-xl border border-zinc-800">
                 <InteractionBubbleMap
                   network={network}
                   selectedPostId={selectedPostId}

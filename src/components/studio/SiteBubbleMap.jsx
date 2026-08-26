@@ -1,7 +1,13 @@
 import { useMemo, useState, useRef, useEffect, useCallback } from 'react'
 import { Film, Clapperboard, Image as ImageIcon, Radio, Users, Activity } from 'lucide-react'
-
-const GOLDEN = Math.PI * (3 - Math.sqrt(5))
+import {
+  layoutBubbleNetwork,
+  contentBounds,
+  fitZoomForBounds,
+  clampBubbleZoom,
+  clampPanToBox,
+  formatCompactCount,
+} from '../../lib/bubbleEngine'
 
 const NODE_META = {
   videos: { label: 'Videos', color: '#38bdf8', Icon: Film },
@@ -12,32 +18,9 @@ const NODE_META = {
   interactions: { label: 'Interactions', color: '#fbbf24', Icon: Activity },
 }
 
-function layout(nodes, width, height) {
-  const cx = width / 2
-  const cy = height / 2
-  const hubR = 40
-  const maxR = Math.min(width, height) * 0.38
-  const placed = nodes.map((n, i) => {
-    const angle = i * GOLDEN + Math.PI / 8
-    const ring = 0.55 + 0.35 * (i / Math.max(nodes.length - 1, 1))
-    const size = Math.min(52, Math.max(28, 22 + Math.sqrt(n.value || 1) * 2.2))
-    return {
-      ...n,
-      x: cx + Math.cos(angle) * (hubR + 56 + ring * maxR),
-      y: cy + Math.sin(angle) * (hubR + 56 + ring * maxR),
-      size,
-    }
-  })
-  return { hub: { x: cx, y: cy, size: hubR * 2 }, nodes: placed }
-}
-
-function clampZoom(z) {
-  if (!Number.isFinite(z) || z <= 0) return 1
-  return Math.min(8, Math.max(0.35, z))
-}
-
 /**
  * Site-wide bubble for Stats → More: calabi at center, platform facets in orbit.
+ * Layout always fits the box; pan/zoom clamp so nothing leaves the frame.
  */
 export default function SiteBubbleMap({
   videos = 0,
@@ -55,12 +38,12 @@ export default function SiteBubbleMap({
   const dragRef = useRef(null)
 
   const nodes = useMemo(() => ([
-    { id: 'videos', value: videos, ...NODE_META.videos },
-    { id: 'clips', value: clips, ...NODE_META.clips },
-    { id: 'pics', value: pics, ...NODE_META.pics },
-    { id: 'live', value: live, ...NODE_META.live },
-    { id: 'creators', value: creators, ...NODE_META.creators },
-    { id: 'interactions', value: interactions, ...NODE_META.interactions },
+    { id: 'videos', value: videos, weight: Math.max(1, videos), ...NODE_META.videos },
+    { id: 'clips', value: clips, weight: Math.max(1, clips), ...NODE_META.clips },
+    { id: 'pics', value: pics, weight: Math.max(1, pics), ...NODE_META.pics },
+    { id: 'live', value: live, weight: Math.max(1, live), ...NODE_META.live },
+    { id: 'creators', value: creators, weight: Math.max(1, creators), ...NODE_META.creators },
+    { id: 'interactions', value: interactions, weight: Math.max(1, interactions), ...NODE_META.interactions },
   ]), [videos, clips, pics, live, creators, interactions])
 
   useEffect(() => {
@@ -68,7 +51,7 @@ export default function SiteBubbleMap({
     if (!el) return undefined
     const measure = () => {
       const r = el.getBoundingClientRect()
-      setSize({ w: Math.max(480, r.width), h: Math.max(420, r.height) })
+      setSize({ w: Math.max(280, r.width), h: Math.max(280, r.height) })
     }
     measure()
     const ro = new ResizeObserver(measure)
@@ -76,33 +59,44 @@ export default function SiteBubbleMap({
     return () => ro.disconnect()
   }, [])
 
-  const laid = useMemo(() => layout(nodes, size.w, size.h), [nodes, size.w, size.h])
+  const laid = useMemo(
+    () => layoutBubbleNetwork(nodes, size.w, size.h, { pad: 72 }),
+    [nodes, size.w, size.h]
+  )
+  const bounds = useMemo(() => contentBounds(laid), [laid])
+  const fitZ = useMemo(
+    () => fitZoomForBounds(bounds, size.w, size.h, { pad: 8 }),
+    [bounds, size.w, size.h]
+  )
 
   const keepHubInView = useCallback((nextZoom, nextPan) => {
-    const hub = laid.hub
-    const sx = hub.x * nextZoom + nextPan.x
-    const sy = hub.y * nextZoom + nextPan.y
-    const marginX = size.w * 0.22
-    const marginY = size.h * 0.22
-    let { x, y } = nextPan
-    if (sx < marginX) x += marginX - sx
-    if (sx > size.w - marginX) x -= sx - (size.w - marginX)
-    if (sy < marginY) y += marginY - sy
-    if (sy > size.h - marginY) y -= sy - (size.h - marginY)
-    return { x, y }
-  }, [laid.hub, size.w, size.h])
+    return clampPanToBox(nextPan, nextZoom, size, bounds)
+  }, [bounds, size])
+
+  useEffect(() => {
+    setZoom(1)
+    setPan({ x: 0, y: 0 })
+  }, [size.w, size.h, nodes])
+
+  useEffect(() => {
+    setZoom((z) => clampBubbleZoom(z, fitZ, 8))
+  }, [fitZ])
+
+  useEffect(() => {
+    setPan((p) => keepHubInView(zoom, p))
+  }, [zoom, keepHubInView])
 
   const zoomAt = useCallback((factor, clientX, clientY) => {
     const el = wrapRef.current
     if (!el) {
-      setZoom((z) => clampZoom(z * factor))
+      setZoom((z) => clampBubbleZoom(z * factor, fitZ, 8))
       return
     }
     const rect = el.getBoundingClientRect()
     const cx = clientX - rect.left
     const cy = clientY - rect.top
     setZoom((z) => {
-      const next = clampZoom(z * factor)
+      const next = clampBubbleZoom(z * factor, fitZ, 8)
       setPan((p) => {
         const wx = (cx - p.x) / z
         const wy = (cy - p.y) / z
@@ -111,7 +105,7 @@ export default function SiteBubbleMap({
       })
       return next
     })
-  }, [keepHubInView])
+  }, [keepHubInView, fitZ])
 
   useEffect(() => {
     const el = wrapRef.current
@@ -141,7 +135,7 @@ export default function SiteBubbleMap({
     <div className="rounded-2xl border border-zinc-800 bg-[#07070a] overflow-hidden">
       <div className="px-4 py-3 border-b border-zinc-800">
         <p className="text-sm font-semibold text-white">Site bubble</p>
-        <p className="text-xs text-zinc-500 mt-0.5">calabi at the center — videos, clips, pics, live, creators, and interactions.</p>
+        <p className="text-xs text-zinc-500 mt-0.5">calabi at the center — videos, clips, pics, live, creators, and interactions. Fits the box; scroll to zoom.</p>
       </div>
       <div
         ref={wrapRef}
@@ -195,7 +189,7 @@ export default function SiteBubbleMap({
               <circle r={n.size / 2 + 3} fill="none" stroke={n.color} strokeWidth="2.5" />
               <circle r={n.size / 2} fill="#121218" />
               <text textAnchor="middle" dominantBaseline="middle" fill={n.color} fontSize="10" fontWeight="700">
-                {n.value >= 1000 ? `${(n.value / 1000).toFixed(1)}k` : n.value}
+                {formatCompactCount(n.value)}
               </text>
               <text y={n.size / 2 + 14} textAnchor="middle" fill="#d4d4d8" fontSize="9" fontWeight="600">
                 {n.label}
