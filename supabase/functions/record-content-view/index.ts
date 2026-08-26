@@ -90,8 +90,9 @@ Deno.serve(async (req) => {
 
   // Also mirror a view interaction for bubble map when signed in
   if (actorId) {
+    const interactionId = `ci_view_${contentId}_${actorId}`.replace(/[^a-zA-Z0-9:_-]/g, '_').slice(0, 180)
     await writer.from('creator_interactions').upsert({
-      id: `civ_${contentId}_${actorId}_view`.slice(0, 180),
+      id: interactionId,
       creator_id: creatorId,
       content_id: contentId,
       type: 'view',

@@ -242,6 +242,24 @@ export default function CreatorStudio({
   const [restoreBusy, setRestoreBusy] = useState(false)
   const [restoreNote, setRestoreNote] = useState('')
   const [deletingId, setDeletingId] = useState(null)
+  const [cloudSyncBusy, setCloudSyncBusy] = useState(false)
+
+  const refreshAudienceFromCloud = async () => {
+    if (!user?.id || user.provider !== 'supabase') return
+    setCloudSyncBusy(true)
+    try {
+      const { syncCreatorInteractionsFromCloud, syncGraphFromCloud } = await import('../../lib/graphSync')
+      await syncGraphFromCloud?.().catch(() => {})
+      await syncCreatorInteractionsFromCloud?.().catch(() => {})
+      const ids = getCreatorContent(user.id, user.handle).map((p) => p.id).filter(Boolean)
+      if (ids.length) {
+        const { pullViewCounts } = await import('../../lib/economySync')
+        await pullViewCounts(ids).catch(() => {})
+      }
+    } finally {
+      setCloudSyncBusy(false)
+    }
+  }
 
   useEffect(() => {
     if (!initialSection) return
@@ -261,9 +279,14 @@ export default function CreatorStudio({
     if (!user?.id || user.provider !== 'supabase') return undefined
     let cancelled = false
     const sync = () => {
-      import('../../lib/graphSync').then(({ syncCreatorInteractionsFromCloud }) => {
+      import('../../lib/graphSync').then(async ({ syncCreatorInteractionsFromCloud, syncGraphFromCloud }) => {
         if (cancelled) return
-        syncCreatorInteractionsFromCloud?.().catch(() => {})
+        try {
+          await syncGraphFromCloud?.()
+        } catch {}
+        try {
+          await syncCreatorInteractionsFromCloud?.()
+        } catch {}
       }).catch(() => {})
       const ids = getCreatorContent(user.id, user.handle).map((p) => p.id).filter(Boolean)
       if (ids.length) {
@@ -274,12 +297,12 @@ export default function CreatorStudio({
       }
     }
     sync()
-    const t = setInterval(sync, 20000)
+    const t = setInterval(sync, section === 'analytics' ? 12000 : 20000)
     return () => {
       cancelled = true
       clearInterval(t)
     }
-  }, [user?.id, user?.provider, user?.handle])
+  }, [user?.id, user?.provider, user?.handle, section])
 
   const finishOnboarding = () => {
     if (user?.id) lsSet(`calabi_onboarding_done_${user.id}`, true)
@@ -558,6 +581,8 @@ export default function CreatorStudio({
                   onSelectPost={setSelectedPostId}
                   postTitle={selectedPost?.title}
                   creator={user}
+                  onRefresh={refreshAudienceFromCloud}
+                  refreshing={cloudSyncBusy}
                 />
               </div>
               <div className="shrink-0 max-h-[40%] overflow-y-auto border-t border-zinc-800 pt-3">

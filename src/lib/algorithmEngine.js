@@ -199,6 +199,7 @@ export function recordInteraction(userId, event) {
   })
 
   if (event.creatorId) {
+    // Only map-relevant actions — loop/complete/impression inflate the bubble and are ignored by logCreatorInteraction.
     logCreatorInteraction({
       creatorId: event.creatorId,
       contentId: event.contentId,
