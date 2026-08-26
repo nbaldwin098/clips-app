@@ -71,7 +71,6 @@ export default function ShortsStage({
   useEffect(() => {
     if (!n) return
     const start = Math.max(0, Math.min(n - 1, Number(initialIndex) || 0))
-    // Do not include `n` — skipping an empty ad must not rewind to the first clip.
     const token = `${start}:${loop}`
     if (lastStart.current === token) return
     lastStart.current = token
@@ -85,9 +84,6 @@ export default function ShortsStage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [n, initialIndex, loop])
 
-  // When slides are removed (empty ads) or added, re-align only if we would
-  // otherwise sit between two clips. Never freeze the scroller if the user
-  // is already moving past the slot.
   useEffect(() => {
     if (!n || lastCount.current === n) return
     lastCount.current = n
@@ -203,7 +199,7 @@ export default function ShortsStage({
             <div
               key={row.key}
               className={slideShell}
-              style={{ height: '100%', minHeight: '100%' }}
+              style={{ height: '100%', minHeight: '100%', flex: '0 0 100%' }}
             >
               {Math.abs(row.reelIdx - reelPos) <= PRELOAD_NEAR
                 ? renderSlide(row.index, row.reelIdx === reelPos, Math.abs(row.reelIdx - reelPos) === 1)

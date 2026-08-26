@@ -100,7 +100,6 @@ function ClipSlide({
     if (http) {
       setSrc(parsed?.src || raw)
       setResolving(false)
-      // Still try IDB as a silent fallback if the hosted URL dies later (onError).
       return () => { cancelled = true }
     }
 
@@ -432,9 +431,10 @@ function ClipFeedAdSlide({ active, warm = false, ad, onEmpty }) {
   const filledRef = useRef(false)
   useEffect(() => {
     if (!active || filledRef.current) return undefined
+    // ExoClick fill timeout is 6s — do not skip the slide before it can paint.
     const t = window.setTimeout(() => {
       if (!filledRef.current) onEmpty?.()
-    }, 2800)
+    }, 7500)
     return () => window.clearTimeout(t)
   }, [active, onEmpty])
 
@@ -465,17 +465,12 @@ export default function ShortsFeed({
     const base = (tab === 'following' ? following : recommended).filter(isFeedable)
     if (!focusId) return base
 
-    // Click stash / catalog — same resolver watch uses. Profile and "Also on"
-    // open clips that are often missing from the frozen home shorts feed.
     const focused = getWatchItem(focusId)
     if (!focused || focused.type !== 'short' || !isFeedable(focused)) {
-      // Dead / deleted uploads must not become empty snap slots in the reel.
       if (base.some((i) => i.id === focusId)) return base
       return base
     }
 
-    // Prefer that creator's clips so a channel-page tap stays on their reel
-    // instead of dumping into a random global shuffle.
     const creatorId = focused.creatorId || focused.userId
     const creatorClips = getCreatorPublicContent(creatorId, focused.handle)
       .filter((i) => i.type === 'short' && isFeedable(i))
@@ -483,7 +478,6 @@ export default function ShortsFeed({
     const rest = pool.filter((i) => i.id !== focused.id)
     return [focused, ...rest]
   }, [tab, following, recommended, focusId, syncTick])
-  // Ads only in the open player while scrolling — Recommended grid stays clean.
   const mixed = useMemo(() => {
     if (!focusId) return []
     return mixFeedAds(items, 'clip-feed', user?.id)
@@ -571,7 +565,7 @@ export default function ShortsFeed({
       count={visibleMixed.length}
       activeIndex={activeIdx}
       goToRef={goToRef}
-      loop={visibleMixed.length >= 4}
+      loop={visibleMixed.length >= 1}
       onActiveIndex={(i) => {
         const prev = visibleMixed[prevIdx.current]?.item
         const waited = Date.now() - shownAt.current
