@@ -96,7 +96,7 @@ function catalogSyncErrorMessage(error) {
 }
 
 export async function pushContentRecord(record, actor) {
-  if (!record?.id || !actor?.id || actor.provider !== 'supabase' || !isSupabaseConfigured()) {
+  if (!record?.id || !actor?.id || !isSupabaseConfigured()) {
     return { ok: false, error: 'Catalog sync unavailable.' }
   }
   const media = cloudUrl(record.mediaUrl) || cloudUrl(record.sourceUrl)
@@ -104,6 +104,10 @@ export async function pushContentRecord(record, actor) {
   try {
     const sb = await getSupabase()
     if (!sb) return { ok: false, error: 'Catalog sync unavailable.' }
+    const { data: sessionData } = await sb.auth.getSession()
+    if (!sessionData?.session?.user?.id) {
+      return { ok: false, error: 'Sign in required to publish.' }
+    }
     const { error } = await sb.from(TABLE).upsert(toRow(record, actor), { onConflict: 'id' })
     if (error) {
       console.warn('[Clips] Cloud content sync (push) failed:', error.message)
@@ -141,29 +145,61 @@ export async function pullContentRecords(limit = PULL_LIMIT) {
   }
 }
 
-export async function deleteContentRecord(id, actor) {
-  if (!id || !actor?.id || actor.provider !== 'supabase' || !isSupabaseConfigured()) return false
+/**
+ * Delete a catalog row in Supabase.
+ * Uses the live auth session (not actor.provider flags), so owner/local-labeled
+ * sessions still delete when signed into Supabase.
+ */
+export async function deleteContentRecord(id, actor = null) {
+  if (!id || !isSupabaseConfigured()) return false
   try {
     const sb = await getSupabase()
     if (!sb) return false
-    const { error } = await sb.from(TABLE).delete().eq('id', id).eq('creator_id', actor.id)
-    return !error
-  } catch {
+    const { data: sessionData } = await sb.auth.getSession()
+    const uid = sessionData?.session?.user?.id || null
+    if (!uid) {
+      console.warn('[Clips] deleteContentRecord: no auth session')
+      return false
+    }
+
+    // Prefer scoped delete (matches RLS creator_id = auth.uid())
+    let { error } = await sb.from(TABLE).delete().eq('id', id).eq('creator_id', uid)
+    if (error) {
+      console.warn('[Clips] scoped delete failed:', error.message)
+    }
+
+    // Verify gone; if still present try id-only (admin policies)
+    const { data: still } = await sb.from(TABLE).select('id').eq('id', id).maybeSingle()
+    if (still?.id) {
+      const res2 = await sb.from(TABLE).delete().eq('id', id)
+      if (res2.error) {
+        console.warn('[Clips] id delete failed:', res2.error.message)
+        return false
+      }
+    }
+
+    const { data: check } = await sb.from(TABLE).select('id').eq('id', id).maybeSingle()
+    return !check?.id
+  } catch (err) {
+    console.warn('[Clips] deleteContentRecord failed:', err?.message)
     return false
   }
 }
 
 async function deleteOwnedDeadRows(actor) {
-  if (!actor?.id || actor.provider !== 'supabase' || !isSupabaseConfigured()) return
+  if (!actor?.id || !isSupabaseConfigured()) return
   const sb = await getSupabase()
   if (!sb) return
   try {
-    const { data } = await sb.from(TABLE).select('id, type, media_url, source_url, thumb_url, origin, hosted').eq('creator_id', actor.id)
+    const { data: sessionData } = await sb.auth.getSession()
+    const uid = sessionData?.session?.user?.id
+    if (!uid) return
+    const { data } = await sb.from(TABLE).select('id, type, media_url, source_url, thumb_url, origin, hosted').eq('creator_id', uid)
     for (const row of data || []) {
       const mapped = fromRow(row)
       if (keepCloudRow(mapped)) continue
       if (isUserUploadRecord(mapped)) continue
-      await sb.from(TABLE).delete().eq('id', row.id).eq('creator_id', actor.id)
+      await sb.from(TABLE).delete().eq('id', row.id).eq('creator_id', uid)
     }
   } catch {}
 }
@@ -189,7 +225,6 @@ export async function syncContentFromCloud(actor = null) {
     })
     replaceImportsFromCloud([...pending, ...rows])
   } else {
-    // Empty pull: do not erase session catalog (upload would vanish).
     mergeImports([])
   }
   purgeDeadCatalog()
