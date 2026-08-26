@@ -36,9 +36,9 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 
 | ID | Area | Issue | Notes | Status |
 |----|------|-------|-------|--------|
-| BUG-001 | Cloud / uploads | Confirm production uploads work after Next env fix (#104) | Verify `VITE_SUPABASE_*` on Node service; Clear build cache & redeploy; test video + clip + pic | `open` |
+| BUG-001 | Cloud / uploads | Confirm production uploads work after Next env fix (#104) | Owner confirmed uploads stick after refresh on Node deploy | `done` |
 | BUG-002 | Storage | Confirm public bucket named exactly `clips` exists | Migration `0003_clips_storage_bucket.sql`; policies for public read + owner write | `open` |
-| BUG-003 | Catalog | Confirm `videos` table still has rows after migrate | If empty, investigate wipe/purge; restore from backup if any | `open` |
+| BUG-003 | Catalog | Confirm `videos` table still has rows after migrate | Live SSR titles for `/FoHGp57XPSB`, `/ZVD42PXmSuI`, org posts; removed stale `public/sitemap.xml` that hid dynamic sitemap | `done` |
 | BUG-004 | Auth | CS1 / owner cloud login edge cases still fragile | Recent URGENT restores; add regression test for owner + Supabase session | `open` |
 | BUG-005 | Next / SEO | SpaShell still owns most routes | Finish PR: every known path has App Router page + metadata; SpaShell remains client UI bridge | `done` |
 | BUG-006 | Next / nav | Client `pushState` routing vs Next App Router | Done in #107 (`NextNavContext` + `router.push`) | `done` |
@@ -111,6 +111,8 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 
 | ID | Issue | PR | Date |
 |----|-------|-----|------|
+| BUG-001 | Production uploads confirmed after Next env fix | owner check | 2026-08-26 |
+| BUG-003 | `videos` catalog has live rows; drop static sitemap override | #110 | 2026-08-26 |
 | BUG-113 | Next SEO finish: all known routes have App Router pages + metadata | #109 | 2026-08-26 |
 | BUG-005 | SpaShell route peel / Next SEO rebuild | #103–#109 | 2026-08-26 |
 | BUG-112 | Next SEO Phase 3: section routes + NextNavContext | #107 | 2026-08-26 |
@@ -140,11 +142,11 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 
 ## Next 5 to pull (suggested order)
 
-1. **BUG-001** — Prove uploads work on production Node deploy  
-2. **BUG-002** / **BUG-003** — Bucket + `videos` table health  
-3. **BUG-008** — Fix smoke suite so CI means something again  
-4. **BUG-027** — Close/rebase stale open PRs  
-5. **BUG-012** — Decide AdSense vs none and wire or drop #102
+1. **BUG-002** — Confirm Storage bucket is named exactly `clips`  
+2. **BUG-008** — Fix smoke suite so CI means something again  
+3. **BUG-027** — Close/rebase stale open PRs  
+4. **BUG-012** — Decide AdSense vs none and wire or drop #102  
+5. **BUG-004** — Harden owner / CS1 cloud login
 
 ---
 
