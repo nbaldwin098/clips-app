@@ -13,7 +13,6 @@ import {
   Play,
   RotateCcw,
   Trash2,
-  Sparkles,
   Clapperboard,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
@@ -63,7 +62,7 @@ const STUDIO_NAV = [
 
 const SECTION_META = {
   overview: { title: 'Creator Studio', subtitle: 'Posts, activity, and shortcuts' },
-  analytics: { title: 'Analytics', subtitle: 'Views, likes, and growth' },
+  analytics: { title: 'Analytics', subtitle: 'Where and how people interact with your posts' },
   wallet: { title: 'Wallet & revenue', subtitle: 'Cash, memberships, and payouts' },
   vods: { title: 'VOD library', subtitle: 'Past live lobbies on this device' },
   verify: { title: 'Verification', subtitle: 'ID check for a verified badge' },
@@ -243,7 +242,6 @@ export default function CreatorStudio({
   const [restoreBusy, setRestoreBusy] = useState(false)
   const [restoreNote, setRestoreNote] = useState('')
   const [deletingId, setDeletingId] = useState(null)
-  const [showHub, setShowHub] = useState(false)
 
   useEffect(() => {
     if (initialSection) setSection(initialSection)
@@ -507,47 +505,37 @@ export default function CreatorStudio({
                   { label: 'Lobby', value: live?.isLive ? 'Live' : 'Off', hint: approved ? `$${balance.paid.toFixed(2)} paid` : 'Apply to earn' },
                 ]}
               />
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowHub(false)}
-                  className={cn('h-8 px-3 text-xs font-semibold', !showHub ? 'bg-white text-black' : 'border border-zinc-700 text-zinc-300')}
-                >
-                  Activity map
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowHub(true)}
-                  className={cn('h-8 px-3 text-xs font-semibold', showHub ? 'bg-white text-black' : 'border border-zinc-700 text-zinc-300')}
-                >
-                  <span className="inline-flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5" /> Hub</span>
-                </button>
-              </div>
-              {showHub ? (
-                <StudioHub
-                  onNavigate={onNavigate}
-                  onOpenUpload={onOpenUpload}
-                  onOpenImport={onOpenImport}
-                  approved={approved}
-                />
-              ) : (
-                <div className="min-h-[320px] flex-1">
-                  <InteractionBubbleMap
-                    nodes={bubbles}
-                    range={range}
-                    onRangeChange={setRange}
-                    selectedPostId={selectedPostId}
-                    onSelectPost={setSelectedPostId}
-                    postTitle={selectedPost?.title}
-                  />
-                </div>
-              )}
+              <StudioHub
+                onNavigate={onNavigate}
+                onOpenUpload={onOpenUpload}
+                onOpenImport={onOpenImport}
+                approved={approved}
+              />
+              <button
+                type="button"
+                onClick={() => setSection('analytics')}
+                className="self-start h-9 px-3 border border-zinc-700 text-xs text-white hover:bg-white hover:text-black"
+              >
+                Open interaction map in Analytics →
+              </button>
             </div>
           ) : null}
 
           {section === 'analytics' ? (
-            <div className="h-full overflow-y-auto">
-              <CreatorAnalyticsPanel embedded onNavigate={onNavigate} />
+            <div className="h-full min-h-0 flex flex-col gap-4 overflow-hidden">
+              <div className="min-h-0 flex-1 min-h-[320px]">
+                <InteractionBubbleMap
+                  nodes={bubbles}
+                  range={range}
+                  onRangeChange={setRange}
+                  selectedPostId={selectedPostId}
+                  onSelectPost={setSelectedPostId}
+                  postTitle={selectedPost?.title}
+                />
+              </div>
+              <div className="shrink-0 max-h-[40%] overflow-y-auto border-t border-zinc-800 pt-3">
+                <CreatorAnalyticsPanel embedded onNavigate={onNavigate} />
+              </div>
             </div>
           ) : null}
 
