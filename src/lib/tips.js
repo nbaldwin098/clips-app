@@ -228,14 +228,16 @@ export function claimStripeReturn(user, params = {}, search = '') {
   }
   if (pending?.kind === 'calabi_cash') {
     if (pending.donorId !== user.id) return { ok: false, kind: '' }
-    const units = Math.floor(Number(pending.units) || usdToCashUnits(pending.amount))
+    const tier = getTierById(pending.tierId)
+    const units = Math.floor(Number(pending.units) || tier?.units || usdToCashUnits(pending.amount))
     creditCalabiCash(user.id, units, {
       kind: 'purchase',
       tierId: pending.tierId,
       usd: pending.amount,
       note: 'Calabi Cash pack',
+      coins: tier?.coins || 0,
     })
-    return { ok: true, kind: 'calabi_cash', units }
+    return { ok: true, kind: 'calabi_cash', units, coins: tier?.coins || 0 }
   }
   if (pending?.kind === 'post_purchase') {
     if (pending.donorId === user.id && pending.contentId) markContentPurchased(user.id, pending.contentId)

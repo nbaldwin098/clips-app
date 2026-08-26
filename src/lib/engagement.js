@@ -71,8 +71,8 @@ export function toggleVote(userId, contentId, direction, meta = {}) {
   return cur
 }
 
-/** Like once. Never removes a like. Does not write the signed-in user's Liked page. */
-export function ensureUpvote(userId, contentId) {
+/** Like once. Never removes a like. Logs creator interaction when first liked. */
+export function ensureUpvote(userId, contentId, meta = {}) {
   if (!userId || !contentId) return getVotes(contentId)
   const votes = lsGet(USER_VOTES, {})
   const mine = { ...(votes[userId] || {}) }
@@ -86,6 +86,27 @@ export function ensureUpvote(userId, contentId) {
   tally[contentId] = cur
   lsSet(USER_VOTES, votes)
   lsSet(LIKES, tally)
+  const liked = new Set(lsGet('liked', []))
+  liked.add(contentId)
+  lsSet('liked', [...liked])
+  pushVote(userId, contentId, 'up')
+  notifyNewLike(contentId, userId)
+  queueMicrotask(() => {
+    import('./creatorInteractions').then(({ logCreatorInteraction, creatorIdForContent }) => {
+      const creatorId = meta.creatorId || creatorIdForContent(contentId)
+      if (!creatorId) return
+      logCreatorInteraction({
+        creatorId,
+        contentId,
+        type: 'like',
+        actorId: userId,
+        title: meta.title || '',
+        surface: meta.surface || 'unknown',
+        contentType: meta.contentType || null,
+      })
+    }).catch(() => {})
+  })
+  notifyContentChanged()
   return cur
 }
 
@@ -106,15 +127,25 @@ export function recordView(contentId, meta = {}) {
     import('./creatorInteractions').then(({ logCreatorInteraction, creatorIdForContent }) => {
       const creatorId = meta.creatorId || creatorIdForContent(contentId)
       if (!creatorId) return
+      const actorId = meta.actorId || null
       logCreatorInteraction({
         creatorId,
         contentId,
         type: 'view',
-        actorId: meta.actorId || null,
+        actorId,
         title: meta.title || '',
         surface: meta.surface || 'unknown',
         contentType: meta.contentType || null,
       })
+      import('./economySync').then(({ pushContentView }) => {
+        pushContentView({
+          contentId,
+          creatorId,
+          actorId,
+          surface: meta.surface || 'unknown',
+          contentType: meta.contentType || null,
+        }).catch(() => {})
+      }).catch(() => {})
     }).catch(() => {})
   })
   return map[contentId]
@@ -239,7 +270,26 @@ export function addPremiumSub(userId, creatorId) {
   if (!isSubscribed(userId, creatorId)) {
     toggleSubscribe(userId, creatorId, { notify: false })
   }
-  if (isNew) notifyPremium(creatorId, userId)
+  if (isNew) {
+    notifyPremium(creatorId, userId)
+    queueMicrotask(() => {
+      import('./economySync').then(({ pushPremiumSub }) => {
+        pushPremiumSub(userId, creatorId).catch(() => {})
+      }).catch(() => {})
+      import('./creatorInteractions').then(({ logCreatorInteraction }) => {
+        logCreatorInteraction({
+          creatorId,
+          contentId: null,
+          type: 'subscribe',
+          actorId: userId,
+          title: 'Premium member',
+          surface: 'channel',
+          contentType: 'channel',
+          weight: 3,
+        })
+      }).catch(() => {})
+    })
+  }
   return true
 }
 

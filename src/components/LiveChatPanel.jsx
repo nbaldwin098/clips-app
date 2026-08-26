@@ -12,7 +12,7 @@ import {
 import { useAuth } from '../context/AuthContext'
 import { cn } from '../lib/utils'
 import { trySendLiveChat, removeLiveChatMessage } from '../lib/liveChat'
-import { subscribeLiveChat } from '../lib/liveChatSync'
+import { subscribeLiveChat, GLOBAL_LIVE_CHANNEL_ID, isGlobalLiveChannel } from '../lib/liveChatSync'
 import { isChannelMod, timeoutChatUser, banChatUser } from '../lib/channelStaff'
 import { startTipCheckout, tipWithCalabiCash, TIP_AMOUNTS, TIP_AMOUNT_MIN, TIP_AMOUNT_MAX } from '../lib/tips'
 import { getCalabiCashBalance } from '../lib/calabiCash'
@@ -74,13 +74,10 @@ export default function LiveChatPanel({
   const chatContainerRef = useRef(null)
   const isScrolledToBottomRef = useRef(true)
 
-  const streamUserId = channel?.userId || null
+  const streamUserId = channel?.userId || GLOBAL_LIVE_CHANNEL_ID
+  const isGlobal = isGlobalLiveChannel(streamUserId) || !channel?.userId
 
   useEffect(() => {
-    if (!streamUserId) {
-      setMessages([])
-      return undefined
-    }
     return subscribeLiveChat(streamUserId, (list) => {
       setMessages(list)
       const last = list[list.length - 1]
@@ -106,12 +103,12 @@ export default function LiveChatPanel({
 
   const handleSendMessage = (e) => {
     e?.preventDefault()
-    if (!inputText.trim() || !streamUserId) return
+    if (!inputText.trim()) return
     if (!isAuthenticated) {
       onOpenAuth?.()
       return
     }
-    const result = trySendLiveChat(streamUserId, {
+    const result = trySendLiveChat(isGlobal ? GLOBAL_LIVE_CHANNEL_ID : streamUserId, {
       userId: user.id,
       handle: user.handle,
       text: inputText.trim().slice(0, 500),
@@ -129,7 +126,10 @@ export default function LiveChatPanel({
 
   const donateLive = async (amount) => {
     if (!isAuthenticated) { onOpenAuth?.(); return }
-    if (!streamUserId) return
+    if (isGlobal || !channel?.userId) {
+      setChatError('Open a creator stream to tip.')
+      return
+    }
     setTipBusy(String(amount))
     const result = await startTipCheckout({
       user,
@@ -145,7 +145,10 @@ export default function LiveChatPanel({
 
   const donateCash = () => {
     if (!isAuthenticated) { onOpenAuth?.(); return }
-    if (!streamUserId) return
+    if (isGlobal || !channel?.userId) {
+      setChatError('Open a creator stream to tip with Cash.')
+      return
+    }
     const result = tipWithCalabiCash({
       user,
       creatorId: streamUserId,
@@ -157,7 +160,7 @@ export default function LiveChatPanel({
     if (result.ok) setRequestText('')
   }
 
-  const canMod = isAuthenticated && streamUserId && isChannelMod(streamUserId, user)
+  const canMod = isAuthenticated && !isGlobal && streamUserId && isChannelMod(streamUserId, user)
 
   const handleAddEmote = (symbol) => {
     setInputText((prev) => (prev ? `${prev} ${symbol}` : symbol))
@@ -183,7 +186,7 @@ export default function LiveChatPanel({
 
         <div className="flex items-center gap-1.5 min-w-0">
           <span className="text-xs font-bold uppercase tracking-wider text-zinc-200 truncate">
-            {channel ? `@${channel.handle} chat` : 'Live chat'}
+            {isGlobal ? 'Global chat' : `@${channel?.handle || 'creator'} chat`}
           </span>
         </div>
 
@@ -233,7 +236,11 @@ export default function LiveChatPanel({
       {!channel ? (
         <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-2">
           <MessageSquare className="h-6 w-6 text-zinc-600" />
-          <p className="text-xs text-zinc-500">Select a live channel to view its chat.</p>
+          {isGlobal ? (
+            <p className="text-[11px] text-zinc-500 px-1 pb-2">
+              Site-wide lobby. Open a live creator to switch into their chat.
+            </p>
+          ) : null}
         </div>
       ) : (
         <>

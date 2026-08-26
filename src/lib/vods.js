@@ -78,6 +78,19 @@ export function setVodVisibility(vodId, visibility) {
       })
     }
   }
+  if (row?.userId) {
+    queueMicrotask(() => {
+      import('./supabaseClient').then(async ({ getSupabase, isSupabaseConfigured }) => {
+        if (!isSupabaseConfigured()) return
+        const { getGraphActor } = await import('./graphSync')
+        const actor = getGraphActor()
+        if (!actor?.id || actor.id !== row.userId) return
+        const sb = await getSupabase()
+        if (!sb) return
+        await sb.from('vods').update({ visibility }).eq('id', vodId).eq('user_id', row.userId)
+      }).catch(() => {})
+    })
+  }
   return row
 }
 
@@ -126,5 +139,27 @@ export function archiveEndedLive(user, liveState) {
   const all = lsGet(VODS_KEY, []) || []
   all.unshift(vod)
   lsSet(VODS_KEY, all.slice(0, 400))
+  queueMicrotask(() => {
+    import('./supabaseClient').then(async ({ getSupabase, isSupabaseConfigured }) => {
+      if (!isSupabaseConfigured()) return
+      const { getGraphActor } = await import('./graphSync')
+      const actor = getGraphActor()
+      if (!actor?.id || actor.id !== user.id) return
+      const sb = await getSupabase()
+      if (!sb) return
+      await sb.from('vods').upsert({
+        id: vod.id,
+        user_id: user.id,
+        title: vod.title,
+        started_at: vod.startedAt,
+        ended_at: vod.endedAt,
+        duration_sec: vod.durationSec,
+        visibility: vod.visibility,
+        category: vod.category || null,
+        meta: { watchers: vod.watchers || 0, contentId: vod.contentId || null },
+        created_at: vod.endedAt,
+      })
+    }).catch(() => {})
+  })
   return vod
 }

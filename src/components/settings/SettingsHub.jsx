@@ -12,6 +12,7 @@ import RolesSettings from './RolesSettings'
 import AnalyticsSettings from './AnalyticsSettings'
 import CopyrightSettings from './CopyrightSettings'
 import LegalSettings from './LegalSettings'
+import WalletSettings from './WalletSettings'
 
 const PAGES = {
   account: AccountSettings,
@@ -27,6 +28,7 @@ const PAGES = {
   analytics: AnalyticsSettings,
   copyright: CopyrightSettings,
   legal: LegalSettings,
+  wallet: WalletSettings,
 }
 
 export default function SettingsHub({ section, onNavigate }) {

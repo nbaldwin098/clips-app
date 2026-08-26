@@ -1,5 +1,5 @@
 import { getLiveChat, postLiveChat, isPremiumSub, isSubscribed } from './engagement'
-import { removeLiveChatMessageCloud } from './liveChatSync'
+import { removeLiveChatMessageCloud, isGlobalLiveChannel, GLOBAL_LIVE_CHANNEL_ID } from './liveChatSync'
 import { getStreamSettings } from './streamSettings'
 import { getUserSettings } from './storage'
 import { getChannelStaff, isChannelMod } from './channelStaff'
@@ -9,6 +9,7 @@ function blockedPhrases(channelId) {
     .split('\n')
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean)
+  if (isGlobalLiveChannel(channelId)) return global
   const staff = getChannelStaff(channelId)
   const extra = String(staff.blockedTerms || '')
     .split('\n')
@@ -23,10 +24,21 @@ export function removeLiveChatMessage(streamUserId, messageId) {
 }
 
 export function trySendLiveChat(streamUserId, message, { actor } = {}) {
-  if (!streamUserId) return { ok: false, error: 'No live channel.' }
+  const channelId = streamUserId || GLOBAL_LIVE_CHANNEL_ID
   const text = String(message?.text || '').trim().slice(0, 500)
   if (!text) return { ok: false, error: 'Write a message.' }
   const userId = message.userId
+
+  if (isGlobalLiveChannel(channelId)) {
+    const lower = text.toLowerCase()
+    if (blockedPhrases(channelId).some((w) => w && lower.includes(w))) {
+      return { ok: false, error: 'That phrase is blocked in this chat.' }
+    }
+    postLiveChat(GLOBAL_LIVE_CHANNEL_ID, { ...message, text, kind: message.kind || 'chat' })
+    return { ok: true }
+  }
+
+  if (!streamUserId) return { ok: false, error: 'No live channel.' }
   const staff = getChannelStaff(streamUserId)
   const settings = getStreamSettings(streamUserId)
 

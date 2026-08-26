@@ -57,7 +57,7 @@ export default function MonetizationSettings({ onNavigate }) {
               <SettingsButton variant="ghost" onClick={() => onNavigate?.('settings', 'revenue')}>
                 Revenue dashboard
               </SettingsButton>
-              <SettingsButton variant="ghost" onClick={() => onNavigate?.('wallet')}>
+              <SettingsButton variant="ghost" onClick={() => onNavigate?.('settings', 'wallet')}>
                 Wallet
               </SettingsButton>
               <SettingsButton variant="ghost" onClick={() => onNavigate?.('calabi-cash')}>

@@ -20,7 +20,7 @@ export default function HelpPage() {
     },
     {
       q: 'Where is Studio, Wallet, and analytics?',
-      a: 'Open your profile picture in the top right → Creator dashboard. Analytics, wallet, VODs, and verify live inside the dashboard. Site settings is the other item in that menu. Create (upload and go live) is in the left menu, under Live.',
+      a: 'Open your profile picture → Creator dashboard (Analytics, Earnings, VODs, Stream, Verify). Under Site settings: Account and Wallet & Cash. Create (upload / go live) is in the left menu.',
     },
     {
       q: 'Can I watch without an account?',
@@ -40,7 +40,7 @@ export default function HelpPage() {
     },
     {
       q: 'How do creator payouts work?',
-      a: 'Anyone signed in can upload or go live from Create. To earn, apply from Creator dashboard → Wallet or the apply page. Admin sends payouts by hand after approval. Views are not worth $1 per 1,000. There is no automatic bank withdraw.',
+      a: 'Anyone signed in can upload or go live from Create. To earn, apply from Creator dashboard → Earnings or the apply page. Admin sends payouts after approval. Withdrawals are requested from Earnings. Views are not worth $1 per 1,000.',
     },
     {
       q: 'How do I report copyright infringement?',

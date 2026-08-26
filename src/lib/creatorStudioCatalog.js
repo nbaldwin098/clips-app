@@ -13,7 +13,7 @@ export const CREATOR_STUDIO_GROUPS = [
       { id: 'import', label: 'Import link', route: { view: 'dashboard', action: 'import' }, status: 'live' },
       { id: 'calabi-studio', label: 'Calabi Studio', route: { view: 'calabi-studio' }, status: 'partial' },
       { id: 'studio-tools', label: 'Drafts & schedule', route: { view: 'studio-tools' }, status: 'partial' },
-      { id: 'vods', label: 'VOD channel', route: { view: 'vods' }, status: 'partial' },
+      { id: 'vods', label: 'VOD channel', route: { view: 'dashboard', section: 'vods' }, status: 'live' },
     ],
   },
   {
@@ -22,8 +22,8 @@ export const CREATOR_STUDIO_GROUPS = [
     description: 'Stream key, multi-stream, pools, challenges',
     items: [
       { id: 'go-live', label: 'Go live lobby', route: { view: 'live' }, status: 'partial' },
-      { id: 'stream-settings', label: 'Stream & ingest', route: { view: 'settings', section: 'stream' }, status: 'partial' },
-      { id: 'stream-key', label: 'Stream key', route: { view: 'settings', section: 'stream' }, status: 'live' },
+      { id: 'stream-settings', label: 'Stream & ingest', route: { view: 'dashboard', section: 'stream' }, status: 'live' },
+      { id: 'stream-key', label: 'Stream key', route: { view: 'dashboard', section: 'stream' }, status: 'live' },
       { id: 'multi-stream', label: 'Multi-stream YT/TikTok', route: { view: 'live' }, status: 'partial' },
     ],
   },
@@ -54,9 +54,10 @@ export const CREATOR_STUDIO_GROUPS = [
     label: 'Revenue',
     description: 'Memberships, payouts, and monetization',
     items: [
+      { id: 'earnings', label: 'Earnings portal', route: { view: 'dashboard', section: 'earnings' }, status: 'live' },
       { id: 'revenue', label: 'Revenue dashboard', route: { view: 'settings', section: 'revenue' }, status: 'live' },
-      { id: 'wallet', label: 'Wallet & payouts', route: { view: 'wallet' }, status: 'live' },
-      { id: 'calabi-cash', label: 'Calabi Cash', route: { view: 'calabi-cash' }, status: 'live' },
+      { id: 'wallet', label: 'Wallet & Cash', route: { view: 'settings', section: 'wallet' }, status: 'live' },
+      { id: 'calabi-cash', label: 'Calabi Cash', route: { view: 'settings', section: 'wallet' }, status: 'live' },
       { id: 'monetization', label: 'Membership & 80/20 split', route: { view: 'settings', section: 'monetization' }, status: 'live' },
       { id: 'stripe-connect', label: 'Stripe Connect', route: null, status: 'planned' },
     ],

@@ -105,7 +105,7 @@ export default function RevenueSettings({ hideHeader = false, onNavigate }) {
           <SettingsButton variant="ghost" onClick={() => onNavigate?.('settings', 'monetization')}>
             Membership price
           </SettingsButton>
-          <SettingsButton variant="ghost" onClick={() => onNavigate?.('wallet')}>
+          <SettingsButton variant="ghost" onClick={() => onNavigate?.('settings', 'wallet')}>
             Open wallet
           </SettingsButton>
         </div>

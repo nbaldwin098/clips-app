@@ -540,6 +540,10 @@ function AppShell() {
           />
         )
       case 'wallet':
+        return <SettingsHub section="wallet" onNavigate={navigate} />
+      case 'calabi-cash':
+        return <SettingsHub section="wallet" onNavigate={navigate} />
+      case 'stream-settings':
         return (
           <CreatorStudio
             onOpenImport={openImport}
@@ -547,7 +551,7 @@ function AppShell() {
             onNavigate={navigate}
             onPlayItem={openWatch}
             onOpenAuth={openAuth}
-            initialSection="wallet"
+            initialSection="stream"
           />
         )
       case 'analytics':
@@ -568,12 +572,6 @@ function AppShell() {
       case 'community': return <CommunityPage onNavigate={navigate} onOpenAuth={openAuth} />
       case 'studio-tools': return <StudioToolsPage onNavigate={navigate} />
       case 'calabi-studio': return <CalabiStudioPage onNavigate={navigate} />
-      case 'calabi-cash': return (
-        <div className="p-4 md:p-6 max-w-3xl mx-auto">
-          <CalabiCashShopPage />
-        </div>
-      )
-      case 'stream-settings': return <StreamSettingsPage onNavigate={navigate} />
       case 'settings': return <SettingsHub section={routeId} onNavigate={navigate} />
       case 'explore': return <ExplorePage onPlayItem={openWatch} onOpenPic={openPic} onOpenTag={openTag} initialQuery={searchQuery} onApplyQuery={setSearchQuery} />
       case 'pics': return <PicsPage onOpenAuth={openAuth} onOpenProfile={openProfile} initialPicId={routeId} />

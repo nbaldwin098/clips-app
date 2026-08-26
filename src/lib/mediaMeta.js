@@ -68,13 +68,17 @@ function noonTodayIso() {
   return d.toISOString()
 }
 
+// kept for rare seed fallbacks; postedAtOf no longer forces "today"
+void noonTodayIso
+
+
 /**
  * Prefer the immutable first-publish stamp. Never invent a new clock on edits.
  * Order: firstPublishedAt → publishedAt → createdAt → importedAt.
+ * Library/org rows keep their seeded createdAt — never rewrite to "today".
  */
 export function postedAtOf(item) {
   if (!item || typeof item !== 'object') return ''
-  if (isLibraryRecord(item)) return noonTodayIso()
   const raw =
     item.firstPublishedAt
     || item.publishedAt
@@ -82,8 +86,8 @@ export function postedAtOf(item) {
     || item.importedAt
     || ''
   const t = parsePostedTime(raw)
-  // Cloud merges used to keep Unix-epoch / 1969 stamps. Those are not real post dates.
-  if (t && t < Date.parse('2000-01-01T00:00:00.000Z')) return noonTodayIso()
+  // Cloud merges used to keep Unix-epoch / 1969 stamps — treat as missing, not "today".
+  if (t && t < Date.parse('2000-01-01T00:00:00.000Z')) return ''
   return raw
 }
 
@@ -118,28 +122,31 @@ export function formatPostedExact(iso) {
   })
 }
 
+/** YouTube-style relative time — never collapse a whole day to just "today". */
 export function formatPostedAt(iso, now = Date.now()) {
   if (!iso) return ''
   const t = parsePostedTime(iso)
   if (!t) return ''
   const diff = now - t
-  const a = new Date(t)
-  const b = new Date(now)
-  const sameDay = a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
   if (diff >= 0 && diff < 15_000) return 'just now'
-  if (sameDay) return 'today'
   const mins = Math.floor(diff / 60_000)
   if (diff < 60_000) return `${Math.max(1, Math.floor(diff / 1000))}s ago`
-  if (mins < 60) return `${mins}m ago`
+  if (mins < 60) return `${mins} minute${mins === 1 ? '' : 's'} ago`
   const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
+  if (hrs < 24) return `${hrs} hour${hrs === 1 ? '' : 's'} ago`
   const days = Math.floor(hrs / 24)
-  if (days < 7) return `${days}d ago`
-  if (days < 31) return `${Math.floor(days / 7)}w ago`
-  const months = Math.floor(days / 30)
-  if (months < 18) return `${months}mo ago`
-  const years = Math.floor(days / 365)
-  return `${years}y ago`
+  if (days < 7) return `${days} day${days === 1 ? '' : 's'} ago`
+  if (days < 28) {
+    const weeks = Math.floor(days / 7)
+    return `${weeks} week${weeks === 1 ? '' : 's'} ago`
+  }
+  const a = new Date(t)
+  const sameYear = a.getFullYear() === new Date(now).getFullYear()
+  return a.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    ...(sameYear ? {} : { year: 'numeric' }),
+  })
 }
 
 export function isRecentShort(item, hours = 72) {

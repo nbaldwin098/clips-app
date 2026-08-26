@@ -40,6 +40,7 @@ export function setStreamSettings(userId, partial) {
   const next = { ...getStreamSettings(userId), ...partial, updatedAt: new Date().toISOString() }
   all[userId] = next
   lsSet(KEY, all)
+  pushStreamSettingsCloud(userId, next)
   return next
 }
 
@@ -47,4 +48,58 @@ export function estimateVodGb(hours, qualityId = '1080p30') {
   const preset = QUALITY_PRESETS.find((p) => p.id === qualityId) || QUALITY_PRESETS[1]
   const gbPerHour = (preset.videoBitrateKbps * 3600) / 8 / 1e6
   return Math.round(hours * gbPerHour * 100) / 100
+}
+
+
+/** Push stream + VOD channel prefs to Supabase (migration 0016). */
+export function pushStreamSettingsCloud(userId, settings, vodChannel = null) {
+  if (!userId) return
+  queueMicrotask(() => {
+    import('./supabaseClient').then(async ({ getSupabase, isSupabaseConfigured }) => {
+      if (!isSupabaseConfigured()) return
+      const { getGraphActor } = await import('./graphSync')
+      const actor = getGraphActor()
+      if (!actor?.id || actor.id !== userId) return
+      const sb = await getSupabase()
+      if (!sb) return
+      const s = settings || getStreamSettings(userId)
+      await sb.from('stream_settings').upsert({
+        user_id: userId,
+        latency: s.latency || 'low',
+        default_quality: s.defaultQuality || '720p30',
+        stream_title_template: s.streamTitleTemplate || '',
+        store_past_broadcasts: s.storePastBroadcasts !== false,
+        auto_publish_vod: !!(vodChannel?.autoPublish ?? s.autoPublishVod),
+        vod_visibility: vodChannel?.visibility || s.vodVisibility || 'private',
+        vod_channel_enabled: !!vodChannel?.enabled,
+        vod_channel_handle: vodChannel?.handle || '',
+        updated_at: new Date().toISOString(),
+      })
+    }).catch(() => {})
+  })
+}
+
+export async function pullStreamSettingsCloud(userId) {
+  if (!userId) return null
+  try {
+    const { getSupabase, isSupabaseConfigured } = await import('./supabaseClient')
+    if (!isSupabaseConfigured()) return null
+    const { getGraphActor } = await import('./graphSync')
+    const actor = getGraphActor()
+    if (!actor?.id || actor.id !== userId) return null
+    const sb = await getSupabase()
+    if (!sb) return null
+    const { data, error } = await sb.from('stream_settings').select('*').eq('user_id', userId).maybeSingle()
+    if (error || !data) return null
+    return setStreamSettings(userId, {
+      latency: data.latency,
+      defaultQuality: data.default_quality,
+      streamTitleTemplate: data.stream_title_template,
+      storePastBroadcasts: data.store_past_broadcasts,
+      autoPublishVod: data.auto_publish_vod,
+      vodVisibility: data.vod_visibility,
+    })
+  } catch {
+    return null
+  }
 }
