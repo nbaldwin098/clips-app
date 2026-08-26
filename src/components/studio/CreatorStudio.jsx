@@ -31,6 +31,7 @@ import InteractionBubbleMap from './InteractionBubbleMap'
 import ErrorReportPrompt from '../ErrorReportPrompt'
 import CreatorAnalyticsPanel from '../settings/CreatorAnalyticsPanel'
 import RevenueSettings from '../settings/RevenueSettings'
+import CalabiCashShop from '../CalabiCashShop'
 import VerifyPage from '../VerifyPage'
 import {
   getIdVerificationForUser,
@@ -468,7 +469,8 @@ export default function CreatorStudio({
           ) : null}
 
           {section === 'wallet' ? (
-            <div className="h-full overflow-y-auto">
+            <div className="h-full overflow-y-auto p-4 space-y-8">
+              <CalabiCashShop />
               <RevenueSettings onNavigate={onNavigate} />
             </div>
           ) : null}

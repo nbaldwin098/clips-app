@@ -11,6 +11,7 @@ export const CREATOR_STUDIO_GROUPS = [
     items: [
       { id: 'upload', label: 'Upload', route: { view: 'dashboard', action: 'upload' }, status: 'live' },
       { id: 'import', label: 'Import link', route: { view: 'dashboard', action: 'import' }, status: 'live' },
+      { id: 'calabi-studio', label: 'Calabi Studio', route: { view: 'calabi-studio' }, status: 'partial' },
       { id: 'studio-tools', label: 'Drafts & schedule', route: { view: 'studio-tools' }, status: 'partial' },
       { id: 'vods', label: 'VOD channel', route: { view: 'vods' }, status: 'partial' },
     ],
@@ -18,12 +19,13 @@ export const CREATOR_STUDIO_GROUPS = [
   {
     id: 'live',
     label: 'Live',
-    description: 'Stream key, ingest, and live ads',
+    description: 'Stream key, multi-stream, pools, challenges',
     items: [
       { id: 'go-live', label: 'Go live lobby', route: { view: 'live' }, status: 'partial' },
       { id: 'stream-settings', label: 'Stream & ingest', route: { view: 'settings', section: 'stream' }, status: 'partial' },
       { id: 'stream-key', label: 'Stream key', route: { view: 'settings', section: 'stream' }, status: 'live' },
-      { id: 'live-ads', label: 'Live ad breaks', route: { view: 'settings', section: 'stream' }, status: 'live' },
+      { id: 'multi-stream', label: 'Multi-stream YT/TikTok', route: { view: 'live' }, status: 'partial' },
+      { id: 'live-ads', label: 'Live ad breaks', route: { view: 'settings', section: 'stream' }, status: 'planned' },
     ],
   },
   {
@@ -55,7 +57,8 @@ export const CREATOR_STUDIO_GROUPS = [
     items: [
       { id: 'revenue', label: 'Revenue dashboard', route: { view: 'settings', section: 'revenue' }, status: 'live' },
       { id: 'wallet', label: 'Wallet & payouts', route: { view: 'wallet' }, status: 'live' },
-      { id: 'monetization', label: 'Membership price', route: { view: 'settings', section: 'monetization' }, status: 'live' },
+      { id: 'calabi-cash', label: 'Calabi Cash', route: { view: 'calabi-cash' }, status: 'live' },
+      { id: 'monetization', label: 'Membership & 80/20 split', route: { view: 'settings', section: 'monetization' }, status: 'live' },
       { id: 'stripe-connect', label: 'Stripe Connect', route: null, status: 'planned' },
     ],
   },

@@ -109,6 +109,16 @@ export const SECTION_META = {
     description: 'Creator studio tools on calabi.',
     noindex: true,
   },
+  'calabi-studio': {
+    title: 'Calabi Studio',
+    description: 'Free CapCut-style editor, filters, AI avatars, and social clip push on calabi.',
+    noindex: true,
+  },
+  'calabi-cash': {
+    title: 'Calabi Cash',
+    description: 'Buy Calabi Cash to tip creators on lives, videos, clips, and pics.',
+    noindex: true,
+  },
   'stream-settings': {
     title: 'Stream settings',
     description: 'Stream settings on calabi.',
