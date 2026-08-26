@@ -122,6 +122,19 @@ assert(existsSync(new URL('../middleware.js', import.meta.url)), 'middleware rew
 assert(readFileSync(new URL('../package.json', import.meta.url), 'utf8').includes('"next"'), 'Next.js is a dependency')
 assert(readFileSync(new URL('../package.json', import.meta.url), 'utf8').includes('"build": "next build"'), 'default build is Next.js')
 assert(readFileSync(new URL('../src/components/AdminSetup.jsx', import.meta.url), 'utf8').includes('Render rewrite'), 'admin setup documents the host rewrite')
+// Phase 3: section routes + Next router sync (BUG-005 / BUG-006)
+for (const section of ['clips', 'pics', 'live', 'explore', 'creators', 'create', 'advertise', 'support']) {
+  assert(existsSync(new URL(`../app/${section}/page.jsx`, import.meta.url)), `section route /${section} exists`)
+  assert(
+    readFileSync(new URL(`../app/${section}/page.jsx`, import.meta.url), 'utf8').includes('sectionMetadata'),
+    `/${section} exports section SEO metadata`,
+  )
+}
+assert(existsSync(new URL('../app/sectionMeta.js', import.meta.url)), 'shared sectionMeta helper exists')
+assert(existsSync(new URL('../src/lib/NextNavContext.jsx', import.meta.url)), 'NextNavContext bridges App Router')
+assert(readFileSync(new URL('../app/SpaShell.jsx', import.meta.url), 'utf8').includes('NextNavContext'), 'SpaShell provides NextNavContext')
+assert(readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8').includes('useNextNav'), 'App consumes Next router')
+assert(readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8').includes('nextNav.router.push'), 'App navigates via router.push')
 
 function isPromoLive(promo, now = Date.now()) {
   if (!promo || promo.published !== true) return false
