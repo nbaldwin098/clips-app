@@ -1,42 +1,80 @@
 /**
- * Env reader that works in Vite (import.meta.env) and Next.js (process.env).
- * Prefer NEXT_PUBLIC_* on Next; keep VITE_* for existing Render vars.
+ * Env reader for Vite + Next.
+ *
+ * IMPORTANT: Next/webpack only inlines *static* process.env.NAME access in
+ * client bundles. Dynamic process.env[key] is empty in the browser — that
+ * broke Supabase after the SEO rebuild and made uploads/catalog look unsaved.
  */
+const CLIENT_ENV = {
+  VITE_SUPABASE_URL:
+    (typeof process !== 'undefined' && (process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL)) || '',
+  VITE_SUPABASE_ANON_KEY:
+    (typeof process !== 'undefined' && (process.env.VITE_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)) || '',
+  NEXT_PUBLIC_SUPABASE_URL:
+    (typeof process !== 'undefined' && (process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.VITE_SUPABASE_URL)) || '',
+  NEXT_PUBLIC_SUPABASE_ANON_KEY:
+    (typeof process !== 'undefined' && (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY)) || '',
+  VITE_SUPPORT_EMAIL: (typeof process !== 'undefined' && process.env.VITE_SUPPORT_EMAIL) || '',
+  VITE_COPYRIGHT_EMAIL: (typeof process !== 'undefined' && process.env.VITE_COPYRIGHT_EMAIL) || '',
+  VITE_PRIVACY_EMAIL: (typeof process !== 'undefined' && process.env.VITE_PRIVACY_EMAIL) || '',
+  VITE_LEGAL_EMAIL: (typeof process !== 'undefined' && process.env.VITE_LEGAL_EMAIL) || '',
+  VITE_DMCA_EMAIL: (typeof process !== 'undefined' && process.env.VITE_DMCA_EMAIL) || '',
+  VITE_STRIPE_PUBLISHABLE_KEY:
+    (typeof process !== 'undefined' && (process.env.VITE_STRIPE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)) || '',
+  VITE_STRIPE_PAYMENT_LINK: (typeof process !== 'undefined' && process.env.VITE_STRIPE_PAYMENT_LINK) || '',
+  VITE_PLATFORM_OWNER_ID: (typeof process !== 'undefined' && process.env.VITE_PLATFORM_OWNER_ID) || '',
+  VITE_ADMIN_CODE: (typeof process !== 'undefined' && process.env.VITE_ADMIN_CODE) || '',
+  VITE_LIVE_INGEST_CONNECTED: (typeof process !== 'undefined' && process.env.VITE_LIVE_INGEST_CONNECTED) || '',
+  VITE_SUPABASE_SQL_EDITOR: (typeof process !== 'undefined' && process.env.VITE_SUPABASE_SQL_EDITOR) || '',
+  VITE_APPS_OPEN_FROM: (typeof process !== 'undefined' && process.env.VITE_APPS_OPEN_FROM) || '',
+  VITE_APPS_OPEN_UNTIL: (typeof process !== 'undefined' && process.env.VITE_APPS_OPEN_UNTIL) || '',
+  NODE_ENV: (typeof process !== 'undefined' && process.env.NODE_ENV) || '',
+}
+
+function fromImportMeta(key) {
+  try {
+    const v = import.meta.env?.[key]
+    return v != null && String(v).trim() !== '' ? String(v).trim() : ''
+  } catch {
+    return ''
+  }
+}
+
 export function runtimeEnv(key, fallback = '') {
   const bare = String(key || '')
-  const nextKey = bare.startsWith('VITE_')
-    ? `NEXT_PUBLIC_${bare.slice(5)}`
-    : bare.startsWith('NEXT_PUBLIC_')
-      ? bare
-      : `NEXT_PUBLIC_${bare}`
-  const viteKey = bare.startsWith('VITE_') ? bare : `VITE_${bare.replace(/^NEXT_PUBLIC_/, '')}`
+  if (!bare) return fallback
 
-  try {
-    if (typeof process !== 'undefined' && process.env) {
-      const a = process.env[bare]
-      if (a != null && String(a).trim() !== '') return String(a).trim()
-      const b = process.env[nextKey]
-      if (b != null && String(b).trim() !== '') return String(b).trim()
-      const c = process.env[viteKey]
-      if (c != null && String(c).trim() !== '') return String(c).trim()
-    }
-  } catch { /* ignore */ }
+  const direct = CLIENT_ENV[bare]
+  if (direct != null && String(direct).trim() !== '') return String(direct).trim()
 
-  try {
-    const meta = import.meta.env
-    const a = meta?.[bare]
-    if (a != null && String(a).trim() !== '') return String(a).trim()
-    const b = meta?.[viteKey]
-    if (b != null && String(b).trim() !== '') return String(b).trim()
-  } catch { /* ignore */ }
+  if (bare.startsWith('VITE_')) {
+    const nextKey = `NEXT_PUBLIC_${bare.slice(5)}`
+    const viaNext = CLIENT_ENV[nextKey]
+    if (viaNext != null && String(viaNext).trim() !== '') return String(viaNext).trim()
+  }
+  if (bare.startsWith('NEXT_PUBLIC_')) {
+    const viteKey = `VITE_${bare.slice('NEXT_PUBLIC_'.length)}`
+    const viaVite = CLIENT_ENV[viteKey]
+    if (viaVite != null && String(viaVite).trim() !== '') return String(viaVite).trim()
+  }
+
+  const meta = fromImportMeta(bare)
+  if (meta) return meta
+  if (bare.startsWith('NEXT_PUBLIC_')) {
+    const metaVite = fromImportMeta(`VITE_${bare.slice('NEXT_PUBLIC_'.length)}`)
+    if (metaVite) return metaVite
+  }
+  if (bare.startsWith('VITE_')) {
+    const metaNext = fromImportMeta(`NEXT_PUBLIC_${bare.slice(5)}`)
+    if (metaNext) return metaNext
+  }
 
   return fallback
 }
 
 export function isProdRuntime() {
-  try {
-    if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'production') return true
-  } catch { /* ignore */ }
+  const n = runtimeEnv('NODE_ENV')
+  if (n === 'production') return true
   try {
     return !!import.meta.env?.PROD
   } catch {
