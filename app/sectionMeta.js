@@ -154,6 +154,10 @@ export const SECTION_META = {
     description: 'Your stats on calabi.',
     noindex: true,
   },
+  api: {
+    title: 'Bubble API',
+    description: 'APIs for businesses and platforms to use calabi audience bubbles.',
+  },
   notifications: {
     title: 'Notifications',
     description: 'Notifications on calabi.',

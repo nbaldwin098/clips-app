@@ -25,6 +25,7 @@ import {
   ShoppingBag,
   Store,
   Newspaper,
+  Code2,
 } from 'lucide-react'
 import { lsGet } from '../lib/storage'
 import { listSidebarCreators } from '../lib/contentService'
@@ -243,6 +244,7 @@ export default function CollapsibleSidebar({
             <div className={cn('space-y-0.5', collapsed ? '' : 'ml-2 border-l border-[#23232c] pl-2')}>
               <NavBtn collapsed={collapsed} active={currentView === 'seller' || currentView === 'seller-portal'} onClick={() => go('seller')} icon={Store} label="Seller portal" />
               <NavBtn collapsed={collapsed} active={currentView === 'stats'} onClick={() => go('stats')} icon={Activity} label="Stats" />
+              <NavBtn collapsed={collapsed} active={currentView === 'api'} onClick={() => go('api')} icon={Code2} label="API" />
               <NavBtn collapsed={collapsed} active={currentView === 'support'} onClick={() => go('support')} icon={LifeBuoy} label="Support" />
               <NavBtn collapsed={collapsed} active={currentView === 'advertise' || currentView === 'advertiser-portal'} onClick={() => go('advertise')} icon={Megaphone} label="Advertise with us" />
               <NavBtn collapsed={collapsed} active={currentView === 'about'} onClick={() => go('about')} icon={BookOpen} label="About" />

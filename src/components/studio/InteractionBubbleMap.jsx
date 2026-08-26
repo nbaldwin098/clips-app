@@ -6,32 +6,15 @@ import {
 } from '../../lib/creatorInteractions'
 import { fetchProfilesByIds } from '../../lib/profiles'
 import { cn } from '../../lib/utils'
-
-const GOLDEN = Math.PI * (3 - Math.sqrt(5))
-
-function layoutNetwork(people, width, height) {
-  const cx = width / 2
-  const cy = height / 2
-  const hubR = 32
-  const maxR = Math.min(width, height) * 0.42
-  const placed = people.map((p, i) => {
-    const t = i + 1
-    const ring = 0.28 + 0.72 * Math.sqrt(t / Math.max(people.length, 1))
-    const angle = i * GOLDEN
-    const radius = hubR + 40 + ring * maxR
-    const size = Math.min(44, Math.max(18, 14 + Math.sqrt(p.weight || 1) * 6))
-    return {
-      ...p,
-      x: cx + Math.cos(angle) * radius,
-      y: cy + Math.sin(angle) * radius,
-      size,
-    }
-  })
-  return {
-    hub: { id: 'hub', x: cx, y: cy, size: hubR * 2 },
-    nodes: placed,
-  }
-}
+import {
+  prepareBubblePopulation,
+  layoutBubbleNetwork,
+  contentBounds,
+  fitZoomForBounds,
+  clampBubbleZoom,
+  clampPanToBox,
+  formatCompactCount,
+} from '../../lib/bubbleEngine'
 
 function formatWhen(ms) {
   if (!ms) return '—'
@@ -44,6 +27,7 @@ function formatWhen(ms) {
 }
 
 function personLabel(p) {
+  if (p.isCluster || p.kind === 'cluster') return p.displayName || 'More people'
   if (p.kind === 'guests') return 'Unsigned viewers'
   if (p.handle) return `@${String(p.handle).replace(/^@/, '')}`
   if (p.displayName) return p.displayName
@@ -188,19 +172,9 @@ export default function InteractionBubbleMap({
   const endMs = nowMs
   const scrubMs = untilMs != null && Number.isFinite(untilMs) ? untilMs : endMs
 
-  const keepHubInView = useCallback((nextZoom, nextPan, hub, w, h) => {
-    if (!hub || !w || !h) return nextPan
-    const sx = hub.x * nextZoom + nextPan.x
-    const sy = hub.y * nextZoom + nextPan.y
-    // Keep hub inside a generous center band so zoom-out never ejects the map.
-    const marginX = Math.max(48, w * 0.2)
-    const marginY = Math.max(48, h * 0.2)
-    let { x, y } = nextPan
-    if (sx < marginX) x += marginX - sx
-    if (sx > w - marginX) x -= sx - (w - marginX)
-    if (sy < marginY) y += marginY - sy
-    if (sy > h - marginY) y -= sy - (h - marginY)
-    return { x, y }
+  const keepHubInView = useCallback((nextZoom, nextPan, bounds, w, h) => {
+    if (!bounds || !w || !h) return nextPan
+    return clampPanToBox(nextPan, nextZoom, { w, h }, bounds)
   }, [])
 
   const peopleBase = useMemo(() => {
@@ -243,7 +217,7 @@ export default function InteractionBubbleMap({
     if (!el) return
     const measure = () => {
       const r = el.getBoundingClientRect()
-      setSize({ w: Math.max(480, r.width), h: Math.max(420, r.height) })
+      setSize({ w: Math.max(280, r.width), h: Math.max(280, r.height) })
     }
     measure()
     const ro = new ResizeObserver(measure)
@@ -283,8 +257,38 @@ export default function InteractionBubbleMap({
     return enriched.filter((n) => (n.byType && n.byType[filter]) || n.primaryType === filter)
   }, [enriched, filter])
 
-  // Fixed layout world; zoom/pan are a camera (endless), not a re-layout.
-  const laid = useMemo(() => layoutNetwork(filtered, size.w, size.h), [filtered, size.w, size.h])
+  const population = useMemo(() => {
+    const hint = Math.max(
+      Number(summary.people) || 0,
+      Number(network?.summary?.people) || 0,
+      filtered.length
+    )
+    return prepareBubblePopulation(filtered, { cap: 240, totalHint: hint })
+  }, [filtered, summary.people, network?.summary?.people])
+
+  // Layout stays inside the box; zoom/pan are a camera clamped to the frame.
+  const laid = useMemo(
+    () => layoutBubbleNetwork(population.nodes, size.w, size.h, { pad: 64 }),
+    [population.nodes, size.w, size.h]
+  )
+  const bounds = useMemo(() => contentBounds(laid), [laid])
+  const fitZ = useMemo(
+    () => fitZoomForBounds(bounds, size.w, size.h, { pad: 10 }),
+    [bounds, size.w, size.h]
+  )
+
+  useEffect(() => {
+    setZoom(1)
+    setPan({ x: 0, y: 0 })
+  }, [selectedPostId, population.total, size.w, size.h, filter])
+
+  useEffect(() => {
+    setZoom((z) => clampBubbleZoom(z, fitZ, 24))
+  }, [fitZ])
+
+  useEffect(() => {
+    setPan((p) => keepHubInView(zoom, p, bounds, size.w, size.h))
+  }, [zoom, bounds, size.w, size.h, keepHubInView])
 
   const hubId = hubMeta?.id || (selectedPostId ? `hub_post_${selectedPostId}` : `hub_${creator?.id || 'creator'}`)
   const nodeById = useMemo(() => {
@@ -316,16 +320,12 @@ export default function InteractionBubbleMap({
     const d = dragRef.current
     if (!d) return
     const raw = { x: d.ox + (e.clientX - d.px), y: d.oy + (e.clientY - d.py) }
-    setPan(keepHubInView(zoom, raw, laid.hub, size.w, size.h))
-  }, [keepHubInView, zoom, laid.hub, size.w, size.h])
+    setPan(keepHubInView(zoom, raw, bounds, size.w, size.h))
+  }, [keepHubInView, zoom, bounds, size.w, size.h])
 
   const onPointerUp = useCallback(() => { dragRef.current = null }, [])
 
-  const clampZoom = (z) => {
-    // Allow deep zoom-out, but never so far the hub leaves the viewport band.
-    if (!Number.isFinite(z) || z <= 0) return 1
-    return Math.min(500, Math.max(0.28, z))
-  }
+  const clampZoom = (z) => clampBubbleZoom(z, fitZ, 24)
 
   const zoomAt = useCallback((factor, clientX, clientY) => {
     const el = wrapRef.current
@@ -342,11 +342,11 @@ export default function InteractionBubbleMap({
         const wx = (cx - p.x) / z
         const wy = (cy - p.y) / z
         const raw = { x: cx - wx * next, y: cy - wy * next }
-        return keepHubInView(next, raw, laid.hub, size.w, size.h)
+        return keepHubInView(next, raw, bounds, size.w, size.h)
       })
       return next
     })
-  }, [keepHubInView, laid.hub, size.w, size.h])
+  }, [keepHubInView, bounds, size.w, size.h, fitZ])
 
   const onWheel = useCallback((e) => {
     e.preventDefault()
@@ -387,8 +387,11 @@ export default function InteractionBubbleMap({
           </p>
           <p className="text-[11px] text-zinc-500">
             Post is the center. People around it are color-coded by what they did.
-            {summary.people ? ` · ${summary.people} people` : ''}
-            {summary.total ? ` · ${summary.total} actions` : ''}
+            {summary.people ? ` · ${formatCompactCount(summary.people)} people` : ''}
+            {summary.total ? ` · ${formatCompactCount(summary.total)} actions` : ''}
+            {population.aggregated
+              ? ` · showing ${population.shown} + cluster (${formatCompactCount(population.hidden)} more)`
+              : ''}
           </p>
         </div>
         {onRefresh ? (
@@ -558,7 +561,10 @@ export default function InteractionBubbleMap({
               {laid.nodes.map((b) => {
                 const label = personLabel(b)
                 const active = hover?.id === b.id
-                const rings = actionRingColors(b)
+                const isCluster = b.isCluster || b.kind === 'cluster'
+                const rings = isCluster
+                  ? [{ id: 'agg', color: '#71717a', label: 'Aggregated' }]
+                  : actionRingColors(b)
                 const ringPad = 2 + rings.length * 4.2
                 return (
                   <g
@@ -569,8 +575,14 @@ export default function InteractionBubbleMap({
                     onMouseLeave={() => setHover(null)}
                   >
                     <ActionRings radius={b.size / 2} rings={rings} active={active} />
-                    <circle r={b.size / 2} fill="#121218" />
-                    {b.avatarUrl ? (
+                    <circle
+                      r={b.size / 2}
+                      fill="#121218"
+                      stroke={isCluster ? '#71717a' : undefined}
+                      strokeWidth={isCluster ? 1.5 : 0}
+                      strokeDasharray={isCluster ? '4 3' : undefined}
+                    />
+                    {b.avatarUrl && !isCluster ? (
                       <image
                         href={b.avatarUrl}
                         x={-b.size / 2}
@@ -588,7 +600,9 @@ export default function InteractionBubbleMap({
                         fontSize={Math.min(12, b.size / 2.4)}
                         fontWeight="700"
                       >
-                        {(label.replace(/^@/, '')[0] || '?').toUpperCase()}
+                        {isCluster
+                          ? formatCompactCount(b.clusterSize || b.weight || 0)
+                          : (label.replace(/^@/, '')[0] || '?').toUpperCase()}
                       </text>
                     )}
                     {b.size > 26 ? (

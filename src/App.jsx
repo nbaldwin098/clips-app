@@ -74,6 +74,7 @@ const ShopPage = lazy(() => import('./components/ShopPage'))
 const SellerPortal = lazy(() => import('./components/SellerPortal'))
 const NewsPage = lazy(() => import('./components/NewsPage'))
 const MessagesPage = lazy(() => import('./components/MessagesPage'))
+const BubbleApiPage = lazy(() => import('./components/BubbleApiPage'))
 
 const KNOWN_VIEWS = new Set([
   'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
@@ -83,7 +84,7 @@ const KNOWN_VIEWS = new Set([
   'subscriptions', 'playlists', 'community', 'studio-tools', 'stream-settings',
   'calabi-studio', 'calabi-cash', 'shop', 'marketplace', 'seller', 'seller-portal', 'news',
   'legal-tos', 'legal-privacy', 'legal-creator', 'legal-community',
-  'watch', 'sound', 'tag', 'create', 'messages',
+  'watch', 'sound', 'tag', 'create', 'messages', 'api',
 ])
 
 function AppShell() {
@@ -616,6 +617,7 @@ function AppShell() {
       case 'liked': return <LikedPage onNavigate={navigate} onPlayItem={openWatch} />
       case 'watch-later': return <WatchLaterPage onNavigate={navigate} onPlayItem={openWatch} />
       case 'stats': return <StatsPage onNavigate={navigate} />
+      case 'api': return <BubbleApiPage onNavigate={navigate} />
       case 'library': return <LibraryPage />
       case 'help': return <HelpPage />
       case 'about': return <AboutPage />
