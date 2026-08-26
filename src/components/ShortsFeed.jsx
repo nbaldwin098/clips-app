@@ -14,8 +14,6 @@ import { copyShareUrl } from '../lib/routes'
 import CommentsPanel from './CommentsPanel'
 import ShortsStage, { ShortsCard } from './ShortsStage'
 import ShortsGrid from './ShortsGrid'
-import { InFeedAd } from './AdUnits'
-import { mixFeedAds } from '../lib/adEngine'
 import { preloadPostedItems } from '../lib/preloadMedia'
 import { useContentSyncTick } from '../lib/useContentSync'
 
@@ -406,31 +404,6 @@ function ClipSlide({
   )
 }
 
-function ClipFeedAdSlide({ active, warm = false, ad, onEmpty }) {
-  const filledRef = useRef(false)
-  useEffect(() => {
-    if (!active || filledRef.current) return undefined
-    const t = window.setTimeout(() => {
-      if (!filledRef.current) onEmpty?.()
-    }, 7500)
-    return () => window.clearTimeout(t)
-  }, [active, onEmpty])
-
-  return (
-    <ShortsCard fillMobile data-ad-slide="">
-      <InFeedAd
-        ad={ad}
-        variant="clip"
-        active={active || warm}
-        onFill={(ok) => { if (ok) filledRef.current = true }}
-      />
-      <p className="pointer-events-none absolute top-3 left-3 z-20 rounded bg-black/70 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-white/90">
-        Sponsored · swipe for next
-      </p>
-    </ShortsCard>
-  )
-}
-
 export default function ShortsFeed({
   onOpenAuth, onOpenProfile, onOpenSound, onStitch, onNavigate, focusId,
 }) {
@@ -456,15 +429,6 @@ export default function ShortsFeed({
     const rest = pool.filter((i) => i.id !== focused.id)
     return [focused, ...rest]
   }, [tab, following, recommended, focusId, syncTick])
-  const mixed = useMemo(() => {
-    if (!focusId) return []
-    return mixFeedAds(items, 'clip-feed', user?.id)
-  }, [items, focusId, user?.id])
-  const [skippedAdKeys, setSkippedAdKeys] = useState(() => new Set())
-  const visibleMixed = useMemo(
-    () => mixed.filter((row) => row.kind !== 'ad' || !skippedAdKeys.has(row.key)),
-    [mixed, skippedAdKeys],
-  )
   const [activeIdx, setActiveIdx] = useState(0)
   const [muted, setMuted] = useState(true)
   const goToRef = useRef(null)
@@ -474,9 +438,9 @@ export default function ShortsFeed({
 
   const startIdx = useMemo(() => {
     if (!focusId) return 0
-    const i = visibleMixed.findIndex((row) => row.kind === 'item' && row.item?.id === focusId)
+    const i = items.findIndex((item) => item.id === focusId)
     return i >= 0 ? i : 0
-  }, [visibleMixed, focusId])
+  }, [items, focusId])
 
   useEffect(() => {
     setActiveIdx(startIdx)
@@ -486,18 +450,8 @@ export default function ShortsFeed({
 
   useEffect(() => {
     const from = Math.max(0, activeIdx)
-    preloadPostedItems(visibleMixed.slice(from), inPlayer ? 3 : 2)
-  }, [activeIdx, visibleMixed, inPlayer])
-
-  const skipAdSlide = useCallback((index) => {
-    const row = visibleMixed[index]
-    if (!row || row.kind !== 'ad') return
-    setSkippedAdKeys((prev) => {
-      const next = new Set(prev)
-      next.add(row.key)
-      return next
-    })
-  }, [visibleMixed])
+    preloadPostedItems(items.slice(from), inPlayer ? 3 : 2)
+  }, [activeIdx, items, inPlayer])
 
   const openClip = (id) => {
     onNavigate?.('clips', { id })
@@ -521,7 +475,7 @@ export default function ShortsFeed({
     )
   }
 
-  if (!visibleMixed.length) {
+  if (!items.length) {
     return (
       <div className="h-full min-h-0 flex flex-col items-center justify-center gap-4 bg-[#000000] px-6 text-center">
         <p className="text-sm text-zinc-300">This clip was removed or is no longer available.</p>
@@ -539,12 +493,12 @@ export default function ShortsFeed({
   return (
     <ShortsStage
       key={`clips-player-${tab}-${focusId}`}
-      count={visibleMixed.length}
+      count={items.length}
       activeIndex={activeIdx}
       goToRef={goToRef}
-      loop={visibleMixed.length >= 1}
+      loop={items.length >= 1}
       onActiveIndex={(i) => {
-        const prev = visibleMixed[prevIdx.current]?.item
+        const prev = items[prevIdx.current]
         const waited = Date.now() - shownAt.current
         if (prev && user?.id && i !== prevIdx.current) {
           recordInteraction(user.id, {
@@ -564,15 +518,10 @@ export default function ShortsFeed({
         <div className="h-full flex items-center justify-center text-sm text-zinc-400">No clips</div>
       )}
       renderSlide={(index, active, warm) => {
-        const row = visibleMixed[index]
-        if (row?.kind === 'ad') {
-          return (
-            <ClipFeedAdSlide active={active} warm={warm} ad={row.ad} onEmpty={() => skipAdSlide(index)} />
-          )
-        }
-        return row?.item ? (
+        const item = items[index]
+        return item ? (
           <ClipSlide
-            item={row.item}
+            item={item}
             active={active}
             warm={warm}
             muted={muted}
