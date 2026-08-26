@@ -44,7 +44,7 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 | BUG-006 | Next / nav | Client `pushState` routing vs Next App Router | Done in #107 (`NextNavContext` + `router.push`) | `done` |
 | BUG-007 | Deploy | Old Static Render service must stay deleted/suspended | Domain only on Node web service | `open` |
 | BUG-008 | Smoke | `live-smoke.mjs` still asserts removed ExoClick/VAST behavior | Smoke rewritten for no-op stubs + deleted ad modules | `done` |
-| BUG-090 | Auth | Admin unlock broken; owner still treated as cs1 on live | kiddnixk owner + Admin cloud password field (#121) | `doing` |
+| BUG-090 | Auth | Admin unlock broken; owner still treated as cs1 on live | #121 merged; unlock hang/remount fix in follow-up | `doing` |
 
 ### P1 — important
 
