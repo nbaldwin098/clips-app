@@ -54,13 +54,62 @@ export default function StatsPage({ onNavigate }) {
     return { totalLikes: up, totalDislikes: down, totalViews: views }
   }, [allItems, likesMap])
 
-  const clips = allItems.filter((i) => i.type === 'short')
-  const videos = allItems.filter((i) => i.type === 'video')
-  const pics = allItems.filter((i) => i.type === 'pic')
+  const clips = useMemo(() => allItems.filter((i) => i.type === 'short'), [allItems])
+  const videos = useMemo(() => allItems.filter((i) => i.type === 'video'), [allItems])
+  const pics = useMemo(() => allItems.filter((i) => i.type === 'pic'), [allItems])
   const numClips = clips.length
   const numVideos = videos.length
   const numPics = pics.length
   const numLives = liveBoard.length
+
+  const bubbleBuckets = useMemo(() => {
+    const toRow = (item, weight, contentType) => ({
+      id: item.id,
+      contentId: item.id,
+      contentType: contentType || item.type,
+      title: item.title || 'Untitled',
+      handle: item.handle || '',
+      thumbUrl: item.thumbUrl || item.mediaUrl || null,
+      weight: Math.max(1, Number(weight) || 1),
+    })
+
+    const liked = []
+    const disliked = []
+    for (const item of allItems) {
+      const vote = likesMap[item.id]
+      const up = Number(vote?.up) || 0
+      const down = Number(vote?.down) || 0
+      if (up > 0) liked.push(toRow(item, up, item.type))
+      if (down > 0) disliked.push(toRow(item, down, item.type))
+    }
+
+    const liveRows = liveBoard.map((s) => ({
+      id: `live_${s.userId}`,
+      contentId: s.userId,
+      contentType: 'live',
+      title: s.title || s.displayName || s.handle || 'Live',
+      handle: s.handle || '',
+      thumbUrl: s.thumbUrl || null,
+      weight: 1,
+    }))
+
+    return {
+      videos: videos.map((v) => toRow(v, (v.views || 0) + 1, 'video')),
+      clips: clips.map((c) => toRow(c, (c.views || 0) + 1, 'short')),
+      pics: pics.map((p) => toRow(p, 1, 'pic')),
+      lives: liveRows,
+      likes: liked,
+      dislikes: disliked,
+      counts: {
+        videos: numVideos,
+        clips: numClips,
+        pics: numPics,
+        lives: numLives,
+        likes: liked.length,
+        dislikes: disliked.length,
+      },
+    }
+  }, [allItems, likesMap, liveBoard, videos, clips, pics, numVideos, numClips, numPics, numLives])
 
   const stats = [
     { label: 'Users', value: totalUsers.toLocaleString(), icon: Users, hint: 'Registered accounts' },
@@ -86,6 +135,8 @@ export default function StatsPage({ onNavigate }) {
         lives={numLives}
         likes={totalLikes}
         dislikes={totalDislikes}
+        buckets={bubbleBuckets}
+        onNavigate={onNavigate}
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
