@@ -102,10 +102,30 @@ export function hiddenBrokenIds() {
 
 export function hideBrokenMedia(id) {
   if (!id) return
+  const row = (getImports() || []).find((r) => r?.id === id) || null
   const next = hiddenBrokenIds()
   next.add(id)
   lsSet(HIDDEN_KEY, [...next])
+  // Hosted / user uploads stay in the session catalog — only hide from feeds.
+  // Never hard-delete cloud truth from a thumb/media error path.
+  if (row && (isUserUploadRecord(row) || row.hosted === true)) {
+    try { clearFrozenFeeds() } catch { /* ok */ }
+    return
+  }
   removeImport(id)
+}
+
+export function unhideBrokenMedia(ids = []) {
+  const list = Array.isArray(ids) ? ids.filter(Boolean) : []
+  if (!list.length) return
+  const next = hiddenBrokenIds()
+  let changed = false
+  for (const id of list) {
+    if (next.delete(id)) changed = true
+  }
+  if (!changed) return
+  lsSet(HIDDEN_KEY, [...next])
+  try { clearFrozenFeeds() } catch { /* ok */ }
 }
 
 export function purgeDeadCatalog() {
@@ -114,6 +134,22 @@ export function purgeDeadCatalog() {
   let removed = 0
   for (const row of list) {
     if (!row?.id) continue
+    const protect = isUserUploadRecord(row) || row.hosted === true
+    if (protect) {
+      if (isReferenceItem(row) || isRetiredCatalogItem(row)) {
+        removeImport(row.id)
+        removed += 1
+        continue
+      }
+      // Keep hosted/http uploads. Drop ghost uploads with no playable URL.
+      const hasHttp =
+        isHttpUrl(row.mediaUrl) || isHttpUrl(row.sourceUrl) || isHttpUrl(row.thumbUrl)
+      if (!isFeedable(row) && !hasHttp) {
+        removeImport(row.id)
+        removed += 1
+      }
+      continue
+    }
     const drop =
       hidden.has(row.id)
       || isReferenceItem(row)
