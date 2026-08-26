@@ -1,4 +1,7 @@
-import { fetchRecentContentIds } from '../src/lib/contentServer.js'
+import {
+  fetchRecentContentIds,
+  fetchRecentCreatorHandles,
+} from '../src/lib/contentServer.js'
 
 export default async function sitemap() {
   const base = 'https://calabi.us'
@@ -39,5 +42,18 @@ export default async function sitemap() {
     contentEntries = []
   }
 
-  return [...staticEntries, ...contentEntries]
+  let profileEntries = []
+  try {
+    const handles = await fetchRecentCreatorHandles(100)
+    profileEntries = handles.map((handle) => ({
+      url: `${base}/profile/${encodeURIComponent(handle)}`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.65,
+    }))
+  } catch {
+    profileEntries = []
+  }
+
+  return [...staticEntries, ...contentEntries, ...profileEntries]
 }

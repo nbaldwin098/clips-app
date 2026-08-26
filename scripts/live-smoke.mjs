@@ -135,6 +135,20 @@ assert(existsSync(new URL('../src/lib/NextNavContext.jsx', import.meta.url)), 'N
 assert(readFileSync(new URL('../app/SpaShell.jsx', import.meta.url), 'utf8').includes('NextNavContext'), 'SpaShell provides NextNavContext')
 assert(readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8').includes('useNextNav'), 'App consumes Next router')
 assert(readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8').includes('nextNav.router.push'), 'App navigates via router.push')
+// Phase 4: home SSR + profile SEO + noindex private shells
+assert(readFileSync(new URL('../app/page.jsx', import.meta.url), 'utf8').includes('fetchRecentContent'), 'home SSRs recent content list')
+assert(readFileSync(new URL('../app/page.jsx', import.meta.url), 'utf8').includes('<section'), 'home includes crawler section HTML')
+assert(existsSync(new URL('../app/profile/[handle]/page.jsx', import.meta.url)), 'profile SEO route exists')
+assert(readFileSync(new URL('../app/profile/[handle]/page.jsx', import.meta.url), 'utf8').includes('fetchProfileByHandle'), 'profile route loads creator metadata')
+assert(readFileSync(new URL('../src/lib/contentServer.js', import.meta.url), 'utf8').includes('fetchRecentCreatorHandles'), 'contentServer can list creator handles')
+assert(readFileSync(new URL('../app/sitemap.js', import.meta.url), 'utf8').includes('fetchRecentCreatorHandles'), 'sitemap includes creator profiles')
+for (const privateRoute of ['dashboard', 'settings', 'library']) {
+  assert(existsSync(new URL(`../app/${privateRoute}/page.jsx`, import.meta.url)), `/${privateRoute} App Router page exists`)
+  assert(
+    readFileSync(new URL(`../app/${privateRoute}/page.jsx`, import.meta.url), 'utf8').includes('index: false'),
+    `/${privateRoute} is noindex`,
+  )
+}
 
 function isPromoLive(promo, now = Date.now()) {
   if (!promo || promo.published !== true) return false

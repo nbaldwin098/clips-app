@@ -40,8 +40,8 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 | BUG-002 | Storage | Confirm public bucket named exactly `clips` exists | Migration `0003_clips_storage_bucket.sql`; policies for public read + owner write | `open` |
 | BUG-003 | Catalog | Confirm `videos` table still has rows after migrate | If empty, investigate wipe/purge; restore from backup if any | `open` |
 | BUG-004 | Auth | CS1 / owner cloud login edge cases still fragile | Recent URGENT restores; add regression test for owner + Supabase session | `open` |
-| BUG-005 | Next / SEO | SpaShell still owns most routes | Phase 3 PR #107: dedicated `/clips`…`/support` + metadata; home/dashboard/watch still SpaShell | `doing` |
-| BUG-006 | Next / nav | Client `pushState` routing vs Next App Router | Phase 3 PR #107: `NextNavContext` + `router.push` + pathname sync (Vite keeps `pushHash`) | `doing` |
+| BUG-005 | Next / SEO | SpaShell still owns most routes | Phase 4: home SSR feed + `/profile/[handle]` + noindex studio/settings/library | `doing` |
+| BUG-006 | Next / nav | Client `pushState` routing vs Next App Router | Done in #107 (`NextNavContext` + `router.push`) | `done` |
 | BUG-007 | Deploy | Old Static Render service must stay deleted/suspended | Domain only on Node web service | `open` |
 | BUG-008 | Smoke | `live-smoke.mjs` still asserts removed ExoClick/VAST behavior | ~many FAIL after ads strip; rewrite smoke for no-ad / Next world | `open` |
 
@@ -111,6 +111,8 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 
 | ID | Issue | PR | Date |
 |----|-------|-----|------|
+| BUG-112 | Next SEO Phase 3: section routes + NextNavContext | #107 | 2026-08-26 |
+| BUG-006 | Client nav synced to Next App Router | #107 | 2026-08-26 |
 | BUG-111 | Next SEO Phase 2: SSR About/Help/Legal + content article HTML + sitemap ids | #106 | 2026-08-26 |
 | BUG-100 | Supabase env empty in browser after Next migrate (uploads looked unsaved) | #104 | 2026-08-26 |
 | BUG-101 | Next.js App Router Phase 1 (SEO foundation, Node Render) | #103 | 2026-08-26 |
@@ -136,7 +138,7 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 
 ## Next 5 to pull (suggested order)
 
-1. **BUG-005 / BUG-006** — Land Phase 3 PR, then peel home / watch chrome (Phase 4)  
+1. **BUG-005** — Land Phase 4 (home SSR + profile SEO), then peel watch chrome if needed  
 2. **BUG-001** — Prove uploads work on production Node deploy  
 3. **BUG-002** / **BUG-003** — Bucket + `videos` table health  
 4. **BUG-008** — Fix smoke suite so CI means something again  
