@@ -1,9 +1,16 @@
-/** Site owner intercept — password is hashed. Plaintext is not stored here. */
+/**
+ * Platform owner identity — CS1 signs in through Supabase like any other user.
+ * Aliases (cs1, sa6sysn, cs1@calabi.local) resolve to real cloud emails.
+ * Local password hashes are only for the admin portal code check, not site login.
+ */
 export const OWNER_LOGIN = {
-  id: 'owner-cs1',
+  id: 'owner-cs1', // legacy id — live sessions use the Supabase user uuid
   handle: 'cs1',
   displayName: 'Nicholas',
-  email: 'cs1@calabi.local',
+  /** Preferred cloud email for CS1 */
+  email: 'cs1@calabi.us',
+  /** Legacy local-only address — never used as Supabase login */
+  legacyEmail: 'cs1@calabi.local',
   passwordHash: 'sha256$5de84747bc1f609ecc05696ac30538f1$071a94618b7488983b35d0387686304ace964a4bc0d634c20496efcf4b06ee2c',
   passwordHashes: [
     'sha256$5de84747bc1f609ecc05696ac30538f1$071a94618b7488983b35d0387686304ace964a4bc0d634c20496efcf4b06ee2c',
@@ -13,21 +20,20 @@ export const OWNER_LOGIN = {
   ],
 }
 
-const LOCAL_OWNER_IDS = new Set([
-  OWNER_LOGIN.email,
-  OWNER_LOGIN.handle,
-  'sa6sysn',
-  'cs1@calabi.us',
-])
+const OWNER_HANDLES = new Set(['cs1', 'sa6sysn'])
 
-const OWNER_ALIASES = new Set([
-  ...LOCAL_OWNER_IDS,
+const OWNER_EMAILS = new Set([
+  'cs1@calabi.us',
+  'cs1@calabi.local',
   'kiddnixk@gmail.com',
 ])
 
+const OWNER_ALIASES = new Set([...OWNER_HANDLES, ...OWNER_EMAILS])
+
+/** @deprecated Local-only owner sessions are removed; kept for smoke alias checks. */
 export function isLocalOwnerLogin(value) {
   const e = String(value || '').trim().toLowerCase()
-  return LOCAL_OWNER_IDS.has(e)
+  return OWNER_HANDLES.has(e) || e === 'cs1@calabi.local'
 }
 
 export function findOwnerLogin(value) {
@@ -37,9 +43,18 @@ export function findOwnerLogin(value) {
   return null
 }
 
+/** Cloud emails to try for an owner alias (never *.local). */
+export function ownerCloudEmails(typed = '') {
+  const t = String(typed || '').trim().toLowerCase()
+  const list = []
+  if (t.includes('@') && !t.endsWith('.local')) list.push(t)
+  list.push(OWNER_LOGIN.email, 'kiddnixk@gmail.com')
+  return [...new Set(list.filter((e) => e.includes('@') && !e.endsWith('.local')))]
+}
+
 export function isOwnerAccount(user) {
   if (!user || typeof user !== 'object') return false
-  if (String(user.id || '') === OWNER_LOGIN.id) return true
+  // Legacy local id should not grant owner once cloud-only — only real emails/handles / configured id
   if (findOwnerLogin(user.email) || findOwnerLogin(user.handle)) return true
   return false
 }

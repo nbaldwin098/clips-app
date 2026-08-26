@@ -66,13 +66,12 @@ export function getAdminCode() {
   return runtimeEnv('VITE_ADMIN_CODE')
 }
 
-/** Owner is the local cs1 intercept, the owner emails/handles, or a configured cloud user. */
+/** Owner is a cloud user whose email/handle matches CS1 aliases, or VITE_PLATFORM_OWNER_ID. */
 export function isPlatformOwner(user) {
   if (!user) return false
   if (isOwnerAccount(user)) return true
-  if (user.provider !== 'supabase') return false
   const ownerId = getPlatformOwnerId()
-  if (ownerId) return user.id === ownerId
+  if (ownerId && user.id === ownerId) return true
   return false
 }
 

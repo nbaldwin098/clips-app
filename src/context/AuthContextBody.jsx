@@ -8,7 +8,7 @@ import { ensureOwnProfile, privilegesFromProfile, updateOwnProfileFields } from 
 import { hashSecret, verifySecret } from '../lib/secrets'
 import { persistableMediaUrl, restoreProfilePictures, persistProfilePicture } from '../lib/profileMedia'
 import { findOfficialLogin } from '../data/publicMediaSeed'
-import { findOwnerLogin, isLocalOwnerLogin, isOwnerAccount, OWNER_LOGIN } from '../data/ownerLogin'
+import { findOwnerLogin, ownerCloudEmails, isOwnerAccount, OWNER_LOGIN } from '../data/ownerLogin'
 import { accessBlockMessage } from '../lib/trustSafety'
 import { findNamedAccountLogin, verifyNamedAccountPassword } from '../data/namedAccountsSeed'
 import { sanitizeAuthError } from '../lib/authBrand'
@@ -27,23 +27,24 @@ function rejectIfBlocked(next) {
 function persistableUser(u) {
   if (!u || typeof u !== 'object') return null
   const org = String(u.id || '').startsWith('org-')
-  const localOwner = String(u.id || '') === OWNER_LOGIN.id
   const owner = isOwnerAccount(u)
+  const provider = u.provider === 'supabase' ? 'supabase' : (org ? 'local' : (u.provider || 'local'))
   return {
     id: String(u.id || '').slice(0, 80),
     email: String(u.email || '').slice(0, 200),
     displayName: String(u.displayName || 'Viewer').slice(0, 80),
     handle: normalizeHandle(u.handle) || 'viewer',
-    provider: localOwner ? 'local' : (u.provider === 'supabase' ? 'supabase' : 'local'),
+    provider,
     avatarUrl: persistableMediaUrl(u.avatarUrl) || '',
     phone: u.phone || '',
     bannerUrl: persistableMediaUrl(u.bannerUrl) || '',
     bio: String(u.bio || '').slice(0, 500),
-    passwordHash: u.passwordHash || undefined,
-    isCreator: org || owner,
-    creatorStatus: org || owner ? 'approved' : 'none',
-    isPlatformAdmin: owner,
-    role: owner ? 'admin' : 'user',
+    // Never persist password hashes for cloud users
+    passwordHash: provider === 'supabase' ? undefined : (u.passwordHash || undefined),
+    isCreator: org || owner || !!u.isCreator,
+    creatorStatus: org || owner ? 'approved' : (u.creatorStatus || 'none'),
+    isPlatformAdmin: owner || !!u.isPlatformAdmin,
+    role: owner ? 'admin' : (u.role || 'user'),
   }
 }
 
@@ -80,8 +81,13 @@ function mapSbUser(sbUser, meta = {}) {
   const email = sbUser.email || meta.email || ''
   const phone = sbUser.phone || meta.phone || ''
   const seed = email.split('@')[0] || phone.slice(-4) || 'user'
-  const handle = meta.handle || sbUser.user_metadata?.handle || pickUniqueHandle(seed)
-  const displayName = meta.displayName || sbUser.user_metadata?.display_name || seed || 'Viewer'
+  const owner = findOwnerLogin(email)
+  const handle = owner
+    ? OWNER_LOGIN.handle
+    : (meta.handle || sbUser.user_metadata?.handle || pickUniqueHandle(seed))
+  const displayName = owner
+    ? (meta.displayName || OWNER_LOGIN.displayName)
+    : (meta.displayName || sbUser.user_metadata?.display_name || seed || 'Viewer')
   return {
     ...DEFAULT_USER,
     id: sbUser.id,
@@ -90,10 +96,10 @@ function mapSbUser(sbUser, meta = {}) {
     displayName,
     handle: String(handle).toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24) || 'user',
     provider: 'supabase',
-    creatorStatus: 'none',
-    isCreator: false,
-    isPlatformAdmin: false,
-    role: 'user',
+    creatorStatus: owner ? 'approved' : 'none',
+    isCreator: !!owner,
+    isPlatformAdmin: !!owner,
+    role: owner ? 'admin' : 'user',
     avatarUrl: persistableMediaUrl(meta.avatarUrl || sbUser.user_metadata?.avatar_url) || '',
     bannerUrl: persistableMediaUrl(meta.bannerUrl) || '',
     bio: meta.bio || '',
@@ -180,6 +186,13 @@ export function AuthProvider({ children }) {
     let unsub = () => {}
     ;(async () => {
       if (!isSupabaseConfigured()) { setAuthReady(true); return }
+      // Drop legacy local owner-cs1 sessions — CS1 is cloud-only now
+      try {
+        const stale = lsGet('user', null)
+        if (stale && (stale.id === OWNER_LOGIN.id || stale.provider === 'local' && findOwnerLogin(stale.email || stale.handle))) {
+          lsRemove('user')
+        }
+      } catch {}
       try {
         const sb = await getSupabase()
         if (!sb) { setAuthReady(true); return }
@@ -247,105 +260,60 @@ export function AuthProvider({ children }) {
     if (owner) {
       if (modeAuth === 'signup') throw new Error('That email is the site owner. Sign in instead.')
       if (!password || password.length < 6) throw new Error('Email and a password of at least 6 characters are required.')
-      const hashes = [owner.passwordHash, ...(owner.passwordHashes || [])]
-      let ok = false
-      const seen = new Set()
-      for (const stored of hashes) {
-        if (!stored || seen.has(stored)) continue
-        seen.add(stored)
-        if (await verifySecret(password, stored)) { ok = true; break }
+      if (!isSupabaseConfigured()) {
+        throw new Error('Cloud sign-in is required for cs1. Set Supabase env on this deploy, then try again.')
       }
-      if (ok) {
-        if (isSupabaseConfigured()) {
-          const sb = await getSupabase()
-          if (!sb) throw new Error('Sign-in is temporarily unavailable. Try again.')
-          const emails = [...new Set([
-            'cs1@calabi.us',
-            'kiddnixk@gmail.com',
-            owner.email,
-            String(email || '').includes('@') ? String(email).trim().toLowerCase() : '',
-          ].filter(Boolean))]
-          const finishOwner = async (sbUser) => {
-            const mapped = await hydratePrivileges(mapSbUser(sbUser, {
-              handle: owner.handle,
-              displayName: owner.displayName,
-            }))
-            const next = {
-              ...mapped,
-              handle: owner.handle,
-              displayName: owner.displayName,
-              isCreator: true,
-              creatorStatus: 'approved',
-              isPlatformAdmin: true,
-              role: 'admin',
-            }
-            const blocked = accessBlockMessage(next)
-            if (blocked) throw new Error(blocked)
-            setUser(next)
-            setMode('creator')
-            try { indexUser(next) } catch {}
-            setGraphActor(next)
-            try { await syncGraphFromCloud() } catch {}
-            return next
-          }
-          const cloudErrors = []
-          for (const mail of emails) {
-            if (!String(mail).includes('@') || String(mail).endsWith('.local')) continue
-            const { data, error } = await sb.auth.signInWithPassword({ email: mail, password })
-            if (error || !data?.user) {
-              if (error?.message) cloudErrors.push(`${mail}: ${error.message}`)
-              continue
-            }
-            return finishOwner(data.user)
-          }
-          for (const mail of emails) {
-            if (!String(mail).includes('@') || String(mail).endsWith('.local')) continue
-            const { data, error } = await sb.auth.signUp({
-              email: mail,
-              password,
-              options: { data: { display_name: owner.displayName, handle: owner.handle } },
-            })
-            if (error || !data?.user) {
-              if (error?.message) cloudErrors.push(`signup ${mail}: ${error.message}`)
-              continue
-            }
-            if (data.session?.user) return finishOwner(data.session.user)
-            if (data.user) {
-              const again = await sb.auth.signInWithPassword({ email: mail, password })
-              if (again.data?.user) return finishOwner(again.data.user)
-              if (again.error?.message) cloudErrors.push(`confirm ${mail}: ${again.error.message}`)
-            }
-          }
-          const hint = cloudErrors.slice(0, 2).join(' · ')
-          throw new Error(
-            'Owner password is correct, but cloud sign-in failed. In Supabase → Authentication → Users, add cs1@calabi.us with this same password and turn off Confirm email for testing. '
-            + (hint ? `(${hint})` : 'Then try again.'),
-          )
-        }
+      const sb = await getSupabase()
+      if (!sb) throw new Error('Sign-in is temporarily unavailable. Try again.')
+
+      const finishOwner = async (sbUser) => {
+        const mapped = await hydratePrivileges(mapSbUser(sbUser, {
+          handle: OWNER_LOGIN.handle,
+          displayName: OWNER_LOGIN.displayName,
+        }))
         const next = {
-          id: owner.id,
-          email: owner.email,
-          displayName: owner.displayName,
-          handle: owner.handle,
-          provider: 'local',
-          avatarUrl: '',
-          bannerUrl: '',
-          bio: '',
-          passwordHash: owner.passwordHash,
+          ...mapped,
+          // Always a normal Supabase session — never provider:local / owner-cs1
+          provider: 'supabase',
+          handle: OWNER_LOGIN.handle,
+          displayName: mapped.displayName || OWNER_LOGIN.displayName,
           isCreator: true,
           creatorStatus: 'approved',
           isPlatformAdmin: true,
           role: 'admin',
         }
-        rejectIfBlocked(next)
+        delete next.passwordHash
+        const blocked = accessBlockMessage(next)
+        if (blocked) throw new Error(blocked)
         setUser(next)
         setMode('creator')
         try { indexUser(next) } catch {}
+        setGraphActor(next)
+        try { await syncGraphFromCloud() } catch {}
+        try { await pullWatchProgressFromCloud(next.id) } catch {}
         return next
       }
-      if (isLocalOwnerLogin(email) || !isSupabaseConfigured()) {
-        throw new Error('Wrong email or password.')
+
+      const emails = ownerCloudEmails(email)
+      const cloudErrors = []
+      for (const mail of emails) {
+        const { data, error } = await sb.auth.signInWithPassword({ email: mail, password })
+        if (error || !data?.user) {
+          if (error?.message) cloudErrors.push(`${mail}: ${error.message}`)
+          continue
+        }
+        const mfa = await readMfaState(sb)
+        setMfaPending(mfa.pending)
+        setMfaFactors(mfa.factors)
+        return finishOwner(data.user)
       }
+      const hint = cloudErrors.slice(0, 2).join(' · ')
+      throw new Error(
+        sanitizeAuthError(
+          hint
+            || 'Wrong email or password. Use your cloud password for cs1@calabi.us (or your linked Gmail).',
+        ),
+      )
     }
 
     const org = findOfficialLogin(email)
