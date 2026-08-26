@@ -33,7 +33,7 @@ import { creatorDisplayName, isOfficialCreator, likesLabel, viewsLabel, formatDu
 import { isVerifiedChannel } from '../lib/verification'
 import { startPremiumCheckout } from '../lib/checkout'
 import { stashPendingStripe, startTipCheckout, TIP_AMOUNTS, TIP_AMOUNT_MIN, TIP_AMOUNT_MAX } from '../lib/tips'
-import { getStripePaymentLink } from '../lib/stripeConfig'
+import { ownCheckoutConfigured } from '../lib/stripeCheckout'
 import { preloadPostedItem } from '../lib/preloadMedia'
 
 function Pill({ children, onClick, active = false, title, disabled }) {
@@ -457,9 +457,15 @@ export default function WatchPage({
     const result = await startPremiumCheckout({
       already: false,
       email: user?.email || '',
-      reference: item.creatorId || item.id,
+      reference: `post:${item.id}:${user.id}`,
+      amountCents: Math.round(Number(item.priceUsd) * 100),
+      kind: 'post_purchase',
+      productName: item.title || 'Paid post',
+      creatorId: item.creatorId || item.userId || '',
+      contentId: item.id,
     })
     if (result.url) redirectSafeUrl(result.url)
+    else if (result.message) setPayBusy(false) // keep message path if any UI uses it
     setPayBusy(false)
   }
 
@@ -587,7 +593,7 @@ export default function WatchPage({
                   onClick={buyPost}
                   className="h-10 px-5 rounded-full bg-white text-black text-sm font-semibold disabled:opacity-50"
                 >
-                  {payBusy ? 'Opening…' : getStripePaymentLink() ? `Pay $${Number(item.priceUsd).toFixed(2)} on Stripe` : 'Stripe Payment Link is not on this deploy'}
+                  {payBusy ? 'Opening…' : ownCheckoutConfigured() ? `Pay $${Number(item.priceUsd).toFixed(2)}` : 'Checkout not configured'}
                 </button>
               </div>
             )}
@@ -707,7 +713,7 @@ export default function WatchPage({
                   </p>
                 </div>
                 <FollowButton creatorId={item.creatorId || item.userId} handle={item.handle} onOpenAuth={onOpenAuth} className="ml-2" />
-                {getStripePaymentLink() ? (
+                {ownCheckoutConfigured() ? (
                   <div className="ml-2 flex items-center gap-1 flex-wrap justify-end">
                     {TIP_AMOUNTS.map((n) => (
                       <button

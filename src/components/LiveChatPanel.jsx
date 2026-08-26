@@ -15,9 +15,9 @@ import { trySendLiveChat, removeLiveChatMessage } from '../lib/liveChat'
 import { subscribeLiveChat, GLOBAL_LIVE_CHANNEL_ID, isGlobalLiveChannel } from '../lib/liveChatSync'
 import { isChannelMod, timeoutChatUser, banChatUser } from '../lib/channelStaff'
 import { startTipCheckout, tipWithCalabiCash, TIP_AMOUNTS, TIP_AMOUNT_MIN, TIP_AMOUNT_MAX } from '../lib/tips'
+import { ownCheckoutConfigured } from '../lib/stripeCheckout'
 import { getCalabiCashBalance } from '../lib/calabiCash'
 import { redirectSafeUrl } from '../lib/safeUrl'
-import { getStripePaymentLink } from '../lib/stripeConfig'
 
 const QUICK_EMOTES = [
   '😀', '😂', '❤️', '🔥', '👏', '🎉', '👀', '💯', '🙌', '😮', '😢', '🤔',
@@ -358,7 +358,7 @@ export default function LiveChatPanel({
           </button>
         ) : (
           <form onSubmit={handleSendMessage} className="space-y-2">
-            {getStripePaymentLink() ? (
+            {ownCheckoutConfigured() ? (
               <div className="space-y-1">
                 <div className="flex flex-wrap gap-1">
                   {TIP_AMOUNTS.map((n) => (
@@ -395,7 +395,7 @@ export default function LiveChatPanel({
                 </div>
               </div>
             ) : (
-              <p className="text-[10px] text-zinc-600">Live donate needs a Stripe Payment Link on this deploy.</p>
+              <p className="text-[10px] text-zinc-600">Live donate needs own Stripe Checkout (deploy create-checkout-session).</p>
             )}
             <div className="space-y-1 border-t border-zinc-800 pt-2">
               <p className="text-[10px] text-zinc-500">Calabi Cash · bal {getCalabiCashBalance(user?.id)}</p>

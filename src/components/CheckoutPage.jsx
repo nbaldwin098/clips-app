@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { membershipReturnPaid, getStripePaymentLink, isStripeConfigured, stripeMode } from '../lib/stripeConfig'
+import { membershipReturnPaid, isStripeConfigured, stripeMode } from '../lib/stripeConfig'
+import { ownCheckoutConfigured } from '../lib/stripeCheckout'
 import { usePremiumCheckout } from '../hooks/usePremiumCheckout'
 import PageHeader from './PageHeader'
 import { calcPlatformFeeCents, PLATFORM_FEE_EXPLAINER, formatUsdFromCents } from '../lib/marketplaceSync'
@@ -10,14 +11,14 @@ export default function CheckoutPage({ onNavigate, creatorId, returnParams = {} 
   const checkout = usePremiumCheckout({ user, isAuthenticated, creatorId })
   const priceCents = Math.round((Number(checkout.price) || 0) * 100)
   const fee = calcPlatformFeeCents(priceCents)
-  const hasLink = !!getStripePaymentLink()
+  const canPay = ownCheckoutConfigured()
   const mode = stripeMode()
 
   useEffect(() => {
     if (!isAuthenticated || !user?.id || !checkout.target) return
     const search = typeof window !== 'undefined' ? window.location.search : ''
     if (!membershipReturnPaid(returnParams, search)) return
-    checkout.setStatus('Returned from Stripe. Premium applies when the Payment Link return confirms paid=1 or session_id.')
+    checkout.setStatus('Returned from Stripe. Premium applies when checkout confirms paid=1 or session_id.')
   }, [isAuthenticated, user?.id, checkout.target, returnParams, checkout.setStatus])
 
   return (
@@ -28,7 +29,7 @@ export default function CheckoutPage({ onNavigate, creatorId, returnParams = {} 
         <ul className="text-xs text-zinc-400 space-y-1 list-disc list-inside">
           <li>Premium badge in chat</li>
           <li>Creator emotes the channel has added</li>
-          <li>Charged through Stripe Payment Link (cloud)</li>
+          <li>Charged through calabi’s own Stripe Checkout</li>
         </ul>
         <div className="rounded-lg border border-zinc-800 bg-black/40 p-3 space-y-1 text-xs text-zinc-400">
           <p className="flex items-center gap-1 text-zinc-300">
@@ -41,21 +42,19 @@ export default function CheckoutPage({ onNavigate, creatorId, returnParams = {} 
             </span>
           </p>
           <p className="text-[11px] text-sky-300/90">{PLATFORM_FEE_EXPLAINER}</p>
-          <p className="text-white pt-1">Shown for protection; Stripe processes the card charge on the Payment Link.</p>
+          <p className="text-white pt-1">Stripe hosts the card form; money is confirmed on return to calabi.</p>
         </div>
         <p className="text-[11px] text-zinc-500">
-          {isStripeConfigured()
-            ? (hasLink
-              ? `Stripe ready (${mode}). Pay opens hosted Checkout.`
-              : 'Publishable key is set, but VITE_STRIPE_PAYMENT_LINK is missing — add the Payment Link on Render to charge cards.')
-            : 'Set VITE_STRIPE_PUBLISHABLE_KEY and VITE_STRIPE_PAYMENT_LINK on Render.'}
+          {canPay
+            ? `Own checkout ready${isStripeConfigured() ? ` (${mode})` : ''}. Sign in, then Pay.`
+            : 'Set VITE_SUPABASE_URL + ANON_KEY and deploy the create-checkout-session Edge Function.'}
         </p>
         {checkout.already ? (
           <p className="text-sm text-white">You already have premium on this channel.</p>
         ) : (
-          <button type="button" disabled={!isAuthenticated || !hasLink} onClick={checkout.pay} className="w-full h-11 rounded-lg bg-white text-black text-sm font-medium disabled:opacity-40">
+          <button type="button" disabled={!isAuthenticated || !canPay} onClick={checkout.pay} className="w-full h-11 rounded-lg bg-white text-black text-sm font-medium disabled:opacity-40">
             {isAuthenticated
-              ? (hasLink ? `Pay $${checkout.price}/mo on Stripe` : 'Stripe Payment Link required')
+              ? (canPay ? `Pay $${checkout.price}/mo` : 'Checkout not configured')
               : 'Sign in for premium'}
           </button>
         )}
