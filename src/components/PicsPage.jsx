@@ -409,6 +409,8 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
     if (viewerIndex == null) return
     const pic = scrollItems[viewerIndex]
     if (!pic?.id) return
+    // Count once per opened pic — do not depend on scrollItems identity
+    // (catalog refresh used to re-fire forever and crash the page).
     recordView(pic.id, {
       creatorId: pic.creatorId || pic.userId,
       title: pic.title,
