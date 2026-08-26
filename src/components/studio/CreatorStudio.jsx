@@ -22,9 +22,9 @@ import { getCreatorContent, deleteCatalogItem } from '../../lib/contentService'
 import { getViews, getVotes } from '../../lib/engagement'
 import { creatorBalance } from '../../lib/payouts'
 import { listVods, setVodVisibility, getVodChannel } from '../../lib/vods'
-import { buildInteractionBubbles } from '../../lib/creatorInteractions'
+import { buildInteractionNetwork } from '../../lib/creatorInteractions'
 import { formatCount } from '../../lib/uiFormat'
-import { formatPostedAt } from '../../lib/mediaMeta'
+import { formatPostedAt, postedAtOf } from '../../lib/mediaMeta'
 import { cn } from '../../lib/utils'
 import { restoreLostUploads } from '../../lib/restoreUploads'
 import { useContentSyncTick, useInteractionSyncTick } from '../../lib/useContentSync'
@@ -101,7 +101,7 @@ function PostRow({ post, active, deleting, onSelect, onPlay, onDelete }) {
             <p className="text-[10px] uppercase tracking-wider text-zinc-500">{typeLabel(post.type)}</p>
             <p className="text-sm font-semibold text-white truncate mt-0.5">{post.title || 'Untitled'}</p>
           </div>
-          <span className="shrink-0 text-[10px] text-zinc-500">{formatPostedAt(post.createdAt) || '—'}</span>
+          <span className="shrink-0 text-[10px] text-zinc-500">{formatPostedAt(postedAtOf(post)) || '—'}</span>
         </div>
         <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] text-zinc-400">
           <span>{formatCount(views)} views</span>
@@ -291,8 +291,8 @@ export default function CreatorStudio({
 
   const selectedPost = posts.find((p) => p.id === selectedPostId) || null
 
-  const bubbles = useMemo(
-    () => buildInteractionBubbles(user?.id, posts, { contentId: selectedPostId, range }),
+  const network = useMemo(
+    () => buildInteractionNetwork(user?.id, posts, { contentId: selectedPostId, range }),
     [user?.id, posts, selectedPostId, range, syncTick, interactionTick]
   )
 
@@ -526,12 +526,13 @@ export default function CreatorStudio({
             <div className="h-full min-h-0 flex flex-col gap-4 overflow-hidden">
               <div className="min-h-0 flex-1 min-h-[320px]">
                 <InteractionBubbleMap
-                  nodes={bubbles}
+                  network={network}
                   range={range}
                   onRangeChange={setRange}
                   selectedPostId={selectedPostId}
                   onSelectPost={setSelectedPostId}
                   postTitle={selectedPost?.title}
+                  creator={user}
                 />
               </div>
               <div className="shrink-0 max-h-[40%] overflow-y-auto border-t border-zinc-800 pt-3">

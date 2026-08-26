@@ -19,7 +19,7 @@ import { pushContentRecord, deleteContentRecord, notifyContentChanged, syncConte
 import { newContentId } from './newContentId'
 import { getSubscriptionsForUser } from './engagement'
 import { getPicsFeed } from './picsService'
-import { mergeTags, isReleased } from './mediaMeta'
+import { mergeTags, isReleased, stampFirstPublished } from './mediaMeta'
 import { setChapters, setCaptions, deleteScheduled } from './youtubeParity'
 import { isFeedable, isReferenceItem, isRetiredCatalogItem } from './catalogHealth'
 import { isAccountHidden } from './trustSafety'
@@ -157,6 +157,7 @@ export function normalizeItem(raw) {
     status: raw.status || 'published',
     category: raw.category || null,
     publishedAt: raw.publishedAt || null,
+    firstPublishedAt: raw.firstPublishedAt || null,
   }
 }
 
@@ -649,6 +650,9 @@ export async function publishLocalMedia(file, actor = null, {
       handle: host.handle || actor.handle,
     }
 
+    const stamped = stampFirstPublished(record)
+    Object.assign(record, stamped)
+
     if (finalStatus === 'published') {
       const pushed = await pushContentRecord(record, host)
       if (!pushed.ok) {
@@ -686,15 +690,16 @@ export async function publishDraftItem(id, actor = null) {
   if (!hasHttp) {
     return { ok: false, error: uploadFailedMessage() }
   }
-  const next = {
+  const nowIso = new Date().toISOString()
+  const next = stampFirstPublished({
     ...raw,
     status: 'published',
-    publishedAt: new Date().toISOString(),
+    publishedAt: raw.publishedAt || raw.firstPublishedAt || nowIso,
     scheduledFor: null,
     hosted: true,
     localStored: false,
     origin: raw.origin === 'pic-local' ? 'pic-upload' : (raw.origin === 'upload-local' ? 'upload' : raw.origin),
-  }
+  }, raw.firstPublishedAt || raw.publishedAt || raw.createdAt || nowIso)
   const host = await resolveUploadHost(actor?.id ? actor : { id: raw.creatorId, handle: raw.handle, provider: 'supabase' })
   if (host?.id) {
     const pushed = await pushContentRecord(next, host)
@@ -742,7 +747,17 @@ export function flushScheduledPublishes() {
     if (raw.status !== 'scheduled') continue
     const when = new Date(raw.scheduledFor || 0).getTime()
     if (!when || when > now) continue
-    updateImport(raw.id, { status: 'published', publishedAt: new Date().toISOString() })
+    const publishedAt = raw.publishedAt || raw.firstPublishedAt || new Date().toISOString()
+    const next = stampFirstPublished({
+      ...raw,
+      status: 'published',
+      publishedAt,
+    }, publishedAt)
+    updateImport(raw.id, {
+      status: 'published',
+      publishedAt: next.publishedAt,
+      firstPublishedAt: next.firstPublishedAt,
+    })
     if (raw.creatorId) {
       notifyFollowersOfUpload({ creatorId: raw.creatorId, handle: raw.handle, title: raw.title })
     }

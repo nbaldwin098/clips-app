@@ -12,6 +12,7 @@ import { processImageFile } from './videoStorage'
 import { hasStableImage, hiddenBrokenIds, isFeedable } from './catalogHealth'
 import { isAccountHidden } from './trustSafety'
 import { newContentId } from './newContentId'
+import { stampFirstPublished } from './mediaMeta'
 
 const LEAKED_ERROR_PATTERN = /row-level security|violates|local only\s*—/i
 function sanitizeDescription(desc) {
@@ -122,6 +123,8 @@ export async function publishPhoto(file, actor = null, { priceUsd = 0 } = {}) {
       width: processed.width,
       height: processed.height,
       createdAt: new Date().toISOString(),
+      publishedAt: new Date().toISOString(),
+      status: 'published',
       priceUsd: finalPrice,
       creatorId: host.id,
       userId: host.id,
@@ -129,6 +132,8 @@ export async function publishPhoto(file, actor = null, { priceUsd = 0 } = {}) {
       displayName: host.displayName || actor.displayName || actor.handle,
       avatarUrl: actor.avatarUrl || null,
     }
+
+    Object.assign(record, stampFirstPublished(record))
 
     const pushed = await pushContentRecord(record, host)
     if (!pushed.ok) {

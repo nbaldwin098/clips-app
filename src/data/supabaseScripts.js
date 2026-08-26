@@ -8,6 +8,7 @@ import showAdsLiveChat from '../../supabase/migrations/0011_show_ads_live_chat.s
 import videosPublishColumns from '../../supabase/migrations/0012_videos_publish_columns.sql?raw'
 import liveFeatureState from '../../supabase/migrations/0013_live_feature_state.sql?raw'
 import creatorInteractions from '../../supabase/migrations/0014_creator_interactions.sql?raw'
+import videosFirstPublished from '../../supabase/migrations/0015_videos_first_published_at.sql?raw'
 
 export const SETUP_SCRIPTS = [
   {
@@ -69,5 +70,11 @@ export const SETUP_SCRIPTS = [
     title: 'Creator interaction map (bubble events)',
     file: '0014_creator_interactions.sql',
     sql: String(creatorInteractions || ''),
+  },
+  {
+    id: '0015',
+    title: 'Immutable first-publish timestamps',
+    file: '0015_videos_first_published_at.sql',
+    sql: String(videosFirstPublished || ''),
   },
 ]

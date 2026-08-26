@@ -3,7 +3,7 @@
  * Session memory holds the latest pull; catalog is not written to localStorage.
  */
 import { replaceImportsFromCloud, removeImport, purgeLegacyLocalCatalog, getImports } from './storage'
-import { isUserUploadRecord } from './mediaMeta'
+import { isUserUploadRecord, stampFirstPublished, olderIso } from './mediaMeta'
 import { getSupabase, isSupabaseConfigured } from './supabaseClient'
 import { isFeedable, isReferenceItem, hasStableImage, purgeDeadCatalog } from './catalogHealth'
 import { clearFrozenFeeds } from './frozenFeeds'
@@ -28,6 +28,9 @@ function toRow(record, actor) {
   const media = cloudUrl(record.mediaUrl) || cloudUrl(record.sourceUrl)
   const source = cloudUrl(record.sourceUrl) || media
   const thumb = cloudUrl(record.thumbUrl) || media
+  const stamped = stampFirstPublished(record)
+  const createdAt = record.createdAt || stamped.firstPublishedAt || new Date().toISOString()
+  const publishedAt = stamped.publishedAt || (stamped.status === 'published' ? createdAt : null)
   return {
     id: record.id,
     creator_id: actor?.id || record.creatorId || record.userId || null,
@@ -47,8 +50,9 @@ function toRow(record, actor) {
     tags: record.tags || [],
     engagement: record.engagement || {},
     views: record.views || 0,
-    created_at: record.createdAt || new Date().toISOString(),
-    published_at: record.publishedAt || record.createdAt || null,
+    created_at: createdAt,
+    published_at: publishedAt,
+    first_published_at: stamped.firstPublishedAt || publishedAt || null,
     status: record.status || 'published',
     scheduled_for: record.scheduledFor || null,
     price_usd: Number(record.priceUsd) > 0 ? Number(record.priceUsd) : 0,
@@ -56,6 +60,11 @@ function toRow(record, actor) {
 }
 
 function fromRow(row) {
+  const createdAt = row.created_at
+  const publishedAt = row.published_at || row.created_at
+  const firstPublishedAt =
+    row.first_published_at
+    || (row.status === 'published' || row.published_at ? olderIso(publishedAt, createdAt) : null)
   return {
     id: row.id,
     creatorId: row.creator_id || undefined,
@@ -76,8 +85,9 @@ function fromRow(row) {
     tags: row.tags || [],
     engagement: row.engagement || {},
     views: row.views || 0,
-    createdAt: row.created_at,
-    publishedAt: row.published_at || row.created_at,
+    createdAt,
+    publishedAt,
+    firstPublishedAt,
     status: row.status || 'published',
     scheduledFor: row.scheduled_for || null,
     priceUsd: Number(row.price_usd) > 0 ? Number(row.price_usd) : 0,
@@ -90,7 +100,7 @@ function catalogSyncErrorMessage(error) {
   const msg = String(error?.message || error || '').trim()
   if (!msg) return "Couldn't save to the catalog."
   if (/Could not find the .* column/i.test(msg)) {
-    return 'Site database is out of date — run the latest Supabase migration (0012_videos_publish_columns.sql).'
+    return 'Site database is out of date — run the latest Supabase migration (0015_videos_first_published_at.sql / 0012).'
   }
   if (LEAKED_DB_ERROR.test(msg)) return "Couldn't publish — sign in with the account that owns this upload."
   return msg
@@ -109,7 +119,14 @@ export async function pushContentRecord(record, actor) {
     if (!sessionData?.session?.user?.id) {
       return { ok: false, error: 'Sign in required to publish.' }
     }
-    const { error } = await sb.from(TABLE).upsert(toRow(record, actor), { onConflict: 'id' })
+    let payload = toRow(record, actor)
+    let { error } = await sb.from(TABLE).upsert(payload, { onConflict: 'id' })
+    // Older DBs without 0015: retry without first_published_at so uploads still work.
+    if (error && /first_published_at/i.test(String(error.message || ''))) {
+      const { first_published_at: _drop, ...rest } = payload
+      payload = rest
+      ;({ error } = await sb.from(TABLE).upsert(payload, { onConflict: 'id' }))
+    }
     if (error) {
       console.warn('[Clips] Cloud content sync (push) failed:', error.message)
       return { ok: false, error: catalogSyncErrorMessage(error) }
@@ -224,7 +241,21 @@ export async function syncContentFromCloud(actor = null) {
       const age = Date.now() - new Date(r.createdAt || 0).getTime()
       return Number.isFinite(age) && age >= 0 && age < 120000
     })
-    replaceImportsFromCloud([...pending, ...rows])
+    const existing = getImports()
+    const byPrev = new Map(existing.map((r) => [r.id, r]))
+    replaceImportsFromCloud([...pending, ...rows].map((row) => {
+      const prev = byPrev.get(row.id)
+      if (!prev?.firstPublishedAt) return row
+      if (row.firstPublishedAt) {
+        const a = Date.parse(prev.firstPublishedAt)
+        const b = Date.parse(row.firstPublishedAt)
+        if (Number.isFinite(a) && Number.isFinite(b) && a < b) {
+          return { ...row, firstPublishedAt: prev.firstPublishedAt, createdAt: prev.createdAt || row.createdAt }
+        }
+        return row
+      }
+      return { ...row, firstPublishedAt: prev.firstPublishedAt }
+    }))
   } else {
     // Empty/failed pull must not wipe, but the UI needs a hydrated signal.
     markCatalogHydrated()

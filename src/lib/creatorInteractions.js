@@ -3,10 +3,7 @@
  * Records when viewers click (open), like, follow, share, comment, or skip a post.
  * Local storage is the UI source; cloud rows sync so creators see other devices.
  */
-import { lsGet, lsSet } from './storage'
-import { getViews, getVotes, getSubscriberCount } from './engagement'
-import { listComments } from './youtubeParity'
-import { getImports } from './storage'
+import { lsGet, lsSet, getImports } from './storage'
 
 const KEY = 'clips_creator_interactions'
 const MAX = 2500
@@ -247,98 +244,214 @@ function rangeCutoff(range) {
 /**
  * Build bubble nodes for the map. Prefers live event log; seeds from tallies
  * when the log is thin so the map is never empty for creators with real traffic.
+ * @deprecated Prefer buildInteractionNetwork for the studio map (real users).
  */
 export function buildInteractionBubbles(creatorId, posts = [], { contentId = null, range = 'all' } = {}) {
-  const live = listCreatorInteractions(creatorId, { contentId, range, limit: 1200 })
-  const nodes = []
-  const postById = new Map((posts || []).map((p) => [p.id, p]))
-
-  for (const ev of live) {
-    const meta = typeMeta(ev.type)
-    const post = ev.contentId ? postById.get(ev.contentId) : null
-    nodes.push({
-      id: ev.id,
-      contentId: ev.contentId,
-      type: ev.type,
-      label: meta.label,
-      color: meta.color,
-      short: meta.short,
-      weight: Number(ev.weight) || 1,
-      at: Date.parse(ev.at) || Date.now(),
-      title: ev.title || post?.title || (ev.type === 'subscribe' ? 'Channel' : 'Post'),
-      source: ev.source || 'live',
-      surface: ev.surface || 'unknown',
-      contentType: ev.contentType || contentTypeForItem(post) || null,
-    })
-  }
-
-  if (nodes.length < 8) {
-    const seed = seedBubblesFromTallies(creatorId, posts, contentId, range)
-    for (const s of seed) {
-      if (nodes.some((n) => n.contentId === s.contentId && n.type === s.type && n.source === 'tally')) continue
-      nodes.push(s)
-    }
-  }
-
-  return nodes
+  const net = buildInteractionNetwork(creatorId, posts, { contentId, range })
+  return (net.people || []).map((p) => ({
+    id: p.id,
+    contentId: p.topContentId || null,
+    type: p.primaryType,
+    label: p.primaryLabel,
+    color: p.color,
+    short: p.short,
+    weight: p.weight,
+    count: p.eventCount,
+    at: p.lastAt,
+    title: p.topTitle || (p.primaryType === 'subscribe' ? 'Channel' : 'Post'),
+    source: 'live',
+    surface: p.primarySurface,
+    contentType: p.primaryContentType,
+    actorId: p.actorId,
+    handle: p.handle,
+    displayName: p.displayName,
+    avatarUrl: p.avatarUrl,
+  }))
 }
 
-function seedBubblesFromTallies(creatorId, posts, contentId, range) {
-  const cut = rangeCutoff(range)
-  const list = (posts || []).filter((p) => p && (!contentId || p.id === contentId))
-  const out = []
-  for (const post of list.slice(0, 40)) {
-    const created = Date.parse(post.createdAt || post.publishedAt || 0) || Date.now() - 86400000
-    if (cut && created < cut && !(getViews(post.id) || post.views)) continue
-    const views = getViews(post.id) || post.views || 0
-    const likes = getVotes(post.id)?.up || 0
-    const comments = listComments(post.id).length
-    const span = Math.max(3600000, Date.now() - created)
-    const place = (type, count, offsetFrac) => {
-      if (!count) return
-      const at = created + span * offsetFrac
-      if (cut && at < cut) return
-      const meta = typeMeta(type)
-      out.push({
-        id: `seed_${post.id}_${type}`,
-        contentId: post.id,
-        type,
-        label: meta.label,
-        color: meta.color,
-        short: meta.short,
-        weight: Math.max(1, Math.round(Math.log2(count + 1) * 2)),
-        count,
-        at,
-        title: post.title || 'Post',
-        source: 'tally',
-        surface: post.type === 'pic' ? 'pics' : post.type === 'video' ? 'watch' : 'clips',
-        contentType: contentTypeForItem(post),
-      })
+/**
+ * Meme/solana-style network: one node per real actor, white edges to the creator
+ * hub and between people who touched the same post. Tallies are never invented as people.
+ */
+export function buildInteractionNetwork(creatorId, posts = [], { contentId = null, range = 'all' } = {}) {
+  const live = listCreatorInteractions(creatorId, { contentId, range, limit: 1500 })
+    .filter((ev) => ev && ev.source !== 'tally')
+  const postById = new Map((posts || []).map((p) => [p.id, p]))
+  const byActor = new Map()
+  let guestEvents = 0
+  let guestWeight = 0
+
+  for (const ev of live) {
+    if (!ev.actorId) {
+      guestEvents += 1
+      guestWeight += Number(ev.weight) || 1
+      continue
     }
-    place('view', views, 0.35)
-    place('like', likes, 0.55)
-    place('comment', comments, 0.7)
+    const key = String(ev.actorId)
+    let bucket = byActor.get(key)
+    if (!bucket) {
+      bucket = {
+        actorId: key,
+        events: [],
+        byType: {},
+        contentIds: new Set(),
+        weight: 0,
+        firstAt: Infinity,
+        lastAt: 0,
+      }
+      byActor.set(key, bucket)
+    }
+    const w = Number(ev.weight) || 1
+    bucket.events.push(ev)
+    bucket.byType[ev.type] = (bucket.byType[ev.type] || 0) + w
+    if (ev.contentId) bucket.contentIds.add(ev.contentId)
+    bucket.weight += w
+    const t = Date.parse(ev.at) || Date.now()
+    if (t < bucket.firstAt) bucket.firstAt = t
+    if (t > bucket.lastAt) bucket.lastAt = t
   }
-  const subs = getSubscriberCount(creatorId)
-  if (subs && !contentId) {
-    const meta = typeMeta('subscribe')
-    out.push({
-      id: `seed_subs_${creatorId}`,
-      contentId: null,
-      type: 'subscribe',
-      label: meta.label,
+
+  const people = []
+  for (const bucket of byActor.values()) {
+    const types = Object.entries(bucket.byType).sort((a, b) => b[1] - a[1])
+    const primaryType = types[0]?.[0] || 'view'
+    const meta = typeMeta(primaryType)
+    const topEv = [...bucket.events].sort((a, b) => (Number(b.weight) || 1) - (Number(a.weight) || 1))[0]
+    const post = topEv?.contentId ? postById.get(topEv.contentId) : null
+    people.push({
+      id: `actor_${bucket.actorId}`,
+      kind: 'person',
+      actorId: bucket.actorId,
+      handle: null,
+      displayName: null,
+      avatarUrl: null,
+      weight: bucket.weight,
+      eventCount: bucket.events.length,
+      byType: { ...bucket.byType },
+      types: types.map(([id]) => id),
+      primaryType,
+      primaryLabel: meta.label,
       color: meta.color,
       short: meta.short,
-      weight: Math.max(1, Math.round(Math.log2(subs + 1) * 3)),
-      count: subs,
-      at: Date.now() - 3 * 86400000,
-      title: 'Channel',
-      source: 'tally',
-      surface: 'channel',
-      contentType: 'channel',
+      primarySurface: topEv?.surface || 'unknown',
+      primaryContentType: topEv?.contentType || contentTypeForItem(post) || null,
+      contentIds: [...bucket.contentIds],
+      topContentId: topEv?.contentId || null,
+      topTitle: topEv?.title || post?.title || (primaryType === 'subscribe' ? 'Channel' : 'Post'),
+      firstAt: Number.isFinite(bucket.firstAt) ? bucket.firstAt : Date.now(),
+      lastAt: bucket.lastAt || Date.now(),
+      events: bucket.events.slice(0, 40),
     })
   }
-  return out
+
+  people.sort((a, b) => b.weight - a.weight || b.lastAt - a.lastAt)
+
+  if (guestEvents > 0) {
+    const meta = typeMeta('view')
+    people.push({
+      id: 'actor_guests',
+      kind: 'guests',
+      actorId: null,
+      handle: 'guests',
+      displayName: 'Unsigned viewers',
+      avatarUrl: null,
+      weight: guestWeight || guestEvents,
+      eventCount: guestEvents,
+      byType: { view: guestWeight || guestEvents },
+      types: ['view'],
+      primaryType: 'view',
+      primaryLabel: 'Unsigned activity',
+      color: meta.color,
+      short: 'Guest',
+      primarySurface: 'unknown',
+      primaryContentType: null,
+      contentIds: [],
+      topContentId: null,
+      topTitle: 'Signed-out sessions',
+      firstAt: Date.now(),
+      lastAt: Date.now(),
+      events: [],
+    })
+  }
+
+  const hub = {
+    id: `hub_${creatorId || 'creator'}`,
+    kind: 'hub',
+    actorId: creatorId || null,
+    label: 'You',
+  }
+
+  const edges = []
+  for (const person of people) {
+    edges.push({
+      id: `e_hub_${person.id}`,
+      from: hub.id,
+      to: person.id,
+      kind: 'hub',
+      weight: person.weight,
+      types: person.types,
+    })
+  }
+
+  // Co-interaction edges: people who touched the same post (meme-coin style clusters).
+  const byContent = new Map()
+  for (const person of people) {
+    if (person.kind !== 'person') continue
+    for (const cid of person.contentIds) {
+      if (!byContent.has(cid)) byContent.set(cid, [])
+      byContent.get(cid).push(person.id)
+    }
+  }
+  const seenPair = new Set()
+  let coEdgeCount = 0
+  for (const [, ids] of byContent) {
+    if (ids.length < 2 || coEdgeCount > 120) continue
+    const capped = ids.slice(0, 12)
+    for (let i = 0; i < capped.length; i += 1) {
+      for (let j = i + 1; j < capped.length; j += 1) {
+        const a = capped[i]
+        const b = capped[j]
+        const key = a < b ? `${a}|${b}` : `${b}|${a}`
+        if (seenPair.has(key)) continue
+        seenPair.add(key)
+        edges.push({
+          id: `e_co_${key}`,
+          from: a,
+          to: b,
+          kind: 'co',
+          weight: 1,
+          types: [],
+        })
+        coEdgeCount += 1
+        if (coEdgeCount > 120) break
+      }
+      if (coEdgeCount > 120) break
+    }
+  }
+
+  const summary = summarizeNetwork(people, live)
+  return { hub, people, edges, events: live, summary }
+}
+
+export function summarizeNetwork(people = [], events = []) {
+  const byType = {}
+  const bySurface = {}
+  let total = 0
+  for (const ev of events || []) {
+    const w = Number(ev.weight) || 1
+    byType[ev.type] = (byType[ev.type] || 0) + w
+    const surf = ev.surface || 'unknown'
+    bySurface[surf] = (bySurface[surf] || 0) + w
+    total += w
+  }
+  return {
+    byType,
+    bySurface,
+    total,
+    people: (people || []).filter((p) => p.kind === 'person').length,
+    guests: (people || []).some((p) => p.kind === 'guests'),
+    nodes: (people || []).length,
+  }
 }
 
 export function summarizeBubbles(nodes) {
@@ -352,4 +465,22 @@ export function summarizeBubbles(nodes) {
     total += n.count || n.weight || 1
   }
   return { byType, bySurface, total, nodes: (nodes || []).length }
+}
+
+/** Resolve local + cloud identity for actor ids (handles / avatars). */
+export function resolveActorIdentities(actorIds = [], cloudProfiles = {}) {
+  const index = lsGet('users_index', {}) || {}
+  const out = {}
+  for (const id of actorIds || []) {
+    if (!id) continue
+    const local = index[id] || null
+    const cloud = cloudProfiles[id] || null
+    out[id] = {
+      id,
+      handle: cloud?.handle || local?.handle || null,
+      displayName: cloud?.displayName || local?.displayName || null,
+      avatarUrl: cloud?.avatarUrl || local?.avatarUrl || null,
+    }
+  }
+  return out
 }
