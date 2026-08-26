@@ -105,8 +105,8 @@ export default function UploadModal({ open, onClose, onDone, initialKind = 'vide
           </div>
           <p className="text-[11px] text-zinc-500">
             {kind === 'short'
-              ? 'Clips: max 60 seconds and 40MB. MP4 works best on phones.'
-              : 'Videos: max 80MB.'}
+              ? 'Clips: max 60 seconds. MP4 works best on phones.'
+              : 'Videos: max 24 hours.'}
           </p>
 
           <input

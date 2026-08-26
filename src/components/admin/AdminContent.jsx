@@ -1,6 +1,14 @@
 import { useMemo, useState } from 'react'
 import { adminRemoveContent, listAllContent } from '../../lib/trustSafety'
 
+function formatSize(bytes) {
+  const n = Number(bytes) || 0
+  if (n < 1024) return `${n} B`
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`
+  if (n < 1024 * 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(1)} MB`
+  return `${(n / (1024 * 1024 * 1024)).toFixed(2)} GB`
+}
+
 export default function AdminContent() {
   const [q, setQ] = useState('')
   const [tick, setTick] = useState(0)
@@ -41,6 +49,7 @@ export default function AdminContent() {
               <th className="px-5 py-2.5 font-medium">Title</th>
               <th className="px-3 py-2.5 font-medium">Creator</th>
               <th className="px-3 py-2.5 font-medium">Type</th>
+              <th className="px-3 py-2.5 font-medium">Size</th>
               <th className="px-3 py-2.5 font-medium" />
             </tr>
           </thead>
@@ -50,6 +59,7 @@ export default function AdminContent() {
                 <td className="px-5 py-2.5 text-white max-w-[360px] truncate">{r.title || 'Untitled'}</td>
                 <td className="px-3 py-2.5 text-zinc-400">@{r.handle || '—'}</td>
                 <td className="px-3 py-2.5 text-zinc-500">{r.type || 'video'}</td>
+                <td className="px-3 py-2.5 text-zinc-500">{formatSize(r.storedBytes)}</td>
                 <td className="px-3 py-2.5 text-right">
                   <button
                     type="button"
