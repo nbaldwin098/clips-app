@@ -14,7 +14,6 @@ import { getMediaBlobUrl } from '../lib/videoStorage'
 import { copyShareUrl, replaceHash } from '../lib/routes'
 import ShortsStage, { ShortsCard } from './ShortsStage'
 import { downloadPostedMedia } from '../lib/mediaDownload'
-import { shuffleFeed } from '../lib/shuffleFeed'
 import { preloadPostedItems } from '../lib/preloadMedia'
 
 function PicImage({ pic, className, alt = '', full = false, fill = false, eager = false, onUnplayable }) {
@@ -273,10 +272,12 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
 
   const scrollItems = useMemo(() => {
     const list = (items || []).filter(isFeedable)
-    if (!initialPicId) return shuffleFeed(list)
+    // Keep catalog order (newest first). Do not reshuffle on every refresh —
+    // that used to re-trigger view logging and crash the pics page.
+    if (!initialPicId) return list
     const focused = list.find((p) => p.id === initialPicId)
-    const rest = shuffleFeed(list.filter((p) => p.id !== initialPicId))
-    return focused && isFeedable(focused) ? [focused, ...rest] : shuffleFeed(list)
+    const rest = list.filter((p) => p.id !== initialPicId)
+    return focused && isFeedable(focused) ? [focused, ...rest] : list
   }, [items, initialPicId])
   const goToRef = useRef(null)
   const skipAutoOpen = useRef(false)
@@ -322,6 +323,8 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
     if (viewerIndex == null) return
     const pic = scrollItems[viewerIndex]
     if (!pic?.id) return
+    // Count once per opened pic — do not depend on scrollItems identity
+    // (catalog refresh used to re-fire forever and crash the page).
     recordView(pic.id, {
       creatorId: pic.creatorId || pic.userId,
       title: pic.title,
@@ -329,7 +332,7 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
       surface: 'pics',
       contentType: 'pic',
     })
-  }, [viewerIndex, scrollItems, user?.id])
+  }, [viewerIndex, scrollItems[viewerIndex]?.id, user?.id])
 
   useEffect(() => {
     if (viewerIndex == null) return
@@ -347,7 +350,10 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
     setError('')
     try {
       const res = await publishPhoto(file, user)
-      if (!res.ok) { setError(res.error || 'Upload failed.'); return }
+      if (!res?.ok) {
+        setError(res?.error || 'Upload failed.')
+        return
+      }
       refresh()
     } catch (err) {
       setError(err?.message || 'Upload failed.')
