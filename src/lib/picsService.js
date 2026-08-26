@@ -69,14 +69,19 @@ export function getPicsFeed() {
       origin: raw.origin || '',
       createdAt: raw.createdAt || raw.publishedAt || '',
       hosted: !!raw.hosted,
+      attachments: Array.isArray(raw.attachments) ? raw.attachments : [],
     }))
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 }
 
-export async function publishPhoto(file, actor = null, { priceUsd = 0 } = {}) {
+/**
+ * Publish a photo, optionally with attached gif / video / live lobby pointer.
+ * attachments: [{ type: 'gif'|'video'|'live', url?, contentId?, title? }]
+ */
+export async function publishPhoto(file, actor = null, { priceUsd = 0, attachments = [], description = '' } = {}) {
   if (!file) return { ok: false, item: null, error: 'Choose a photo.' }
   if (!String(file.type || '').startsWith('image/')) {
-    return { ok: false, item: null, error: 'Choose an image file (jpg, png, webp).' }
+    return { ok: false, item: null, error: 'Choose an image file (jpg, png, webp, gif).' }
   }
   if (!actor?.id) return { ok: false, item: null, error: signInToUploadMessage() }
 
@@ -104,11 +109,21 @@ export async function publishPhoto(file, actor = null, { priceUsd = 0 } = {}) {
       ? Math.round(parsedPrice * 100) / 100
       : 0
 
+    const cleanAttachments = (Array.isArray(attachments) ? attachments : [])
+      .filter((a) => a && (a.url || a.contentId))
+      .slice(0, 4)
+      .map((a) => ({
+        type: ['gif', 'video', 'live'].includes(a.type) ? a.type : 'video',
+        url: String(a.url || ''),
+        contentId: String(a.contentId || ''),
+        title: String(a.title || '').slice(0, 80),
+      }))
+
     const record = {
       id,
       type: 'pic',
       title: String(file.name || 'Photo').replace(/\.[^.]+$/, '') || 'Photo',
-      description: '',
+      description: String(description || '').slice(0, 2000),
       sourceUrl: mediaUrl,
       mediaUrl,
       thumbUrl: mediaUrl,
@@ -131,6 +146,7 @@ export async function publishPhoto(file, actor = null, { priceUsd = 0 } = {}) {
       handle: host.handle || actor.handle,
       displayName: host.displayName || actor.displayName || actor.handle,
       avatarUrl: actor.avatarUrl || null,
+      attachments: cleanAttachments,
     }
 
     Object.assign(record, stampFirstPublished(record))
@@ -149,3 +165,4 @@ export async function publishPhoto(file, actor = null, { priceUsd = 0 } = {}) {
     return { ok: false, item: null, error: err?.message || uploadFailedMessage() }
   }
 }
+

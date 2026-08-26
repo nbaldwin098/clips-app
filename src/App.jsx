@@ -517,10 +517,10 @@ function AppShell() {
       case 'live':
         return (
           <LiveView
-            onOpenCheckout={openCheckout}
             focusedStream={focusedLiveStream}
             onFocusStream={focusLiveStream}
             onOpenAuth={openAuth}
+            onNavigate={navigate}
           />
         )
       case 'dashboard':
@@ -597,7 +597,7 @@ function AppShell() {
       case 'advertise': return <AdvertisePage onNavigate={navigate} />
       case 'advertiser-portal': return <AdvertiserPortal onNavigate={navigate} />
       case 'support': return <SupportPage onOpenAuth={openAuth} />
-      case 'news': return <NewsPage onNavigate={navigate} />
+      case 'news': return <NewsPage onNavigate={navigate} onOpenAuth={openAuth} />
       case 'shop':
       case 'marketplace':
         return <ShopPage onNavigate={navigate} onOpenAuth={openAuth} />
