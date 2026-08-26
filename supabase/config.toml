@@ -1,0 +1,5 @@
+# Minimal config so `supabase functions deploy` works when linked.
+# Project is primarily managed in the Supabase Dashboard.
+
+[functions.create-checkout-session]
+verify_jwt = true
