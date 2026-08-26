@@ -5,8 +5,13 @@
 import { getSupabase, isSupabaseConfigured } from './supabaseClient'
 
 const BUCKET = 'clips'
-const MAX_VIDEO = 80 * 1024 * 1024
+export const MAX_VIDEO_BYTES = 80 * 1024 * 1024
+/** Clips (shorts): tighter cap so storage stays predictable. */
+export const MAX_CLIP_BYTES = 40 * 1024 * 1024
+export const MAX_CLIP_DURATION_SEC = 60
 const MAX_IMAGE = 12 * 1024 * 1024
+/** @deprecated use MAX_VIDEO_BYTES */
+const MAX_VIDEO = MAX_VIDEO_BYTES
 const PUBLIC_MARKER = `/storage/v1/object/public/${BUCKET}/`
 
 function extFromFile(file, fallback = 'bin') {
@@ -76,10 +81,12 @@ export function uploadFailedMessage() {
   return "Couldn't upload. Try again."
 }
 
-/** @deprecated */
-export function cloudHostRequiredMessage(actor) {
-  if (!actor?.id) return signInToUploadMessage()
-  return uploadFailedMessage()
+export function clipLimitsMessage() {
+  return `Clips max ${MAX_CLIP_DURATION_SEC}s and ${Math.round(MAX_CLIP_BYTES / (1024 * 1024))}MB. Use MP4 for best playback.`
+}
+
+export function videoLimitsMessage() {
+  return `Videos max ${Math.round(MAX_VIDEO_BYTES / (1024 * 1024))}MB.`
 }
 
 async function uploadToBucket(file, userId, { maxBytes, kind }) {
@@ -119,8 +126,9 @@ async function uploadToBucket(file, userId, { maxBytes, kind }) {
   }
 }
 
-export async function uploadVideoToSupabase(file, userId) {
-  return uploadToBucket(file, userId, { maxBytes: MAX_VIDEO, kind: 'videos' })
+export async function uploadVideoToSupabase(file, userId, { asClip = false } = {}) {
+  const maxBytes = asClip ? MAX_CLIP_BYTES : MAX_VIDEO_BYTES
+  return uploadToBucket(file, userId, { maxBytes, kind: 'videos' })
 }
 
 export async function uploadImageToSupabase(file, userId) {
@@ -129,10 +137,8 @@ export async function uploadImageToSupabase(file, userId) {
 
 /** Host a data:image thumbnail as a durable public URL. */
 export async function uploadDataUrlToSupabase(dataUrl, userId, name = 'thumb.jpg') {
-  const raw = String(dataUrl || '')
-  if (!raw.startsWith('data:image/')) return { ok: false, error: 'Not an image data URL.' }
   try {
-    const res = await fetch(raw)
+    const res = await fetch(dataUrl)
     const blob = await res.blob()
     const file = new File([blob], name, { type: blob.type || 'image/jpeg' })
     return uploadImageToSupabase(file, userId)
@@ -141,18 +147,13 @@ export async function uploadDataUrlToSupabase(dataUrl, userId, name = 'thumb.jpg
   }
 }
 
-export function storagePathFromPublicUrl(url) {
-  const u = String(url || '')
+function storagePathFromPublicUrl(publicUrl) {
+  const u = String(publicUrl || '')
   const i = u.indexOf(PUBLIC_MARKER)
-  if (i < 0) return null
-  try {
-    return decodeURIComponent(u.slice(i + PUBLIC_MARKER.length).split('?')[0])
-  } catch {
-    return u.slice(i + PUBLIC_MARKER.length).split('?')[0] || null
-  }
+  if (i < 0) return ''
+  return decodeURIComponent(u.slice(i + PUBLIC_MARKER.length))
 }
 
-/** Remove a hosted file from the clips bucket (best-effort). */
 export async function deleteHostedMedia(publicUrl) {
   const path = storagePathFromPublicUrl(publicUrl)
   if (!path || !isSupabaseConfigured()) return false
