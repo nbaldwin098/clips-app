@@ -118,6 +118,8 @@ assert(existsSync(new URL('../app/SiteChrome.jsx', import.meta.url)), 'SEO marke
 assert(readFileSync(new URL('../app/about/page.jsx', import.meta.url), 'utf8').includes('AboutPage'), 'about route SSRs AboutPage')
 assert(readFileSync(new URL('../app/content/[id]/page.jsx', import.meta.url), 'utf8').includes('<article'), 'content route includes SEO article HTML')
 assert(readFileSync(new URL('../app/sitemap.js', import.meta.url), 'utf8').includes('fetchRecentContentIds'), 'sitemap includes recent content ids')
+assert(!existsSync(new URL('../public/sitemap.xml', import.meta.url)), 'no static public/sitemap.xml overriding App Router sitemap')
+assert(!existsSync(new URL('../public/robots.txt', import.meta.url)), 'no static public/robots.txt overriding App Router robots')
 assert(existsSync(new URL('../middleware.js', import.meta.url)), 'middleware rewrites bare content ids for SEO')
 assert(readFileSync(new URL('../package.json', import.meta.url), 'utf8').includes('"next"'), 'Next.js is a dependency')
 assert(readFileSync(new URL('../package.json', import.meta.url), 'utf8').includes('"build": "next build"'), 'default build is Next.js')
