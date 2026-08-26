@@ -120,137 +120,103 @@ function ClipSlide({
         setResolving(false)
       }
     })()
-
     return () => { cancelled = true }
-  }, [item.id, item.mediaUrl, item.sourceUrl, item.localStored])
+  }, [item.id, item.mediaUrl, item.sourceUrl])
 
   useEffect(() => {
-    viewCountedRef.current = false
-  }, [item.id])
-
-  const syncPlayback = useCallback((el) => {
+    const el = vidRef.current
     if (!el || embed?.type === 'iframe') return
     if (active) {
-      el.muted = muted
-      el.playbackRate = 1
-      const p = el.play()
-      if (p?.catch) p.catch(() => {
+      el.play?.().catch(() => {
         el.muted = true
         el.play()?.catch(() => {})
       })
-      if (user?.id) {
-        recordInteraction(user.id, {
-          contentId: item.id,
-          type: 'impression',
-          tags: item.tags || [],
-          creatorId,
-        })
-      }
     } else {
-      el.pause()
-      try { el.currentTime = 0 } catch {}
+      el.pause?.()
     }
-  }, [active, muted, embed?.type, user?.id, item.id, item.tags, creatorId])
+  }, [active, src, embed?.type])
 
-  const bindVideoRef = useCallback((el) => {
-    vidRef.current = el
-    syncPlayback(el)
-  }, [syncPlayback])
+  const bindVideoRef = useCallback((node) => {
+    vidRef.current = node
+  }, [])
 
-  useEffect(() => {
-    syncPlayback(vidRef.current)
-  }, [syncPlayback])
+  const onSurfaceClick = () => {
+    const now = Date.now()
+    if (now - lastTap.current < 280) {
+      if (user?.id) {
+        const next = toggleVote(user.id, item.id, 1)
+        setVotes(getVotes(item.id))
+        setMyVote(next)
+        setHeartBurst(true)
+        window.setTimeout(() => setHeartBurst(false), 600)
+      } else {
+        onOpenAuth?.()
+      }
+    }
+    lastTap.current = now
+  }
+
+  const holdTimer = useRef(0)
+  const holdStart = () => {
+    holdTimer.current = window.setTimeout(() => {
+      const el = vidRef.current
+      if (el) el.pause?.()
+    }, 180)
+  }
+  const holdEnd = () => {
+    window.clearTimeout(holdTimer.current)
+    if (active) vidRef.current?.play?.().catch(() => {})
+  }
 
   const like = (e) => {
     e?.stopPropagation?.()
-    if (!user?.id) { onOpenAuth?.(); return }
-    const next = toggleVote(user.id, item.id, 'up')
-    setVotes({ ...next })
-    setMyVote(getUserVote(user.id, item.id))
-    setHeartBurst(true)
-    setTimeout(() => setHeartBurst(false), 500)
-    recordInteraction(user.id, {
-      contentId: item.id,
-      type: 'upvote',
-      tags: item.tags || [],
-      creatorId,
-    })
+    if (!user?.id) return onOpenAuth?.()
+    const next = toggleVote(user.id, item.id, myVote === 1 ? 0 : 1)
+    setVotes(getVotes(item.id))
+    setMyVote(next)
   }
 
   const follow = (e) => {
     e?.stopPropagation?.()
-    if (!user?.id) { onOpenAuth?.(); return }
+    if (!user?.id) return onOpenAuth?.()
     if (!creatorId) return
     setFollowing(toggleSubscribe(user.id, creatorId))
   }
 
-  const onSurfaceClick = () => {
-    const now = Date.now()
-    if (now - lastTap.current < 280) like()
-    lastTap.current = now
-  }
-
-  const holdStart = () => {
-    const el = vidRef.current
-    if (el) el.playbackRate = 2
-  }
-  const holdEnd = () => {
-    const el = vidRef.current
-    if (el) el.playbackRate = 1
-  }
-
   const share = async (e) => {
     e?.stopPropagation?.()
-    try {
-      await copyShareUrl('clips', item.id)
-      setShareCopied(true)
-      setTimeout(() => setShareCopied(false), 1800)
-      if (user?.id) {
-        recordInteraction(user.id, {
-          contentId: item.id,
-          type: 'share',
-          tags: item.tags || [],
-          creatorId,
-        })
-      }
-    } catch {}
+    const ok = await copyShareUrl('clip', item.id)
+    setShareCopied(ok)
+    window.setTimeout(() => setShareCopied(false), 1500)
   }
 
-  const handle = item.handle ? `@${String(item.handle).replace(/^@/, '')}` : '@creator'
-  const initial = String(item.handle || 'C').replace(/^@/, '').slice(0, 1).toUpperCase()
-  const videoSrc = embed?.src || src
+  const handle = item.handle ? `@${String(item.handle).replace(/^@/, '')}` : 'creator'
   const isIframe = embed?.type === 'iframe'
+  const videoSrc = src || embed?.src || ''
 
   const actions = (circled) => (
     <>
-      <RailBtn circled={circled} onClick={like} label={votes.up || 0} active={myVote === 'up'}>
-        <Heart className={`h-7 w-7 ${myVote === 'up' ? 'fill-current' : ''}`} />
+      <RailBtn onClick={like} label={votes.up || 0} active={myVote === 1} circled={circled}>
+        <Heart className={`h-6 w-6 ${myVote === 1 ? 'fill-current' : ''}`} />
       </RailBtn>
-      {finished ? (
-        <RailBtn circled={circled} onClick={watchAgain} label="Again">
-          <RotateCcw className="h-6 w-6" />
+      <RailBtn onClick={(e) => { e.stopPropagation(); setCommentsOpen(true) }} label={commentCount || 0} circled={circled}>
+        <MessageCircle className="h-6 w-6" />
+      </RailBtn>
+      <RailBtn onClick={share} label={shareCopied ? 'Copied' : 'Share'} circled={circled}>
+        <Share2 className="h-6 w-6" />
+      </RailBtn>
+      {onStitch ? (
+        <RailBtn onClick={(e) => { e.stopPropagation(); onStitch(item) }} label="Stitch" circled={circled}>
+          <Clapperboard className="h-6 w-6" />
         </RailBtn>
       ) : null}
-      <RailBtn circled={circled} onClick={() => setCommentsOpen(true)} label={commentCount}>
-        <MessageCircle className="h-7 w-7" />
-      </RailBtn>
-      <RailBtn circled={circled} onClick={share} label={shareCopied ? 'Copied' : 'Share'}>
-        <Share2 className="h-7 w-7" />
-      </RailBtn>
-      <RailBtn
-        circled={circled}
-        onClick={(e) => { e?.stopPropagation?.(); if (!user?.id) { onOpenAuth?.(); return } onStitch?.(item) }}
-        label="Stitch"
-      >
-        <Clapperboard className="h-6 w-6" />
-      </RailBtn>
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); onOpenProfile?.(item.handle, creatorId) }}
         className="h-11 w-11 rounded-full overflow-hidden bg-white/20 text-white text-sm font-semibold flex items-center justify-center ring-2 ring-white/80"
         aria-label={handle}
       >
-        {item.avatarUrl ? <img src={item.avatarUrl} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" /> : initial}
+        {item.avatarUrl ? <img src={item.avatarUrl} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" /> : (handle[1] || 'C').toUpperCase()}
       </button>
     </>
   )
@@ -272,16 +238,11 @@ function ClipSlide({
           <video
             ref={bindVideoRef}
             src={safeMediaUrl(videoSrc)}
-            className="absolute inset-0 w-full h-full object-cover md:object-contain bg-black pointer-events-auto touch-pan-y"
+            className="absolute inset-0 w-full h-full object-cover md:object-contain bg-black pointer-events-none"
             playsInline
             loop
             muted={muted}
             preload={active || warm ? 'auto' : 'metadata'}
-            onClick={onSurfaceClick}
-            onPointerDown={holdStart}
-            onPointerUp={holdEnd}
-            onPointerCancel={holdEnd}
-            onPointerLeave={holdEnd}
             onTimeUpdate={(e) => {
               const el = e.target
               if (!el?.duration) return
@@ -330,13 +291,22 @@ function ClipSlide({
           <div className="absolute inset-0 flex items-center justify-center text-zinc-500 text-sm">No media</div>
         )}
       </div>
+      {/* Hit layer: scroll/wheel reaches the stage; taps still work */}
+      <div
+        className="absolute inset-0 z-[2] touch-pan-y"
+        onClick={onSurfaceClick}
+        onPointerDown={holdStart}
+        onPointerUp={holdEnd}
+        onPointerCancel={holdEnd}
+        onPointerLeave={holdEnd}
+      />
 
       <div className="absolute top-0 inset-x-0 z-20 flex items-center justify-between px-3 pt-3">
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onBack?.() }}
           className="h-10 w-10 rounded-full text-white flex items-center justify-center"
-          aria-label="Back to clips"
+          aria-label="Back"
         >
           <ChevronLeft className="h-7 w-7 drop-shadow" />
         </button>
@@ -400,22 +370,31 @@ function ClipSlide({
               <span className="truncate">{item.soundTitle}</span>
             </button>
           ) : null}
-        </div>
-        <div className="h-0.5 bg-white/20">
-          <div className="h-full bg-white" style={{ width: `${Math.round((progress || 0) * 100)}%` }} />
+          {finished ? (
+            <button
+              type="button"
+              onClick={watchAgain}
+              className="mt-2 h-8 px-3 rounded-full bg-white/15 text-[12px] text-white inline-flex items-center gap-1.5"
+            >
+              <RotateCcw className="h-3.5 w-3.5" /> Watch again
+            </button>
+          ) : null}
+          <div className="mt-2 h-0.5 rounded-full bg-white/20 overflow-hidden">
+            <div className="h-full bg-white/80" style={{ width: `${Math.round(progress * 100)}%` }} />
+          </div>
         </div>
       </div>
 
-      <div className="md:hidden absolute right-2 bottom-36 flex flex-col items-center gap-5 z-10">
-        {actions(false)}
+      <div className="md:hidden absolute right-2 bottom-28 z-20 flex flex-col items-center gap-4">
+        {actions(true)}
       </div>
 
       {commentsOpen && (
         <div className="absolute inset-x-0 bottom-0 z-30 max-h-[50%] rounded-t-2xl bg-[#121218] border-t border-zinc-800 overflow-y-auto">
           <div className="flex items-center justify-between px-4 py-3">
             <p className="text-sm font-semibold text-white">Comments</p>
-            <button type="button" onClick={() => setCommentsOpen(false)} className="h-8 w-8 rounded-lg flex items-center justify-center text-zinc-400">
-              <X className="h-4 w-4" />
+            <button type="button" onClick={() => setCommentsOpen(false)} className="text-zinc-400" aria-label="Close">
+              <X className="h-5 w-5" />
             </button>
           </div>
           <div className="px-4 pb-6">
@@ -431,7 +410,6 @@ function ClipFeedAdSlide({ active, warm = false, ad, onEmpty }) {
   const filledRef = useRef(false)
   useEffect(() => {
     if (!active || filledRef.current) return undefined
-    // ExoClick fill timeout is 6s — do not skip the slide before it can paint.
     const t = window.setTimeout(() => {
       if (!filledRef.current) onEmpty?.()
     }, 7500)
@@ -487,45 +465,44 @@ export default function ShortsFeed({
     () => mixed.filter((row) => row.kind !== 'ad' || !skippedAdKeys.has(row.key)),
     [mixed, skippedAdKeys],
   )
-  const goToRef = useRef(null)
   const [activeIdx, setActiveIdx] = useState(0)
-  const visibleMixedRef = useRef(visibleMixed)
-  visibleMixedRef.current = visibleMixed
-  const activeIdxRef = useRef(0)
-  activeIdxRef.current = activeIdx
   const [muted, setMuted] = useState(true)
-  const shownAt = useRef(Date.now())
+  const goToRef = useRef(null)
   const prevIdx = useRef(0)
+  const shownAt = useRef(Date.now())
   const inPlayer = Boolean(focusId)
+
   const startIdx = useMemo(() => {
-    if (!focusId || !visibleMixed.length) return 0
-    const idx = visibleMixed.findIndex((row) => row.item?.id === focusId)
-    return idx >= 0 ? idx : 0
-  }, [focusId, visibleMixed])
+    if (!focusId) return 0
+    const i = visibleMixed.findIndex((row) => row.kind === 'item' && row.item?.id === focusId)
+    return i >= 0 ? i : 0
+  }, [visibleMixed, focusId])
 
-  useEffect(() => { setSkippedAdKeys(new Set()) }, [focusId, tab])
-
-  useEffect(() => { setActiveIdx(startIdx) }, [startIdx])
   useEffect(() => {
-    const from = inPlayer ? activeIdx + 1 : 0
+    setActiveIdx(startIdx)
+    prevIdx.current = startIdx
+    shownAt.current = Date.now()
+  }, [startIdx, focusId])
+
+  useEffect(() => {
+    const from = Math.max(0, activeIdx)
     preloadPostedItems(visibleMixed.slice(from), inPlayer ? 3 : 2)
-  }, [visibleMixed, activeIdx, inPlayer])
+  }, [activeIdx, visibleMixed, inPlayer])
 
   const skipAdSlide = useCallback((index) => {
-    const row = visibleMixedRef.current[index]
+    const row = visibleMixed[index]
     if (!row || row.kind !== 'ad') return
     setSkippedAdKeys((prev) => {
-      if (prev.has(row.key)) return prev
       const next = new Set(prev)
       next.add(row.key)
       return next
     })
-    if (activeIdxRef.current === index) {
-      window.setTimeout(() => goToRef.current?.(index, 'auto'), 40)
-    }
-  }, [])
+  }, [visibleMixed])
 
-  const openClip = (item) => onNavigate?.('clips', item.id)
+  const openClip = (id) => {
+    onNavigate?.('clips', { id })
+  }
+
   const backToGrid = () => {
     setTab('recommended')
     onNavigate?.('clips')
