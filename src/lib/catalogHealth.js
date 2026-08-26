@@ -3,13 +3,13 @@
  * come back on refresh. Local cache is the UI source; cloud pull must
  * use the same rules or merge will resurrect junk.
  */
-import { lsGet, lsSet, removeImport } from './storage'
+import { lsGet, lsSet, removeImport, getImports } from './storage'
 import { isUserUploadRecord } from './mediaMeta'
 import { clearFrozenFeeds } from './frozenFeeds'
 
 const HIDDEN_KEY = 'hidden_broken_media'
 
-/** Titles the operator asked to purge (still in some local caches after cloud delete). */
+/** Titles the operator asked to purge. */
 const RETIRED_TITLE_RE = /^(insane|spooky\s*halloween)$/i
 
 export function isHttpUrl(url) {
@@ -102,9 +102,6 @@ export function hiddenBrokenIds() {
 
 export function hideBrokenMedia(id) {
   if (!id) return
-  const imports = lsGet('imports', []) || []
-  const row = Array.isArray(imports) ? imports.find((r) => r?.id === id) : null
-  if (row && isUserUploadRecord(row)) return
   const next = hiddenBrokenIds()
   next.add(id)
   lsSet(HIDDEN_KEY, [...next])
@@ -113,30 +110,25 @@ export function hideBrokenMedia(id) {
 
 export function purgeDeadCatalog() {
   const hidden = hiddenBrokenIds()
-  const list = lsGet('imports', []) || []
-  if (!Array.isArray(list)) {
-    lsSet('imports', [])
-    return 0
+  const list = getImports() || []
+  let removed = 0
+  for (const row of list) {
+    if (!row?.id) continue
+    const drop =
+      hidden.has(row.id)
+      || isReferenceItem(row)
+      || isRetiredCatalogItem(row)
+      || !isFeedable(row)
+    if (drop) {
+      removeImport(row.id)
+      removed += 1
+    }
   }
-  const next = list.filter((row) => {
-    if (!row?.id || hidden.has(row.id)) return false
-    if (isReferenceItem(row)) return false
-    if (isRetiredCatalogItem(row)) return false
-    if (isUserUploadRecord(row)) return isFeedable(row)
-    return isFeedable(row)
-  })
-  const removed = list.length - next.length
   if (removed > 0) {
-    lsSet('imports', next)
     try { clearFrozenFeeds() } catch { /* ok */ }
   }
-  // Legacy mirror
   try {
-    const legacy = lsGet('user_clips', []) || []
-    if (Array.isArray(legacy) && legacy.length) {
-      const cleaned = legacy.filter((row) => row?.id && !hidden.has(row.id) && !isRetiredCatalogItem(row) && !isReferenceItem(row))
-      if (cleaned.length !== legacy.length) lsSet('user_clips', cleaned)
-    }
+    localStorage.removeItem('user_clips')
   } catch { /* ok */ }
   return removed
 }
