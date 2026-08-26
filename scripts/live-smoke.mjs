@@ -6,7 +6,7 @@ import { extractHashtags, mergeTags, parseClock, parseCaptionCues, isReleased, f
 import { parseRoute, buildHash } from '../src/lib/routes.js'
 import { makePublicId, isShortPublicId, looksLikeContentId, allocatePublicId } from '../src/lib/publicId.js'
 import { sanitizeAuthError, normalizePhone } from '../src/lib/authBrand.js'
-import { findOwnerLogin, isLocalOwnerLogin, isOwnerAccount, OWNER_LOGIN } from '../src/data/ownerLogin.js'
+import { findOwnerLogin, isLocalOwnerLogin, isOwnerAccount, OWNER_LOGIN, ownerCloudEmails } from '../src/data/ownerLogin.js'
 import { parseVastXml, parseVastClock, videoInStreamBreaks, EXOCLICK_VAST_URL, videoVastAdsEnabled } from '../src/lib/vastAds.js'
 import { mixFeedAds, mixClipFeedRows, mixPicFeedRows, getActiveAdForVideo, adsAreRunning } from '../src/lib/adEngine.js'
 import { featuredWindowStart, nextFeaturedRefreshAt, lastHourRange, interleaveHourlyHits, HOURLY_PATTERN, HOURLY_VIDEO_COUNT, HOURLY_CLIP_COUNT, HOURLY_PIC_COUNT } from '../src/lib/hourWindow.js'
@@ -504,14 +504,27 @@ const vodLib = readFileSync(new URL('../src/lib/vods.js', import.meta.url), 'utf
 assert(vodLib.includes('archiveEndedLive'), 'ended lives are copied')
 assert(vodLib.includes('setVodChannel'), 'creators can enable a VOD channel')
 const ownerSrc = readFileSync(new URL('../src/data/ownerLogin.js', import.meta.url), 'utf8')
-assert(ownerSrc.includes('cs1@calabi.local'), 'owner login email exists')
-assert(ownerSrc.includes('passwordHash'), 'owner password is hashed')
+assert(ownerSrc.includes('cs1@calabi.us'), 'owner preferred cloud email is cs1@calabi.us')
+assert(ownerSrc.includes('ownerCloudEmails'), 'owner aliases resolve to cloud emails')
+assert(ownerSrc.includes('cs1@calabi.local'), 'legacy local email still recognized as alias')
 assert(!!findOwnerLogin('cs1'), 'owner sign-in accepts handle cs1')
 assert(!!findOwnerLogin('sa6sysn'), 'owner sign-in accepts sa6sysn')
-assert(!!findOwnerLogin('cs1@calabi.local'), 'owner sign-in accepts local email')
+assert(!!findOwnerLogin('cs1@calabi.local'), 'owner sign-in accepts legacy local email alias')
+assert(!!findOwnerLogin('cs1@calabi.us'), 'owner sign-in accepts cloud email')
 assert(!!findOwnerLogin('kiddnixk@gmail.com'), 'owner sign-in accepts gmail')
-assert(isLocalOwnerLogin('cs1') && !isLocalOwnerLogin('kiddnixk@gmail.com'), 'gmail can fall through to cloud auth')
+assert(isLocalOwnerLogin('cs1') && !isLocalOwnerLogin('kiddnixk@gmail.com'), 'gmail is cloud-native alias')
 assert(!findOwnerLogin('name1@calabi.com'), 'named accounts are not owner')
+{
+  const mails = ownerCloudEmails('cs1')
+  assert(mails.includes('cs1@calabi.us'), 'cs1 handle maps to cloud email')
+  assert(!mails.some((e) => e.endsWith('.local')), 'owner cloud emails never use .local')
+}
+const authOwnerSrc = readFileSync(new URL('../src/context/AuthContextBody.jsx', import.meta.url), 'utf8')
+assert(authOwnerSrc.includes('ownerCloudEmails'), 'cs1 login uses cloud email list')
+assert(authOwnerSrc.includes("provider: 'supabase'"), 'cs1 session is supabase provider')
+assert(!authOwnerSrc.includes("provider: 'local',\n          avatarUrl: '',\n          bannerUrl: '',\n          bio: '',\n          passwordHash: owner.passwordHash"), 'cs1 has no local owner session fallback')
+assert(authOwnerSrc.includes('Cloud sign-in is required for cs1'), 'cs1 requires cloud when supabase missing')
+assert(!/signUp\(\{[\s\S]{0,80}owner\.displayName/.test(authOwnerSrc), 'cs1 login does not auto-signUp as owner')
 function ownerHashMatches(raw, stored) {
   const parts = String(stored || '').split('$')
   if (parts.length < 3) return false
@@ -519,7 +532,7 @@ function ownerHashMatches(raw, stored) {
   return next === parts[2]
 }
 const ownerHashes = [OWNER_LOGIN.passwordHash, ...(OWNER_LOGIN.passwordHashes || [])]
-assert(ownerHashes.some((h) => ownerHashMatches('cs1cs1', h)), 'simple owner password hash is stored')
+assert(ownerHashes.some((h) => ownerHashMatches('cs1cs1', h)), 'admin portal still has owner password hashes')
 const liveAdsSrc = readFileSync(new URL('../src/lib/liveAds.js', import.meta.url), 'utf8')
 assert(liveAdsSrc.includes('Ads removed') || liveAdsSrc.includes('cueLiveAd'), 'liveAds is a stub module')
 assert(liveAdsSrc.includes('LIVE_VIEWER_AD_DELAY_SEC = 0') || liveAdsSrc.includes('return { ok: false'), 'live viewer ads are disabled')

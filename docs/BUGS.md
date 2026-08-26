@@ -39,7 +39,7 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 | BUG-001 | Cloud / uploads | Confirm production uploads work after Next env fix (#104) | Owner confirmed uploads stick after refresh on Node deploy | `done` |
 | BUG-002 | Storage | Confirm public bucket named exactly `clips` exists | Migration `0003_clips_storage_bucket.sql`; user confirmed | `done` |
 | BUG-003 | Catalog | Confirm `videos` table still has rows after migrate | Live SSR titles for `/FoHGp57XPSB`, `/ZVD42PXmSuI`, org posts; removed stale `public/sitemap.xml` that hid dynamic sitemap | `done` |
-| BUG-004 | Auth | CS1 / owner cloud login edge cases still fragile | Recent URGENT restores; add regression test for owner + Supabase session | `open` |
+| BUG-004 | Auth | CS1 / owner cloud login edge cases still fragile | CS1 is cloud-only Supabase (no local session); aliases → cs1@calabi.us | `done` |
 | BUG-005 | Next / SEO | SpaShell still owns most routes | Finish PR: every known path has App Router page + metadata; SpaShell remains client UI bridge | `done` |
 | BUG-006 | Next / nav | Client `pushState` routing vs Next App Router | Done in #107 (`NextNavContext` + `router.push`) | `done` |
 | BUG-007 | Deploy | Old Static Render service must stay deleted/suspended | Domain only on Node web service | `open` |
