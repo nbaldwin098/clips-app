@@ -6,6 +6,7 @@ import namedActivity from '../../supabase/migrations/0009_named_activity.sql?raw
 import stopNamedActivity from '../../supabase/migrations/0010_stop_named_activity.sql?raw'
 import showAdsLiveChat from '../../supabase/migrations/0011_show_ads_live_chat.sql?raw'
 import videosPublishColumns from '../../supabase/migrations/0012_videos_publish_columns.sql?raw'
+import liveFeatureState from '../../supabase/migrations/0013_live_feature_state.sql?raw'
 
 export const SETUP_SCRIPTS = [
   {
@@ -55,5 +56,11 @@ export const SETUP_SCRIPTS = [
     title: 'Upload publish columns (fixes "Couldn\'t upload")',
     file: '0012_videos_publish_columns.sql',
     sql: String(videosPublishColumns || ''),
+  },
+  {
+    id: '0013',
+    title: 'Live pools / challenges / group sync',
+    file: '0013_live_feature_state.sql',
+    sql: String(liveFeatureState || ''),
   },
 ]

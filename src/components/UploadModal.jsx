@@ -11,6 +11,7 @@ export default function UploadModal({ open, onClose, onDone, initialKind = 'vide
   const [file, setFile] = useState(null)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [priceUsd, setPriceUsd] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const [progress, setProgress] = useState('')
@@ -22,6 +23,7 @@ export default function UploadModal({ open, onClose, onDone, initialKind = 'vide
     setFile(null)
     setTitle('')
     setDescription('')
+    setPriceUsd('')
     setErr('')
     setProgress('')
     setBusy(false)
@@ -33,6 +35,7 @@ export default function UploadModal({ open, onClose, onDone, initialKind = 'vide
     setFile(null)
     setTitle('')
     setDescription('')
+    setPriceUsd('')
     setErr('')
     setProgress('')
     setBusy(false)
@@ -70,6 +73,7 @@ export default function UploadModal({ open, onClose, onDone, initialKind = 'vide
         title: title.trim() || undefined,
         description: description.trim() || undefined,
         status: 'published',
+        priceUsd: priceUsd ? Number(priceUsd) : 0,
       })
       if (!published.ok || !published.item) {
         setErr(published.error || "Couldn't upload. Try again.")
@@ -140,6 +144,17 @@ export default function UploadModal({ open, onClose, onDone, initialKind = 'vide
               onChange={(e) => setDescription(e.target.value)}
               className="mt-1 w-full min-h-[72px] rounded-lg bg-black border border-white/10 px-3 py-2 text-sm text-white resize-y"
               maxLength={5000}
+            />
+          </label>
+          <label className="block text-xs text-zinc-400">Price (USD, optional paid post)
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={priceUsd}
+              onChange={(e) => setPriceUsd(e.target.value)}
+              placeholder="0 = free"
+              className="mt-1 w-full h-10 rounded-lg bg-black border border-white/10 px-3 text-sm text-white"
             />
           </label>
 

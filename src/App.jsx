@@ -51,6 +51,7 @@ import {
 import { startSession } from './lib/algorithmEngine'
 import { lsGet, lsSet } from './lib/storage'
 import { syncContentFromCloud, notifyContentChanged, subscribeCloudCatalog } from './lib/contentSync'
+import { pullLiveFeatureState } from './lib/liveFeatureSync'
 import { setGraphActor, syncGraphFromCloud, syncPublicEngagementFromCloud } from './lib/graphSync'
 import { promoteDeviceUploadsToCloud } from './lib/promoteUploads'
 import { installRuntimeGuards } from './lib/selfHeal'
@@ -150,6 +151,7 @@ function AppShell() {
     const pull = () => {
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
       syncContentFromCloud(user)
+      pullLiveFeatureState().catch(() => {})
       flushScheduledPublishes()
       syncPromotionsFromCloud()
       syncGraphFromCloud().catch(() => {})

@@ -1,6 +1,6 @@
 import { lsGet, lsSet } from './storage'
 import { addDonation, postLiveChat, markContentPurchased } from './engagement'
-import { membershipReturnPaid } from './stripeConfig'
+import { membershipReturnPaid, getCalabiCashPaymentLink } from './stripeConfig'
 import { startPremiumCheckout } from './checkout'
 import { createNotification } from './notifications'
 import { creditCalabiCash, getTierById, spendCalabiCash, creatorCashShare, usdToCashUnits, hasUsedFirstBuy } from './calabiCash'
@@ -102,6 +102,7 @@ export async function startCalabiCashCheckout({ user, tierId }) {
     already: false,
     email: user.email || '',
     reference: `cash:${tier.id}:${tier.units}:${user.id}`.slice(0, 200),
+    paymentLink: getCalabiCashPaymentLink(tier.id),
   })
   return { ok: !!result.url, url: result.url || '', message: result.message, granted: false }
 }

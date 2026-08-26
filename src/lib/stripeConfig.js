@@ -96,4 +96,28 @@ export const STRIPE_PRODUCT_NOTES = {
   feeFixed: 0.3,
   renderKey: 'VITE_STRIPE_PUBLISHABLE_KEY',
   renderLink: 'VITE_STRIPE_PAYMENT_LINK',
+  cashLinks: 'Optional per-pack links: VITE_STRIPE_CASH_LINK_T1/T3/T5/T10/T50/FIRST',
+}
+
+/** Per-tier Calabi Cash Payment Links (fallback: generic VITE_STRIPE_PAYMENT_LINK). */
+export function getCalabiCashPaymentLink(tierId) {
+  const map = {
+    first: 'VITE_STRIPE_CASH_LINK_FIRST',
+    t1: 'VITE_STRIPE_CASH_LINK_T1',
+    t3: 'VITE_STRIPE_CASH_LINK_T3',
+    t5: 'VITE_STRIPE_CASH_LINK_T5',
+    t10: 'VITE_STRIPE_CASH_LINK_T10',
+    t50: 'VITE_STRIPE_CASH_LINK_T50',
+  }
+  const key = map[tierId]
+  const raw = key ? env(key) : ''
+  if (raw) {
+    try {
+      const u = new URL(raw)
+      if (u.protocol === 'https:' && (u.hostname === 'buy.stripe.com' || u.hostname.endsWith('.stripe.com'))) {
+        return u.toString()
+      }
+    } catch {}
+  }
+  return getStripePaymentLink()
 }

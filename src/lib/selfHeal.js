@@ -8,6 +8,7 @@ import { normalizeTaste } from './algorithmEngine'
 import { seedOfficialCatalog } from '../data/publicMediaSeed'
 import { seedNamedAccounts } from '../data/namedAccountsSeed'
 import { isUserUploadRecord } from './mediaMeta'
+import { indexUser } from './moderation'
 
 function isRecord(v) {
   return !!v && typeof v === 'object' && !Array.isArray(v)
@@ -148,6 +149,26 @@ export function healLocalState() {
 
   try {
     seedNamedAccounts()
+  } catch {}
+
+  try {
+    // Reindex creators from posts into users_index for discovery / admin people
+    const posts = [...(lsGet('imports', []) || []), ...(lsGet('user_clips', []) || [])]
+    const seen = new Set()
+    for (const p of posts) {
+      const id = p?.creatorId || p?.userId
+      if (!id || seen.has(id)) continue
+      seen.add(id)
+      try {
+        indexUser({
+          id,
+          handle: p.creatorHandle || p.handle || '',
+          displayName: p.creatorName || p.displayName || '',
+          isCreator: true,
+          creatorStatus: 'approved',
+        })
+      } catch {}
+    }
   } catch {}
 }
 

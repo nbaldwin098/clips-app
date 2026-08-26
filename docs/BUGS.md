@@ -37,7 +37,7 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 | ID | Area | Issue | Notes | Status |
 |----|------|-------|-------|--------|
 | BUG-001 | Cloud / uploads | Confirm production uploads work after Next env fix (#104) | Owner confirmed uploads stick after refresh on Node deploy | `done` |
-| BUG-002 | Storage | Confirm public bucket named exactly `clips` exists | Migration `0003_clips_storage_bucket.sql`; policies for public read + owner write | `open` |
+| BUG-002 | Storage | Confirm public bucket named exactly `clips` exists | Migration `0003_clips_storage_bucket.sql`; user confirmed | `done` |
 | BUG-003 | Catalog | Confirm `videos` table still has rows after migrate | Live SSR titles for `/FoHGp57XPSB`, `/ZVD42PXmSuI`, org posts; removed stale `public/sitemap.xml` that hid dynamic sitemap | `done` |
 | BUG-004 | Auth | CS1 / owner cloud login edge cases still fragile | Recent URGENT restores; add regression test for owner + Supabase session | `open` |
 | BUG-005 | Next / SEO | SpaShell still owns most routes | Finish PR: every known path has App Router page + metadata; SpaShell remains client UI bridge | `done` |
@@ -67,7 +67,7 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 | BUG-028 | Home | All/Videos/Shorts/Pics chips + empty “No posts yet” | #111 + #112 hydrate/early sync | `done` |
 | BUG-025 | Error reports | ErrorReportPrompt shipped — confirm tickets show in Admin | PR #96 | `open` |
 | BUG-026 | Header | Logo-only header / no hamburger — confirm mobile sidebar OK | #97/#98 | `open` |
-| BUG-027 | Open PRs | Close or rebase stale drafts #93, #101, #102, #58, #71 | Avoid more parallel conflict | `open` |
+| BUG-027 | Open PRs | Close or rebase stale drafts #93, #101, #102, #58, #71 | Closed; merged branches deleted | `done` |
 
 ### P2 — cleanup & quality
 
@@ -170,8 +170,8 @@ Last updated: 2026-08-26 (platform differentiators foundations: Cash, pools, Gho
 
 | ID | Area | Issue | Notes | Status |
 |----|------|-------|-------|--------|
-| BUG-060 | Cash | Calabi Cash wallets + web tiers | Local wallet + Payment Link claim; Stripe Cash products still needed | `partial` |
-| BUG-061 | Live | Pools / Ghost AI / PvP challenges | Device-local state; needs cloud sync for multi-device | `partial` |
+| BUG-060 | Cash | Calabi Cash wallets + web tiers | Per-tier Payment Link env vars + claim path; create Stripe products next | `partial` |
+| BUG-061 | Live | Pools / Ghost AI / PvP challenges | `0013_live_feature_state` + pull/push when table exists | `partial` |
 | BUG-062 | Live | Group streams + raids | Invite/request UI; ingest multi-host TBD | `partial` |
 | BUG-063 | Studio | Calabi Studio CapCut parity | Trim/filters/avatar/shell; cloud encode TBD | `partial` |
 | BUG-064 | Social | Multi-stream + one-tap post | Connect mocks; real YT/TikTok OAuth TBD | `partial` |
