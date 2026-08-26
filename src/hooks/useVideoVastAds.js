@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { loadExoClickVast, videoVastAdsEnabled, videoInStreamBreaks, VIDEO_FIRST_AD_SEC, VIDEO_PREROLL_BREAK } from '../lib/vastAds'
+import { loadExoClickVast, videoVastAdsEnabled, videoInStreamBreaks, VIDEO_PREROLL_BREAK } from '../lib/vastAds'
 
 export function useVideoVastAds(item, { embed = false } = {}) {
   const [creative, setCreative] = useState(null)
@@ -8,6 +8,9 @@ export function useVideoVastAds(item, { embed = false } = {}) {
   const lastTime = useRef(0)
   const playedBreaks = useRef(new Set())
   const showing = useRef(false)
+  // Mid-roll points computed once per video once duration is known (random is sticky).
+  const plannedBreaks = useRef([])
+  const plannedForDuration = useRef(0)
 
   const enabled = item?.type === 'video' && videoVastAdsEnabled()
 
@@ -29,6 +32,8 @@ export function useVideoVastAds(item, { embed = false } = {}) {
     lastTime.current = 0
     playedBreaks.current = new Set()
     showing.current = false
+    plannedBreaks.current = []
+    plannedForDuration.current = 0
     setCreative(null)
     setSlot(null)
     setCampaignBreak(0)
@@ -36,14 +41,6 @@ export function useVideoVastAds(item, { embed = false } = {}) {
     triggerBreak(VIDEO_PREROLL_BREAK)
     return undefined
   }, [item?.id, enabled, triggerBreak])
-
-  useEffect(() => {
-    if (!enabled || !embed) return undefined
-    const timer = window.setTimeout(() => {
-      triggerBreak(VIDEO_FIRST_AD_SEC)
-    }, VIDEO_FIRST_AD_SEC * 1000)
-    return () => window.clearTimeout(timer)
-  }, [item?.id, enabled, embed, triggerBreak])
 
   const finishAd = useCallback(() => {
     showing.current = false
@@ -59,8 +56,14 @@ export function useVideoVastAds(item, { embed = false } = {}) {
     }
     const prev = lastTime.current
     lastTime.current = current
-    if (!Number.isFinite(current) || !Number.isFinite(duration)) return
-    const hit = videoInStreamBreaks(duration).find(
+    if (!Number.isFinite(current) || !Number.isFinite(duration) || duration <= 0) return
+
+    if (plannedForDuration.current !== duration) {
+      plannedForDuration.current = duration
+      plannedBreaks.current = videoInStreamBreaks(duration)
+    }
+
+    const hit = plannedBreaks.current.find(
       (t) => !playedBreaks.current.has(t) && prev < t && current >= t,
     )
     if (hit == null) return
