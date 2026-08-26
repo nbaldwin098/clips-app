@@ -106,8 +106,45 @@ export function getCreatorPublicContent(creatorId, handle = null) {
     if (!isReleased(i)) return false
     if (!isFeedable(i)) return false
     if (isAccountHidden(i.creatorId || i.userId, i.handle)) return false
+    // Private / unlisted stay in the library but off public feeds & profiles.
+    if (i.visibility === 'private' || i.visibility === 'unlisted') return false
     return true
   })
+}
+
+/** Owner library — includes private/unlisted so creators can manage them. */
+export function getCreatorLibraryContent(creatorId, handle = null) {
+  return getCreatorContent(creatorId, handle).filter((i) => {
+    if (isAccountHidden(i.creatorId || i.userId, i.handle)) return false
+    return true
+  })
+}
+
+export function setContentVisibility(contentId, visibility, actor = null) {
+  if (!contentId) return { ok: false, error: 'Missing content.' }
+  const nextVis = visibility === 'private' || visibility === 'unlisted' ? visibility : 'public'
+  const imports = getImports()
+  const rec = imports.find((i) => i.id === contentId)
+  if (!rec) return { ok: false, error: 'Not found.' }
+  if (actor?.id && rec.creatorId && rec.creatorId !== actor.id && rec.userId !== actor.id) {
+    return { ok: false, error: 'Not your content.' }
+  }
+  const next = {
+    ...rec,
+    visibility: nextVis,
+    status: nextVis === 'private' ? 'draft' : (rec.status === 'draft' && nextVis === 'public' ? 'published' : rec.status),
+  }
+  if (nextVis === 'public' && next.status === 'draft') {
+    next.status = 'published'
+    next.publishedAt = next.publishedAt || new Date().toISOString()
+  }
+  saveImport(next)
+  queueMicrotask(() => {
+    import('./contentSync').then(({ pushContentRecord }) => {
+      if (actor) pushContentRecord?.(next, actor).catch?.(() => {})
+    }).catch(() => {})
+  })
+  return { ok: true, item: normalizeItem(next) }
 }
 
 export function getCreatorUnreleased(creatorId, handle = null) {
@@ -169,7 +206,7 @@ function onlyReleased(items) {
 
 export function getHomeFeed(userId = null) {
   const imports = getImports().map((i) => ({ ...i, type: i.type || 'short' }))
-  let merged = onlyReleased(withViewCounts(imports.map(normalizeItem)).filter((i) => i.type !== 'pic' && isFeedable(i) && !isAccountHidden(i.creatorId || i.userId, i.handle)))
+  let merged = onlyReleased(withViewCounts(imports.map(normalizeItem)).filter((i) => i.type !== 'pic' && isFeedable(i) && !isAccountHidden(i.creatorId || i.userId, i.handle) && i.visibility !== 'private' && i.visibility !== 'unlisted'))
   merged = merged.map((i) => {
     const cid = i.creatorId || i.userId
     return { ...i, pinned: cid ? isPinned(cid, i.id) : false }
@@ -640,7 +677,7 @@ export async function publishLocalMedia(file, actor = null, {
       soundId: sound?.id || null,
       soundTitle: sound?.title || null,
       filterId: filterId && filterId !== 'none' ? filterId : null,
-      visibility: visibility === 'unlisted' ? 'unlisted' : 'public',
+      visibility: visibility === 'private' ? 'private' : visibility === 'unlisted' ? 'unlisted' : 'public',
       stitchOf: stitchOf || null,
       chapters: cleanChapters,
       captionsText: String(captionsText || '').slice(0, 20000),
@@ -666,6 +703,12 @@ export async function publishLocalMedia(file, actor = null, {
     }
 
     saveImport(record)
+    if (record.type === 'short') {
+      try {
+        const { saveClipToVodLibrary } = await import('./vods')
+        saveClipToVodLibrary(host, record)
+      } catch {}
+    }
     if (cleanChapters.length) setChapters(id, cleanChapters)
     if (record.captionsText) setCaptions(id, [{ lang: 'en', text: record.captionsText }])
     notifyContentChanged()

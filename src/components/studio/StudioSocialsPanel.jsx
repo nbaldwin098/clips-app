@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Youtube, Instagram } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { getCreatorContent } from '../../lib/contentService'
 import { listVods } from '../../lib/vods'
@@ -11,6 +12,7 @@ import {
   getSocialConnects,
   connectSocial,
   disconnectSocial,
+  setSocialShowOnProfile,
   queueSocialPost,
   listSocialJobs,
 } from '../../lib/socialConnects'
@@ -40,6 +42,33 @@ function providerAccepts(providerId, contentType) {
   const meta = SOCIAL_PROVIDERS.find((p) => p.id === providerId)
   if (!meta?.accepts) return true
   return meta.accepts.includes(contentType)
+}
+
+function ProviderGlyph({ id, className = 'h-5 w-5' }) {
+  if (id === 'youtube') return <Youtube className={className} aria-hidden />
+  if (id === 'instagram') return <Instagram className={className} aria-hidden />
+  if (id === 'tiktok') {
+    return (
+      <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
+        <path d="M14.5 3h2.1c.2 1.5 1.1 2.8 2.4 3.6v2.2a6.3 6.3 0 0 1-2.5-.7v5.4a5.4 5.4 0 1 1-5.4-5.4c.3 0 .6 0 .9.1v2.3a3.1 3.1 0 1 0 2.2 3V3z" />
+      </svg>
+    )
+  }
+  if (id === 'x') {
+    return (
+      <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
+        <path d="M4 4h4.1l4 5.4L16.7 4H20l-6.2 7.2L20.5 20H16.4l-4.4-5.9L7.3 20H4l6.5-7.6L4 4z" />
+      </svg>
+    )
+  }
+  if (id === 'facebook') {
+    return (
+      <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
+        <path d="M14 9h3V6h-3c-2.2 0-4 1.8-4 4v2H8v3h2v6h3v-6h2.4l.6-3H13v-2c0-.6.4-1 1-1z" />
+      </svg>
+    )
+  }
+  return <span className="text-xs font-bold">{id.slice(0, 2).toUpperCase()}</span>
 }
 
 /**
@@ -112,8 +141,8 @@ export default function StudioSocialsPanel({ onNavigate }) {
 
   const onConnect = (providerId) => {
     const handle = handleDraft[providerId] || user?.handle || ''
-    const res = connectSocial(uid, providerId, handle)
-    setNote(res.ok ? `Connected ${providerId}.` : (res.error || 'Could not connect.'))
+    const res = connectSocial(uid, providerId, handle, { showOnProfile: true })
+    setNote(res.ok ? 'Connected.' : (res.error || 'Could not connect.'))
     bump((n) => n + 1)
   }
 
@@ -134,8 +163,7 @@ export default function StudioSocialsPanel({ onNavigate }) {
       setNote(res.error || 'Could not queue.')
       return
     }
-    const names = res.job.providers.map((id) => SOCIAL_PROVIDERS.find((p) => p.id === id)?.label || id).join(', ')
-    setNote(`Queued to ${names}.`)
+    setNote('Queued to selected accounts.')
     bump((n) => n + 1)
   }
 
@@ -148,52 +176,63 @@ export default function StudioSocialsPanel({ onNavigate }) {
 
       <SettingsNotice>
         <p>
-          Connects are saved on this device until live OAuth keys ship. Queued posts show below — they will publish automatically once provider APIs are wired.
+          Connects are saved on this device until live OAuth keys ship. Toggle Show on profile for each connected network.
         </p>
       </SettingsNotice>
 
-      <SettingsCard title="Connected accounts" description="YouTube, TikTok, Instagram, X, and Facebook.">
-        <div className="space-y-2">
+      <SettingsCard title="Connected accounts" description="Icon buttons — connect, then choose profile visibility.">
+        <div className="flex flex-wrap gap-3">
           {SOCIAL_PROVIDERS.map((p) => {
             const row = connects[p.id]
+            const on = !!row?.connected
             return (
-              <div
-                key={p.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-zinc-800 bg-[#0a0a0e] px-3 py-2.5"
-              >
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-white">{p.label}</p>
-                  <p className="text-[11px] text-zinc-500">
-                    {row?.connected
-                      ? `@${row.handle || 'connected'} · accepts ${p.accepts.join(', ')}`
-                      : `Not connected · ${p.accepts.join(', ')}`}
-                  </p>
-                </div>
-                {row?.connected ? (
-                  <button
-                    type="button"
-                    className="text-xs text-zinc-300 underline"
-                    onClick={() => { disconnectSocial(uid, p.id); bump((n) => n + 1) }}
-                  >
-                    Disconnect
-                  </button>
+              <div key={p.id} className="flex flex-col items-center gap-2 w-[5.5rem]">
+                <button
+                  type="button"
+                  title={p.label}
+                  aria-label={p.label}
+                  onClick={() => {
+                    if (on) {
+                      disconnectSocial(uid, p.id)
+                      bump((n) => n + 1)
+                    } else {
+                      onConnect(p.id)
+                    }
+                  }}
+                  className={cn(
+                    'h-12 w-12 rounded-xl border inline-flex items-center justify-center',
+                    on ? 'border-white bg-white text-black' : 'border-zinc-700 text-zinc-300 hover:border-zinc-500'
+                  )}
+                >
+                  <ProviderGlyph id={p.id} />
+                </button>
+                {!on ? (
+                  <input
+                    value={handleDraft[p.id] || ''}
+                    onChange={(e) => setHandleDraft((d) => ({ ...d, [p.id]: e.target.value }))}
+                    placeholder="@handle"
+                    className="h-7 w-full rounded border border-zinc-800 bg-black px-1 text-[10px] text-white text-center"
+                    aria-label={`${p.label} handle`}
+                  />
                 ) : (
-                  <div className="flex items-center gap-2">
+                  <label className="flex items-center gap-1 text-[10px] text-zinc-400">
                     <input
-                      value={handleDraft[p.id] || ''}
-                      onChange={(e) => setHandleDraft((d) => ({ ...d, [p.id]: e.target.value }))}
-                      placeholder={`@${user?.handle || 'handle'}`}
-                      className="h-8 w-28 rounded-lg border border-zinc-800 bg-black px-2 text-xs text-white"
+                      type="checkbox"
+                      checked={row.showOnProfile !== false}
+                      onChange={(e) => {
+                        setSocialShowOnProfile(uid, p.id, e.target.checked)
+                        bump((n) => n + 1)
+                      }}
                     />
-                    <SettingsButton onClick={() => onConnect(p.id)}>Connect</SettingsButton>
-                  </div>
+                    Profile
+                  </label>
                 )}
               </div>
             )
           })}
         </div>
         <p className="text-[11px] text-zinc-600 mt-3">
-          Channel page social links are separate branding URLs — manage those in{' '}
+          Branding URLs stay in{' '}
           <button type="button" className="underline text-zinc-400" onClick={() => onNavigate?.('settings', 'channel')}>
             Settings → Channel
           </button>
@@ -277,12 +316,13 @@ export default function StudioSocialsPanel({ onNavigate }) {
                         disabled={!ok}
                         onClick={() => toggleProvider(p.id)}
                         className={cn(
-                          'h-9 px-3 rounded-lg border text-xs font-semibold disabled:opacity-40',
+                          'h-10 w-10 rounded-lg border inline-flex items-center justify-center disabled:opacity-40',
                           on ? 'border-white bg-white text-black' : 'border-zinc-700 text-zinc-300'
                         )}
                         title={ok ? p.label : `${p.label} doesn’t accept ${typeLabel(selected.type).toLowerCase()}s`}
+                        aria-label={p.label}
                       >
-                        {p.label}
+                        <ProviderGlyph id={p.id} className="h-4 w-4" />
                       </button>
                     )
                   })}
@@ -326,12 +366,18 @@ export default function StudioSocialsPanel({ onNavigate }) {
                   <p className="text-sm text-white truncate">{j.title}</p>
                   <span className="text-[10px] uppercase tracking-wider text-zinc-500">{j.status}</span>
                 </div>
-                <p className="text-[11px] text-zinc-500 mt-0.5">
-                  {(j.contentType || 'short')} · {(j.providers || []).map((id) => SOCIAL_PROVIDERS.find((p) => p.id === id)?.short || id).join(', ')}
-                  {j.at ? ` · ${new Date(j.at).toLocaleString()}` : ''}
-                </p>
+                <div className="mt-1 flex flex-wrap gap-1.5 items-center">
+                  {(j.providers || []).map((id) => (
+                    <span key={id} className="inline-flex h-6 w-6 items-center justify-center border border-zinc-700 text-zinc-300" title={id}>
+                      <ProviderGlyph id={id} className="h-3.5 w-3.5" />
+                    </span>
+                  ))}
+                  <span className="text-[11px] text-zinc-500">
+                    {j.contentType || 'short'}
+                    {j.at ? ` · ${new Date(j.at).toLocaleString()}` : ''}
+                  </span>
+                </div>
                 {j.caption ? <p className="text-[11px] text-zinc-400 mt-1 line-clamp-2">{j.caption}</p> : null}
-                {j.note ? <p className="text-[10px] text-zinc-600 mt-1">{j.note}</p> : null}
               </li>
             ))}
           </ul>

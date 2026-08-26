@@ -26,21 +26,44 @@ export function listConnectedProviders(userId) {
   return SOCIAL_PROVIDERS.filter((p) => connects[p.id]?.connected)
 }
 
-export function connectSocial(userId, provider, handle = '') {
+export function connectSocial(userId, provider, handle = '', opts = {}) {
   if (!userId || !SOCIAL_PROVIDERS.some((p) => p.id === provider)) {
     return { ok: false, error: 'Unknown provider.' }
   }
   const all = lsGet(SOCIAL, {}) || {}
   const row = all[userId] || {}
+  const prev = row[provider] || {}
   row[provider] = {
     connected: true,
     handle: String(handle || '').replace(/^@/, '').slice(0, 64),
     mock: true,
-    connectedAt: new Date().toISOString(),
+    showOnProfile: opts.showOnProfile != null ? !!opts.showOnProfile : (prev.showOnProfile !== false),
+    connectedAt: prev.connectedAt || new Date().toISOString(),
   }
   all[userId] = row
   lsSet(SOCIAL, all)
   return { ok: true, connects: row }
+}
+
+export function setSocialShowOnProfile(userId, provider, show) {
+  if (!userId || !provider) return { ok: false }
+  const all = lsGet(SOCIAL, {}) || {}
+  const row = all[userId] || {}
+  if (!row[provider]?.connected) return { ok: false, error: 'Connect first.' }
+  row[provider] = { ...row[provider], showOnProfile: !!show }
+  all[userId] = row
+  lsSet(SOCIAL, all)
+  return { ok: true, connects: row }
+}
+
+export function listProfileSocials(userId) {
+  const connects = getSocialConnects(userId)
+  return SOCIAL_PROVIDERS.filter((p) => connects[p.id]?.connected && connects[p.id]?.showOnProfile !== false)
+    .map((p) => ({
+      id: p.id,
+      label: p.label,
+      handle: connects[p.id]?.handle || '',
+    }))
 }
 
 export function disconnectSocial(userId, provider) {

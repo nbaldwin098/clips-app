@@ -7,7 +7,6 @@ import {
   submitIdVerification,
 } from '../lib/verification'
 import { isOfficialCreator } from '../lib/uiFormat'
-import PageHeader from './PageHeader'
 import VerifiedBadge from './VerifiedBadge'
 
 function SidePicker({ label, file, preview, onPick }) {
@@ -34,7 +33,7 @@ function SidePicker({ label, file, preview, onPick }) {
   )
 }
 
-export default function VerifyPage({ onOpenAuth, onNavigate }) {
+export default function VerifyPage({ onOpenAuth }) {
   const { user, isAuthenticated } = useAuth()
   const existing = user ? getIdVerificationForUser(user.id) : null
   const alreadyOfficial = isOfficialCreator(user?.id, user?.handle)
@@ -72,7 +71,7 @@ export default function VerifyPage({ onOpenAuth, onNavigate }) {
   if (alreadyOfficial) {
     return (
       <div className="p-4 md:p-6 max-w-lg mx-auto">
-        <PageHeader title="Checkmark" onBack={() => onNavigate?.('channel')} />
+        <h1 className="text-lg font-semibold text-white mb-4">Get verified</h1>
         <div className="rounded-2xl border border-zinc-800 bg-[#121218] p-5">
           <p className="text-sm text-white inline-flex items-center gap-2">
             Official channel <VerifiedBadge />
@@ -88,7 +87,7 @@ export default function VerifyPage({ onOpenAuth, onNavigate }) {
   if (alreadyVerified || existing?.status === 'approved') {
     return (
       <div className="p-4 md:p-6 max-w-lg mx-auto">
-        <PageHeader title="Checkmark" onBack={() => onNavigate?.('channel')} />
+        <h1 className="text-lg font-semibold text-white mb-4">Get verified</h1>
         <div className="rounded-2xl border border-zinc-800 bg-[#121218] p-5">
           <p className="text-sm text-white inline-flex items-center gap-2">
             Your checkmark is on <VerifiedBadge title="Verified" />
@@ -102,9 +101,10 @@ export default function VerifyPage({ onOpenAuth, onNavigate }) {
   if (existing?.status === 'pending' || done) {
     return (
       <div className="p-4 md:p-6 max-w-lg mx-auto">
-        <PageHeader title="Checkmark" onBack={() => onNavigate?.('channel')} />
-        <div className="rounded-2xl border border-zinc-800 bg-[#121218] p-5 text-sm text-zinc-200">
-          Front and back of your ID are in review. You will get a notification when we accept or deny it. Creator status is not required.
+        <h1 className="text-lg font-semibold text-white mb-4">Get verified</h1>
+        <div className="rounded-2xl border border-zinc-800 bg-[#121218] p-5 text-sm text-zinc-200 space-y-2">
+          <p>Front and back of your ID are in review.</p>
+          <p className="text-zinc-400 text-xs">We will get back to you within 7 business days.</p>
         </div>
       </div>
     )
@@ -131,9 +131,9 @@ export default function VerifyPage({ onOpenAuth, onNavigate }) {
 
   return (
     <div className="p-4 md:p-6 max-w-lg mx-auto">
-      <PageHeader title="Get a checkmark" onBack={() => onNavigate?.('channel')} />
+      <h1 className="text-lg font-semibold text-white mb-3">Get verified</h1>
       <p className="text-sm text-zinc-400 mb-4">
-        Upload a photo of the front and the back of a government ID. We accept or deny it. This is not the creator application — anyone can apply, with or without creator status.
+        Upload a photo of the front and the back of a government ID. We will get back to you within 7 business days.
       </p>
       {existing?.status === 'denied' ? (
         <p className="mb-4 text-sm text-zinc-200 rounded-xl border border-zinc-800 bg-[#121218] px-4 py-3">

@@ -7,13 +7,41 @@ import { lsGet } from '../lib/storage'
 import { getPicsFeed } from '../lib/picsService'
 import { getSubscriberCount } from '../lib/engagement'
 import { useContentSyncTick } from '../lib/useContentSync'
-import { Pin, Trash2 } from 'lucide-react'
+import { Pin, Trash2, Youtube, Instagram } from 'lucide-react'
 import { cn } from '../lib/utils'
 import ChannelAvatar from './ChannelAvatar'
 import VerifiedBadge from './VerifiedBadge'
 import FollowButton from './FollowButton'
 import { followersLabel, isOfficialCreator } from '../lib/uiFormat'
 import { isVerifiedChannel } from '../lib/verification'
+import { listProfileSocials } from '../lib/socialConnects'
+
+function SocialGlyph({ id, className = 'h-4 w-4' }) {
+  if (id === 'youtube') return <Youtube className={className} />
+  if (id === 'instagram') return <Instagram className={className} />
+  if (id === 'tiktok') {
+    return (
+      <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
+        <path d="M14.5 3h2.1c.2 1.5 1.1 2.8 2.4 3.6v2.2a6.3 6.3 0 0 1-2.5-.7v5.4a5.4 5.4 0 1 1-5.4-5.4c.3 0 .6 0 .9.1v2.3a3.1 3.1 0 1 0 2.2 3V3z" />
+      </svg>
+    )
+  }
+  if (id === 'x') {
+    return (
+      <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
+        <path d="M4 4h4.1l4 5.4L16.7 4H20l-6.2 7.2L20.5 20H16.4l-4.4-5.9L7.3 20H4l6.5-7.6L4 4z" />
+      </svg>
+    )
+  }
+  if (id === 'facebook') {
+    return (
+      <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
+        <path d="M14 9h3V6h-3c-2.2 0-4 1.8-4 4v2H8v3h2v6h3v-6h2.4l.6-3H13v-2c0-.6.4-1 1-1z" />
+      </svg>
+    )
+  }
+  return null
+}
 
 export default function ProfilePage({ onNavigate, profileHandle, profileUserId, onPlayItem, onOpenPic, onOpenProfile, onOpenAuth, onOpenCheckout }) {
   const { user } = useAuth()
@@ -59,6 +87,7 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
   const subs = resolvedId ? getSubscriberCount(resolvedId) : 0
   const official = isOfficialCreator(creatorId, handle)
   const verified = isVerifiedChannel(creatorId, handle)
+  const profileSocials = useMemo(() => listProfileSocials(resolvedId), [resolvedId, tick, syncTick])
 
   const onPin = (contentId) => {
     if (!isSelf || !creatorId) return
@@ -106,10 +135,23 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
         </div>
       </div>
       {bio && <p className="px-4 mt-2 text-sm text-zinc-400 max-w-2xl text-center sm:text-left">{bio}</p>}
+      {profileSocials.length ? (
+        <div className="px-4 mt-3 flex flex-wrap gap-2 justify-center sm:justify-start">
+          {profileSocials.map((s) => (
+            <span
+              key={s.id}
+              title={s.handle ? `@${s.handle}` : s.label}
+              className="h-9 w-9 inline-flex items-center justify-center rounded-full border border-zinc-700 text-zinc-200"
+            >
+              <SocialGlyph id={s.id} />
+            </span>
+          ))}
+        </div>
+      ) : null}
       <div className="px-4 mt-6 flex gap-6 border-b border-[#272727]">
         {[
           { id: 'videos', label: 'Videos' },
-          { id: 'clips', label: 'Shorts' },
+          { id: 'clips', label: 'Clips' },
           { id: 'pics', label: 'Pics' },
           { id: 'live', label: liveEntry ? '● Live' : 'Live' },
           { id: 'playlists', label: 'Playlists' },

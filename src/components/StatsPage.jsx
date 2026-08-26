@@ -17,6 +17,7 @@ import { listImportsNormalized } from '../lib/contentService'
 import { lsGet } from '../lib/storage'
 import { useContentSyncTick } from '../lib/useContentSync'
 import PageHeader from './PageHeader'
+import SiteBubbleMap from './studio/SiteBubbleMap'
 
 export default function StatsPage({ onNavigate }) {
   const syncTick = useContentSyncTick()
@@ -25,12 +26,15 @@ export default function StatsPage({ onNavigate }) {
   const likesMap = useMemo(() => lsGet('engagement_likes', {}) || {}, [syncTick])
   const subsMap = useMemo(() => lsGet('engagement_subs', {}) || {}, [syncTick])
   const liveBoard = useMemo(() => (lsGet('live_board', []) || []).filter((b) => b.isLive), [syncTick])
+  const interactionCount = useMemo(() => {
+    const rows = lsGet('clips_creator_interactions', []) || []
+    return Array.isArray(rows) ? rows.length : 0
+  }, [syncTick])
 
   const totalUsers = users.length
   const approvedCreators = users.filter((u) => u.creatorStatus === 'approved' || u.isCreator)
   const totalCreators = approvedCreators.length
 
-  // Subscriptions & Premium
   const totalSubscribers = useMemo(() => {
     let count = 0
     for (const list of Object.values(subsMap)) {
@@ -52,7 +56,6 @@ export default function StatsPage({ onNavigate }) {
     return count
   }, [])
 
-  // Aggregate likes, dislikes, views
   const { totalLikes, totalDislikes, totalViews } = useMemo(() => {
     let up = 0
     let down = 0
@@ -68,13 +71,13 @@ export default function StatsPage({ onNavigate }) {
     return { totalLikes: up, totalDislikes: down, totalViews: views }
   }, [allItems, likesMap])
 
-  // Clips vs Videos breakdown
   const clips = allItems.filter((i) => i.type === 'short')
-  const videos = allItems.filter((i) => i.type !== 'short')
+  const videos = allItems.filter((i) => i.type === 'video')
+  const pics = allItems.filter((i) => i.type === 'pic')
   const numClips = clips.length
   const numVideos = videos.length
+  const numPics = pics.length
 
-  // Duration in hours
   const clipDurationHours = useMemo(() => {
     const totalSec = clips.reduce((acc, c) => acc + (Number(c.durationSec) || 0), 0)
     return (totalSec / 3600).toFixed(2)
@@ -86,6 +89,7 @@ export default function StatsPage({ onNavigate }) {
   }, [videos])
 
   const numLiveStreamers = liveBoard.length
+  const interactionTotal = Math.max(interactionCount, totalLikes + totalSubscribers + totalViews)
 
   const stats = [
     { label: 'Total Users', value: totalUsers, icon: Users, hint: 'Registered platform accounts' },
@@ -103,11 +107,19 @@ export default function StatsPage({ onNavigate }) {
   ]
 
   return (
-    <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6">
+    <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-8">
       <PageHeader title="Platform Stats" onBack={() => onNavigate?.('home')} />
       <p className="text-xs text-zinc-500">Counts from this catalog — nothing invented.</p>
 
-      {/* Grid of Stat Cards */}
+      <SiteBubbleMap
+        videos={numVideos}
+        clips={numClips}
+        pics={numPics}
+        live={numLiveStreamers}
+        creators={totalCreators}
+        interactions={interactionTotal}
+      />
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
         {stats.map(({ label, value, icon: Icon, hint }) => (
           <div
@@ -127,7 +139,6 @@ export default function StatsPage({ onNavigate }) {
           </div>
         ))}
       </div>
-
     </div>
   )
 }

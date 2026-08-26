@@ -21,10 +21,16 @@ import {
 import { useAuth } from '../../context/AuthContext'
 import CreatorOnboarding from '../CreatorOnboarding'
 import { lsGet, lsSet } from '../../lib/storage'
-import { getCreatorContent, deleteCatalogItem } from '../../lib/contentService'
+import { getCreatorContent, deleteCatalogItem, setContentVisibility } from '../../lib/contentService'
 import { getViews, getVotes, getSubscriberCount, getCreatorAnalytics } from '../../lib/engagement'
 import { creatorBalance } from '../../lib/payouts'
 import { listVods, setVodVisibility, getVodChannel } from '../../lib/vods'
+import {
+  getLinkedVodAccount,
+  startVodAccountLink,
+  confirmVodAccountLink,
+  unlinkVodAccount,
+} from '../../lib/vodAccountLink'
 import { buildInteractionNetwork } from '../../lib/creatorInteractions'
 import { formatCount } from '../../lib/uiFormat'
 import { formatPostedAt, postedAtOf } from '../../lib/mediaMeta'
@@ -97,9 +103,10 @@ function groupNav(items) {
   return groups
 }
 
-function PostRow({ post, active, deleting, onSelect, onPlay, onDelete }) {
+function PostRow({ post, active, deleting, onSelect, onPlay, onDelete, onVisibility }) {
   const views = getViews(post.id)
   const likes = getVotes(post.id)?.up || 0
+  const vis = post.visibility === 'private' || post.status === 'draft' ? 'private' : (post.visibility || 'public')
   return (
     <div
       className={cn(
@@ -120,7 +127,7 @@ function PostRow({ post, active, deleting, onSelect, onPlay, onDelete }) {
           <span>·</span>
           <span>{formatCount(likes)} likes</span>
           <span>·</span>
-          <span>{post.status || 'live'}</span>
+          <span>{vis}</span>
         </div>
       </button>
       <div className="mt-2 flex gap-1">
@@ -131,6 +138,17 @@ function PostRow({ post, active, deleting, onSelect, onPlay, onDelete }) {
         >
           <Play className="h-3.5 w-3.5" /> Open
         </button>
+        {onVisibility ? (
+          <select
+            value={vis}
+            onChange={(e) => onVisibility(post, e.target.value)}
+            className="h-8 border border-zinc-700 bg-black px-1 text-[10px] text-white"
+            title="Visibility"
+          >
+            <option value="public">Public</option>
+            <option value="private">Private</option>
+          </select>
+        ) : null}
         <button
           type="button"
           onClick={() => onDelete(post)}
@@ -146,37 +164,154 @@ function PostRow({ post, active, deleting, onSelect, onPlay, onDelete }) {
 }
 
 function VodsPanel({ user }) {
+  const [, bump] = useState(0)
   const vods = listVods(user?.id)
   const ch = getVodChannel(user?.id)
+  const clips = useMemo(
+    () => (getCreatorContent(user?.id, user?.handle) || []).filter((p) => p.type === 'short'),
+    [user?.id, user?.handle, bump]
+  )
+  const [linkEmail, setLinkEmail] = useState('')
+  const [linkCode, setLinkCode] = useState('')
+  const [linkNote, setLinkNote] = useState('')
+  const [demoCode, setDemoCode] = useState('')
+  const linked = getLinkedVodAccount(user?.id)
+
+  const onSendCode = () => {
+    const res = startVodAccountLink(user?.id, linkEmail)
+    setLinkNote(res.message || res.error || '')
+    setDemoCode(res.demoCode || '')
+    bump((n) => n + 1)
+  }
+
+  const onConfirmLink = () => {
+    const res = confirmVodAccountLink(user?.id, linkCode, user)
+    setLinkNote(res.message || res.error || '')
+    if (res.ok) {
+      setLinkCode('')
+      setDemoCode('')
+    }
+    bump((n) => n + 1)
+  }
+
   return (
-    <div className="space-y-4 max-w-2xl">
+    <div className="space-y-6 max-w-2xl">
       <SettingsNotice>
         <p>
-          Ended live lobbies for your cloud account.
+          Lives end into this library. Creator clips and your clips are kept here too.
           {ch.enabled
             ? ` Second channel @${ch.handle || '—'} is ${ch.autoPublish ? 'auto-posting' : 'manual'}.`
-            : ' Second channel is off — turn it on under Stream in this dashboard.'}
+            : ' Link a second account below to publish VODs on a separate channel.'}
         </p>
       </SettingsNotice>
-      {vods.length === 0 ? (
-        <p className="text-sm text-zinc-500">No lives ended yet.</p>
-      ) : vods.map((v) => (
-        <SettingsCard key={v.id} title={v.title || 'Past broadcast'}>
+
+      <SettingsCard title="Link second account" description="Verify the email on that login with a code.">
+        {linked ? (
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-[11px] text-zinc-500">
-              {v.endedAt?.slice(0, 16).replace('T', ' ')} · {Math.round((v.durationSec || 0) / 60)} min
+            <p className="text-sm text-white">
+              Linked @{linked.handle || linked.email}
             </p>
-            <select
-              value={v.visibility}
-              onChange={(e) => setVodVisibility(v.id, e.target.value)}
-              className="h-9 border border-zinc-800 bg-black px-2 text-xs text-white"
+            <SettingsButton
+              variant="ghost"
+              onClick={() => {
+                unlinkVodAccount(user?.id)
+                bump((n) => n + 1)
+              }}
             >
-              <option value="private">Private</option>
-              <option value="public">Public</option>
-            </select>
+              Unlink
+            </SettingsButton>
           </div>
-        </SettingsCard>
-      ))}
+        ) : (
+          <div className="space-y-2">
+            <input
+              value={linkEmail}
+              onChange={(e) => setLinkEmail(e.target.value)}
+              placeholder="Second account email"
+              className="h-9 w-full border border-zinc-800 bg-black px-2 text-xs text-white"
+            />
+            <div className="flex flex-wrap gap-2">
+              <SettingsButton onClick={onSendCode}>Send code</SettingsButton>
+              <input
+                value={linkCode}
+                onChange={(e) => setLinkCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="6-digit code"
+                className="h-9 w-28 border border-zinc-800 bg-black px-2 text-xs text-white"
+              />
+              <SettingsButton onClick={onConfirmLink}>Verify & link</SettingsButton>
+            </div>
+            {demoCode ? <p className="text-[11px] text-zinc-500">Demo code (mail not wired): {demoCode}</p> : null}
+            {linkNote ? <p className="text-xs text-amber-400">{linkNote}</p> : null}
+          </div>
+        )}
+      </SettingsCard>
+
+      <div className="space-y-3">
+        <p className="text-xs uppercase tracking-wider text-zinc-600">Lives & VODs</p>
+        {vods.filter((v) => v.kind !== 'clip').length === 0 ? (
+          <p className="text-sm text-zinc-500">No lives ended yet.</p>
+        ) : vods.filter((v) => v.kind !== 'clip').map((v) => (
+          <SettingsCard key={v.id} title={v.title || 'Past broadcast'}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-[11px] text-zinc-500">
+                {v.endedAt?.slice(0, 16).replace('T', ' ')} · {Math.round((v.durationSec || 0) / 60)} min
+              </p>
+              <select
+                value={v.visibility}
+                onChange={(e) => { setVodVisibility(v.id, e.target.value); bump((n) => n + 1) }}
+                className="h-9 border border-zinc-800 bg-black px-2 text-xs text-white"
+              >
+                <option value="private">Private</option>
+                <option value="public">Public</option>
+              </select>
+            </div>
+          </SettingsCard>
+        ))}
+      </div>
+
+      <div className="space-y-3">
+        <p className="text-xs uppercase tracking-wider text-zinc-600">Clips in library</p>
+        {clips.length === 0 && vods.filter((v) => v.kind === 'clip').length === 0 ? (
+          <p className="text-sm text-zinc-500">No clips yet.</p>
+        ) : (
+          <>
+            {clips.map((c) => (
+              <SettingsCard key={c.id} title={c.title || 'Clip'}>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-[11px] text-zinc-500">
+                    Clip · {c.visibility || 'public'} · {Math.round((c.durationSec || 0))}s
+                  </p>
+                  <select
+                    value={c.visibility === 'private' || c.status === 'draft' ? 'private' : 'public'}
+                    onChange={(e) => {
+                      setContentVisibility(c.id, e.target.value, user)
+                      bump((n) => n + 1)
+                    }}
+                    className="h-9 border border-zinc-800 bg-black px-2 text-xs text-white"
+                  >
+                    <option value="private">Private</option>
+                    <option value="public">Public</option>
+                  </select>
+                </div>
+              </SettingsCard>
+            ))}
+            {vods.filter((v) => v.kind === 'clip').map((v) => (
+              <SettingsCard key={v.id} title={v.title || 'Clip'}>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-[11px] text-zinc-500">Saved clip record</p>
+                  <select
+                    value={v.visibility}
+                    onChange={(e) => { setVodVisibility(v.id, e.target.value); bump((n) => n + 1) }}
+                    className="h-9 border border-zinc-800 bg-black px-2 text-xs text-white"
+                  >
+                    <option value="private">Private</option>
+                    <option value="public">Public</option>
+                  </select>
+                </div>
+              </SettingsCard>
+            ))}
+          </>
+        )}
+      </div>
     </div>
   )
 }
@@ -538,6 +673,9 @@ export default function CreatorStudio({
                 onSelect={setSelectedPostId}
                 onPlay={openPost}
                 onDelete={onDeletePost}
+                onVisibility={(p, vis) => {
+                  setContentVisibility(p.id, vis, user)
+                }}
               />
             ))}
           </div>
@@ -651,7 +789,7 @@ export default function CreatorStudio({
                   ]}
                 />
               </div>
-              <div className="min-h-[320px] h-[42vh] shrink-0">
+              <div className="min-h-[520px] h-[min(70vh,720px)] shrink-0">
                 <InteractionBubbleMap
                   network={network}
                   selectedPostId={selectedPostId}

@@ -13,6 +13,7 @@ import {
   refreshWalletFromCloud,
 } from '../../lib/calabiCash'
 import { creatorBalance } from '../../lib/payouts'
+import { buildMethodSummary, storePayoutSecret, removePayoutSecret } from '../../lib/payoutVault'
 import {
   SettingsCard,
   SettingsKpiGrid,
@@ -74,9 +75,13 @@ export default function CreatorEarningsPanel() {
   const [, bump] = useState(0)
   const [amount, setAmount] = useState('25')
   const [methodId, setMethodId] = useState('')
-  const [label, setLabel] = useState('PayPal')
-  const [details, setDetails] = useState('')
-  const [type, setType] = useState('paypal')
+  const [type, setType] = useState('bank')
+  const [routingNumber, setRoutingNumber] = useState('')
+  const [accountNumber, setAccountNumber] = useState('')
+  const [accountName, setAccountName] = useState('')
+  const [chain, setChain] = useState('sol')
+  const [cryptoAddress, setCryptoAddress] = useState('')
+  const [paypalEmail, setPaypalEmail] = useState('')
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -103,7 +108,6 @@ export default function CreatorEarningsPanel() {
   )
   const methods = listWithdrawMethods(uid) || []
   const requests = listWithdrawRequests(uid, 10) || []
-  // Legacy ledger is { views, paid } — never treat as pending/available cash.
   const payout = creatorBalance(uid, user?.handle) || { views: 0, paid: 0 }
   const coins = Number(getCoinBalance(uid)) || 0
 
@@ -114,9 +118,51 @@ export default function CreatorEarningsPanel() {
   const onAddMethod = async () => {
     if (!uid) return
     setBusy(true)
-    const res = await saveWithdrawMethod(uid, { type, label, details, primary: methods.length === 0 })
+    setNote('')
+    const fields = type === 'bank'
+      ? { routingNumber, accountNumber, accountName, label: accountName || 'Bank account' }
+      : type === 'crypto'
+        ? { chain, address: cryptoAddress, label: chain === 'btc' ? 'Bitcoin' : 'Solana' }
+        : { email: paypalEmail, label: 'PayPal' }
+
+    if (type === 'bank' && (!String(routingNumber).replace(/\D/g, '') || !String(accountNumber).replace(/\D/g, ''))) {
+      setBusy(false)
+      setNote('Enter routing and account numbers.')
+      return
+    }
+    if (type === 'crypto' && !String(cryptoAddress).trim()) {
+      setBusy(false)
+      setNote('Enter your wallet address.')
+      return
+    }
+    if (type === 'paypal' && !String(paypalEmail).trim()) {
+      setBusy(false)
+      setNote('Enter your PayPal email.')
+      return
+    }
+
+    const summary = buildMethodSummary(type, fields)
+    const id = `wm_${Date.now()}`
+    storePayoutSecret(uid, id, summary.secret)
+    const res = await saveWithdrawMethod(uid, {
+      id,
+      type,
+      label: summary.label,
+      details: summary.details,
+      primary: methods.length === 0,
+    })
     setBusy(false)
-    setNote(res.ok ? 'Withdrawal method saved on cloud.' : (res.error || 'Could not save'))
+    if (!res.ok) {
+      removePayoutSecret(uid, id)
+      setNote(res.error || 'Could not save')
+      return
+    }
+    setNote('Payout method saved in the secure vault.')
+    setRoutingNumber('')
+    setAccountNumber('')
+    setAccountName('')
+    setCryptoAddress('')
+    setPaypalEmail('')
     bump((n) => n + 1)
   }
 
@@ -159,14 +205,17 @@ export default function CreatorEarningsPanel() {
         <p>
           Legacy payout ledger: {usd(payout?.paid)} paid
           {payout?.views != null ? ` · ${Number(payout.views) || 0} tracked views` : ''}.
-          Earnings above sync from Supabase (run migration 0016 if empty).
+          Bank and crypto details are stored in a secure payout vault (masked on screen).
         </p>
       </SettingsNotice>
 
-      <SettingsCard title="Withdrawal methods" description="PayPal, bank, or crypto payout destination.">
-        <div className="space-y-2">
+      <SettingsCard
+        title="Withdraw"
+        description="Add a bank or crypto payout method, then request a withdrawal. Minimum $10."
+      >
+        <div className="space-y-4">
           {methods.length === 0 ? (
-            <p className="text-xs text-zinc-500">No methods yet.</p>
+            <p className="text-xs text-zinc-500">No payout methods yet — add one below.</p>
           ) : methods.map((m) => (
             <div key={m.id} className="flex items-center justify-between gap-2 border border-zinc-800 px-3 py-2 text-sm">
               <div>
@@ -178,6 +227,7 @@ export default function CreatorEarningsPanel() {
                 className="text-xs"
                 onClick={async () => {
                   await removeWithdrawMethod(uid, m.id)
+                  removePayoutSecret(uid, m.id)
                   bump((n) => n + 1)
                 }}
               >
@@ -185,45 +235,119 @@ export default function CreatorEarningsPanel() {
               </SettingsButton>
             </div>
           ))}
-          <div className="grid gap-2 sm:grid-cols-3 pt-2">
-            <select value={type} onChange={(e) => setType(e.target.value)} className="h-9 border border-zinc-800 bg-black px-2 text-xs text-white">
-              <option value="paypal">PayPal</option>
-              <option value="bank">Bank</option>
-              <option value="crypto">Crypto</option>
-            </select>
-            <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Label" className="h-9 border border-zinc-800 bg-black px-2 text-xs text-white" />
-            <input value={details} onChange={(e) => setDetails(e.target.value)} placeholder="email / account" className="h-9 border border-zinc-800 bg-black px-2 text-xs text-white" />
-          </div>
-          <SettingsButton disabled={busy} onClick={onAddMethod}>Add method</SettingsButton>
-        </div>
-      </SettingsCard>
 
-      <SettingsCard title="Request withdrawal" description="Minimum $10. Processed after review.">
-        <div className="flex flex-wrap gap-2 items-end">
-          <label className="text-xs text-zinc-400">
-            Amount (USD)
-            <input value={amount} onChange={(e) => setAmount(e.target.value)} className="mt-1 block h-9 w-28 border border-zinc-800 bg-black px-2 text-sm text-white" />
-          </label>
-          <label className="text-xs text-zinc-400">
-            Method
-            <select value={methodId} onChange={(e) => setMethodId(e.target.value)} className="mt-1 block h-9 min-w-[10rem] border border-zinc-800 bg-black px-2 text-sm text-white">
-              <option value="">Select…</option>
-              {methods.map((m) => (
-                <option key={m.id} value={m.id}>{m.label}</option>
+          <div className="border-t border-zinc-800 pt-4 space-y-3">
+            <p className="text-xs font-semibold text-zinc-300">Add payment method</p>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { id: 'bank', label: 'Bank' },
+                { id: 'crypto', label: 'Crypto' },
+                { id: 'paypal', label: 'PayPal' },
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setType(t.id)}
+                  className={`h-9 px-3 text-xs font-semibold border ${type === t.id ? 'border-white text-white' : 'border-zinc-700 text-zinc-400'}`}
+                >
+                  {t.label}
+                </button>
               ))}
-            </select>
-          </label>
-          <SettingsButton disabled={busy || !methodId} onClick={onWithdraw}>Request</SettingsButton>
+            </div>
+
+            {type === 'bank' ? (
+              <div className="grid gap-2 sm:grid-cols-2">
+                <input
+                  value={accountName}
+                  onChange={(e) => setAccountName(e.target.value)}
+                  placeholder="Account name"
+                  className="h-9 border border-zinc-800 bg-black px-2 text-xs text-white sm:col-span-2"
+                />
+                <input
+                  value={routingNumber}
+                  onChange={(e) => setRoutingNumber(e.target.value.replace(/\D/g, '').slice(0, 9))}
+                  placeholder="Routing number"
+                  className="h-9 border border-zinc-800 bg-black px-2 text-xs text-white"
+                  inputMode="numeric"
+                />
+                <input
+                  value={accountNumber}
+                  onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, '').slice(0, 17))}
+                  placeholder="Account number"
+                  className="h-9 border border-zinc-800 bg-black px-2 text-xs text-white"
+                  inputMode="numeric"
+                />
+              </div>
+            ) : null}
+
+            {type === 'crypto' ? (
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setChain('sol')}
+                    className={`h-9 px-3 text-xs font-semibold border ${chain === 'sol' ? 'border-white text-white' : 'border-zinc-700 text-zinc-400'}`}
+                  >
+                    SOL
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setChain('btc')}
+                    className={`h-9 px-3 text-xs font-semibold border ${chain === 'btc' ? 'border-white text-white' : 'border-zinc-700 text-zinc-400'}`}
+                  >
+                    BTC
+                  </button>
+                </div>
+                <input
+                  value={cryptoAddress}
+                  onChange={(e) => setCryptoAddress(e.target.value.trim())}
+                  placeholder={chain === 'btc' ? 'Bitcoin address' : 'Solana address'}
+                  className="h-9 w-full border border-zinc-800 bg-black px-2 text-xs text-white"
+                />
+              </div>
+            ) : null}
+
+            {type === 'paypal' ? (
+              <input
+                value={paypalEmail}
+                onChange={(e) => setPaypalEmail(e.target.value)}
+                placeholder="PayPal email"
+                className="h-9 w-full border border-zinc-800 bg-black px-2 text-xs text-white"
+              />
+            ) : null}
+
+            <SettingsButton disabled={busy} onClick={onAddMethod}>Save payment method</SettingsButton>
+          </div>
+
+          <div className="border-t border-zinc-800 pt-4 space-y-3">
+            <p className="text-xs font-semibold text-zinc-300">Request withdrawal</p>
+            <div className="flex flex-wrap gap-2 items-end">
+              <label className="text-xs text-zinc-400">
+                Amount (USD)
+                <input value={amount} onChange={(e) => setAmount(e.target.value)} className="mt-1 block h-9 w-28 border border-zinc-800 bg-black px-2 text-sm text-white" />
+              </label>
+              <label className="text-xs text-zinc-400">
+                Method
+                <select value={methodId} onChange={(e) => setMethodId(e.target.value)} className="mt-1 block h-9 min-w-[12rem] border border-zinc-800 bg-black px-2 text-sm text-white">
+                  <option value="">Select…</option>
+                  {methods.map((m) => (
+                    <option key={m.id} value={m.id}>{m.label}</option>
+                  ))}
+                </select>
+              </label>
+              <SettingsButton disabled={busy || !methodId} onClick={onWithdraw}>Request withdrawal</SettingsButton>
+            </div>
+            {requests.length ? (
+              <ul className="mt-2 space-y-1 text-xs text-zinc-500">
+                {requests.map((r) => (
+                  <li key={r.id}>
+                    {usd(r.amountUsd)} · {r.status || 'pending'} · {r.methodLabel || '—'} · {String(r.createdAt || '').slice(0, 16)}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
         </div>
-        {requests.length ? (
-          <ul className="mt-3 space-y-1 text-xs text-zinc-500">
-            {requests.map((r) => (
-              <li key={r.id}>
-                {usd(r.amountUsd)} · {r.status || 'pending'} · {r.methodLabel || '—'} · {String(r.createdAt || '').slice(0, 16)}
-              </li>
-            ))}
-          </ul>
-        ) : null}
       </SettingsCard>
 
       {note ? <p className="text-xs text-amber-400">{note}</p> : null}
