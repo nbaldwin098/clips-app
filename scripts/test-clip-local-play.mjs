@@ -22,8 +22,8 @@ const raw = {
   storedBytes: 999,
   hosted: false,
   status: 'published',
-  creatorId: 'owner-cs1',
-  handle: 'cs1',
+  creatorId: 'owner-kiddnixk',
+  handle: 'kiddnixk',
 }
 const n = normalizeItem(raw)
 assert.equal(n.localStored, true, 'normalize keeps localStored')

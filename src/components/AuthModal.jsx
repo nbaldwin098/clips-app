@@ -286,12 +286,19 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
                   type="text"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  placeholder="kiddnixk@gmail.com"
                   className="mt-1 w-full h-10 rounded-lg border border-[#2f2f37] bg-[#000000] px-3 text-sm text-[#efeff1] focus:outline-none focus:ring-1 focus:ring-white"
                   autoComplete="username"
                   inputMode="email"
                   autoCapitalize="none"
                   autoCorrect="off"
+                  spellCheck={false}
                 />
+                {mode === 'signin' ? (
+                  <p className="mt-1 text-[11px] text-zinc-500">
+                    Use the same cloud email + password on every device. Local device-only sessions do not travel.
+                  </p>
+                ) : null}
               </label>
             )}
 

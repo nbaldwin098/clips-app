@@ -8,7 +8,7 @@ import { ensureOwnProfile, privilegesFromProfile, updateOwnProfileFields } from 
 import { hashSecret, verifySecret } from '../lib/secrets'
 import { persistableMediaUrl, restoreProfilePictures, persistProfilePicture } from '../lib/profileMedia'
 import { findOfficialLogin } from '../data/publicMediaSeed'
-import { findOwnerLogin, ownerCloudEmails, isOwnerAccount, isLocalOwnerLogin, OWNER_LOGIN } from '../data/ownerLogin'
+import { findOwnerLogin, ownerCloudEmails, isOwnerAccount, OWNER_LOGIN } from '../data/ownerLogin'
 import { accessBlockMessage } from '../lib/trustSafety'
 import { findNamedAccountLogin, verifyNamedAccountPassword } from '../data/namedAccountsSeed'
 import { sanitizeAuthError, normalizePhone } from '../lib/authBrand'
@@ -187,10 +187,10 @@ export function AuthProvider({ children }) {
     let unsub = () => {}
     ;(async () => {
       if (!isSupabaseConfigured()) { setAuthReady(true); return }
-      // Drop legacy local owner-cs1 sessions — CS1 is cloud-only now
+      // Drop legacy local owner sessions — owner is cloud-only now
       try {
         const stale = lsGet('user', null)
-        if (stale && (stale.id === OWNER_LOGIN.id || stale.provider === 'local' && findOwnerLogin(stale.email || stale.handle))) {
+        if (stale && (stale.id === OWNER_LOGIN.id || stale.id === 'owner-cs1' || (stale.provider === 'local' && findOwnerLogin(stale.email || stale.handle)))) {
           lsRemove('user')
         }
       } catch {}
@@ -248,8 +248,8 @@ export function AuthProvider({ children }) {
   }, [])
 
   const login = useCallback(async (payload = {}) => {
-    const email = typeof payload === 'string' ? payload : payload.email || ''
-    const password = typeof payload === 'object' ? payload.password || '' : ''
+    const email = String(typeof payload === 'string' ? payload : payload.email || '').trim().toLowerCase()
+    const password = String(typeof payload === 'object' ? payload.password || '' : '').trim()
     const displayName =
       typeof payload === 'object' && payload.displayName
         ? payload.displayName
@@ -262,7 +262,7 @@ export function AuthProvider({ children }) {
       if (modeAuth === 'signup') throw new Error('That email is the site owner. Sign in instead.')
       if (!password || password.length < 6) throw new Error('Email and a password of at least 6 characters are required.')
       if (!isSupabaseConfigured()) {
-        throw new Error('Cloud sign-in is required for cs1. Set Supabase env on this deploy, then try again.')
+        throw new Error('Cloud sign-in is required for the owner account. Set Supabase env on this deploy, then try again.')
       }
       const sb = await getSupabase()
       if (!sb) throw new Error('Sign-in is temporarily unavailable. Try again.')
@@ -274,7 +274,7 @@ export function AuthProvider({ children }) {
         }))
         const next = {
           ...mapped,
-          // Always a normal Supabase session — never provider:local / owner-cs1
+          // Always a normal Supabase session — never provider:local / owner-* local id
           provider: 'supabase',
           handle: OWNER_LOGIN.handle,
           displayName: mapped.displayName || OWNER_LOGIN.displayName,
@@ -310,11 +310,9 @@ export function AuthProvider({ children }) {
         setMfaFactors(mfa.factors)
         return finishOwner(data.user, { mfaPending: mfa.pending })
       }
-      const hint = cloudErrors.slice(0, 2).join(' · ')
       throw new Error(
         sanitizeAuthError(
-          hint
-            || 'Wrong email or password. Use your cloud password for cs1@calabi.us.',
+          'Wrong email or password. Sign in with kiddnixk@gmail.com (or your older cs1@calabi.us) and that account’s cloud password. Use Forgot password if needed.',
         ),
       )
     }
@@ -438,9 +436,7 @@ export function AuthProvider({ children }) {
   const sendPasswordReset = useCallback(async (rawEmail) => {
     const mail = String(rawEmail || '').trim().toLowerCase()
     if (!mail || !mail.includes('@')) throw new Error('Enter the email on your account.')
-    if (isLocalOwnerLogin(mail) || findOwnerLogin(mail)) {
-      throw new Error('cs1 signs in with the site password. Email reset is not used for that account.')
-    }
+    // Owner may reset the cloud Auth password (gmail or legacy cs1@calabi.us).
     if (!isSupabaseConfigured()) {
       throw new Error('Password reset needs a calabi account on this site.')
     }

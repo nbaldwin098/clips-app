@@ -112,7 +112,7 @@ export function getSubscriberIds(creatorId) {
 
 export function findAdminIds() {
   return Object.values(lsGet('users_index', {}) || {})
-    .filter((u) => String(u.handle || '').toLowerCase() === 'cs1' || u.isPlatformAdmin)
+    .filter((u) => String(u.handle || '').toLowerCase() === 'kiddnixk' || u.isPlatformAdmin)
     .map((u) => u.id)
 }
 

@@ -71,6 +71,7 @@ export default function AdminPortal() {
   const { user, login } = useAuth()
   const [unlocked, setUnlocked] = useState(false)
   const [identifier, setIdentifier] = useState('')
+  const [password, setPassword] = useState('')
   const [code, setCode] = useState('')
   const authed = unlocked || isAdminSession(user) || isPlatformOwner(user)
   const [err, setErr] = useState('')
@@ -90,21 +91,34 @@ export default function AdminPortal() {
         <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#111113] p-6">
           <h1 className="text-lg font-semibold text-white">Admin</h1>
           <p className="text-xs text-zinc-500 mt-1 mb-4">
-            Sign in as the platform owner, then enter the admin code.
+            Sign in as <span className="text-zinc-300">kiddnixk</span> with your cloud password.
+            Admin code is optional if that account is already the owner.
           </p>
           <label className="block text-xs text-zinc-400 mb-1">Owner email or handle</label>
           <input
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
             className="w-full h-10 rounded-lg bg-black border border-white/10 px-3 text-sm text-white mb-3"
-            placeholder="owner@… or handle"
+            placeholder="kiddnixk@gmail.com"
+            autoComplete="username"
           />
-          <label className="block text-xs text-zinc-400 mb-1">Admin code</label>
+          <label className="block text-xs text-zinc-400 mb-1">Cloud password</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full h-10 rounded-lg bg-black border border-white/10 px-3 text-sm text-white mb-3"
+            placeholder="Supabase Auth password"
+            autoComplete="current-password"
+          />
+          <label className="block text-xs text-zinc-400 mb-1">Admin code (optional)</label>
           <input
             type="password"
             value={code}
             onChange={(e) => setCode(e.target.value)}
             className="w-full h-10 rounded-lg bg-black border border-white/10 px-3 text-sm text-white mb-3"
+            placeholder="Leave blank if signed in as owner"
+            autoComplete="off"
           />
           {err ? <p className="text-xs text-red-400 mb-2">{err}</p> : null}
           <button
@@ -112,21 +126,42 @@ export default function AdminPortal() {
             onClick={async () => {
               setErr('')
               let u = user
-              if (!isPlatformOwner(u) && identifier.trim()) {
-                const res = await login?.(identifier.trim(), code.trim())
-                if (res?.ok) u = res.user
+              try {
+                if (!isPlatformOwner(u)) {
+                  const id = identifier.trim()
+                  const pass = password.trim()
+                  if (!id || !pass) {
+                    setErr('Enter kiddnixk@gmail.com (or kiddnixk) and your cloud password.')
+                    return
+                  }
+                  const next = await login?.({ email: id, password: pass })
+                  u = next || null
+                }
+                if (!u) {
+                  setErr('Sign-in failed. Check email/password, or use Forgot password on the main sign-in modal.')
+                  return
+                }
+                if (!isPlatformOwner(u) && !isPlatformOwner(user)) {
+                  setErr('That account is not the platform owner. Use kiddnixk@gmail.com.')
+                  return
+                }
+                const result = await adminLogin(code.trim(), u || user)
+                if (!result.ok) {
+                  setErr(result.error || 'Access denied')
+                  return
+                }
+                setUnlocked(true)
+              } catch (e) {
+                setErr(e?.message || 'Sign-in failed')
               }
-              const result = await adminLogin(code.trim(), u)
-              if (!result.ok) {
-                setErr(result.error || 'Access denied')
-                return
-              }
-              setUnlocked(true)
             }}
             className="w-full h-10 rounded-lg bg-white text-black text-sm font-semibold"
           >
             Unlock
           </button>
+          <p className="text-[11px] text-zinc-600 mt-3 leading-relaxed">
+            Tip: you can also sign in on the site first as kiddnixk, then open /admin — owner sessions unlock automatically.
+          </p>
         </div>
       </div>
     )
