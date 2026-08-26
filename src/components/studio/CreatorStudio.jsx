@@ -71,16 +71,16 @@ const STUDIO_NAV = [
 ]
 
 const SECTION_META = {
-  overview: { title: 'Creator Studio', subtitle: 'Your workspace' },
-  lab: { title: 'Calabi Studio', subtitle: 'Post · Edit · Live · Socials' },
-  post: { title: 'Calabi Studio', subtitle: 'Post · Edit · Live · Socials' },
-  analytics: { title: 'Analytics', subtitle: 'Channel numbers, bubble map, and live stats' },
-  controls: { title: 'Controls', subtitle: 'Shortcuts for channel, stream, money, and growth' },
-  socials: { title: 'Socials', subtitle: 'Connect accounts and post out' },
-  earnings: { title: 'Earnings', subtitle: 'Tips, withdrawals, and income' },
-  vods: { title: 'VOD library', subtitle: 'Past broadcasts' },
-  stream: { title: 'Stream settings', subtitle: 'OBS and quality' },
-  verify: { title: 'Verification', subtitle: 'ID check for a verified badge' },
+  overview: { title: 'Creator Studio' },
+  lab: { title: 'Calabi Studio' },
+  post: { title: 'Calabi Studio' },
+  analytics: { title: 'Analytics' },
+  controls: { title: 'Controls' },
+  socials: { title: 'Socials' },
+  earnings: { title: 'Earnings' },
+  vods: { title: 'VOD library' },
+  stream: { title: 'Stream settings' },
+  verify: { title: 'Verification' },
 }
 
 function typeLabel(type) {
@@ -677,7 +677,6 @@ export default function CreatorStudio({
           <p className="mt-1 text-sm text-zinc-500">
             @{user?.handle || 'creator'}
             {verified ? ' · Verified' : verifyStatus === 'pending' ? ' · ID in review' : ''}
-            <span className="text-zinc-600"> · {meta.subtitle}</span>
           </p>
         </header>
 
@@ -766,13 +765,12 @@ export default function CreatorStudio({
               <div className="shrink-0 space-y-3">
                 <div>
                   <h2 className="text-xl font-semibold text-white tracking-tight">Channel stats</h2>
-                  <p className="mt-1 text-sm text-zinc-500">Posts, reach, and lobby — all in one place.</p>
                 </div>
                 <SettingsKpiGrid
                   columns={3}
                   items={[
                     { label: 'Posts', value: String(posts.length) },
-                    { label: 'Unique viewers', value: formatCount(views) },
+                    { label: 'Views', value: formatCount(views) },
                     { label: 'Likes', value: formatCount(likes) },
                     { label: 'Followers', value: formatCount(followers), hint: `${formatCount(premiumSubs)} premium` },
                     { label: 'VODs', value: String(vods.length) },
@@ -780,7 +778,7 @@ export default function CreatorStudio({
                   ]}
                 />
               </div>
-              <div className="flex-1 min-h-0 overflow-hidden rounded-xl border border-zinc-800">
+              <div className="flex-1 min-h-[320px] overflow-hidden rounded-xl border border-zinc-800">
                 <InteractionBubbleMap
                   network={network}
                   selectedPostId={selectedPostId}

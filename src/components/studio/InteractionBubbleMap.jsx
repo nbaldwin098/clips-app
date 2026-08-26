@@ -28,7 +28,7 @@ function formatWhen(ms) {
 
 function personLabel(p) {
   if (p.isCluster || p.kind === 'cluster') return p.displayName || 'More people'
-  if (p.kind === 'guests') return 'Unsigned viewers'
+  if (p.kind === 'guests') return 'Guests'
   if (p.handle) return `@${String(p.handle).replace(/^@/, '')}`
   if (p.displayName) return p.displayName
   if (p.actorId) return `${String(p.actorId).slice(0, 8)}…`
@@ -376,9 +376,6 @@ export default function InteractionBubbleMap({
     return (
       <div className="h-full min-h-0 flex flex-col items-center justify-center bg-[#07070a] border border-zinc-800 p-8 text-center">
         <p className="text-sm font-semibold text-white">Pick a post</p>
-        <p className="text-xs text-zinc-500 mt-2 max-w-sm">
-          Each post has its own bubble map. Select one from Your posts — that post becomes the center, and everyone who viewed or acted on it orbits around it.
-        </p>
       </div>
     )
   }
@@ -389,14 +386,6 @@ export default function InteractionBubbleMap({
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-white truncate">
             Post bubble · {title}
-          </p>
-          <p className="text-[11px] text-zinc-500">
-            Post is the center. People around it are color-coded by what they did.
-            {summary.people ? ` · ${formatCompactCount(summary.people)} people` : ''}
-            {summary.total ? ` · ${formatCompactCount(summary.total)} actions` : ''}
-            {population.aggregated
-              ? ` · showing ${population.shown} + cluster (${formatCompactCount(population.hidden)} more)`
-              : ''}
           </p>
         </div>
         {onRefresh ? (
@@ -458,182 +447,169 @@ export default function InteractionBubbleMap({
       <div className="min-h-0 flex-1 flex flex-col">
         <div
           ref={wrapRef}
-          className="relative flex-1 min-h-0 overflow-hidden cursor-grab active:cursor-grabbing touch-none"
+          className="relative flex-1 min-h-[280px] overflow-hidden cursor-grab active:cursor-grabbing touch-none"
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
         >
-          {!laid.nodes.length ? (
-            <div className="absolute inset-0 flex items-center justify-center p-6 text-center">
-              <div>
-                <p className="text-sm text-zinc-300">No interactions yet for this post</p>
-                <p className="text-xs text-zinc-500 mt-1 max-w-sm">
-                  When someone views or likes while cloud signed-in, they appear here. Scrub the slider to replay growth from publish → now.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <>
-              {/* Backdrop stays put — only bubbles/edges zoom & pan */}
-              <svg
-                width={size.w}
-                height={size.h}
-                viewBox={`0 0 ${size.w} ${size.h}`}
-                className="absolute inset-0 pointer-events-none"
-                aria-hidden
-              >
-                <defs>
-                  <radialGradient id="net-glow" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stopColor="#1a1a24" />
-                    <stop offset="100%" stopColor="#07070a" />
-                  </radialGradient>
-                  <pattern id="studio-grid" width="48" height="48" patternUnits="userSpaceOnUse">
-                    <path d="M 48 0 L 0 0 0 48" fill="none" stroke="#14141c" strokeWidth="1" />
-                  </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#net-glow)" />
-                <rect width="100%" height="100%" fill="url(#studio-grid)" />
-              </svg>
-              <svg
-                width={size.w}
-                height={size.h}
-                viewBox={`0 0 ${size.w} ${size.h}`}
-                className="absolute left-0 top-0 origin-top-left will-change-transform"
-                style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})` }}
-                role="img"
-                aria-label="Post audience bubble map"
-              >
-                <defs>
-                  {laid.nodes.map((n) => (
-                    n.avatarUrl ? (
-                      <clipPath key={`clip_${n.id}`} id={`clip_${n.id}`}>
-                        <circle r={n.size / 2} />
-                      </clipPath>
-                    ) : null
-                  ))}
-                </defs>
+          {/* Backdrop stays put — only bubbles/edges zoom & pan */}
+          <svg
+            width={size.w}
+            height={size.h}
+            viewBox={`0 0 ${size.w} ${size.h}`}
+            className="absolute inset-0 pointer-events-none"
+            aria-hidden
+          >
+            <defs>
+              <radialGradient id="net-glow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#1a1a24" />
+                <stop offset="100%" stopColor="#07070a" />
+              </radialGradient>
+              <pattern id="studio-grid" width="48" height="48" patternUnits="userSpaceOnUse">
+                <path d="M 48 0 L 0 0 0 48" fill="none" stroke="#14141c" strokeWidth="1" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#net-glow)" />
+            <rect width="100%" height="100%" fill="url(#studio-grid)" />
+          </svg>
+          <svg
+            width={size.w}
+            height={size.h}
+            viewBox={`0 0 ${size.w} ${size.h}`}
+            className="absolute left-0 top-0 origin-top-left will-change-transform"
+            style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})` }}
+            role="img"
+            aria-label="Post audience bubble map"
+          >
+            <defs>
+              {laid.nodes.map((n) => (
+                n.avatarUrl ? (
+                  <clipPath key={`clip_${n.id}`} id={`clip_${n.id}`}>
+                    <circle r={n.size / 2} />
+                  </clipPath>
+                ) : null
+              ))}
+            </defs>
 
-                {visibleEdges.map((e) => {
-                  const from = e.from === hubId || e.kind === 'hub' ? hubPos : nodeById.get(e.from)
-                  const to = nodeById.get(e.to)
-                  if (!from || !to) return null
-                  const isHub = e.kind === 'hub'
-                  return (
-                    <line
-                      key={e.id}
-                      x1={from.x}
-                      y1={from.y}
-                      x2={to.x}
-                      y2={to.y}
-                      stroke="#ffffff"
-                      strokeOpacity={isHub ? 0.28 + Math.min(0.45, (e.weight || 1) * 0.04) : 0.12}
-                      strokeWidth={isHub ? Math.min(2.8, 0.8 + Math.log2((e.weight || 1) + 1) * 0.45) : 0.7}
-                    />
-                  )
-                })}
+            {visibleEdges.map((e) => {
+              const from = e.from === hubId || e.kind === 'hub' ? hubPos : nodeById.get(e.from)
+              const to = nodeById.get(e.to)
+              if (!from || !to) return null
+              const isHub = e.kind === 'hub'
+              return (
+                <line
+                  key={e.id}
+                  x1={from.x}
+                  y1={from.y}
+                  x2={to.x}
+                  y2={to.y}
+                  stroke="#ffffff"
+                  strokeOpacity={isHub ? 0.28 + Math.min(0.45, (e.weight || 1) * 0.04) : 0.12}
+                  strokeWidth={isHub ? Math.min(2.8, 0.8 + Math.log2((e.weight || 1) + 1) * 0.45) : 0.7}
+                />
+              )
+            })}
 
-                {/* Post hub + recurring view pulse rings */}
-                <g transform={`translate(${hubPos.x}, ${hubPos.y})`}>
-                  {isPostHub ? (
-                    <>
-                      <circle r={(hubPos.size || 64) / 2 + 18} fill="none" stroke={VIEW_ONLY_COLOR} strokeOpacity="0.35" strokeWidth="1.5">
-                        <animate attributeName="r" values={`${(hubPos.size || 64) / 2 + 10};${(hubPos.size || 64) / 2 + 28};${(hubPos.size || 64) / 2 + 10}`} dur="2.8s" repeatCount="indefinite" />
-                        <animate attributeName="stroke-opacity" values="0.45;0.08;0.45" dur="2.8s" repeatCount="indefinite" />
-                      </circle>
-                      <circle r={(hubPos.size || 64) / 2 + 10} fill="none" stroke={VIEW_ONLY_COLOR} strokeOpacity="0.55" strokeWidth="2">
-                        <animate attributeName="r" values={`${(hubPos.size || 64) / 2 + 6};${(hubPos.size || 64) / 2 + 16};${(hubPos.size || 64) / 2 + 6}`} dur="2.8s" begin="0.6s" repeatCount="indefinite" />
-                        <animate attributeName="stroke-opacity" values="0.6;0.12;0.6" dur="2.8s" begin="0.6s" repeatCount="indefinite" />
-                      </circle>
-                    </>
-                  ) : (
-                    <circle r={(hubPos.size || 56) / 2 + 6} fill="none" stroke="#ffffff" strokeOpacity="0.15" strokeWidth="1.5" />
-                  )}
-                  <circle r={(hubPos.size || 64) / 2} fill="#f4f4f5" />
-                  {hubMeta?.thumbUrl || selectedPost?.thumbUrl ? (
+            {/* Post hub — always rendered when a post is selected */}
+            <g transform={`translate(${hubPos.x}, ${hubPos.y})`}>
+              {isPostHub ? (
+                <>
+                  <circle r={(hubPos.size || 64) / 2 + 18} fill="none" stroke={VIEW_ONLY_COLOR} strokeOpacity="0.35" strokeWidth="1.5">
+                    <animate attributeName="r" values={`${(hubPos.size || 64) / 2 + 10};${(hubPos.size || 64) / 2 + 28};${(hubPos.size || 64) / 2 + 10}`} dur="2.8s" repeatCount="indefinite" />
+                    <animate attributeName="stroke-opacity" values="0.45;0.08;0.45" dur="2.8s" repeatCount="indefinite" />
+                  </circle>
+                  <circle r={(hubPos.size || 64) / 2 + 10} fill="none" stroke={VIEW_ONLY_COLOR} strokeOpacity="0.55" strokeWidth="2">
+                    <animate attributeName="r" values={`${(hubPos.size || 64) / 2 + 6};${(hubPos.size || 64) / 2 + 16};${(hubPos.size || 64) / 2 + 6}`} dur="2.8s" begin="0.6s" repeatCount="indefinite" />
+                    <animate attributeName="stroke-opacity" values="0.6;0.12;0.6" dur="2.8s" begin="0.6s" repeatCount="indefinite" />
+                  </circle>
+                </>
+              ) : (
+                <circle r={(hubPos.size || 56) / 2 + 6} fill="none" stroke="#ffffff" strokeOpacity="0.15" strokeWidth="1.5" />
+              )}
+              <circle r={(hubPos.size || 64) / 2} fill="#f4f4f5" />
+              {hubMeta?.thumbUrl || selectedPost?.thumbUrl ? (
+                <image
+                  href={hubMeta?.thumbUrl || selectedPost?.thumbUrl}
+                  x={-(hubPos.size || 64) / 2}
+                  y={-(hubPos.size || 64) / 2}
+                  width={hubPos.size || 64}
+                  height={hubPos.size || 64}
+                  clipPath="circle(50%)"
+                  preserveAspectRatio="xMidYMid slice"
+                />
+              ) : (
+                <text textAnchor="middle" dominantBaseline="middle" fill="#09090b" fontSize="10" fontWeight="800">
+                  POST
+                </text>
+              )}
+              <text y={(hubPos.size || 64) / 2 + 14} textAnchor="middle" fill="#e4e4e7" fontSize="9" fontWeight="600">
+                {(title || 'Post').length > 22 ? `${String(title).slice(0, 21)}…` : (title || 'Post')}
+              </text>
+              {viewCount ? (
+                <text y={(hubPos.size || 64) / 2 + 26} textAnchor="middle" fill="#a16207" fontSize="8">
+                  {viewCount} view{viewCount === 1 ? '' : 's'}
+                </text>
+              ) : null}
+            </g>
+
+            {laid.nodes.map((b) => {
+              const label = personLabel(b)
+              const active = hover?.id === b.id
+              const isCluster = b.isCluster || b.kind === 'cluster'
+              const rings = isCluster
+                ? [{ id: 'agg', color: '#71717a', label: 'Aggregated' }]
+                : actionRingColors(b)
+              const ringPad = 2 + rings.length * 4.2
+              return (
+                <g
+                  key={b.id}
+                  data-bubble-node="1"
+                  transform={`translate(${b.x}, ${b.y})`}
+                  className="cursor-pointer"
+                  onMouseEnter={() => setHover(b)}
+                  onMouseLeave={() => setHover(null)}
+                >
+                  <ActionRings radius={b.size / 2} rings={rings} active={active} />
+                  <circle
+                    r={b.size / 2}
+                    fill="#121218"
+                    stroke={isCluster ? '#71717a' : undefined}
+                    strokeWidth={isCluster ? 1.5 : 0}
+                    strokeDasharray={isCluster ? '4 3' : undefined}
+                  />
+                  {b.avatarUrl && !isCluster ? (
                     <image
-                      href={hubMeta?.thumbUrl || selectedPost?.thumbUrl}
-                      x={-(hubPos.size || 64) / 2}
-                      y={-(hubPos.size || 64) / 2}
-                      width={hubPos.size || 64}
-                      height={hubPos.size || 64}
-                      clipPath="circle(50%)"
+                      href={b.avatarUrl}
+                      x={-b.size / 2}
+                      y={-b.size / 2}
+                      width={b.size}
+                      height={b.size}
+                      clipPath={`url(#clip_${b.id})`}
                       preserveAspectRatio="xMidYMid slice"
                     />
                   ) : (
-                    <text textAnchor="middle" dominantBaseline="middle" fill="#09090b" fontSize="10" fontWeight="800">
-                      POST
+                    <text
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fill="#e4e4e7"
+                      fontSize={Math.min(12, b.size / 2.4)}
+                      fontWeight="700"
+                    >
+                      {isCluster
+                        ? formatCompactCount(b.clusterSize || b.weight || 0)
+                        : (label.replace(/^@/, '')[0] || '?').toUpperCase()}
                     </text>
                   )}
-                  <text y={(hubPos.size || 64) / 2 + 14} textAnchor="middle" fill="#e4e4e7" fontSize="9" fontWeight="600">
-                    {(title || 'Post').length > 22 ? `${String(title).slice(0, 21)}…` : (title || 'Post')}
-                  </text>
-                  {viewCount ? (
-                    <text y={(hubPos.size || 64) / 2 + 26} textAnchor="middle" fill="#a16207" fontSize="8">
-                      {viewCount} view{viewCount === 1 ? '' : 's'}
+                  {b.size > 26 ? (
+                    <text y={b.size / 2 + ringPad + 8} textAnchor="middle" fill="#d4d4d8" fontSize="8">
+                      {label.length > 14 ? `${label.slice(0, 13)}…` : label}
                     </text>
                   ) : null}
                 </g>
-
-                {laid.nodes.map((b) => {
-                  const label = personLabel(b)
-                  const active = hover?.id === b.id
-                  const isCluster = b.isCluster || b.kind === 'cluster'
-                  const rings = isCluster
-                    ? [{ id: 'agg', color: '#71717a', label: 'Aggregated' }]
-                    : actionRingColors(b)
-                  const ringPad = 2 + rings.length * 4.2
-                  return (
-                    <g
-                      key={b.id}
-                      data-bubble-node="1"
-                      transform={`translate(${b.x}, ${b.y})`}
-                      className="cursor-pointer"
-                      onMouseEnter={() => setHover(b)}
-                      onMouseLeave={() => setHover(null)}
-                    >
-                      <ActionRings radius={b.size / 2} rings={rings} active={active} />
-                      <circle
-                        r={b.size / 2}
-                        fill="#121218"
-                        stroke={isCluster ? '#71717a' : undefined}
-                        strokeWidth={isCluster ? 1.5 : 0}
-                        strokeDasharray={isCluster ? '4 3' : undefined}
-                      />
-                      {b.avatarUrl && !isCluster ? (
-                        <image
-                          href={b.avatarUrl}
-                          x={-b.size / 2}
-                          y={-b.size / 2}
-                          width={b.size}
-                          height={b.size}
-                          clipPath={`url(#clip_${b.id})`}
-                          preserveAspectRatio="xMidYMid slice"
-                        />
-                      ) : (
-                        <text
-                          textAnchor="middle"
-                          dominantBaseline="middle"
-                          fill="#e4e4e7"
-                          fontSize={Math.min(12, b.size / 2.4)}
-                          fontWeight="700"
-                        >
-                          {isCluster
-                            ? formatCompactCount(b.clusterSize || b.weight || 0)
-                            : (label.replace(/^@/, '')[0] || '?').toUpperCase()}
-                        </text>
-                      )}
-                      {b.size > 26 ? (
-                        <text y={b.size / 2 + ringPad + 8} textAnchor="middle" fill="#d4d4d8" fontSize="8">
-                          {label.length > 14 ? `${label.slice(0, 13)}…` : label}
-                        </text>
-                      ) : null}
-                    </g>
-                  )
-                })}
-              </svg>
-            </>
-          )}
+              )
+            })}
+          </svg>
 
           {hover ? (
             <div
