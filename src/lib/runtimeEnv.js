@@ -25,6 +25,8 @@ const CLIENT_ENV = {
   VITE_PLATFORM_OWNER_ID: (typeof process !== 'undefined' && process.env.VITE_PLATFORM_OWNER_ID) || '',
   VITE_ADMIN_CODE: (typeof process !== 'undefined' && process.env.VITE_ADMIN_CODE) || '',
   VITE_LIVE_INGEST_CONNECTED: (typeof process !== 'undefined' && process.env.VITE_LIVE_INGEST_CONNECTED) || '',
+  VITE_LIVE_RTMP_URL: (typeof process !== 'undefined' && (process.env.VITE_LIVE_RTMP_URL || process.env.NEXT_PUBLIC_LIVE_RTMP_URL)) || '',
+  NEXT_PUBLIC_LIVE_RTMP_URL: (typeof process !== 'undefined' && (process.env.NEXT_PUBLIC_LIVE_RTMP_URL || process.env.VITE_LIVE_RTMP_URL)) || '',
   VITE_SUPABASE_SQL_EDITOR: (typeof process !== 'undefined' && process.env.VITE_SUPABASE_SQL_EDITOR) || '',
   VITE_APPS_OPEN_FROM: (typeof process !== 'undefined' && process.env.VITE_APPS_OPEN_FROM) || '',
   VITE_APPS_OPEN_UNTIL: (typeof process !== 'undefined' && process.env.VITE_APPS_OPEN_UNTIL) || '',

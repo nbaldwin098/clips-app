@@ -23,8 +23,8 @@ export const CREATOR_STUDIO_GROUPS = [
     description: 'Stream key, multi-stream, pools, challenges',
     items: [
       { id: 'go-live', label: 'Go live lobby', route: { view: 'live' }, status: 'partial' },
-      { id: 'stream-settings', label: 'Stream & ingest', route: { view: 'dashboard', section: 'stream' }, status: 'live' },
-      { id: 'stream-key', label: 'Stream key', route: { view: 'dashboard', section: 'stream' }, status: 'live' },
+      { id: 'stream-settings', label: 'Stream & OBS', route: { view: 'dashboard', section: 'stream' }, status: 'live' },
+      { id: 'stream-key', label: 'OBS connect', route: { view: 'dashboard', section: 'stream' }, status: 'live' },
       { id: 'multi-stream', label: 'Multi-stream YT/TikTok', route: { view: 'live' }, status: 'partial' },
     ],
   },
@@ -78,8 +78,8 @@ export const CREATOR_STUDIO_GROUPS = [
 
 export const KICK_TWITCH_PARITY = [
   { feature: 'Stream key', kick: 'live', twitch: 'live', clips: 'live' },
-  { feature: 'RTMP ingest URL', kick: 'live', twitch: 'live', clips: 'planned', note: 'Key is ready; ingest server not connected yet.' },
-  { feature: 'Go live / broadcast software', kick: 'live', twitch: 'live', clips: 'partial', note: 'Lobby works; OBS cannot connect until ingest is live.' },
+  { feature: 'RTMP ingest URL', kick: 'live', twitch: 'live', clips: 'partial', note: 'Optional VITE_LIVE_RTMP_URL; free OBS window share works without it.' },
+  { feature: 'Go live / broadcast software', kick: 'live', twitch: 'live', clips: 'live', note: 'OBS Studio is free — share window or Custom RTMP when ingest URL is set.' },
   { feature: 'VOD / past broadcasts', kick: 'live', twitch: 'live', clips: 'partial', note: 'VOD channel settings and library on this device.' },
   { feature: 'Clips from VOD', kick: 'live', twitch: 'live', clips: 'partial' },
   { feature: 'Channel panels & offline screen', kick: 'live', twitch: 'live', clips: 'partial', note: 'Profile, banner, and social links.' },
