@@ -68,14 +68,45 @@ function noonTodayIso() {
   return d.toISOString()
 }
 
+/**
+ * Prefer the immutable first-publish stamp. Never invent a new clock on edits.
+ * Order: firstPublishedAt → publishedAt → createdAt → importedAt.
+ */
 export function postedAtOf(item) {
   if (!item || typeof item !== 'object') return ''
   if (isLibraryRecord(item)) return noonTodayIso()
-  const raw = item.publishedAt || item.createdAt || item.importedAt || ''
+  const raw =
+    item.firstPublishedAt
+    || item.publishedAt
+    || item.createdAt
+    || item.importedAt
+    || ''
   const t = parsePostedTime(raw)
   // Cloud merges used to keep Unix-epoch / 1969 stamps. Those are not real post dates.
   if (t && t < Date.parse('2000-01-01T00:00:00.000Z')) return noonTodayIso()
   return raw
+}
+
+/** Set firstPublishedAt once when a post goes live; never overwrite later. */
+export function stampFirstPublished(record, when = null) {
+  if (!record || typeof record !== 'object') return record
+  if (record.firstPublishedAt) return record
+  const status = record.status || 'published'
+  const goingLive = status === 'published' || !!record.publishedAt
+  if (!goingLive) return record
+  const iso =
+    when
+    || record.publishedAt
+    || record.createdAt
+    || new Date().toISOString()
+  return { ...record, firstPublishedAt: iso }
+}
+
+/** Keep the earliest firstPublishedAt when merging local + cloud rows. */
+export function preferEarlierFirstPublished(prev, next) {
+  if (!prev?.firstPublishedAt) return next?.firstPublishedAt || null
+  if (!next?.firstPublishedAt) return prev.firstPublishedAt
+  return olderIso(prev.firstPublishedAt, next.firstPublishedAt)
 }
 
 export function formatPostedExact(iso) {
@@ -112,7 +143,7 @@ export function formatPostedAt(iso, now = Date.now()) {
 }
 
 export function isRecentShort(item, hours = 72) {
-  const t = new Date(item?.publishedAt || item?.createdAt || 0).getTime()
+  const t = parsePostedTime(postedAtOf(item) || item?.publishedAt || item?.createdAt || 0)
   if (!t) return false
   return Date.now() - t < hours * 3600 * 1000
 }

@@ -88,7 +88,9 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 | BUG-052 | Product | Notifications: no push/email yet | In-app only | `open` |
 | BUG-053 | Product | 2FA / MFA gate — verify import + flow on Next | Past missing-import bug | `open` |
 | BUG-054 | Product | VOD library is device-local metadata | Server VODs when ingest exists | `open` |
-| BUG-055 | Product | Concurrent viewer graph missing | Analytics partial | `open` |
+| BUG-055 | Product | Concurrent viewer graph missing | Audience network map in Analytics (real actors + white edges); concurrent live graph still open | `partial` |
+| BUG-088 | Studio | Bubble map invented tally bubbles / no pan / no people | Real actor network + pan/zoom + profile resolve | `doing` |
+| BUG-089 | Catalog | Post “posted at” drifted on updates | `first_published_at` + preserve trigger (0015) | `doing` |
 | BUG-056 | Product | Custom emotes partial | | `open` |
 | BUG-057 | Product | Stream schedule partial | | `open` |
 | BUG-058 | CI | Align smoke suite with ads-removed + Next | Block merge on green subset | `open` |

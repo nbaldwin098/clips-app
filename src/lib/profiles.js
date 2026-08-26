@@ -92,3 +92,31 @@ export function privilegesFromProfile(profile, fallbackOwner = false) {
     isPlatformAdmin: isAdmin,
   }
 }
+
+/** Batch-resolve public profile identity for bubble-map actor nodes. */
+export async function fetchProfilesByIds(ids = []) {
+  const unique = [...new Set((ids || []).filter(Boolean).map(String))]
+  if (!unique.length || !isSupabaseConfigured()) return {}
+  try {
+    const sb = await getSupabase()
+    if (!sb) return {}
+    const { data, error } = await sb
+      .from('profiles')
+      .select('id, handle, display_name, avatar_url')
+      .in('id', unique.slice(0, 200))
+    if (error || !data) return {}
+    const out = {}
+    for (const row of data) {
+      if (!row?.id) continue
+      out[row.id] = {
+        id: row.id,
+        handle: row.handle || null,
+        displayName: row.display_name || row.handle || null,
+        avatarUrl: row.avatar_url || null,
+      }
+    }
+    return out
+  } catch {
+    return {}
+  }
+}

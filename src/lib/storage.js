@@ -145,7 +145,18 @@ export function mergeImports(records) {
   for (const rec of records) {
     if (!rec?.id) continue
     const prev = byId.get(rec.id) || {}
-    byId.set(rec.id, { ...prev, ...rec })
+    const merged = { ...prev, ...rec }
+    // Never let a later sync move the original post clock.
+    const prevStamp = prev.firstPublishedAt || prev.publishedAt || prev.createdAt
+    const nextStamp = rec.firstPublishedAt || rec.publishedAt || rec.createdAt
+    if (prevStamp && nextStamp) {
+      const earlier = new Date(prevStamp).getTime() <= new Date(nextStamp).getTime() ? prevStamp : nextStamp
+      merged.firstPublishedAt = prev.firstPublishedAt || rec.firstPublishedAt || earlier
+      if (prev.createdAt) merged.createdAt = prev.createdAt
+    } else if (prev.firstPublishedAt) {
+      merged.firstPublishedAt = prev.firstPublishedAt
+    }
+    byId.set(rec.id, merged)
   }
   return setCatalog([...byId.values()])
 }
