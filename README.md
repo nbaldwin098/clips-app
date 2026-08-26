@@ -10,13 +10,13 @@ Vertical shorts, live streaming, and long-form in one product.
 
 **Cross-device sync:** requires Supabase (`VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`) plus the migration in `supabase/migrations/0001_videos_table.sql`. Without it, uploads only exist in that one browser's localStorage — see `docs/BACKEND.md`.
 
-**UI handoff:** `docs/UI_HANDOFF.md` · `docs/BACKEND_SCHEMA.md`.
+**UI handoff:** `docs/UI_HANDOFF.md` · `docs/BACKEND_SCHEMA.md` · **bug log:** `docs/BUGS.md` (fix little by little).
 
 ## Stack
 
-- React 19 + Vite 8 + Tailwind CSS 4
-- localStorage cache for sessions/taste/imports, optionally synced to Supabase across devices (see `docs/BACKEND.md`)
-- Static deploy (Render / any static host)
+- React 19 + Next.js 15 (App Router) + Tailwind CSS 4 (Vite kept as fallback during migrate)
+- Catalog/source of truth: Supabase (`videos` + Storage bucket `clips`)
+- Node deploy on Render (`next build` / `next start`) — see `render.yaml`
 
 ## Scripts
 
