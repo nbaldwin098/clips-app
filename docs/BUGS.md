@@ -40,7 +40,7 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 | BUG-002 | Storage | Confirm public bucket named exactly `clips` exists | Migration `0003_clips_storage_bucket.sql`; policies for public read + owner write | `open` |
 | BUG-003 | Catalog | Confirm `videos` table still has rows after migrate | If empty, investigate wipe/purge; restore from backup if any | `open` |
 | BUG-004 | Auth | CS1 / owner cloud login edge cases still fragile | Recent URGENT restores; add regression test for owner + Supabase session | `open` |
-| BUG-005 | Next / SEO | SpaShell still owns most routes | Phase 4 PR #108: home SSR feed + `/profile/[handle]` + noindex studio/settings/library | `doing` |
+| BUG-005 | Next / SEO | SpaShell still owns most routes | Finish PR: every known path has App Router page + metadata; SpaShell remains client UI bridge | `done` |
 | BUG-006 | Next / nav | Client `pushState` routing vs Next App Router | Done in #107 (`NextNavContext` + `router.push`) | `done` |
 | BUG-007 | Deploy | Old Static Render service must stay deleted/suspended | Domain only on Node web service | `open` |
 | BUG-008 | Smoke | `live-smoke.mjs` still asserts removed ExoClick/VAST behavior | ~many FAIL after ads strip; rewrite smoke for no-ad / Next world | `open` |
@@ -111,6 +111,8 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 
 | ID | Issue | PR | Date |
 |----|-------|-----|------|
+| BUG-113 | Next SEO finish: all known routes have App Router pages + metadata | #109 | 2026-08-26 |
+| BUG-005 | SpaShell route peel / Next SEO rebuild | #103–#109 | 2026-08-26 |
 | BUG-112 | Next SEO Phase 3: section routes + NextNavContext | #107 | 2026-08-26 |
 | BUG-006 | Client nav synced to Next App Router | #107 | 2026-08-26 |
 | BUG-111 | Next SEO Phase 2: SSR About/Help/Legal + content article HTML + sitemap ids | #106 | 2026-08-26 |
@@ -138,11 +140,11 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 
 ## Next 5 to pull (suggested order)
 
-1. **BUG-005** — Land Phase 4 (home SSR + profile SEO), then peel watch chrome if needed  
-2. **BUG-001** — Prove uploads work on production Node deploy  
-3. **BUG-002** / **BUG-003** — Bucket + `videos` table health  
-4. **BUG-008** — Fix smoke suite so CI means something again  
-5. **BUG-027** — Close/rebase stale open PRs
+1. **BUG-001** — Prove uploads work on production Node deploy  
+2. **BUG-002** / **BUG-003** — Bucket + `videos` table health  
+3. **BUG-008** — Fix smoke suite so CI means something again  
+4. **BUG-027** — Close/rebase stale open PRs  
+5. **BUG-012** — Decide AdSense vs none and wire or drop #102
 
 ---
 

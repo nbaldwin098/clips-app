@@ -1,11 +1,7 @@
 import SpaShell from '../SpaShell'
+import { sectionMetadata } from '../sectionMeta'
 
-export const metadata = {
-  title: 'Library',
-  description: 'Your library on calabi.',
-  robots: { index: false, follow: false },
-  alternates: { canonical: '/library' },
-}
+export const metadata = sectionMetadata('library')
 
 export default function LibraryRoute() {
   return <SpaShell />

@@ -14,7 +14,8 @@ Vertical shorts, live streaming, and long-form in one product.
 
 ## Stack
 
-- React 19 + Next.js 15 (App Router) + Tailwind CSS 4 (Vite kept as fallback during migrate)
+- React 19 + Next.js 15 (App Router) + Tailwind CSS 4 — Vite kept as `dev:vite` / `build:vite` fallback
+- SEO: dedicated `app/*/page.jsx` routes + metadata; interactive UI still mounts via `SpaShell` client bridge
 - Catalog/source of truth: Supabase (`videos` + Storage bucket `clips`)
 - Node deploy on Render (`next build` / `next start`) — see `render.yaml`
 
