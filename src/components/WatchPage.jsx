@@ -10,7 +10,6 @@ import { getById, getWatchItem, getRelated, getMoreFromCreator, getWatchQueue } 
 import { recordView, getViews, toggleVote, getVotes, getUserVote, canAccessPaidPost } from '../lib/engagement'
 import { getWatchProgress, recordWatchProgress } from '../lib/watchProgress'
 import { recordInteraction } from '../lib/algorithmEngine'
-import { getActiveAdForVideo, recordAdImpression, recordAdSkip } from '../lib/adEngine'
 import { resolvePlayback, PLAYBACK_SPEEDS, formatClock, isHttp } from '../lib/playback'
 import { parseEmbedUrl } from '../lib/videoEmbed'
 import { redirectSafeUrl, safeIframeSrc, safeMediaUrl } from '../lib/safeUrl'
@@ -29,9 +28,6 @@ import PostedStamp from './PostedStamp'
 import ChannelAvatar from './ChannelAvatar'
 import VerifiedBadge from './VerifiedBadge'
 import FollowButton from './FollowButton'
-import { VideoPreroll } from './AdUnits'
-import VideoInStreamAd from './VideoInStreamAd'
-import { useVideoVastAds } from '../hooks/useVideoVastAds'
 import { creatorDisplayName, isOfficialCreator, likesLabel, viewsLabel, formatDuration } from '../lib/uiFormat'
 import { isVerifiedChannel } from '../lib/verification'
 import { startPremiumCheckout } from '../lib/checkout'
@@ -133,8 +129,6 @@ export default function WatchPage({
   const [moreOpen, setMoreOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
   const moreRef = useRef(null)
-  const [activeAd, setActiveAd] = useState(null)
-  const [adDismissed, setAdDismissed] = useState(false)
   const [autoplay, setAutoplay] = useState(prefs.autoplay !== false)
   const [theater, setTheater] = useState(!!prefs.theater)
   const [ambient, setAmbient] = useState(!!prefs.ambient)
@@ -150,10 +144,8 @@ export default function WatchPage({
   const [customTip, setCustomTip] = useState('')
   const countRef = useRef(null)
   const appliedStart = useRef(false)
-  const showingAdRef = useRef(false)
   const viewCountedRef = useRef(false)
   const iframeViewTimerRef = useRef(null)
-  const vast = useVideoVastAds(item, { embed: mode === 'iframe' })
 
   const [descOpen, setDescOpen] = useState(false)
   const chapters = useMemo(() => {
@@ -217,7 +209,6 @@ export default function WatchPage({
     let cancelled = false
     setViews(getViews(item.id))
     setPhase('loading')
-    setAdDismissed(false)
     attemptRef.current = 0
 
     resolvePlayback(item).then((res) => {
@@ -228,8 +219,6 @@ export default function WatchPage({
       setPhase(res.playSrc ? 'ready' : 'failed')
     })
 
-    setActiveAd(null)
-    setAdDismissed(false)
 
     return () => {
       cancelled = true
@@ -242,9 +231,6 @@ export default function WatchPage({
     setWatchPrefs({ defaultSpeed: speed })
   }, [speed, playSrc])
 
-  const showingCampaignAd = Boolean(activeAd && !adDismissed && !vast.showingVast)
-  const showingAd = vast.showingVast || showingCampaignAd
-  showingAdRef.current = showingAd
   const locked = useMemo(() => !canAccessPaidPost(user, item), [user, item, syncTick])
   const purchasePending = useMemo(() => {
     try { return sessionStorage.getItem('clips_pending_purchase') === itemId } catch { return false }
@@ -262,7 +248,7 @@ export default function WatchPage({
     if (countRef.current) clearInterval(countRef.current)
     if (!el) return
     try { el.currentTime = 0 } catch {}
-    if (!showingAdRef.current && !locked) {
+    if (!locked) {
       el.play?.().catch(() => {
         el.muted = true
         el.play?.().catch(() => {})
@@ -270,33 +256,15 @@ export default function WatchPage({
     }
   }
 
-  const skipAd = useCallback(() => {
-    if (activeAd) recordAdSkip(activeAd.id)
-    setAdDismissed(true)
-  }, [activeAd])
-
-  useEffect(() => {
-    if (!vast.campaignBreak || !item?.id) return
-    const ad = getActiveAdForVideo(item.id)
-    if (!ad) return
-    setAdDismissed(false)
-    setActiveAd(ad)
-    recordAdImpression(ad.id)
-  }, [vast.campaignBreak, item?.id])
-
   useEffect(() => {
     const el = videoRef.current
     if (!el) return
-    if (showingAd) {
-      el.pause()
-      return
-    }
     if (locked || phase !== 'ready' || mode !== 'video') return
     el.play?.().catch(() => {
       el.muted = true
       el.play?.().catch(() => {})
     })
-  }, [showingAd, locked, phase, mode, playSrc])
+  }, [locked, phase, mode, playSrc])
 
   const seekTo = (sec) => {
     const el = videoRef.current
@@ -328,10 +296,6 @@ export default function WatchPage({
       if (pos > 2 && pos < (el.duration || 0) - 2) {
         try { el.currentTime = pos } catch {}
       }
-    }
-    if (showingAdRef.current) {
-      el.pause()
-      return
     }
     el.play?.().catch(() => {
       el.muted = true
@@ -372,7 +336,6 @@ export default function WatchPage({
     if (!video?.duration || !item?.id) return
     countViewOnProgress(video.currentTime)
     if (mode === 'video' && item.type === 'video') {
-      vast.onContentTime(video.currentTime, video.duration)
     }
     const ratio = video.currentTime / video.duration
     if (user?.id) {
@@ -421,9 +384,9 @@ export default function WatchPage({
   }
 
   useEffect(() => {
-    if (phase !== 'ready' || mode !== 'iframe' || showingAd || !playSrc) return
+    if (phase !== 'ready' || mode !== 'iframe' || !playSrc) return
     if (!safeIframeSrc(playSrc)) tryNext()
-  }, [phase, mode, playSrc, showingAd])
+  }, [phase, mode, playSrc])
 
   useEffect(() => () => {
     if (countRef.current) clearInterval(countRef.current)
@@ -535,7 +498,6 @@ export default function WatchPage({
       if (!el) return
       if (e.key === 'k' || e.key === ' ') {
         e.preventDefault()
-        if (showingAdRef.current) return
         if (el.paused) el.play?.().catch(() => {})
         else el.pause()
       } else if (e.key === 'j' || e.key === 'ArrowLeft') {
@@ -617,18 +579,13 @@ export default function WatchPage({
             {ambient && thumb ? (
               <img src={thumb} alt="" className="absolute inset-0 w-full h-full object-cover blur-3xl opacity-40 scale-110" />
             ) : null}
-            {vast.creative ? (
-              <VideoInStreamAd creative={vast.creative} slot={vast.slot} onDone={vast.finishAd} />
-            ) : showingCampaignAd ? (
-              <VideoPreroll ad={activeAd} onSkip={skipAd} onComplete={() => setAdDismissed(true)} />
-            ) : null}
             {phase === 'loading' && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-zinc-400">
                 <Loader2 className="h-8 w-8 animate-spin" />
                 <p className="text-xs">Loading…</p>
               </div>
             )}
-            {phase === 'ready' && mode === 'iframe' && !showingAd && safeIframeSrc(playSrc) && (
+            {phase === 'ready' && mode === 'iframe' && safeIframeSrc(playSrc) && (
               <iframe src={safeIframeSrc(playSrc)} title={item.title || 'Video'} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen sandbox="allow-scripts allow-same-origin allow-presentation" referrerPolicy="strict-origin-when-cross-origin" className="absolute inset-0 w-full h-full border-0" onLoad={onIframeLoad} />
             )}
             {phase === 'ready' && mode === 'video' && safeMediaUrl(playSrc) && (
@@ -637,7 +594,7 @@ export default function WatchPage({
                 key={playSrc}
                 src={safeMediaUrl(playSrc)}
                 controls
-                autoPlay={!locked && !showingAd}
+                autoPlay={!locked}
                 playsInline
                 preload="auto"
                 onLoadedMetadata={onLoadedMetadata}
