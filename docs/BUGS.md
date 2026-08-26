@@ -64,7 +64,7 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 | BUG-022 | Delete | Cloud delete path for admin/creator — verify on Node deploy | Recent fixes around `deleteCatalogItem` + storage remove | `open` |
 | BUG-023 | Chat | Live chat cloud sync reliability | `liveChatSync.js`; test multi-device | `open` |
 | BUG-024 | Feed | Endless clip/pic scroll edge cases | Prior PRs fixed stalls; re-verify after Next | `open` |
-| BUG-028 | Home | All/Videos/Shorts/Pics chips returned + empty “No posts yet” | Filter chips were removed (#56b5d05 never on main); HomeFeed missed content-sync tick | `doing` |
+| BUG-028 | Home | All/Videos/Shorts/Pics chips + empty “No posts yet” | #111 + hydrate/early sync follow-up | `doing` |
 | BUG-025 | Error reports | ErrorReportPrompt shipped — confirm tickets show in Admin | PR #96 | `open` |
 | BUG-026 | Header | Logo-only header / no hamburger — confirm mobile sidebar OK | #97/#98 | `open` |
 | BUG-027 | Open PRs | Close or rebase stale drafts #93, #101, #102, #58, #71 | Avoid more parallel conflict | `open` |

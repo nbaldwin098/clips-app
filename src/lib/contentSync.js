@@ -2,7 +2,7 @@
  * Cloud catalog sync. Supabase is the source of truth.
  * Session memory holds the latest pull; catalog is not written to localStorage.
  */
-import { replaceImportsFromCloud, mergeImports, removeImport, purgeLegacyLocalCatalog, getImports } from './storage'
+import { replaceImportsFromCloud, removeImport, purgeLegacyLocalCatalog, getImports } from './storage'
 import { isUserUploadRecord } from './mediaMeta'
 import { getSupabase, isSupabaseConfigured } from './supabaseClient'
 import { isFeedable, isReferenceItem, hasStableImage, purgeDeadCatalog } from './catalogHealth'
