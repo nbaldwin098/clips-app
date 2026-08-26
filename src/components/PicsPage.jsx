@@ -13,7 +13,6 @@ import { copyShareUrl, replaceHash } from '../lib/routes'
 import ShortsStage, { ShortsCard } from './ShortsStage'
 import { downloadPostedMedia } from '../lib/mediaDownload'
 import { shuffleFeed } from '../lib/shuffleFeed'
-import ErrorReportPrompt from './ErrorReportPrompt'
 import { preloadPostedItems } from '../lib/preloadMedia'
 import { mixFeedAds } from '../lib/adEngine'
 import { InFeedAd } from './AdUnits'
@@ -243,9 +242,10 @@ function PicFeedAdSlide({ active, warm = false, ad, onEmpty }) {
   const filledRef = useRef(false)
   useEffect(() => {
     if (!active || filledRef.current) return undefined
+    // ExoClick fill timeout is 6s — do not skip the slide before it can paint.
     const t = window.setTimeout(() => {
       if (!filledRef.current) onEmpty?.()
-    }, 2800)
+    }, 7500)
     return () => window.clearTimeout(t)
   }, [active, onEmpty])
 
@@ -277,13 +277,10 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
   const shuffled = useMemo(() => {
     const list = (items || []).filter(isFeedable)
     if (!initialPicId) return shuffleFeed(list)
-    // Deep-link / profile tap: keep that pic first so the viewer does not
-    // open a random neighbor from the unshuffled index.
     const focused = list.find((p) => p.id === initialPicId)
     const rest = shuffleFeed(list.filter((p) => p.id !== initialPicId))
     return focused && isFeedable(focused) ? [focused, ...rest] : shuffleFeed(list)
   }, [items, initialPicId])
-  // Ads only while scrolling the viewer — never in the mosaic grid.
   const scrollRows = useMemo(() => mixFeedAds(shuffled, 'pic-feed', user?.id), [shuffled, user?.id])
   const [skippedAdKeys, setSkippedAdKeys] = useState(() => new Set())
   const visibleScrollRows = useMemo(
@@ -386,7 +383,7 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
           count={visibleScrollRows.length}
           activeIndex={viewerIndex}
           goToRef={goToRef}
-          loop={visibleScrollRows.length >= 4}
+          loop={visibleScrollRows.length >= 1}
           onActiveIndex={(i) => {
             setViewerIndex(i)
             const pic = visibleScrollRows[i]?.item
@@ -437,12 +434,7 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
         <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={onPick} />
       </div>
 
-      {error && (
-        <div className="px-4 pt-3">
-          <p className="text-sm text-red-400">{error}</p>
-          <ErrorReportPrompt message={error} context="pic-upload" onOpenAuth={onOpenAuth} />
-        </div>
-      )}
+      {error && <p className="px-4 pt-3 text-sm text-red-400">{error}</p>}
       {items.length === 0 ? (
         <div className="m-4 rounded-2xl border border-zinc-800 bg-[#121218] px-6 py-16 text-center">
           <p className="text-sm text-zinc-300">No pics yet</p>
