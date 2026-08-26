@@ -6,7 +6,7 @@ import { buildCheckout } from '../lib/financialLedger'
 
 const TIERS = [4.99, 9.99, 14.99]
 
-export default function CreatorOnboarding({ onOpenImport, onDone, onNavigate }) {
+export default function CreatorOnboarding({ onOpenUpload, onDone, onNavigate }) {
   const { user, saveProfile, enableCreatorMode, switchMode } = useAuth()
   const [step, setStep] = useState(1)
   const [price, setPrice] = useState(4.99)
@@ -150,24 +150,24 @@ export default function CreatorOnboarding({ onOpenImport, onDone, onNavigate }) 
             Add your first post
           </div>
           <p className="text-xs text-zinc-500 leading-relaxed">
-            Upload a clip, video, or pic — or import a link from another platform.
+            Upload a clip, video, or pic you made — originals only.
           </p>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() => {
-                onOpenImport?.()
+                onOpenUpload?.('video')
                 onDone?.()
               }}
               className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-white text-black text-sm font-medium hover:bg-zinc-200"
             >
-              Import first post
+              Upload first post
             </button>
             <button
               type="button"
               onClick={() => {
                 onDone?.()
-                onNavigate?.('settings', 'stream')
+                onNavigate?.('dashboard', 'stream')
               }}
               className="h-10 px-4 rounded-xl border border-zinc-700 text-sm font-medium text-white hover:bg-[#18181f]"
             >

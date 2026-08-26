@@ -137,6 +137,11 @@ export default function CollapsibleSidebar({
           <NavBtn collapsed={collapsed} active={currentView === 'create'} onClick={() => go('create')} icon={Plus} label="Create" />
         </nav>
 
+        {/* Following sits under Create, visually separated */}
+        <div className="pt-2 mt-1 border-t border-[#1e1e27] space-y-0.5">
+          <NavBtn collapsed={collapsed} active={currentView === 'subscriptions'} onClick={() => go('subscriptions')} icon={Users} label="Following" />
+        </div>
+
         <div className="pt-3 border-t border-[#1e1e27] space-y-1">
           {!collapsed && (
             <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-1 flex items-center gap-1.5">
@@ -210,10 +215,6 @@ export default function CollapsibleSidebar({
               )}
             </button>
           ))}
-        </div>
-
-        <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
-          <NavBtn collapsed={collapsed} active={currentView === 'subscriptions'} onClick={() => go('subscriptions')} icon={Users} label="Following" />
         </div>
 
         <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">

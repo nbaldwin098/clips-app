@@ -10,22 +10,22 @@ export const CREATOR_STUDIO_GROUPS = [
     description: 'Upload, drafts, and VOD library',
     items: [
       { id: 'upload', label: 'Upload', route: { view: 'dashboard', action: 'upload' }, status: 'live' },
-      { id: 'import', label: 'Import link', route: { view: 'dashboard', action: 'import' }, status: 'live' },
       { id: 'calabi-studio', label: 'Calabi Studio', route: { view: 'calabi-studio' }, status: 'partial' },
+      { id: 'make-post', label: 'Make a post', route: { view: 'dashboard', section: 'post' }, status: 'live' },
       { id: 'studio-tools', label: 'Drafts & schedule', route: { view: 'studio-tools' }, status: 'partial' },
       { id: 'vods', label: 'VOD channel', route: { view: 'dashboard', section: 'vods' }, status: 'live' },
       { id: 'socials', label: 'Post to socials', route: { view: 'dashboard', section: 'socials' }, status: 'partial' },
+      { id: 'controls', label: 'Controls', route: { view: 'dashboard', section: 'controls' }, status: 'live' },
     ],
   },
   {
     id: 'live',
     label: 'Live',
-    description: 'Stream key, multi-stream, pools, challenges',
+    description: 'Stream settings and OBS',
     items: [
-      { id: 'go-live', label: 'Go live lobby', route: { view: 'live' }, status: 'partial' },
       { id: 'stream-settings', label: 'Stream & OBS', route: { view: 'dashboard', section: 'stream' }, status: 'live' },
       { id: 'stream-key', label: 'OBS connect', route: { view: 'dashboard', section: 'stream' }, status: 'live' },
-      { id: 'multi-stream', label: 'Multi-stream YT/TikTok', route: { view: 'live' }, status: 'partial' },
+      { id: 'go-live-studio', label: 'Go live (Calabi Studio)', route: { view: 'calabi-studio' }, status: 'partial' },
     ],
   },
   {
