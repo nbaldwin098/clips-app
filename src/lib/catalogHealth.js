@@ -44,8 +44,6 @@ export function hasStableImage(item) {
 
 export function hasLocalMediaHint(item) {
   if (!item?.id) return false
-  // Only rows explicitly marked localStored may play from IndexedDB.
-  // Empty-media "uploads" used to stay feedable and never played for anyone.
   if (item.localStored === true) return true
   if (isUserUploadRecord(item) && Number(item.storedBytes) > 0) {
     const media = String(item.mediaUrl || '')
@@ -57,9 +55,11 @@ export function hasLocalMediaHint(item) {
 
 export function hasPlayableVideo(item) {
   if ([item?.mediaUrl, item?.sourceUrl].some(isKnownDeadUrl)) return false
+  // Public feeds only accept stable http(s) media. Orphaned blob: URLs from the
+  // old local-storage upload era freeze the reel (empty snap slots) for everyone.
   if ([item?.mediaUrl, item?.sourceUrl].some((u) => isHttpUrl(u))) return true
-  if ([item?.mediaUrl, item?.sourceUrl].some(isBlobUrl)) return true
-  return hasLocalMediaHint(item)
+  if (hasLocalMediaHint(item) && [item?.mediaUrl, item?.sourceUrl].some(isBlobUrl)) return true
+  return false
 }
 
 export function isRetiredCatalogItem(item) {
@@ -80,9 +80,12 @@ export function isRetiredCatalogItem(item) {
 
 export function isFeedable(item) {
   if (!item || isReferenceItem(item) || isRetiredCatalogItem(item)) return false
-  if (item.type === 'pic') return hasStableImage(item)
-  // User uploads only belong in shared feeds when they have a public http URL.
-  // Device-only / empty-media rows made it look like "only my uploads exist".
+  if (item.type === 'pic') {
+    if (isUserUploadRecord(item)) {
+      return isHttpUrl(item?.mediaUrl) || isHttpUrl(item?.thumbUrl) || isHttpUrl(item?.sourceUrl) || isDataImageUrl(item?.mediaUrl)
+    }
+    return hasStableImage(item)
+  }
   if (isUserUploadRecord(item)) {
     return isHttpUrl(item?.mediaUrl) || isHttpUrl(item?.sourceUrl)
   }
@@ -96,8 +99,6 @@ export function hiddenBrokenIds() {
 
 export function hideBrokenMedia(id) {
   if (!id) return
-  // Never delete a user upload because a thumbnail or one source failed —
-  // that was wiping clips after refresh when a dead blob: thumb errored.
   const imports = lsGet('imports', []) || []
   const row = Array.isArray(imports) ? imports.find((r) => r?.id === id) : null
   if (row && isUserUploadRecord(row)) return
@@ -118,8 +119,6 @@ export function purgeDeadCatalog() {
     if (!row?.id || hidden.has(row.id)) return false
     if (isReferenceItem(row)) return false
     if (isRetiredCatalogItem(row)) return false
-    // Drop deleted / device-only / empty-media uploads — they become empty snap
-    // slots in the reel and freeze vertical scroll between real clips.
     if (isUserUploadRecord(row)) return isFeedable(row)
     if (row.type === 'pic' && !hasStableImage(row)) return false
     if ((row.type === 'video' || row.type === 'short') && !hasPlayableVideo(row)) return false

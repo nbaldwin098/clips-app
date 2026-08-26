@@ -5,26 +5,33 @@ export function useVideoVastAds(item, { embed = false } = {}) {
   const [creative, setCreative] = useState(null)
   const [slot, setSlot] = useState(null)
   const [campaignBreak, setCampaignBreak] = useState(0)
+  const [prerollResolved, setPrerollResolved] = useState(false)
   const lastTime = useRef(0)
   const playedBreaks = useRef(new Set())
   const showing = useRef(false)
-  // Mid-roll points computed once per video once duration is known (random is sticky).
   const plannedBreaks = useRef([])
   const plannedForDuration = useRef(0)
 
   const enabled = item?.type === 'video' && videoVastAdsEnabled()
 
-  const triggerBreak = useCallback((t) => {
-    if (!enabled || playedBreaks.current.has(t) || showing.current) return
+  const triggerBreak = useCallback((t, { isPreroll = false } = {}) => {
+    if (!enabled || playedBreaks.current.has(t) || showing.current) {
+      if (isPreroll) setPrerollResolved(true)
+      return
+    }
     playedBreaks.current.add(t)
-    loadExoClickVast().then((ad) => {
+    loadExoClickVast({ attempts: 3 }).then((ad) => {
       if (ad?.mediaUrl) {
         showing.current = true
         setSlot(t === VIDEO_PREROLL_BREAK ? 'preroll' : 'midroll')
         setCreative(ad)
+        if (isPreroll) setPrerollResolved(true)
         return
       }
       setCampaignBreak((n) => n + 1)
+      if (isPreroll) setPrerollResolved(true)
+    }).catch(() => {
+      if (isPreroll) setPrerollResolved(true)
     })
   }, [enabled])
 
@@ -37,8 +44,9 @@ export function useVideoVastAds(item, { embed = false } = {}) {
     setCreative(null)
     setSlot(null)
     setCampaignBreak(0)
+    setPrerollResolved(!enabled)
     if (!enabled) return undefined
-    triggerBreak(VIDEO_PREROLL_BREAK)
+    triggerBreak(VIDEO_PREROLL_BREAK, { isPreroll: true })
     return undefined
   }, [item?.id, enabled, triggerBreak])
 
@@ -75,6 +83,7 @@ export function useVideoVastAds(item, { embed = false } = {}) {
     slot,
     showingVast: Boolean(creative),
     campaignBreak,
+    prerollResolved: !enabled || prerollResolved,
     finishAd,
     onContentTime,
   }
