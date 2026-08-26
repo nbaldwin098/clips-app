@@ -4,12 +4,25 @@ import { adminRemoveContent, listAllContent } from '../../lib/trustSafety'
 export default function AdminContent() {
   const [q, setQ] = useState('')
   const [tick, setTick] = useState(0)
+  const [busyId, setBusyId] = useState(null)
   const rows = useMemo(() => {
     const all = listAllContent()
     const s = q.trim().toLowerCase()
     if (!s) return all
     return all.filter((r) => `${r.title} ${r.handle} ${r.id}`.toLowerCase().includes(s))
   }, [q, tick])
+
+  const remove = async (id) => {
+    if (!id || busyId) return
+    if (!window.confirm('Delete this post from the site?')) return
+    setBusyId(id)
+    try {
+      await adminRemoveContent(id)
+    } finally {
+      setBusyId(null)
+      setTick((n) => n + 1)
+    }
+  }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -40,10 +53,11 @@ export default function AdminContent() {
                 <td className="px-3 py-2.5 text-right">
                   <button
                     type="button"
-                    className="h-7 px-2 rounded-md border border-red-500/30 text-[11px] text-red-300"
-                    onClick={() => { adminRemoveContent(r.id); setTick((n) => n + 1) }}
+                    disabled={busyId === r.id}
+                    className="h-7 px-2 rounded-md border border-red-500/30 text-[11px] text-red-300 disabled:opacity-50"
+                    onClick={() => remove(r.id)}
                   >
-                    Remove
+                    {busyId === r.id ? '…' : 'Remove'}
                   </button>
                 </td>
               </tr>
