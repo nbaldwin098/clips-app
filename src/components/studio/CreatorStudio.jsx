@@ -70,7 +70,7 @@ const SECTION_META = {
   socials: { title: 'Socials', subtitle: 'Connect accounts and post videos, clips, pics, or VODs out' },
   earnings: { title: 'Earnings', subtitle: 'Tips, withdrawals, and income chart' },
   vods: { title: 'VOD library', subtitle: 'Past lives — manage visibility here' },
-  stream: { title: 'Stream settings', subtitle: 'Key, quality, and VOD channel — stays in the dashboard' },
+  stream: { title: 'Stream & OBS', subtitle: 'Free OBS connect, stream key, quality, VOD channel' },
   verify: { title: 'Verification', subtitle: 'ID check for a verified badge' },
 }
 

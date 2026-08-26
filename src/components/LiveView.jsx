@@ -285,7 +285,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
                   onClick={shareScreen}
                   className="h-9 px-3 rounded-full bg-white/10 text-xs font-semibold text-white inline-flex items-center gap-1.5"
                 >
-                  <MonitorUp className="h-4 w-4" /> {sharing ? 'Sharing' : 'Screen / OBS window'}
+                  <MonitorUp className="h-4 w-4" /> {sharing ? 'OBS / screen live' : 'Connect OBS window'}
                 </button>
                 {screenError ? <p className="w-full text-[11px] text-red-400">{screenError}</p> : null}
                 </>
@@ -391,7 +391,8 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
             {LIVE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
           <p className="text-[11px] text-zinc-500">
-            Ingest is not connected. Listing yourself copies a VOD record when you end. The stream key is ready for later.
+            OBS Studio is free. Open Studio → Stream for setup steps, or click <span className="text-zinc-300">Screen / OBS window</span> above and pick your OBS preview.
+            Custom RTMP (Server + Key) appears when ingest is configured.
           </p>
           <div className="flex gap-2">
             <code className="flex-1 text-xs bg-[#000000] border border-[#272734] rounded-lg px-3 py-2 text-zinc-300 break-all">{streamKey}</code>
@@ -412,8 +413,13 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
                 disabled={!liveIngestConnected()}
                 className="inline-flex items-center gap-2 h-11 px-5 rounded-lg bg-red-600 text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <Play className="h-4 w-4" /> {liveIngestConnected() ? 'List me' : 'Ingest not connected'}
+                <Play className="h-4 w-4" /> {liveIngestConnected() ? 'List me' : 'List me (needs RTMP ingest)'}
               </button>
+              {!liveIngestConnected() ? (
+                <p className="text-[11px] text-zinc-600">
+                  You can still share OBS on this page for free. Site-wide lobby listing waits for RTMP ingest.
+                </p>
+              ) : null}
             </>
           ) : (
             <button type="button" onClick={endLive} className="inline-flex items-center gap-2 h-11 px-5 rounded-lg border border-zinc-600 text-zinc-200 text-sm">

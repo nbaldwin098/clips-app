@@ -16,7 +16,7 @@ export const SITE_SECTIONS = [
 /** Creator tools — opened from Creator Studio. */
 export const CREATOR_SECTIONS = [
   { id: 'channel', label: 'Channel & Branding', icon: Palette, group: 'Channel' },
-  { id: 'stream', label: 'Stream & Ingest', icon: Radio, group: 'Live' },
+  { id: 'stream', label: 'Stream & OBS', icon: Radio, group: 'Live' },
   { id: 'chat', label: 'Chat & Moderation', icon: MessageSquare, group: 'Live' },
   { id: 'comments', label: 'Comments', icon: MessageCircle, group: 'Community' },
   { id: 'roles', label: 'Roles & Permissions', icon: Users, group: 'Community' },

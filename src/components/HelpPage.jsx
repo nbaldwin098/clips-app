@@ -16,7 +16,7 @@ export default function HelpPage() {
     },
     {
       q: 'How do I stream from a PC, Xbox, or PS5?',
-      a: 'Xbox and PS5 cannot send a picture here. They only talk to their own apps, or you run HDMI into a capture card on a PC and use OBS later. On a PC, Live → Share this screen is a preview on that browser only. Other viewers still see the lobby until ingest is connected. Mods, bots, and !rules live under Settings → Roles.',
+      a: 'OBS Studio is free. Studio → Stream has setup steps. On Live, use Connect OBS window and pick your OBS preview (or OBS Virtual Camera). Xbox/PS5 need an HDMI capture card into a PC running OBS. Site-wide lobby listing still needs RTMP ingest configured.',
     },
     {
       q: 'Where is Studio, Wallet, and analytics?',
