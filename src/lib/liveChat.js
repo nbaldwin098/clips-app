@@ -3,7 +3,6 @@ import { removeLiveChatMessageCloud } from './liveChatSync'
 import { getStreamSettings } from './streamSettings'
 import { getUserSettings } from './storage'
 import { getChannelStaff, isChannelMod } from './channelStaff'
-import { applyAdSlash, parseAdSlash } from './liveAds'
 
 function blockedPhrases(channelId) {
   const global = String(getUserSettings().blockedTerms || '')
@@ -59,17 +58,7 @@ export function trySendLiveChat(streamUserId, message, { actor } = {}) {
 
   postLiveChat(streamUserId, { ...message, text, kind: message.kind || 'chat' })
 
-  if (parseAdSlash(text) && message.kind !== 'bot') {
-    const ads = applyAdSlash(streamUserId, actor || { id: userId }, text)
-    if (ads.botReply) {
-      postLiveChat(streamUserId, {
-        userId: `bot:${streamUserId}`,
-        handle: staff.botName || 'Desk bot',
-        text: ads.botReply,
-        kind: 'bot',
-      })
-    }
-  } else if (text.startsWith('!') && staff.botsEnabled && message.kind !== 'bot') {
+  if (text.startsWith('!') && staff.botsEnabled && message.kind !== 'bot') {
     const trigger = text.split(/\s+/)[0].toLowerCase()
     let reply = ''
     if (trigger === '!rules') reply = staff.rules || 'No channel rules yet.'

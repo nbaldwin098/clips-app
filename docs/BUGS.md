@@ -43,14 +43,14 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 | BUG-005 | Next / SEO | SpaShell still owns most routes | Finish PR: every known path has App Router page + metadata; SpaShell remains client UI bridge | `done` |
 | BUG-006 | Next / nav | Client `pushState` routing vs Next App Router | Done in #107 (`NextNavContext` + `router.push`) | `done` |
 | BUG-007 | Deploy | Old Static Render service must stay deleted/suspended | Domain only on Node web service | `open` |
-| BUG-008 | Smoke | `live-smoke.mjs` still asserts removed ExoClick/VAST behavior | ~many FAIL after ads strip; rewrite smoke for no-ad / Next world | `open` |
+| BUG-008 | Smoke | `live-smoke.mjs` still asserts removed ExoClick/VAST behavior | Smoke rewritten for no-op stubs + deleted ad modules | `done` |
 
 ### P1 — important
 
 | ID | Area | Issue | Notes | Status |
 |----|------|-------|-------|--------|
 | BUG-010 | Live | Live ingest not connected — lobby only | Gate on `VITE_LIVE_INGEST_CONNECTED`; OBS/RTMP/HLS still missing | `open` |
-| BUG-011 | Live | Host ad controls / liveAds stubs after ads removal | Dead UI or confusing settings; remove or rewire when ads return | `open` |
+| BUG-011 | Live | Host ad controls / liveAds stubs after ads removal | LiveView + Stream settings controls removed; thin stubs kept for advertise portal | `done` |
 | BUG-012 | Ads | Decide monetization path: AdSense vs none vs later video ads | Head script PR #102 still open/draft; units not placed | `open` |
 | BUG-013 | Ads | Wire AdSense units for clip-feed + pic-feed if keeping AdSense | Need slot IDs; Auto ads off | `blocked` |
 | BUG-014 | Creator Studio | Setup hub / earnings / apply badge not on `main` | Draft PR #93 stale; re-land on current main | `open` |
@@ -64,7 +64,7 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 | BUG-022 | Delete | Cloud delete path for admin/creator — verify on Node deploy | Recent fixes around `deleteCatalogItem` + storage remove | `open` |
 | BUG-023 | Chat | Live chat cloud sync reliability | `liveChatSync.js`; test multi-device | `open` |
 | BUG-024 | Feed | Endless clip/pic scroll edge cases | Prior PRs fixed stalls; re-verify after Next | `open` |
-| BUG-028 | Home | All/Videos/Shorts/Pics chips + empty “No posts yet” | #111 + hydrate/early sync follow-up | `doing` |
+| BUG-028 | Home | All/Videos/Shorts/Pics chips + empty “No posts yet” | #111 + #112 hydrate/early sync | `done` |
 | BUG-025 | Error reports | ErrorReportPrompt shipped — confirm tickets show in Admin | PR #96 | `open` |
 | BUG-026 | Header | Logo-only header / no hamburger — confirm mobile sidebar OK | #97/#98 | `open` |
 | BUG-027 | Open PRs | Close or rebase stale drafts #93, #101, #102, #58, #71 | Avoid more parallel conflict | `open` |
@@ -75,7 +75,7 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 |----|------|-------|-------|--------|
 | BUG-040 | Tests | Flaky `test-named-activity.mjs` (“browser fallback likes…”) | Pre-existing; quarantine or fix | `open` |
 | BUG-041 | Tests | Add Playwright/browser smoke for upload → play | String smoke isn’t enough | `open` |
-| BUG-042 | Dead code | Remove no-op ad modules or finish AdSense replacement | `AdUnits`, `ExoClickDisplay`, `vastAds`, `AdminAds` stubs | `open` |
+| BUG-042 | Dead code | Remove no-op ad modules or finish AdSense replacement | Deleted AdUnits/ExoClick/VAST hooks; thin `adEngine`/`vastAds`/`liveAds` stubs remain for advertise portal + smoke | `done` |
 | BUG-043 | Dead code | Remove Vite path when Next peel is complete | Keep `build:vite` until SpaShell gone | `open` |
 | BUG-044 | Knip | Run `npm run knip` and clear new unused after Next | | `open` |
 | BUG-045 | Docs | Update AdminSetup / Help for Node deploy + no hamburger | Help already partly updated | `open` |
@@ -143,11 +143,11 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 
 ## Next 5 to pull (suggested order)
 
-1. **BUG-028** — Land home chips removal + empty-feed sync fix  
-2. **BUG-002** — Confirm Storage bucket is named exactly `clips`  
-3. **BUG-008** — Fix smoke suite so CI means something again  
-4. **BUG-027** — Close/rebase stale open PRs  
-5. **BUG-012** — Decide AdSense vs none and wire or drop #102
+1. **BUG-002** — Confirm Storage bucket is named exactly `clips`  
+2. **BUG-027** — Close/rebase stale open PRs  
+3. **BUG-012** — Decide AdSense vs none and wire or drop #102  
+4. **BUG-004** — Owner / CS1 cloud login regression coverage  
+5. **BUG-040** — Quarantine or fix flaky named-activity smoke
 
 ---
 
@@ -164,4 +164,4 @@ Rules:
 - Link a PR when status → `doing`  
 - Never delete history — move to Done / Won’t fix  
 
-Last updated: 2026-08-26 (Phase 2 SEO peel in flight)
+Last updated: 2026-08-26 (dead ad code strip + smoke rewrite)

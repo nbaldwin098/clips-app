@@ -5,8 +5,6 @@ import { getSupabase, isSupabaseConfigured } from '../lib/supabaseClient'
 import { pullWatchProgressFromCloud } from '../lib/watchProgress'
 import { setGraphActor, syncGraphFromCloud } from '../lib/graphSync'
 import { ensureOwnProfile, privilegesFromProfile, updateOwnProfileFields } from '../lib/profiles'
-import { setAdViewer, fetchViewerShowAds } from '../lib/adPrefs'
-import { setVastViewerShowAds } from '../lib/vastAds'
 import { hashSecret, verifySecret } from '../lib/secrets'
 import { persistableMediaUrl, restoreProfilePictures, persistProfilePicture } from '../lib/profileMedia'
 import { findOfficialLogin } from '../data/publicMediaSeed'
@@ -177,23 +175,6 @@ export function AuthProvider({ children }) {
     })
     return () => { alive = false }
   }, [user?.id])
-
-  useEffect(() => {
-    setAdViewer(user)
-    setVastViewerShowAds(user?.showAds !== false)
-    if (!user?.id || user.provider !== 'supabase') return undefined
-    let alive = true
-    fetchViewerShowAds(user.id).then((show) => {
-      if (!alive) return
-      setUser((prev) => {
-        if (!prev || prev.id !== user.id || prev.showAds === show) return prev
-        return { ...prev, showAds: show }
-      })
-      setAdViewer({ ...user, showAds: show })
-      setVastViewerShowAds(show)
-    })
-    return () => { alive = false }
-  }, [user?.id, user?.provider])
 
   useEffect(() => {
     let unsub = () => {}

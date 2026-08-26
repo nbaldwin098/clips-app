@@ -12,20 +12,7 @@ import { watchingLabel } from '../lib/uiFormat'
 import { ensureStreamKey } from '../lib/streamKeys'
 import { archiveEndedLive } from '../lib/vods'
 import { canGoLive } from '../lib/trustSafety'
-import VideoInStreamAd from './VideoInStreamAd'
-import { useLiveStreamAds } from '../hooks/useLiveStreamAds'
 import { liveListingBlockedReason, liveIngestConnected } from '../lib/liveIngest'
-import {
-  cueLiveAd,
-  snoozeLiveAds,
-  liveAdsSnoozed,
-  manualAdCooldownRemaining,
-  liveAdTimeUsedInHour,
-  LIVE_SNOOZE_SEC,
-  MANUAL_AD_BREAKS,
-  manualAdCooldownSec,
-  LIVE_HOURLY_AD_CAP_SEC,
-} from '../lib/liveAds'
 
 function formatElapsed(startedAt) {
   if (!startedAt) return ''
@@ -51,9 +38,6 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
   const [sharing, setSharing] = useState(false)
   const [screenError, setScreenError] = useState('')
   const [goLiveError, setGoLiveError] = useState('')
-  const [adNote, setAdNote] = useState('')
-  const [, bumpAdUi] = useState(0)
-  const refreshAdUi = () => bumpAdUi((n) => n + 1)
   const screenRef = useRef(null)
 
   const [draftReady, setDraftReady] = useState(false)
@@ -189,23 +173,6 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
   }
 
   const subCount = focusedStream?.userId ? getSubscriberCount(focusedStream.userId) : 0
-  const isHost = Boolean(user?.id && focusedStream?.userId && user.id === focusedStream.userId)
-  const liveAds = useLiveStreamAds(focusedStream?.userId || null, { isHost })
-  const adStateId = focusedStream?.userId
-  const snoozed = adStateId ? liveAdsSnoozed(adStateId) : false
-  const manualWait = adStateId ? manualAdCooldownRemaining(adStateId) : 0
-  const adUsedMin = adStateId ? Math.round(liveAdTimeUsedInHour(adStateId) / 60) : 0
-
-  const runManualAd = (breakSec) => {
-    if (!adStateId) return
-    const res = cueLiveAd(adStateId, 'live-creator', { kind: 'manual', breakSec })
-    const cd = manualAdCooldownSec(breakSec)
-    setAdNote(res.ok
-      ? `Manual ${breakSec}s ad queued. Cooldown after it ends: ${Math.round(cd / 60)}m ${cd % 60 ? `${cd % 60}s` : ''}.`
-      : (res.error || 'Could not run ad.'))
-    refreshAdUi()
-  }
-
   return (
     <div className="p-4 md:p-6 max-w-[1400px] mx-auto space-y-6">
       <div>
@@ -250,9 +217,6 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
                 This screen is only on this browser. Other viewers still see the lobby until ingest is connected.
               </p>
             )}
-            {liveAds.creative ? (
-              <VideoInStreamAd creative={liveAds.creative} slot={liveAds.slot} onDone={liveAds.finishAd} />
-            ) : null}
           </div>
           <div className="p-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#23232c]">
             <div className="text-sm text-zinc-400">
@@ -262,28 +226,6 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
             <div className="flex items-center gap-2 flex-wrap justify-end">
               {isAuthenticated && user?.id === focusedStream.userId && (
                 <>
-                <button
-                  type="button"
-                  onClick={() => {
-                    snoozeLiveAds(focusedStream.userId)
-                    setAdNote(`All ads snoozed for ${LIVE_SNOOZE_SEC / 60} minutes.`)
-                    refreshAdUi()
-                  }}
-                  disabled={snoozed}
-                  className="h-9 px-3 rounded-full border border-zinc-700 text-xs font-semibold text-white disabled:opacity-40"
-                >
-                  {snoozed ? 'Snoozed' : 'Snooze ads 5m'}
-                </button>
-                {MANUAL_AD_BREAKS.map((sec) => (
-                  <button
-                    key={sec}
-                    type="button"
-                    onClick={() => runManualAd(sec)}
-                    className="h-9 px-3 rounded-full bg-white text-black text-xs font-semibold"
-                  >
-                    {sec === 180 ? '3m ad' : `${sec}s ad`}
-                  </button>
-                ))}
                 <button
                   type="button"
                   onClick={shareScreen}
@@ -296,14 +238,6 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
               )}
               <FollowButton creatorId={focusedStream.userId} handle={focusedStream.handle} onOpenAuth={onOpenAuth} />
             </div>
-            {isAuthenticated && user?.id === focusedStream.userId ? (
-              <p className="w-full text-[11px] text-zinc-600">
-                Automated ads: set 1–5/hour in Stream settings.
-                {manualWait > 0 ? ` Manual cooldown ${Math.ceil(manualWait / 1000)}s.` : ''}
-                {` ${adUsedMin}m / ${LIVE_HOURLY_AD_CAP_SEC / 60}m ad time this hour.`}
-              </p>
-            ) : null}
-            {adNote ? <p className="w-full text-[11px] text-zinc-500">{adNote}</p> : null}
           </div>
         </div>
       )}
