@@ -3,13 +3,10 @@
  * Name must be exactly VITE_STRIPE_PUBLISHABLE_KEY (Vite ignores vars without VITE_).
  * Secret keys never belong in VITE_*.
  */
+import { runtimeEnv } from './runtimeEnv'
 
 function env(key) {
-  try {
-    return String(import.meta.env?.[key] || '').trim()
-  } catch {
-    return ''
-  }
+  return runtimeEnv(key)
 }
 
 export function getStripePublishableKey() {

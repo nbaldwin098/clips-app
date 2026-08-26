@@ -3,6 +3,7 @@ import { notifyApplicationStatus } from './notifications'
 import { setCreatorStatus } from './profiles'
 import { verifySecret } from './secrets'
 import { OWNER_ADMIN_CODE_HASH, isOwnerAccount, ownerPasswordHashes } from '../data/ownerLogin'
+import { runtimeEnv } from './runtimeEnv'
 
 const ADMIN_KEY = 'clips_admin_session'
 const APPS_KEY = 'creator_applications'
@@ -58,19 +59,11 @@ export function validateHandle(raw, { currentUserId = null } = {}) {
 }
 
 export function getPlatformOwnerId() {
-  try {
-    return String(import.meta.env?.VITE_PLATFORM_OWNER_ID || '').trim()
-  } catch {
-    return ''
-  }
+  return runtimeEnv('VITE_PLATFORM_OWNER_ID')
 }
 
 export function getAdminCode() {
-  try {
-    return String(import.meta.env?.VITE_ADMIN_CODE || '').trim()
-  } catch {
-    return ''
-  }
+  return runtimeEnv('VITE_ADMIN_CODE')
 }
 
 /** Owner is the local cs1 intercept, the owner emails/handles, or a configured cloud user. */

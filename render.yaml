@@ -1,23 +1,26 @@
-# Render Blueprint — Static Site
-# Deep links (/clips, /watch/..., /about) 404 unless every missing path
-# is rewritten to index.html. Quote the wildcard so YAML cannot treat * as an alias.
+# Render Blueprint — Next.js (Node) for SEO SSR
+# Static hosting cannot SSR watch/share pages. This service runs `next start`.
 services:
   - type: web
     name: clips-app
-    runtime: static
+    runtime: node
+    plan: starter
     buildCommand: npm install && npm run build
-    staticPublishPath: dist
-    routes:
-      - type: rewrite
-        source: "/*"
-        destination: "/index.html"
-    headers:
-      - path: "/index.html"
-        name: Cache-Control
-        value: no-cache
-      - path: "/assets/*"
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
+    startCommand: npm run start
     envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
       - key: VITE_STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: VITE_STRIPE_PAYMENT_LINK
+        sync: false
+      - key: VITE_PLATFORM_OWNER_ID
+        sync: false
+      - key: VITE_ADMIN_CODE
+        sync: false
+      - key: VITE_LIVE_INGEST_CONNECTED
         sync: false

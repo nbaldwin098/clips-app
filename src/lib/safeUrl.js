@@ -1,3 +1,5 @@
+import { isProdRuntime } from './runtimeEnv'
+
 /**
  * Central URL allowlist. Never pass raw user input to href, iframe src,
  * <video src>, or window.open without going through one of these helpers.
@@ -33,7 +35,7 @@ export function safeMediaUrl(raw) {
   const s = String(raw || '').trim()
   if (!s) return ''
   if (SAFE_BLOB.test(s) || SAFE_DATA_MEDIA.test(s)) return s
-  const allowHttp = typeof import.meta !== 'undefined' && !import.meta.env?.PROD
+  const allowHttp = !isProdRuntime()
   return safeHttpUrl(s, { allowHttp })
 }
 

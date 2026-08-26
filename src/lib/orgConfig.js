@@ -3,13 +3,11 @@
  * Prefer env overrides when set on Render.
  */
 
+import { runtimeEnv } from './runtimeEnv'
+
 function env(key, fallback) {
-  try {
-    const v = import.meta.env?.[key]
-    return v != null && String(v).trim() !== '' ? String(v).trim() : fallback
-  } catch {
-    return fallback
-  }
+  const v = runtimeEnv(key)
+  return v !== '' ? v : fallback
 }
 
 /** Public contact — set real inboxes before serious creator launch */

@@ -1,14 +1,12 @@
 /**
  * Live video ingest — flip to true when RTMP/HLS ingest is wired on the deploy.
  */
+import { runtimeEnv } from './runtimeEnv'
+
 function envFlag(key, fallback = false) {
-  try {
-    const v = import.meta.env?.[key]
-    if (v == null || String(v).trim() === '') return fallback
-    return String(v).trim() === '1' || String(v).toLowerCase() === 'true'
-  } catch {
-    return fallback
-  }
+  const v = runtimeEnv(key)
+  if (v === '') return fallback
+  return v === '1' || v.toLowerCase() === 'true'
 }
 
 export const LIVE_INGEST_CONNECTED = envFlag('VITE_LIVE_INGEST_CONNECTED', false)
