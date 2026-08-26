@@ -188,7 +188,7 @@ export default function CreatorEarningsPanel() {
           { label: 'Available', value: usd(earnings.availableUsd) },
           { label: 'Pending', value: usd(earnings.pendingUsd) },
           { label: 'Lifetime', value: usd(earnings.lifetimeUsd) },
-          { label: 'Your Coins', value: String(coins) },
+          { label: 'Coins', value: String(coins) },
         ]}
       />
       <IncomeChart series={series} />

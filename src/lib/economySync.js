@@ -53,6 +53,15 @@ function pushLocalCoinLedger(row) {
   lsSet(CACHE_COIN_LEDGER, all.slice(0, 500))
 }
 
+/** Local + last-pulled coin ledger for Orders. */
+export function listCoinLedger(userId, limit = 100) {
+  if (!userId) return []
+  const all = lsGet(CACHE_COIN_LEDGER, []) || []
+  return all
+    .filter((x) => x && x.userId === userId)
+    .slice(0, Math.max(1, Math.floor(Number(limit) || 100)))
+}
+
 export function cachedCash(userId) {
   if (!userId) return 0
   return Math.max(0, Math.floor(Number((lsGet(CACHE_WALLETS, {}) || {})[userId]) || 0))
@@ -247,7 +256,7 @@ export async function cloudCreditCoins(userId, units, meta = {}) {
       delta: n,
       balance: next,
       note: meta.note || '',
-      meta: {},
+      meta: { tierId: meta.tierId || '', usd: meta.usd || 0 },
       at: new Date().toISOString(),
     }
     await writeLedger(client, entry)
@@ -258,6 +267,8 @@ export async function cloudCreditCoins(userId, units, meta = {}) {
       balance: next,
       kind: entry.kind,
       note: entry.note,
+      tierId: meta.tierId || '',
+      usd: meta.usd || 0,
       at: entry.at,
     })
     return { ok: true, balance: next }

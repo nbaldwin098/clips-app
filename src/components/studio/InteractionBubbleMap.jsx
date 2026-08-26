@@ -88,30 +88,6 @@ function ActionRings({ radius, rings, active }) {
   )
 }
 
-function ColorLegend({ counts = {} }) {
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {INTERACTION_TYPES.map((t) => {
-        const n = Number(counts[t.id]) || 0
-        return (
-          <div
-            key={t.id}
-            className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 bg-[#0e0e14] px-2 py-1"
-            title={t.label}
-          >
-            <span
-              className="h-3.5 w-3.5 shrink-0 rounded-sm border border-black/40"
-              style={{ background: t.color }}
-            />
-            <span className="text-[11px] font-medium text-zinc-200">{t.short}</span>
-            <span className="text-[10px] tabular-nums text-zinc-500">{n}</span>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
 function TimeScrubber({ startMs, endMs, valueMs, onChange, peopleCount, actionCount }) {
   if (!startMs || !endMs || endMs <= startMs) return null
   const pct = Math.max(0, Math.min(100, ((valueMs - startMs) / (endMs - startMs)) * 100))
@@ -314,21 +290,42 @@ export default function InteractionBubbleMap({
     })
   }, [edgesBase, laid.nodes, hubId])
 
-  // Pan background only — never capture pointer (steals bubble clicks).
+  // Pan background — capture pointer after a short move so drag stays smooth.
   const onPointerDown = useCallback((e) => {
     if (e.button !== 0) return
     if (e.target?.closest?.('[data-bubble-node]')) return
-    dragRef.current = { px: e.clientX, py: e.clientY, ox: pan.x, oy: pan.y }
+    dragRef.current = {
+      px: e.clientX,
+      py: e.clientY,
+      ox: pan.x,
+      oy: pan.y,
+      pointerId: e.pointerId,
+      el: e.currentTarget,
+      captured: false,
+    }
   }, [pan])
 
   const onPointerMove = useCallback((e) => {
     const d = dragRef.current
     if (!d) return
-    const raw = { x: d.ox + (e.clientX - d.px), y: d.oy + (e.clientY - d.py) }
+    const dx = e.clientX - d.px
+    const dy = e.clientY - d.py
+    if (!d.captured && (dx * dx + dy * dy) >= 9) {
+      d.captured = true
+      try { d.el?.setPointerCapture?.(d.pointerId) } catch { /* ignore */ }
+    }
+    if (!d.captured) return
+    const raw = { x: d.ox + dx, y: d.oy + dy }
     setPan(keepHubInView(zoom, raw, bounds, size.w, size.h))
   }, [keepHubInView, zoom, bounds, size.w, size.h])
 
-  const onPointerUp = useCallback(() => { dragRef.current = null }, [])
+  const onPointerUp = useCallback((e) => {
+    const d = dragRef.current
+    if (d?.captured && d.el) {
+      try { d.el.releasePointerCapture?.(d.pointerId ?? e?.pointerId) } catch { /* ignore */ }
+    }
+    dragRef.current = null
+  }, [])
 
   const clampZoom = (z) => clampBubbleZoom(z, fitZ, 24)
 
@@ -390,10 +387,8 @@ export default function InteractionBubbleMap({
         </div>
       </div>
 
-      <div className="shrink-0 px-3 py-2 border-b border-zinc-800 space-y-2">
-        <p className="text-[10px] uppercase tracking-wider text-zinc-500">Legend</p>
-        <ColorLegend counts={summary.byType || {}} />
-        <div className="flex flex-wrap gap-1.5 pt-1">
+      <div className="shrink-0 px-3 py-2 border-b border-zinc-800">
+        <div className="flex flex-wrap gap-1.5">
           <button
             type="button"
             onClick={() => setFilter('all')}
@@ -437,7 +432,7 @@ export default function InteractionBubbleMap({
       <div className="min-h-0 flex-1 flex flex-col">
         <div
           ref={wrapRef}
-          className="relative flex-1 min-h-[280px] overflow-hidden cursor-grab active:cursor-grabbing touch-none"
+          className="relative flex-1 min-h-[360px] overflow-hidden cursor-grab active:cursor-grabbing touch-none"
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}

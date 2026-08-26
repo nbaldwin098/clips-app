@@ -1012,7 +1012,7 @@ export default function CreatorStudio({
                   { label: 'Lobby', value: live?.isLive ? 'Live' : 'Off', hint: approved ? `$${balance.paid.toFixed(2)} paid` : 'Apply to earn' },
                 ]}
               />
-              <div className="h-[min(58vh,560px)] min-h-[380px] overflow-hidden rounded-xl border border-zinc-800">
+              <div className="h-[min(78vh,820px)] min-h-[520px] overflow-hidden rounded-xl border border-zinc-800">
                 <InteractionBubbleMap
                   network={network}
                   selectedPostId={selectedPostId}
