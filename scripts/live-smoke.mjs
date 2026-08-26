@@ -107,12 +107,16 @@ assert(existsSync(new URL('../public/_redirects', import.meta.url)), 'static hos
 assert(readFileSync(new URL('../public/_redirects', import.meta.url), 'utf8').includes('/index.html'), 'redirects file serves index.html')
 {
   const yaml = readFileSync(new URL('../render.yaml', import.meta.url), 'utf8')
-  assert(yaml.includes('source: "/*"'), 'render blueprint quotes the spa wildcard')
-  assert(yaml.includes('destination: "/index.html"'), 'render blueprint rewrites missing paths to the app')
-  assert(yaml.includes('type: rewrite'), 'render blueprint uses a rewrite not a redirect')
+  assert(yaml.includes('runtime: node') || yaml.includes('next start'), 'render blueprint runs Next.js on Node for SEO')
+  assert(yaml.includes('npm run build'), 'render blueprint builds the app')
 }
 assert(existsSync(new URL('../netlify.toml', import.meta.url)), 'netlify spa fallback is present')
-assert(readFileSync(new URL('../vite.config.js', import.meta.url), 'utf8').includes('spa-index-fallback'), 'build copies index.html to 404.html')
+assert(readFileSync(new URL('../vite.config.js', import.meta.url), 'utf8').includes('spa-index-fallback'), 'vite fallback kept for legacy builds')
+assert(existsSync(new URL('../app/layout.jsx', import.meta.url)), 'Next.js App Router layout exists')
+assert(existsSync(new URL('../app/content/[id]/page.jsx', import.meta.url)), 'content pages have SEO metadata route')
+assert(existsSync(new URL('../middleware.js', import.meta.url)), 'middleware rewrites bare content ids for SEO')
+assert(readFileSync(new URL('../package.json', import.meta.url), 'utf8').includes('"next"'), 'Next.js is a dependency')
+assert(readFileSync(new URL('../package.json', import.meta.url), 'utf8').includes('"build": "next build"'), 'default build is Next.js')
 assert(readFileSync(new URL('../src/components/AdminSetup.jsx', import.meta.url), 'utf8').includes('Render rewrite'), 'admin setup documents the host rewrite')
 
 function isPromoLive(promo, now = Date.now()) {

@@ -1,0 +1,55 @@
+import './globals.css'
+
+export const metadata = {
+  metadataBase: new URL('https://calabi.us'),
+  title: {
+    default: 'calabi',
+    template: '%s · calabi',
+  },
+  description: 'calabi — watch clips, pics, and live streams from creators.',
+  applicationName: 'calabi',
+  openGraph: {
+    type: 'website',
+    siteName: 'calabi',
+    title: 'calabi',
+    description: 'Watch clips, pics, and live streams.',
+    url: 'https://calabi.us',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'calabi',
+    description: 'Watch clips, pics, and live streams.',
+  },
+  icons: {
+    icon: [{ url: '/logo.png', type: 'image/png' }, { url: '/favicon.svg', type: 'image/svg+xml' }],
+    apple: '/apple-touch-icon.png',
+  },
+  other: {
+    '6a97888e-site-verification': '1d873aa2131ea8d9ba1950a936ce2035',
+  },
+}
+
+export const viewport = {
+  themeColor: '#000000',
+  width: 'device-width',
+  initialScale: 1,
+}
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <head>
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="bg-[#000000] text-zinc-100 antialiased selection:bg-white/30 selection:text-white">
+        {children}
+      </body>
+    </html>
+  )
+}

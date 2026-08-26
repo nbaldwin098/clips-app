@@ -1,7 +1,9 @@
+import { runtimeEnv } from './runtimeEnv'
+
 export function getSupabaseConfig() {
   try {
-    const url = import.meta.env?.VITE_SUPABASE_URL || ''
-    const anon = import.meta.env?.VITE_SUPABASE_ANON_KEY || ''
+    const url = runtimeEnv('VITE_SUPABASE_URL') || runtimeEnv('NEXT_PUBLIC_SUPABASE_URL')
+    const anon = runtimeEnv('VITE_SUPABASE_ANON_KEY') || runtimeEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY')
     return { url, anon, configured: !!(url && anon) }
   } catch {
     return { url: '', anon: '', configured: false }
