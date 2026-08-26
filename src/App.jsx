@@ -466,7 +466,7 @@ function AppShell() {
         channel: 'Channel',
         analytics: 'Analytics',
         'studio-tools': 'Studio',
-        'calabi-studio': 'Calabi Studio',
+        'calabi-studio': 'Creator Lab',
         'calabi-cash': 'Coins',
         vods: 'VODs',
         verify: 'Verification',

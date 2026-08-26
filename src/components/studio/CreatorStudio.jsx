@@ -15,6 +15,7 @@ import {
   Trash2,
   Clapperboard,
   Share2,
+  Sparkles,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import CreatorOnboarding from '../CreatorOnboarding'
@@ -34,6 +35,7 @@ import StudioRealtimeAnalytics from './StudioRealtimeAnalytics'
 import ErrorReportPrompt from '../ErrorReportPrompt'
 import CreatorEarningsPanel from './CreatorEarningsPanel'
 import StudioSocialsPanel from './StudioSocialsPanel'
+import CreatorLab from './CreatorLab'
 import StreamSettings from '../settings/StreamSettings'
 import VerifyPage from '../VerifyPage'
 import {
@@ -56,6 +58,7 @@ import {
 
 const STUDIO_NAV = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard, group: 'Studio' },
+  { id: 'lab', label: 'Creator Lab', icon: Sparkles, group: 'Studio' },
   { id: 'analytics', label: 'Analytics', icon: BarChart3, group: 'Studio' },
   { id: 'socials', label: 'Socials', icon: Share2, group: 'Studio' },
   { id: 'earnings', label: 'Earnings', icon: CircleDollarSign, group: 'Money' },
@@ -66,6 +69,7 @@ const STUDIO_NAV = [
 
 const SECTION_META = {
   overview: { title: 'Creator Studio', subtitle: 'Posts, audience, and shortcuts' },
+  lab: { title: 'Creator Lab', subtitle: 'CapCut-style edit + OBS-style live mixer on calabi' },
   analytics: { title: 'Analytics', subtitle: 'Pick a post → its bubble map + live stats under it' },
   socials: { title: 'Socials', subtitle: 'Connect accounts and post videos, clips, pics, or VODs out' },
   earnings: { title: 'Earnings', subtitle: 'Tips, withdrawals, and income chart' },
@@ -238,7 +242,10 @@ export default function CreatorStudio({
   const { user } = useAuth()
   const syncTick = useContentSyncTick()
   const interactionTick = useInteractionSyncTick()
-  const [section, setSection] = useState(() => lsGet('calabi_studio_section', initialSection) || initialSection)
+  const [section, setSection] = useState(() => {
+    if (initialSection && initialSection !== 'overview') return initialSection
+    return lsGet('calabi_studio_section', initialSection) || initialSection
+  })
   const [onboardingDone, setOnboardingDone] = useState(() => lsGet(`calabi_onboarding_done_${user?.id}`, false))
   const [selectedPostId, setSelectedPostId] = useState(null)
   const [range, setRange] = useState('all')
@@ -442,10 +449,10 @@ export default function CreatorStudio({
         <div className="px-2 pt-2 border-t border-zinc-800 space-y-0.5">
           <button
             type="button"
-            onClick={() => onNavigate?.('calabi-studio')}
+            onClick={() => setSection('lab')}
             className="w-full flex items-center gap-2.5 px-2.5 py-2 text-sm text-zinc-400 hover:bg-[#18181f] hover:text-white"
           >
-            <Clapperboard className="h-4 w-4" /> Calabi Studio
+            <Clapperboard className="h-4 w-4" /> Creator Lab
           </button>
           <button
             type="button"
@@ -626,6 +633,12 @@ export default function CreatorStudio({
                   forcePostTab
                 />
               </div>
+            </div>
+          ) : null}
+
+          {section === 'lab' ? (
+            <div className="h-full overflow-y-auto">
+              <CreatorLab onNavigate={onNavigate} compact />
             </div>
           ) : null}
 
