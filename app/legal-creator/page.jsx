@@ -1,4 +1,5 @@
-import SpaShell from '../SpaShell'
+import SiteChrome from '../SiteChrome'
+import { CreatorAgreement } from '../../src/components/legal/LegalPages'
 
 export const metadata = {
   title: 'Creator Agreement',
@@ -7,5 +8,9 @@ export const metadata = {
 }
 
 export default function CreatorAgreementRoute() {
-  return <SpaShell />
+  return (
+    <SiteChrome>
+      <CreatorAgreement />
+    </SiteChrome>
+  )
 }
