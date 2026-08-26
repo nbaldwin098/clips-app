@@ -16,6 +16,7 @@ import {
   cloudSaveWithdrawMethod,
   cloudRemoveWithdrawMethod,
   cloudRequestWithdrawal,
+  listCoinLedger as listCoinLedgerRows,
   pullWallet,
   pullEarnings,
 } from './economySync'
@@ -88,6 +89,11 @@ export function getTierById(id) {
 
 export function listCashLedger() {
   return []
+}
+
+/** Coin purchase / spend history for the Orders tab. */
+export function listCoinLedger(userId, limit = 100) {
+  return listCoinLedgerRows(userId, limit)
 }
 
 export function formatCash() {

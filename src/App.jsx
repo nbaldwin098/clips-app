@@ -296,15 +296,13 @@ function AppShell() {
       const rawId = dest === 'profile' ? (id || profileTarget.handle) : id
       const nextId = rawId && typeof rawId === 'object' ? String(rawId.id || '') : String(rawId || '')
       setRouteId(nextId || '')
+      setRouteParams(params && typeof params === 'object' ? params : {})
       if (dest === 'profile') {
         const uid = (params && params.u) || profileTarget.userId
         goPath('profile', nextId, uid ? { u: uid, ...(params || {}) } : params)
       } else if ((dest === 'clips' || dest === 'watch' || dest === 'pics') && nextId) {
         // Posts use bare /{id} share URLs; clip/pic/watch lists stay /clips etc.
         goPath('content', nextId)
-      } else if (dest === 'messages') {
-        setRouteParams(params && typeof params === 'object' ? params : {})
-        goPath('messages', nextId, params)
       } else {
         goPath(dest, nextId, params)
       }
@@ -551,9 +549,9 @@ function AppShell() {
           />
         )
       case 'wallet':
-        return <SettingsHub section="wallet" onNavigate={navigate} />
+        return <SettingsHub section="wallet" onNavigate={navigate} initialTab={routeParams.tab} />
       case 'calabi-cash':
-        return <SettingsHub section="wallet" onNavigate={navigate} />
+        return <SettingsHub section="wallet" onNavigate={navigate} initialTab={routeParams.tab} />
       case 'stream-settings':
         return (
           <CreatorStudio
@@ -583,7 +581,7 @@ function AppShell() {
       case 'community': return <CommunityPage onNavigate={navigate} onOpenAuth={openAuth} />
       case 'studio-tools': return <StudioToolsPage onNavigate={navigate} />
       case 'calabi-studio': return <CalabiStudioPage onNavigate={navigate} onOpenAuth={openAuth} initialMode={routeId || 'edit'} />
-      case 'settings': return <SettingsHub section={routeId} onNavigate={navigate} />
+      case 'settings': return <SettingsHub section={routeId} onNavigate={navigate} initialTab={routeParams.tab} />
       case 'explore': return <ExplorePage onPlayItem={openWatch} onOpenPic={openPic} onOpenTag={openTag} initialQuery={searchQuery} onApplyQuery={setSearchQuery} />
       case 'pics': return <PicsPage onOpenAuth={openAuth} onOpenProfile={openProfile} initialPicId={routeId} />
       case 'checkout': return <CheckoutPage onNavigate={navigate} creatorId={checkoutTarget.id} returnParams={routeParams} />

@@ -31,13 +31,13 @@ const PAGES = {
   wallet: WalletSettings,
 }
 
-export default function SettingsHub({ section, onNavigate }) {
+export default function SettingsHub({ section, onNavigate, initialTab = null }) {
   const id = PAGES[section] ? section : 'account'
   const Page = PAGES[id]
   const mode = settingsModeForSection(id)
   return (
     <SettingsLayout section={id} mode={mode} onSection={(next) => onNavigate?.('settings', next)}>
-      <Page onNavigate={onNavigate} />
+      <Page onNavigate={onNavigate} initialTab={initialTab} />
     </SettingsLayout>
   )
 }

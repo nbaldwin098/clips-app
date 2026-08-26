@@ -173,31 +173,38 @@ export function clampBubbleZoom(z, fitZoom = 0.35, maxZoom = 24) {
 }
 
 /**
- * Keep the transformed content bbox inside the viewport.
- * Transform model: translate(pan) scale(zoom) with origin top-left.
+ * Keep transformed content near the viewport.
+ * Always allows drag slack — even when content fits — so users can pan freely.
  */
 export function clampPanToBox(pan, zoom, size, bounds) {
-  const pad = 10
+  const edgePad = 10
+  const freeSlack = Math.max(48, Math.min(size.w, size.h) * 0.35)
   const cx = (bounds.minX + bounds.maxX) / 2
   const cy = (bounds.minY + bounds.maxY) / 2
   const contentW = (bounds.maxX - bounds.minX) * zoom
   const contentH = (bounds.maxY - bounds.minY) * zoom
   let { x, y } = pan
 
-  if (contentW <= size.w - pad * 2) {
-    x = size.w / 2 - cx * zoom
-  } else {
-    const minX = size.w - pad - bounds.maxX * zoom
-    const maxX = pad - bounds.minX * zoom
-    x = Math.min(maxX, Math.max(minX, x))
+  {
+    const minX = size.w - edgePad - bounds.maxX * zoom
+    const maxX = edgePad - bounds.minX * zoom
+    if (minX <= maxX) {
+      x = Math.min(maxX, Math.max(minX, x))
+    } else {
+      const mid = size.w / 2 - cx * zoom
+      x = Math.min(mid + freeSlack, Math.max(mid - freeSlack, x))
+    }
   }
 
-  if (contentH <= size.h - pad * 2) {
-    y = size.h / 2 - cy * zoom
-  } else {
-    const minY = size.h - pad - bounds.maxY * zoom
-    const maxY = pad - bounds.minY * zoom
-    y = Math.min(maxY, Math.max(minY, y))
+  {
+    const minY = size.h - edgePad - bounds.maxY * zoom
+    const maxY = edgePad - bounds.minY * zoom
+    if (minY <= maxY) {
+      y = Math.min(maxY, Math.max(minY, y))
+    } else {
+      const mid = size.h / 2 - cy * zoom
+      y = Math.min(mid + freeSlack, Math.max(mid - freeSlack, y))
+    }
   }
 
   return { x, y }
