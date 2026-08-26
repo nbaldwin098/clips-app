@@ -6,16 +6,17 @@ import {
   Video,
   BadgeCheck,
   Settings,
-  Upload,
-  Link2,
-  Radio,
   ChevronLeft,
   Play,
-  RotateCcw,
   Trash2,
   Clapperboard,
   Share2,
   Sparkles,
+  PenSquare,
+  SlidersHorizontal,
+  Film,
+  Image as ImageIcon,
+  Radio,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import CreatorOnboarding from '../CreatorOnboarding'
@@ -28,11 +29,9 @@ import { buildInteractionNetwork } from '../../lib/creatorInteractions'
 import { formatCount } from '../../lib/uiFormat'
 import { formatPostedAt, postedAtOf } from '../../lib/mediaMeta'
 import { cn } from '../../lib/utils'
-import { restoreLostUploads } from '../../lib/restoreUploads'
 import { useContentSyncTick, useInteractionSyncTick } from '../../lib/useContentSync'
 import InteractionBubbleMap from './InteractionBubbleMap'
 import StudioRealtimeAnalytics from './StudioRealtimeAnalytics'
-import ErrorReportPrompt from '../ErrorReportPrompt'
 import CreatorEarningsPanel from './CreatorEarningsPanel'
 import StudioSocialsPanel from './StudioSocialsPanel'
 import CreatorLab from './CreatorLab'
@@ -49,7 +48,6 @@ import {
   statusLabel,
 } from '../../lib/creatorStudioCatalog'
 import {
-  SettingsPageHeader,
   SettingsCard,
   SettingsKpiGrid,
   SettingsButton,
@@ -58,8 +56,10 @@ import {
 
 const STUDIO_NAV = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard, group: 'Studio' },
-  { id: 'lab', label: 'Calabi Studio', icon: Sparkles, group: 'Studio' },
+  { id: 'post', label: 'Make a post', icon: PenSquare, group: 'Studio' },
   { id: 'analytics', label: 'Analytics', icon: BarChart3, group: 'Studio' },
+  { id: 'controls', label: 'Controls', icon: SlidersHorizontal, group: 'Studio' },
+  { id: 'lab', label: 'Calabi Studio', icon: Sparkles, group: 'Studio' },
   { id: 'socials', label: 'Socials', icon: Share2, group: 'Studio' },
   { id: 'earnings', label: 'Earnings', icon: CircleDollarSign, group: 'Money' },
   { id: 'vods', label: 'VODs', icon: Video, group: 'Live' },
@@ -68,13 +68,15 @@ const STUDIO_NAV = [
 ]
 
 const SECTION_META = {
-  overview: { title: 'Creator Studio', subtitle: 'Posts, audience, and shortcuts' },
-  lab: { title: 'Calabi Studio', subtitle: 'Edit · Live · Socials — CapCut + OBS on calabi' },
-  analytics: { title: 'Analytics', subtitle: 'Pick a post → its bubble map + live stats under it' },
-  socials: { title: 'Socials', subtitle: 'Connect accounts and post videos, clips, pics, or VODs out' },
-  earnings: { title: 'Earnings', subtitle: 'Tips, withdrawals, and income chart' },
-  vods: { title: 'VOD library', subtitle: 'Past lives — manage visibility here' },
-  stream: { title: 'Stream & OBS', subtitle: 'Free OBS connect, stream key, quality, VOD channel' },
+  overview: { title: 'Creator Studio', subtitle: 'Your workspace' },
+  post: { title: 'Make a post', subtitle: 'Upload original video, clip, or pic' },
+  analytics: { title: 'Analytics', subtitle: 'Channel numbers, bubble map, and live stats' },
+  controls: { title: 'Controls', subtitle: 'Shortcuts for channel, stream, money, and growth' },
+  lab: { title: 'Calabi Studio', subtitle: 'Edit · Live · Socials' },
+  socials: { title: 'Socials', subtitle: 'Connect accounts and post out' },
+  earnings: { title: 'Earnings', subtitle: 'Tips, withdrawals, and income' },
+  vods: { title: 'VOD library', subtitle: 'Past broadcasts' },
+  stream: { title: 'Stream settings', subtitle: 'OBS and quality' },
   verify: { title: 'Verification', subtitle: 'ID check for a verified badge' },
 }
 
@@ -179,36 +181,35 @@ function VodsPanel({ user }) {
   )
 }
 
-function StudioHub({
+function StudioControls({
   onNavigate,
   onOpenUpload,
-  onOpenImport,
   approved,
 }) {
-  const handlers = { onOpenUpload, onOpenImport }
+  const handlers = { onOpenUpload }
   return (
-    <div className="space-y-4">
-      <SettingsPageHeader
-        title="Shortcuts"
-        subtitle="Organized by what you are doing — not a wall of buttons."
-      />
-      <div className="grid gap-3 md:grid-cols-2">
+    <div className="space-y-8 max-w-3xl">
+      <div>
+        <h2 className="text-xl font-semibold text-white tracking-tight">Controls</h2>
+        <p className="mt-2 text-sm text-zinc-500 leading-relaxed max-w-lg">
+          Filtered shortcuts — content, stream, community, growth, and money. No import links.
+        </p>
+      </div>
+      <div className="grid gap-6 md:grid-cols-2">
         {CREATOR_STUDIO_GROUPS.filter((g) => g.id !== 'account').map((group) => (
-          <SettingsCard
-            key={group.id}
-            title={group.label}
-            description={group.description}
-          >
-            <ul className="space-y-1">
+          <div key={group.id} className="border border-zinc-800/80 bg-[#0a0a0c] p-5">
+            <p className="text-sm font-semibold text-white">{group.label}</p>
+            <p className="mt-1 text-xs text-zinc-500 leading-relaxed">{group.description}</p>
+            <ul className="mt-4 space-y-1">
               {group.items
-                .filter((item) => item.status !== 'planned' && item.route)
-                .slice(0, 5)
+                .filter((item) => item.status !== 'planned' && item.route && item.id !== 'import')
+                .slice(0, 6)
                 .map((item) => (
                   <li key={item.id}>
                     <button
                       type="button"
                       onClick={() => navigateStudioItem(onNavigate, item, handlers)}
-                      className="w-full flex items-center justify-between gap-2 px-2 py-1.5 text-left text-sm text-zinc-300 hover:bg-[#18181f] hover:text-white"
+                      className="w-full flex items-center justify-between gap-2 px-2 py-2.5 text-left text-sm text-zinc-300 hover:bg-[#141418] hover:text-white"
                     >
                       <span>{item.label}</span>
                       <span className="text-[10px] uppercase tracking-wide text-zinc-600">
@@ -218,7 +219,7 @@ function StudioHub({
                   </li>
                 ))}
             </ul>
-          </SettingsCard>
+          </div>
         ))}
       </div>
       {!approved ? (
@@ -231,8 +232,45 @@ function StudioHub({
   )
 }
 
+function MakePostPanel({ onOpenUpload, onNavigate }) {
+  return (
+    <div className="max-w-2xl space-y-8 py-4">
+      <div>
+        <h2 className="text-2xl font-semibold text-white tracking-tight">Make a post</h2>
+        <p className="mt-3 text-sm text-zinc-500 leading-relaxed">
+          Upload your own video, clip, or pic. External imports are off — they would carry another platform’s watermark.
+        </p>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-3">
+        {[
+          { label: 'Video', hint: 'Long-form', Icon: Film, action: () => onOpenUpload?.('video') },
+          { label: 'Clip', hint: 'Vertical short', Icon: Clapperboard, action: () => onOpenUpload?.('short') },
+          { label: 'Pic', hint: 'Photo post', Icon: ImageIcon, action: () => onNavigate?.('create') },
+        ].map((card) => (
+          <button
+            key={card.label}
+            type="button"
+            onClick={card.action}
+            className="text-left border border-zinc-800 bg-[#0a0a0c] p-6 hover:border-zinc-600 transition-colors"
+          >
+            <card.Icon className="h-6 w-6 text-white mb-4" />
+            <p className="text-base font-semibold text-white">{card.label}</p>
+            <p className="mt-1 text-xs text-zinc-500">{card.hint}</p>
+          </button>
+        ))}
+      </div>
+      <button
+        type="button"
+        onClick={() => onNavigate?.('calabi-studio')}
+        className="h-11 px-5 border border-zinc-700 text-sm text-zinc-200 hover:border-white hover:text-white"
+      >
+        Open Calabi Studio to edit or go live
+      </button>
+    </div>
+  )
+}
+
 export default function CreatorStudio({
-  onOpenImport,
   onOpenUpload,
   onNavigate,
   onPlayItem,
@@ -250,8 +288,6 @@ export default function CreatorStudio({
   const [selectedPostId, setSelectedPostId] = useState(null)
   const [range, setRange] = useState('all')
   const [postFilter, setPostFilter] = useState('all')
-  const [restoreBusy, setRestoreBusy] = useState(false)
-  const [restoreNote, setRestoreNote] = useState('')
   const [deletingId, setDeletingId] = useState(null)
   const [cloudSyncBusy, setCloudSyncBusy] = useState(false)
   const [untilMs, setUntilMs] = useState(null)
@@ -336,7 +372,7 @@ export default function CreatorStudio({
   const verifyStatus = getIdVerificationForUser(user?.id)?.status
   const navGroups = groupNav(STUDIO_NAV)
   const meta = SECTION_META[section] || SECTION_META.overview
-  const showPostsColumn = section === 'overview' || section === 'analytics'
+  const showPostsColumn = section === 'analytics'
 
   const filteredPosts = useMemo(() => {
     if (postFilter === 'all') return posts
@@ -392,38 +428,22 @@ export default function CreatorStudio({
     }
   }
 
-  const onRestore = async () => {
-    setRestoreBusy(true)
-    setRestoreNote('')
-    try {
-      const res = await restoreLostUploads(user)
-      const n = Number(res?.total) || 0
-      if (res?.error) setRestoreNote(res.error)
-      else if (n) setRestoreNote(`Restored ${n} post${n === 1 ? '' : 's'}.`)
-      else setRestoreNote('Nothing to restore on this device.')
-    } catch {
-      setRestoreNote("Couldn't restore right now.")
-    } finally {
-      setRestoreBusy(false)
-    }
-  }
-
   return (
     <div className="h-[calc(100dvh-3.5rem)] min-h-[480px] flex bg-[#000000] text-zinc-100 overflow-hidden">
       {/* Labeled studio rail */}
-      <aside className="hidden sm:flex w-52 shrink-0 border-r border-zinc-800 bg-[#050506] flex-col py-3">
+      <aside className="hidden sm:flex w-56 shrink-0 border-r border-zinc-800 bg-[#050506] flex-col py-4">
         <button
           type="button"
           onClick={() => onNavigate?.('home')}
-          className="mx-2 mb-2 h-9 px-2 inline-flex items-center gap-2 text-xs text-zinc-500 hover:text-white"
+          className="mx-3 mb-4 h-9 px-2 inline-flex items-center gap-2 text-xs text-zinc-500 hover:text-white"
         >
           <ChevronLeft className="h-4 w-4" /> Site
         </button>
-        <nav className="flex-1 px-2 space-y-4 overflow-y-auto">
+        <nav className="flex-1 px-3 space-y-5 overflow-y-auto">
           {navGroups.map((g) => (
             <div key={g.name}>
-              <p className="px-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">{g.name}</p>
-              <div className="space-y-0.5">
+              <p className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">{g.name}</p>
+              <div className="space-y-1">
                 {g.items.map((item) => {
                   const Icon = item.icon
                   const active = section === item.id
@@ -433,8 +453,8 @@ export default function CreatorStudio({
                       type="button"
                       onClick={() => setSection(item.id)}
                       className={cn(
-                        'w-full flex items-center gap-2.5 px-2.5 py-2 text-sm font-medium text-left',
-                        active ? 'bg-white text-black' : 'text-zinc-400 hover:bg-[#18181f] hover:text-white'
+                        'w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-left',
+                        active ? 'bg-white text-black' : 'text-zinc-400 hover:bg-[#141418] hover:text-white'
                       )}
                     >
                       <Icon className="h-4 w-4 shrink-0" />
@@ -526,84 +546,112 @@ export default function CreatorStudio({
 
       {/* Main workspace */}
       <main className="flex-1 min-w-0 min-h-0 flex flex-col max-sm:pt-12">
-        <header className="shrink-0 flex flex-wrap items-center gap-2 px-4 py-3 border-b border-zinc-800 bg-[#050506]">
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-white">{meta.title}</p>
-            <p className="text-[11px] text-zinc-500 truncate">
-              @{user?.handle || 'creator'} · {posts.length} posts · {formatCount(views)} views
-              {verified ? ' · Verified' : verifyStatus === 'pending' ? ' · ID in review' : ''}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-1.5">
-            <SettingsButton onClick={onOpenUpload} className="h-8 px-3 text-xs inline-flex items-center gap-1.5">
-              <Upload className="h-3.5 w-3.5" /> Upload
-            </SettingsButton>
-            <SettingsButton variant="ghost" onClick={onOpenImport} className="h-8 px-3 text-xs inline-flex items-center gap-1.5">
-              <Link2 className="h-3.5 w-3.5" /> Import
-            </SettingsButton>
-            <SettingsButton variant="ghost" onClick={() => onNavigate?.('live')} className="h-8 px-3 text-xs inline-flex items-center gap-1.5">
-              <Radio className="h-3.5 w-3.5" /> Live
-            </SettingsButton>
-            <button
-              type="button"
-              onClick={onRestore}
-              disabled={restoreBusy}
-              className="h-8 w-8 inline-flex items-center justify-center border border-zinc-700 text-zinc-400 hover:text-white disabled:opacity-50"
-              title="Restore missing posts"
-            >
-              <RotateCcw className={cn('h-3.5 w-3.5', restoreBusy && 'animate-spin')} />
-            </button>
-          </div>
+        <header className="shrink-0 px-6 md:px-8 py-5 border-b border-zinc-800/80 bg-[#050506]">
+          <p className="text-lg font-semibold text-white tracking-tight">{meta.title}</p>
+          <p className="mt-1 text-sm text-zinc-500">
+            @{user?.handle || 'creator'}
+            {verified ? ' · Verified' : verifyStatus === 'pending' ? ' · ID in review' : ''}
+            <span className="text-zinc-600"> · {meta.subtitle}</span>
+          </p>
         </header>
-        {restoreNote ? (
-          <div className="px-4 py-2 border-b border-zinc-900 text-[11px] text-zinc-400">
-            {restoreNote}
-            {restoreNote.includes("Couldn't") || restoreNote.toLowerCase().includes('error') ? (
-              <ErrorReportPrompt message={restoreNote} context="restore-uploads" />
-            ) : null}
-          </div>
-        ) : null}
 
-        <div className="flex-1 min-h-0 overflow-hidden p-3 md:p-4">
+        <div className="flex-1 min-h-0 overflow-hidden px-6 md:px-8 py-6 md:py-8">
           {section === 'overview' ? (
-            <div className="h-full min-h-0 flex flex-col gap-4 overflow-y-auto">
+            <div className="h-full min-h-0 overflow-y-auto space-y-10 max-w-3xl">
               {showOnboarding ? (
                 <CreatorOnboarding
-                  onOpenImport={onOpenImport}
+                  onOpenUpload={onOpenUpload}
                   onDone={finishOnboarding}
                   onNavigate={onNavigate}
                 />
               ) : null}
-              <SettingsKpiGrid
-                columns={3}
-                items={[
-                  { label: 'Posts', value: String(posts.length) },
-                  { label: 'Unique viewers', value: formatCount(views) },
-                  { label: 'Likes', value: formatCount(likes) },
-                  { label: 'Followers', value: formatCount(followers), hint: `${formatCount(premiumSubs)} premium` },
-                  { label: 'VODs', value: String(vods.length) },
-                  { label: 'Lobby', value: live?.isLive ? 'Live' : 'Off', hint: approved ? `$${balance.paid.toFixed(2)} paid` : 'Apply to earn' },
-                ]}
-              />
-              <StudioHub
+              <div>
+                <h2 className="text-2xl font-semibold text-white tracking-tight">Welcome back</h2>
+                <p className="mt-3 text-sm text-zinc-500 leading-relaxed max-w-md">
+                  Make a post, check analytics, or open Calabi Studio. Numbers live under Analytics — not on this screen.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSection('post')}
+                  className="h-11 px-5 bg-white text-black text-sm font-semibold"
+                >
+                  Make a post
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSection('analytics')}
+                  className="h-11 px-5 border border-zinc-700 text-sm text-zinc-200 hover:border-white"
+                >
+                  Analytics
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSection('controls')}
+                  className="h-11 px-5 border border-zinc-700 text-sm text-zinc-200 hover:border-white"
+                >
+                  Controls
+                </button>
+              </div>
+              {posts.length > 0 ? (
+                <div className="space-y-3 pt-2">
+                  <p className="text-xs uppercase tracking-wider text-zinc-600">Recent</p>
+                  <ul className="space-y-2">
+                    {posts.slice(0, 5).map((p) => (
+                      <li key={p.id}>
+                        <button
+                          type="button"
+                          onClick={() => openPost(p)}
+                          className="w-full text-left px-3 py-3 border border-zinc-800/80 hover:border-zinc-600"
+                        >
+                          <p className="text-sm text-white truncate">{p.title || 'Untitled'}</p>
+                          <p className="text-[11px] text-zinc-500 mt-1">{typeLabel(p.type)} · {formatCount(getViews(p.id))} views</p>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {section === 'post' ? (
+            <div className="h-full overflow-y-auto">
+              <MakePostPanel onOpenUpload={onOpenUpload} onNavigate={onNavigate} />
+            </div>
+          ) : null}
+
+          {section === 'controls' ? (
+            <div className="h-full overflow-y-auto">
+              <StudioControls
                 onNavigate={onNavigate}
                 onOpenUpload={onOpenUpload}
-                onOpenImport={onOpenImport}
                 approved={approved}
               />
-              <button
-                type="button"
-                onClick={() => setSection('analytics')}
-                className="self-start h-9 px-3 border border-zinc-700 text-xs text-white hover:bg-white hover:text-black"
-              >
-                Open live analytics & bubble map →
-              </button>
             </div>
           ) : null}
 
           {section === 'analytics' ? (
-            <div className="h-full min-h-0 flex flex-col gap-3 overflow-hidden">
-              <div className="min-h-0 flex-[1.15] min-h-[300px]">
+            <div className="h-full min-h-0 flex flex-col gap-8 overflow-y-auto">
+              <div className="shrink-0 space-y-3">
+                <div>
+                  <h2 className="text-xl font-semibold text-white tracking-tight">Channel stats</h2>
+                  <p className="mt-1 text-sm text-zinc-500">Posts, reach, and lobby — all in one place.</p>
+                </div>
+                <SettingsKpiGrid
+                  columns={3}
+                  items={[
+                    { label: 'Posts', value: String(posts.length) },
+                    { label: 'Unique viewers', value: formatCount(views) },
+                    { label: 'Likes', value: formatCount(likes) },
+                    { label: 'Followers', value: formatCount(followers), hint: `${formatCount(premiumSubs)} premium` },
+                    { label: 'VODs', value: String(vods.length) },
+                    { label: 'Lobby', value: live?.isLive ? 'Live' : 'Off', hint: approved ? `$${balance.paid.toFixed(2)} paid` : 'Apply to earn' },
+                  ]}
+                />
+              </div>
+              <div className="min-h-[320px] h-[42vh] shrink-0">
                 <InteractionBubbleMap
                   network={network}
                   selectedPostId={selectedPostId}
@@ -618,7 +666,7 @@ export default function CreatorStudio({
                   postStartMs={postStartMs}
                 />
               </div>
-              <div className="min-h-0 flex-1 min-h-[220px] overflow-hidden border-t border-zinc-800 pt-3">
+              <div className="min-h-[240px] shrink-0 border-t border-zinc-800 pt-6 pb-4">
                 <StudioRealtimeAnalytics
                   creatorId={user?.id}
                   posts={posts}
