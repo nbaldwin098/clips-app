@@ -50,6 +50,20 @@ export function addComment(contentId, { userId, handle, text, parentId = null, d
     held,
   })
   pushComment(contentId, row)
+  queueMicrotask(() => {
+    import('./creatorInteractions').then(({ logCreatorInteraction, creatorIdForContent }) => {
+      const creatorId = creatorIdForContent(contentId)
+      if (!creatorId || creatorId === userId) return
+      logCreatorInteraction({
+        creatorId,
+        contentId,
+        type: 'comment',
+        actorId: userId,
+        title: '',
+        surface: 'unknown',
+      })
+    }).catch(() => {})
+  })
   return row
 }
 export function toggleCommentLike(contentId, commentId, userId) {

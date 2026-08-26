@@ -22,8 +22,9 @@ export function getUserVote(userId, contentId) {
   return (lsGet(USER_VOTES, {})[userId] || {})[contentId] || null
 }
 
-export function toggleVote(userId, contentId, direction) {
+export function toggleVote(userId, contentId, direction, meta = {}) {
   if (!userId || !contentId) return getVotes(contentId)
+  if (direction !== 'up' && direction !== 'down') return getVotes(contentId)
   const votes = lsGet(USER_VOTES, {})
   const mine = votes[userId] || {}
   const prev = mine[contentId] || null
@@ -52,13 +53,16 @@ export function toggleVote(userId, contentId, direction) {
     notifyNewLike(contentId, userId)
     queueMicrotask(() => {
       import('./creatorInteractions').then(({ logCreatorInteraction, creatorIdForContent }) => {
-        const creatorId = creatorIdForContent(contentId)
+        const creatorId = meta.creatorId || creatorIdForContent(contentId)
         if (!creatorId) return
         logCreatorInteraction({
           creatorId,
           contentId,
           type: 'like',
           actorId: userId,
+          title: meta.title || '',
+          surface: meta.surface || 'unknown',
+          contentType: meta.contentType || null,
         })
       }).catch(() => {})
     })
@@ -108,6 +112,8 @@ export function recordView(contentId, meta = {}) {
         type: 'view',
         actorId: meta.actorId || null,
         title: meta.title || '',
+        surface: meta.surface || 'unknown',
+        contentType: meta.contentType || null,
       })
     }).catch(() => {})
   })
@@ -157,10 +163,12 @@ export function toggleSubscribe(userId, creatorId, { notify = true } = {}) {
       import('./creatorInteractions').then(({ logCreatorInteraction }) => {
         logCreatorInteraction({
           creatorId,
-          contentId: creatorId,
+          contentId: null,
           type: 'subscribe',
           actorId: userId,
           title: 'Channel follow',
+          surface: 'channel',
+          contentType: 'channel',
         })
       }).catch(() => {})
     })

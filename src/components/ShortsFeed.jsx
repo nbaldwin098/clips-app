@@ -142,9 +142,14 @@ function ClipSlide({
     const now = Date.now()
     if (now - lastTap.current < 280) {
       if (user?.id) {
-        const next = toggleVote(user.id, item.id, 1)
+        const next = toggleVote(user.id, item.id, 'up', {
+          creatorId,
+          title: item.title,
+          surface: 'clips',
+          contentType: 'short',
+        })
         setVotes(getVotes(item.id))
-        setMyVote(next)
+        setMyVote(getUserVote(user.id, item.id))
         setHeartBurst(true)
         window.setTimeout(() => setHeartBurst(false), 600)
       } else {
@@ -169,9 +174,14 @@ function ClipSlide({
   const like = (e) => {
     e?.stopPropagation?.()
     if (!user?.id) return onOpenAuth?.()
-    const next = toggleVote(user.id, item.id, myVote === 1 ? 0 : 1)
+    toggleVote(user.id, item.id, 'up', {
+      creatorId,
+      title: item.title,
+      surface: 'clips',
+      contentType: 'short',
+    })
     setVotes(getVotes(item.id))
-    setMyVote(next)
+    setMyVote(getUserVote(user.id, item.id))
   }
 
   const follow = (e) => {
@@ -186,6 +196,17 @@ function ClipSlide({
     const ok = await copyShareUrl('clip', item.id)
     setShareCopied(ok)
     window.setTimeout(() => setShareCopied(false), 1500)
+    if (ok && user?.id && creatorId) {
+      recordInteraction(user.id, {
+        contentId: item.id,
+        type: 'share',
+        tags: item.tags || [],
+        creatorId,
+        title: item.title,
+        surface: 'clips',
+        contentType: 'short',
+      })
+    }
   }
 
   const handle = item.handle ? `@${String(item.handle).replace(/^@/, '')}` : 'creator'
@@ -194,8 +215,8 @@ function ClipSlide({
 
   const actions = (circled) => (
     <>
-      <RailBtn onClick={like} label={votes.up || 0} active={myVote === 1} circled={circled}>
-        <Heart className={`h-6 w-6 ${myVote === 1 ? 'fill-current' : ''}`} />
+      <RailBtn onClick={like} label={votes.up || 0} active={myVote === 'up'} circled={circled}>
+        <Heart className={`h-6 w-6 ${myVote === 'up' ? 'fill-current' : ''}`} />
       </RailBtn>
       <RailBtn onClick={(e) => { e.stopPropagation(); setCommentsOpen(true) }} label={commentCount || 0} circled={circled}>
         <MessageCircle className="h-6 w-6" />
@@ -247,7 +268,13 @@ function ClipSlide({
               setProgress(el.currentTime / el.duration)
               if (active && el.currentTime >= 1 && !viewCountedRef.current) {
                 viewCountedRef.current = true
-                recordView(item.id)
+                recordView(item.id, {
+                  creatorId,
+                  title: item.title,
+                  actorId: user?.id || null,
+                  surface: 'clips',
+                  contentType: 'short',
+                })
               }
               if (active && user?.id && el.duration && el.currentTime / el.duration >= 0.92) {
                 recordWatchProgress(user.id, {
@@ -269,6 +296,9 @@ function ClipSlide({
                   type: 'loop',
                   tags: item.tags || [],
                   creatorId,
+                  title: item.title,
+                  surface: 'clips',
+                  contentType: 'short',
                 })
                 setTimeout(() => { looped.current = false }, 400)
               }
@@ -506,6 +536,9 @@ export default function ShortsFeed({
             type: waited < 2000 ? 'early_skip' : 'skip',
             tags: prev.tags || [],
             creatorId: prev.creatorId || prev.userId,
+            title: prev.title,
+            surface: 'clips',
+            contentType: 'short',
           })
         }
         shownAt.current = Date.now()

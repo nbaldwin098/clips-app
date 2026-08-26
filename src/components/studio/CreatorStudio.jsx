@@ -243,7 +243,7 @@ export default function CreatorStudio({
   const [restoreBusy, setRestoreBusy] = useState(false)
   const [restoreNote, setRestoreNote] = useState('')
   const [deletingId, setDeletingId] = useState(null)
-  const [showHub, setShowHub] = useState(true)
+  const [showHub, setShowHub] = useState(false)
 
   useEffect(() => {
     if (initialSection) setSection(initialSection)
@@ -256,6 +256,13 @@ export default function CreatorStudio({
   useEffect(() => {
     if (user?.id) setOnboardingDone(lsGet(`calabi_onboarding_done_${user.id}`, false))
   }, [user?.id])
+
+  useEffect(() => {
+    if (!user?.id || user.provider !== 'supabase') return
+    import('../../lib/graphSync').then(({ syncCreatorInteractionsFromCloud }) => {
+      syncCreatorInteractionsFromCloud?.().catch(() => {})
+    }).catch(() => {})
+  }, [user?.id, user?.provider])
 
   const finishOnboarding = () => {
     if (user?.id) lsSet(`calabi_onboarding_done_${user.id}`, true)
@@ -287,7 +294,7 @@ export default function CreatorStudio({
 
   const bubbles = useMemo(
     () => buildInteractionBubbles(user?.id, posts, { contentId: selectedPostId, range }),
-    [user?.id, posts, selectedPostId, range]
+    [user?.id, posts, selectedPostId, range, syncTick]
   )
 
   const openPost = (c) => {
@@ -503,17 +510,17 @@ export default function CreatorStudio({
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setShowHub(true)}
-                  className={cn('h-8 px-3 text-xs font-semibold', showHub ? 'bg-white text-black' : 'border border-zinc-700 text-zinc-300')}
-                >
-                  <span className="inline-flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5" /> Hub</span>
-                </button>
-                <button
-                  type="button"
                   onClick={() => setShowHub(false)}
                   className={cn('h-8 px-3 text-xs font-semibold', !showHub ? 'bg-white text-black' : 'border border-zinc-700 text-zinc-300')}
                 >
                   Activity map
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowHub(true)}
+                  className={cn('h-8 px-3 text-xs font-semibold', showHub ? 'bg-white text-black' : 'border border-zinc-700 text-zinc-300')}
+                >
+                  <span className="inline-flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5" /> Hub</span>
                 </button>
               </div>
               {showHub ? (

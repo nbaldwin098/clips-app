@@ -1,5 +1,10 @@
 import { useMemo, useState, useRef, useEffect } from 'react'
-import { INTERACTION_TYPES, summarizeBubbles } from '../../lib/creatorInteractions'
+import {
+  INTERACTION_TYPES,
+  SURFACE_LABELS,
+  CONTENT_TYPE_LABELS,
+  summarizeBubbles,
+} from '../../lib/creatorInteractions'
 import { cn } from '../../lib/utils'
 
 const RANGES = [
@@ -39,6 +44,13 @@ function formatWhen(ms) {
   return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
+function whereLabel(node) {
+  const surface = SURFACE_LABELS[node.surface] || SURFACE_LABELS.unknown
+  const kind = CONTENT_TYPE_LABELS[node.contentType] || null
+  if (kind && node.contentType !== 'channel') return `${surface} · ${kind}`
+  return surface
+}
+
 export default function InteractionBubbleMap({
   nodes = [],
   range = '7d',
@@ -51,6 +63,7 @@ export default function InteractionBubbleMap({
   const [size, setSize] = useState({ w: 640, h: 420 })
   const [hover, setHover] = useState(null)
   const [filter, setFilter] = useState('all')
+  const [surfaceFilter, setSurfaceFilter] = useState('all')
   const [zoom, setZoom] = useState(1)
 
   useEffect(() => {
@@ -69,21 +82,27 @@ export default function InteractionBubbleMap({
   const filtered = useMemo(() => {
     let list = nodes
     if (filter !== 'all') list = list.filter((n) => n.type === filter)
+    if (surfaceFilter !== 'all') list = list.filter((n) => (n.surface || 'unknown') === surfaceFilter)
     return list
-  }, [nodes, filter])
+  }, [nodes, filter, surfaceFilter])
 
   const laid = useMemo(() => layoutBubbles(filtered, size.w / zoom, size.h / zoom), [filtered, size, zoom])
   const summary = useMemo(() => summarizeBubbles(filtered), [filtered])
+  const surfacesPresent = useMemo(() => {
+    const set = new Set()
+    for (const n of nodes) if (n.surface) set.add(n.surface)
+    return [...set]
+  }, [nodes])
 
   return (
     <div className="h-full min-h-0 flex flex-col bg-[#0a0a0e] border border-zinc-800">
       <div className="shrink-0 flex flex-wrap items-center gap-2 px-3 py-2.5 border-b border-zinc-800">
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-white truncate">
-            Interaction map{postTitle ? ` · ${postTitle}` : ''}
+            Where people interacted{postTitle ? ` · ${postTitle}` : ''}
           </p>
           <p className="text-[11px] text-zinc-500">
-            When people clicked, liked, followed, shared, commented, or skipped your posts
+            How: view, like, follow, share, comment, skip · Where: watch, clips, pics
             {summary.nodes ? ` · ${summary.nodes} bubbles` : ''}
           </p>
         </div>
@@ -113,7 +132,7 @@ export default function InteractionBubbleMap({
             filter === 'all' ? 'border-white text-white' : 'border-zinc-800 text-zinc-500 hover:text-white'
           )}
         >
-          All
+          All how
         </button>
         {INTERACTION_TYPES.map((t) => (
           <button
@@ -129,16 +148,54 @@ export default function InteractionBubbleMap({
             {t.short}
           </button>
         ))}
-        {selectedPostId ? (
+      </div>
+
+      {surfacesPresent.length > 1 ? (
+        <div className="shrink-0 flex flex-wrap gap-1.5 px-3 py-2 border-b border-zinc-800/80">
+          <button
+            type="button"
+            onClick={() => setSurfaceFilter('all')}
+            className={cn(
+              'h-7 px-2.5 text-[11px] font-medium border',
+              surfaceFilter === 'all' ? 'border-white text-white' : 'border-zinc-800 text-zinc-500'
+            )}
+          >
+            All where
+          </button>
+          {surfacesPresent.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setSurfaceFilter(s)}
+              className={cn(
+                'h-7 px-2.5 text-[11px] font-medium border',
+                surfaceFilter === s ? 'border-white text-white' : 'border-zinc-800 text-zinc-500'
+              )}
+            >
+              {SURFACE_LABELS[s] || s}
+            </button>
+          ))}
+          {selectedPostId ? (
+            <button
+              type="button"
+              onClick={() => onSelectPost?.(null)}
+              className="h-7 px-2.5 text-[11px] font-medium border border-zinc-700 text-zinc-300 ml-auto"
+            >
+              Clear post filter
+            </button>
+          ) : null}
+        </div>
+      ) : selectedPostId ? (
+        <div className="shrink-0 px-3 py-2 border-b border-zinc-800/80">
           <button
             type="button"
             onClick={() => onSelectPost?.(null)}
-            className="h-7 px-2.5 text-[11px] font-medium border border-zinc-700 text-zinc-300 ml-auto"
+            className="h-7 px-2.5 text-[11px] font-medium border border-zinc-700 text-zinc-300"
           >
             Clear post filter
           </button>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
       <div ref={wrapRef} className="relative flex-1 min-h-[280px] overflow-hidden">
         {!laid.length ? (
@@ -146,7 +203,7 @@ export default function InteractionBubbleMap({
             <div>
               <p className="text-sm text-zinc-300">No interactions in this range yet</p>
               <p className="text-xs text-zinc-500 mt-1 max-w-sm">
-                Bubbles appear as people watch, like, follow, share, comment, or skip your posts. Tallies from older traffic may show as larger seeded bubbles.
+                Bubbles show up when people open, like, follow, share, comment, or skip your posts — on watch, clips, or pics.
               </p>
             </div>
           </div>
@@ -166,7 +223,6 @@ export default function InteractionBubbleMap({
             </defs>
             <rect width="100%" height="100%" fill="url(#studio-grid)" />
 
-            {/* Time axis label */}
             <text x="48" y={(size.h / zoom) - 12} fill="#52525b" fontSize="10">Earlier</text>
             <text x={(size.w / zoom) - 48} y={(size.h / zoom) - 12} fill="#52525b" fontSize="10" textAnchor="end">Recent</text>
 
@@ -219,7 +275,8 @@ export default function InteractionBubbleMap({
               top: Math.max(8, (hover.y * zoom) - 70),
             }}
           >
-            <p className="text-xs font-semibold text-white">{hover.short} · {hover.title}</p>
+            <p className="text-xs font-semibold text-white">{hover.label} · {hover.title}</p>
+            <p className="text-[11px] text-zinc-300 mt-0.5">Where: {whereLabel(hover)}</p>
             <p className="text-[11px] text-zinc-400 mt-0.5">{formatWhen(hover.at)}</p>
             <p className="text-[11px] text-zinc-500 mt-1">
               {hover.count ? `${hover.count} total` : `Weight ${hover.weight}`}

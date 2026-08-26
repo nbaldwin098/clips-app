@@ -276,8 +276,14 @@ export default function WatchPage({
     if (!item?.id || viewCountedRef.current) return
     if (currentTime < 1) return
     viewCountedRef.current = true
-    setViews(recordView(item.id))
-  }, [item?.id])
+    setViews(recordView(item.id, {
+      creatorId: item.creatorId || item.userId,
+      title: item.title,
+      actorId: user?.id || null,
+      surface: 'watch',
+      contentType: item.type === 'video' ? 'video' : 'short',
+    }))
+  }, [item?.id, item?.creatorId, item?.userId, item?.title, item?.type, user?.id])
 
   const onIframeLoad = useCallback(() => {
     if (iframeViewTimerRef.current) clearTimeout(iframeViewTimerRef.current)
@@ -400,14 +406,19 @@ export default function WatchPage({
       setCopied(withTime ? 'time' : 'link')
       setTimeout(() => setCopied(''), 1600)
       if (user?.id) {
-        recordInteraction(user.id, { contentId: item.id, type: 'share', tags: item.tags || [], creatorId: item.creatorId })
+        recordInteraction(user.id, { contentId: item.id, type: 'share', tags: item.tags || [], creatorId: item.creatorId, title: item.title, surface: 'watch', contentType: item.type === 'video' ? 'video' : 'short' })
       }
     } catch {}
   }
 
   const vote = (dir) => {
     if (!isAuthenticated) { onOpenAuth?.(); return }
-    const next = toggleVote(user.id, item.id, dir)
+    const next = toggleVote(user.id, item.id, dir, {
+      creatorId: item.creatorId || item.userId,
+      title: item.title,
+      surface: 'watch',
+      contentType: item.type === 'video' ? 'video' : 'short',
+    })
     setVotes({ ...next })
     setMyVote(getUserVote(user.id, item.id))
     recordInteraction(user.id, {
@@ -415,6 +426,9 @@ export default function WatchPage({
       type: dir === 'up' ? 'upvote' : 'downvote',
       tags: item.tags || [],
       creatorId: item.creatorId,
+      title: item.title,
+      surface: 'watch',
+      contentType: item.type === 'video' ? 'video' : 'short',
     })
   }
 

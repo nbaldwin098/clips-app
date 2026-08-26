@@ -79,6 +79,52 @@ export function pushVote(userId, contentId, direction) {
   })()
 }
 
+/** Push one creator-facing interaction (bubble map). Actor must be signed in. */
+export function pushCreatorInteraction(row) {
+  if (!canSync() || !row?.id || !row.creatorId || !row.type) return
+  if (row.actorId && row.actorId !== actor.id) return
+  ;(async () => {
+    const sb = await client()
+    if (!sb) return
+    try {
+      await sb.from('creator_interactions').upsert({
+        id: row.id,
+        creator_id: row.creatorId,
+        content_id: row.contentId || null,
+        type: row.type,
+        actor_id: row.actorId || actor.id,
+        title: row.title || '',
+        weight: Math.max(1, Number(row.weight) || 1),
+        surface: row.surface || 'unknown',
+        content_type: row.contentType || null,
+        source: row.source || 'live',
+        at: row.at || new Date().toISOString(),
+      })
+    } catch {}
+  })()
+}
+
+/** Pull interactions aimed at the signed-in creator into local storage. */
+export async function syncCreatorInteractionsFromCloud() {
+  if (!canSync()) return false
+  const sb = await client()
+  if (!sb) return false
+  try {
+    const { data, error } = await sb
+      .from('creator_interactions')
+      .select('*')
+      .eq('creator_id', actor.id)
+      .order('at', { ascending: false })
+      .limit(1500)
+    if (error || !data) return false
+    const { mergeCreatorInteractionsFromCloud } = await import('./creatorInteractions')
+    mergeCreatorInteractionsFromCloud(data)
+    return true
+  } catch {
+    return false
+  }
+}
+
 export function pushComment(contentId, row) {
   if (!canSync() || !row?.id || row.userId !== actor.id) return
   ;(async () => {
@@ -374,6 +420,7 @@ export async function syncGraphFromCloud() {
     if (!comments.error && comments.data) applyComments(comments.data)
     if (!playlists.error && playlists.data) applyPlaylists(playlists.data)
     if (!notifs.error && notifs.data) applyNotifications(notifs.data)
+    try { await syncCreatorInteractionsFromCloud() } catch {}
     emit()
     pushMine()
     return true
