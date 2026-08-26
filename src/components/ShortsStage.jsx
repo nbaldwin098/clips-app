@@ -39,6 +39,7 @@ export default function ShortsStage({
   const jumping = useRef(false)
   const lastStart = useRef(null)
   const lastCount = useRef(n)
+  const lastWheel = useRef(0)
   const [reelPos, setReelPos] = useState(0)
 
   const pageHeight = () => scrollerRef.current?.clientHeight || 1
@@ -156,6 +157,26 @@ export default function ShortsStage({
     if (!n) return
     goTo((activeIndex + dir + n) % n)
   }, [activeIndex, n, goTo])
+
+  // Desktop: wheel over <video> often never reaches the scroller.
+  // Force snap steps so the reel always moves.
+  useEffect(() => {
+    const el = scrollerRef.current
+    if (!el || !n) return undefined
+    const onWheel = (e) => {
+      if (Math.abs(e.deltaY) < 10) return
+      const now = Date.now()
+      if (now - lastWheel.current < 380) {
+        e.preventDefault()
+        return
+      }
+      lastWheel.current = now
+      e.preventDefault()
+      step(e.deltaY > 0 ? 1 : -1)
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [step, n])
 
   useEffect(() => {
     const onKey = (e) => {
