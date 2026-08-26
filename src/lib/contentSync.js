@@ -289,6 +289,10 @@ export async function syncContentFromCloud(actor = null) {
     }))
     // Cloud truth wins — clear false "broken" hides so posts reappear after sync.
     unhideBrokenMedia(rows.map((r) => r.id))
+    try {
+      const { snapshotCatalogBackup } = await import('./catalogBackup')
+      snapshotCatalogBackup('after-sync')
+    } catch { /* ok */ }
   } else {
     // Empty/failed pull must not wipe, but the UI needs a hydrated signal.
     markCatalogHydrated()

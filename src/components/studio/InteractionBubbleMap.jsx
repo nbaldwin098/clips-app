@@ -268,22 +268,26 @@ export default function InteractionBubbleMap({
 
   // Layout stays inside the box; zoom/pan are a camera clamped to the frame.
   const laid = useMemo(
-    () => layoutBubbleNetwork(population.nodes, size.w, size.h, { pad: 64 }),
+    () => layoutBubbleNetwork(population.nodes, size.w, size.h, { pad: 80 }),
     [population.nodes, size.w, size.h]
   )
   const bounds = useMemo(() => contentBounds(laid), [laid])
   const fitZ = useMemo(
-    () => fitZoomForBounds(bounds, size.w, size.h, { pad: 10 }),
+    () => fitZoomForBounds(bounds, size.w, size.h, { pad: 14 }),
     [bounds, size.w, size.h]
   )
 
   useEffect(() => {
-    setZoom(1)
+    setZoom(fitZ)
     setPan({ x: 0, y: 0 })
   }, [selectedPostId, population.total, size.w, size.h, filter])
 
   useEffect(() => {
-    setZoom((z) => clampBubbleZoom(z, fitZ, 24))
+    // Snap to fit when still at the default camera; otherwise only enforce min/max.
+    setZoom((z) => {
+      if (!Number.isFinite(z) || z <= 1.001) return fitZ
+      return clampBubbleZoom(z, fitZ, 24)
+    })
   }, [fitZ])
 
   useEffect(() => {
@@ -310,10 +314,11 @@ export default function InteractionBubbleMap({
     })
   }, [edgesBase, laid.nodes, hubId])
 
+  // Pan background only — never capture pointer (steals bubble clicks).
   const onPointerDown = useCallback((e) => {
     if (e.button !== 0) return
+    if (e.target?.closest?.('[data-bubble-node]')) return
     dragRef.current = { px: e.clientX, py: e.clientY, ox: pan.x, oy: pan.y }
-    e.currentTarget.setPointerCapture?.(e.pointerId)
   }, [pan])
 
   const onPointerMove = useCallback((e) => {
@@ -361,7 +366,7 @@ export default function InteractionBubbleMap({
     return () => el.removeEventListener('wheel', onWheel)
   }, [onWheel])
 
-  const resetView = () => { setZoom(1); setPan({ x: 0, y: 0 }) }
+  const resetView = () => { setZoom(fitZ); setPan({ x: 0, y: 0 }) }
 
   const title = postTitle || selectedPost?.title || hubMeta?.label || 'Post'
   const viewCount = Number(summary.byType?.view) || 0

@@ -759,9 +759,23 @@ export async function publishDraftItem(id, actor = null) {
   return { ok: true, item: normalizeItem(next) }
 }
 
-export async function deleteCatalogItem(id, actor = null) {
+/**
+ * Permanently remove a catalog post (session + cloud + hosted media).
+ * Requires `{ intentional: true }` so media-error / health paths can never wipe posts.
+ * Snapshots a local backup before deleting.
+ */
+export async function deleteCatalogItem(id, actor = null, opts = {}) {
   if (!id) return { ok: false, error: 'Missing id' }
+  if (!opts?.intentional) {
+    console.warn('[Clips] Refused deleteCatalogItem without intentional:true', id)
+    return { ok: false, error: 'intentional-required' }
+  }
   const raw = getImports().find((i) => i.id === id) || null
+
+  try {
+    const { snapshotCatalogBackup } = await import('./catalogBackup')
+    snapshotCatalogBackup('before-delete')
+  } catch { /* ok */ }
 
   removeImport(id)
   notifyContentChanged()

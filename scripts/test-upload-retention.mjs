@@ -91,4 +91,21 @@ for (let i = 0; i < 12; i += 1) {
   assert.ok(ids.has(`up_test_${i}`), `upload ${i} survived cloud merge`)
 }
 
+// Safety: accidental deleteCatalogItem without intentional:true must refuse.
+const { deleteCatalogItem } = await import('../src/lib/contentService.js')
+const { snapshotCatalogBackup, restoreCatalogBackup, getCatalogBackupMeta } = await import('../src/lib/catalogBackup.js')
+snapshotCatalogBackup('test')
+const before = getImports().length
+const refused = await deleteCatalogItem('up_test_1', null)
+assert.equal(refused.ok, false, 'delete without intentional flag is refused')
+assert.ok(getImports().some((r) => r.id === 'up_test_1'), 'refused delete leaves the post')
+const intentional = await deleteCatalogItem('up_test_2', null, { intentional: true })
+assert.equal(intentional.ok, true, 'intentional delete is allowed')
+assert.ok(!getImports().some((r) => r.id === 'up_test_2'), 'intentional delete removes the post')
+const meta = getCatalogBackupMeta()
+assert.ok(meta?.count > 0, 'backup exists after intentional delete path')
+const restored = restoreCatalogBackup()
+assert.ok(restored.ok, 'backup restore works')
+assert.ok(getImports().length >= before - 1, 'restore brings catalog rows back')
+
 console.log('ok upload retention regressions')

@@ -6,6 +6,8 @@ import {
   Radio,
   ThumbsUp,
   ThumbsDown,
+  Users,
+  Activity,
   X,
   ChevronLeft,
 } from 'lucide-react'
@@ -18,6 +20,7 @@ import {
   clampPanToBox,
   formatCompactCount,
 } from '../../lib/bubbleEngine'
+import { recordView } from '../../lib/engagement'
 
 const FACET_META = {
   videos: {
@@ -56,6 +59,18 @@ const FACET_META = {
     Icon: ThumbsDown,
     blurb: 'Posts with negative votes.',
   },
+  creators: {
+    label: 'Creators',
+    color: '#fbbf24',
+    Icon: Users,
+    blurb: 'People who have posted on the site.',
+  },
+  interactions: {
+    label: 'Interactions',
+    color: '#22d3ee',
+    Icon: Activity,
+    blurb: 'Posts that picked up views, likes, and other actions.',
+  },
 }
 
 function shortTitle(title, fallback = 'Untitled') {
@@ -73,11 +88,16 @@ function buildChildPeople(facetId, buckets) {
     const weight = Math.max(1, Number(row.weight) || 1)
     return {
       id: row.id || `${facetId}_${i}`,
-      kind: 'item',
+      kind: facetId === 'creators' ? 'creator' : 'item',
       facetId,
-      contentId: row.contentId || row.id,
-      contentType: row.contentType || null,
-      displayName: shortTitle(row.title || row.label || row.handle || meta.label),
+      contentId: row.contentId || (facetId === 'creators' ? null : row.id),
+      creatorId: row.creatorId || (facetId === 'creators' ? row.id : null),
+      contentType: row.contentType || (facetId === 'creators' ? 'creator' : null),
+      displayName: shortTitle(
+        facetId === 'creators'
+          ? (row.displayName || row.handle || meta.label)
+          : (row.title || row.label || row.handle || meta.label)
+      ),
       handle: row.handle || '',
       weight,
       eventCount: weight,
@@ -86,7 +106,7 @@ function buildChildPeople(facetId, buckets) {
       primaryLabel: meta.label,
       color: meta.color,
       short: meta.label.slice(0, 1),
-      thumbUrl: row.thumbUrl || null,
+      thumbUrl: row.thumbUrl || row.avatarUrl || null,
       raw: row,
     }
   })
@@ -99,6 +119,7 @@ function buildChildPeople(facetId, buckets) {
 /**
  * Site-wide bubble for Stats → More.
  * Overview: facet hubs. Click a facet → expand into all item bubbles for that section.
+ * Opening an item logs a view the same way Creator Studio analytics tracks surfaces.
  */
 export default function SiteBubbleMap({
   videos = 0,
@@ -107,6 +128,8 @@ export default function SiteBubbleMap({
   lives = 0,
   likes = 0,
   dislikes = 0,
+  creators = 0,
+  interactions = 0,
   buckets = null,
   onNavigate = null,
 }) {
@@ -119,6 +142,7 @@ export default function SiteBubbleMap({
   const [selectedItem, setSelectedItem] = useState(null)
   const dragRef = useRef(null)
   const movedRef = useRef(false)
+  const fitZRef = useRef(1)
 
   const overviewNodes = useMemo(() => ([
     { id: 'videos', value: videos, weight: Math.max(1, videos), kind: 'facet', ...FACET_META.videos },
@@ -127,7 +151,9 @@ export default function SiteBubbleMap({
     { id: 'lives', value: lives, weight: Math.max(1, lives), kind: 'facet', ...FACET_META.lives },
     { id: 'likes', value: likes, weight: Math.max(1, likes), kind: 'facet', ...FACET_META.likes },
     { id: 'dislikes', value: dislikes, weight: Math.max(1, dislikes), kind: 'facet', ...FACET_META.dislikes },
-  ]), [videos, clips, pics, lives, likes, dislikes])
+    { id: 'creators', value: creators, weight: Math.max(1, creators), kind: 'facet', ...FACET_META.creators },
+    { id: 'interactions', value: interactions, weight: Math.max(1, interactions), kind: 'facet', ...FACET_META.interactions },
+  ]), [videos, clips, pics, lives, likes, dislikes, creators, interactions])
 
   const childPop = useMemo(() => {
     if (!expandedId) return null
@@ -165,28 +191,26 @@ export default function SiteBubbleMap({
   }, [])
 
   const laid = useMemo(
-    () => layoutBubbleNetwork(activePeople, size.w, size.h, { pad: 72 }),
+    () => layoutBubbleNetwork(activePeople, size.w, size.h, { pad: 88 }),
     [activePeople, size.w, size.h]
   )
   const bounds = useMemo(() => contentBounds(laid), [laid])
   const fitZ = useMemo(
-    () => fitZoomForBounds(bounds, size.w, size.h, { pad: 8 }),
+    () => fitZoomForBounds(bounds, size.w, size.h, { pad: 14 }),
     [bounds, size.w, size.h]
   )
+  fitZRef.current = fitZ
 
   const keepHubInView = useCallback((nextZoom, nextPan) => {
     return clampPanToBox(nextPan, nextZoom, size, bounds)
   }, [bounds, size])
 
+  // Default camera to fit — never leave zoom at 1 when content needs to shrink.
   useEffect(() => {
-    setZoom(1)
+    setZoom(fitZ)
     setPan({ x: 0, y: 0 })
     setSelectedItem(null)
-  }, [size.w, size.h, expandedId, activePeople.length])
-
-  useEffect(() => {
-    setZoom((z) => clampBubbleZoom(z, fitZ, 8))
-  }, [fitZ])
+  }, [size.w, size.h, expandedId, activePeople.length, fitZ])
 
   useEffect(() => {
     setPan((p) => keepHubInView(zoom, p))
@@ -224,11 +248,12 @@ export default function SiteBubbleMap({
     return () => el.removeEventListener('wheel', onWheel)
   }, [zoomAt])
 
+  // Pan only — never capture the pointer (that steals clicks from SVG bubbles).
   const onPointerDown = (e) => {
     if (e.button !== 0) return
+    if (e.target?.closest?.('[data-bubble-node]')) return
     movedRef.current = false
     dragRef.current = { px: e.clientX, py: e.clientY, ox: pan.x, oy: pan.y }
-    e.currentTarget.setPointerCapture?.(e.pointerId)
   }
   const onPointerMove = (e) => {
     const d = dragRef.current
@@ -241,30 +266,52 @@ export default function SiteBubbleMap({
 
   const openFacet = (id) => {
     if (movedRef.current) return
+    if (!FACET_META[id]) return
     setExpandedId(id)
     setSelectedItem(null)
   }
 
-  const onNodeClick = (n) => {
+  const onNodeActivate = (n) => {
     if (movedRef.current) return
     if (!expandedId) {
       openFacet(n.id)
       return
     }
-    if (n.isCluster || n.kind === 'cluster') {
-      setSelectedItem(n)
-      return
-    }
     setSelectedItem(n)
   }
 
+  const trackAndOpen = (item) => {
+    if (!item) return
+    if (item.kind === 'creator' || item.contentType === 'creator' || expandedId === 'creators') {
+      const handle = String(item.handle || item.raw?.handle || '').replace(/^@/, '')
+      const uid = item.creatorId || item.id
+      if (handle || uid) onNavigate?.('profile', handle || uid, uid ? { u: uid } : null)
+      return
+    }
+    if (item.contentType === 'live' || expandedId === 'lives') {
+      onNavigate?.('live')
+      return
+    }
+    const contentId = item.contentId
+    if (!contentId) return
+    try {
+      recordView(contentId, {
+        title: item.displayName || item.raw?.title || '',
+        surface: 'stats',
+        contentType: item.contentType || null,
+        creatorId: item.creatorId || item.raw?.creatorId || null,
+      })
+    } catch { /* ok */ }
+    const type = item.contentType
+    if (type === 'pic') onNavigate?.('pics', contentId)
+    else if (type === 'short') onNavigate?.('clips', contentId)
+    else onNavigate?.('watch', contentId)
+  }
+
   const openSelected = () => {
-    if (!selectedItem?.contentId) return
-    const type = selectedItem.contentType
-    if (type === 'pic') onNavigate?.('pics', selectedItem.contentId)
-    else if (type === 'short') onNavigate?.('clips', selectedItem.contentId)
-    else if (type === 'live') onNavigate?.('live')
-    else onNavigate?.('watch', selectedItem.contentId)
+    if (!selectedItem) return
+    if (selectedItem.isCluster || selectedItem.kind === 'cluster') return
+    trackAndOpen(selectedItem)
   }
 
   const facetMeta = expandedId ? FACET_META[expandedId] : null
@@ -280,7 +327,7 @@ export default function SiteBubbleMap({
           <p className="text-xs text-zinc-500 mt-0.5">
             {expandedId
               ? `${formatCompactCount(childCount)} in this section${childPop?.aggregated ? ` · showing ${childPop.shown} + cluster` : ''} · click a bubble`
-              : 'Click Videos, Clips, Pics, Lives, Likes, or Dislikes to expand into every bubble'}
+              : 'Click Videos, Clips, Pics, Lives, Likes, Dislikes, Creators, or Interactions to expand'}
           </p>
         </div>
         {expandedId ? (
@@ -296,7 +343,7 @@ export default function SiteBubbleMap({
 
       <div
         ref={wrapRef}
-        className="relative h-[min(55vh,520px)] min-h-[320px] overflow-hidden cursor-grab active:cursor-grabbing touch-none"
+        className="relative h-[min(55vh,520px)] min-h-[320px] overflow-hidden cursor-grab active:cursor-grabbing touch-none select-none"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -333,9 +380,10 @@ export default function SiteBubbleMap({
               stroke={n.color || hubColor}
               strokeOpacity="0.35"
               strokeWidth="1.5"
+              pointerEvents="none"
             />
           ))}
-          <g transform={`translate(${laid.hub.x}, ${laid.hub.y})`}>
+          <g transform={`translate(${laid.hub.x}, ${laid.hub.y})`} pointerEvents="none">
             <circle r={laid.hub.size / 2 + 10} fill="none" stroke="#ffffff" strokeOpacity="0.15" strokeWidth="2" />
             <circle r={laid.hub.size / 2} fill={expandedId ? '#121218' : '#f4f4f5'} stroke={hubColor} strokeWidth={expandedId ? 2 : 0} />
             <text
@@ -356,23 +404,39 @@ export default function SiteBubbleMap({
             return (
               <g
                 key={n.id}
+                data-bubble-node="1"
                 transform={`translate(${n.x}, ${n.y})`}
                 className="cursor-pointer"
+                style={{ pointerEvents: 'auto' }}
+                onPointerDown={(e) => {
+                  e.stopPropagation()
+                  movedRef.current = false
+                  dragRef.current = null
+                }}
+                onPointerUp={(e) => {
+                  e.stopPropagation()
+                  if (movedRef.current) return
+                  onNodeActivate(n)
+                }}
+                onClick={(e) => {
+                  // Fallback for environments that synthesize click without pointerup ordering quirks.
+                  e.stopPropagation()
+                  e.preventDefault()
+                }}
                 onMouseEnter={() => setHover(n)}
                 onMouseLeave={() => setHover(null)}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onNodeClick(n)
-                }}
               >
+                {/* Invisible hit target larger than the visual bubble */}
+                <circle r={Math.max(n.size / 2 + 14, 22)} fill="transparent" />
                 <circle
                   r={n.size / 2 + 3}
                   fill="none"
                   stroke={isSel ? '#ffffff' : (n.color || '#a1a1aa')}
                   strokeWidth={isSel ? 3 : 2.5}
                   strokeDasharray={isCluster ? '4 3' : undefined}
+                  pointerEvents="none"
                 />
-                <circle r={n.size / 2} fill="#121218" />
+                <circle r={n.size / 2} fill="#121218" pointerEvents="none" />
                 {n.thumbUrl && !isCluster ? (
                   <image
                     href={n.thumbUrl}
@@ -382,6 +446,7 @@ export default function SiteBubbleMap({
                     height={n.size}
                     clipPath={`url(#site_clip_${n.id})`}
                     preserveAspectRatio="xMidYMid slice"
+                    pointerEvents="none"
                   />
                 ) : (
                   <text
@@ -390,6 +455,7 @@ export default function SiteBubbleMap({
                     fill={n.color || '#e4e4e7'}
                     fontSize={isFacet ? 10 : 9}
                     fontWeight="700"
+                    pointerEvents="none"
                   >
                     {isCluster
                       ? formatCompactCount(n.clusterSize || n.weight || 0)
@@ -398,7 +464,7 @@ export default function SiteBubbleMap({
                         : (label.replace(/^@/, '')[0] || '?').toUpperCase()}
                   </text>
                 )}
-                <text y={n.size / 2 + 14} textAnchor="middle" fill="#d4d4d8" fontSize="9" fontWeight="600">
+                <text y={n.size / 2 + 14} textAnchor="middle" fill="#d4d4d8" fontSize="9" fontWeight="600" pointerEvents="none">
                   {isFacet ? (n.label || label) : (label.length > 14 ? `${label.slice(0, 13)}…` : label)}
                 </text>
               </g>
@@ -407,7 +473,7 @@ export default function SiteBubbleMap({
         </svg>
 
         {hover && !selectedItem ? (
-          <div className="pointer-events-none absolute left-4 bottom-4 border border-zinc-700 bg-[#0e0e14]/95 px-3 py-2 max-w-xs">
+          <div className="pointer-events-none absolute left-4 bottom-4 border border-zinc-700 bg-[#0e0e14]/95 px-3 py-2 max-w-xs z-10">
             <p className="text-xs font-semibold text-white truncate">
               {hover.displayName || hover.label}
             </p>
@@ -421,7 +487,7 @@ export default function SiteBubbleMap({
           </div>
         ) : null}
 
-        <div className="absolute bottom-3 right-3 flex flex-col gap-1">
+        <div className="absolute bottom-3 right-3 flex flex-col gap-1 z-10">
           <button
             type="button"
             onClick={() => {
@@ -444,7 +510,7 @@ export default function SiteBubbleMap({
           </button>
           <button
             type="button"
-            onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }) }}
+            onClick={() => { setZoom(fitZRef.current); setPan({ x: 0, y: 0 }) }}
             className="h-8 w-8 border border-zinc-700 bg-[#121218] text-white text-[10px] font-bold"
           >
             ⟲
@@ -470,7 +536,7 @@ export default function SiteBubbleMap({
                     ? `@${String(selectedItem.handle).replace(/^@/, '')}`
                     : 'Catalog item'}
               </p>
-              {selectedItem.contentId && !(selectedItem.isCluster || selectedItem.kind === 'cluster') ? (
+              {!(selectedItem.isCluster || selectedItem.kind === 'cluster') ? (
                 <button
                   type="button"
                   onClick={openSelected}
@@ -495,7 +561,7 @@ export default function SiteBubbleMap({
       {!expandedId ? (
         <div className="border-t border-zinc-800 px-4 py-3 bg-[#0c0c12]">
           <p className="text-[11px] text-zinc-500">
-            Tip: click any section bubble (even at 0) to expand it into individual bubbles.
+            Tip: click any section bubble (even at 0) to expand it. Opening a post logs a view for creator analytics.
           </p>
         </div>
       ) : null}
