@@ -19,6 +19,40 @@ import AdminSetup from './AdminSetup'
 import AdminPeople from './admin/AdminPeople'
 import AdminContent from './admin/AdminContent'
 import AdminSafety from './admin/AdminSafety'
+import { listEscrow, adminReleaseEscrow, adminRefundEscrow } from '../lib/donationEscrow'
+
+function AdminEscrowPanel({ onChange }) {
+  const rows = listEscrow({ limit: 40 })
+  return (
+    <div className="rounded-xl border border-white/10 bg-[#111113] p-4 space-y-2">
+      <p className="text-sm font-medium text-white">Donation request escrow</p>
+      <p className="text-[11px] text-zinc-500">Release Cash after the streamer fulfills the request. 80% to creator.</p>
+      {!rows.length ? <p className="text-xs text-zinc-600">No escrow rows.</p> : null}
+      {rows.map((r) => (
+        <div key={r.id} className="text-xs text-zinc-400 border border-white/5 rounded-lg px-3 py-2 space-y-1">
+          <p>{r.units} Cash · @{r.donorHandle} → {r.creatorId} · {r.status}</p>
+          <p className="text-zinc-500">{r.requestText}</p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className="underline text-white"
+              onClick={() => { adminReleaseEscrow(r.id); onChange?.() }}
+            >
+              Release
+            </button>
+            <button
+              type="button"
+              className="underline"
+              onClick={() => { adminRefundEscrow(r.id); onChange?.() }}
+            >
+              Refund
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 const NAV = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -187,6 +221,7 @@ export default function AdminPortal() {
                 Storage cost is admin-only. When you record a payout, due storage is deducted first;
                 creators only see the net amount paid.
               </p>
+              <AdminEscrowPanel onChange={refresh} />
               <div className="rounded-xl border border-white/10 bg-[#111113] p-4 space-y-2">
                 <p className="text-sm font-medium">Manual payout</p>
                 <input value={payUser} onChange={(e) => setPayUser(e.target.value)} placeholder="User id" className="w-full h-9 rounded bg-black border border-white/10 px-2 text-sm" />
@@ -251,7 +286,10 @@ export default function AdminPortal() {
             </div>
           )}
           {tab === 'live' && (
-            <div className="p-5 text-sm text-zinc-400">Live moderation tools live with stream data.</div>
+            <div className="p-5 space-y-3 text-sm text-zinc-400">
+              <p>Live tools: pools, challenges, Ghost AI (max 1/hour), group streams, and raids run on creator devices.</p>
+              <AdminEscrowPanel onChange={refresh} />
+            </div>
           )}
         </div>
       </div>

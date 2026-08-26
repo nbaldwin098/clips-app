@@ -3,6 +3,9 @@ import { addDonation, postLiveChat, markContentPurchased } from './engagement'
 import { membershipReturnPaid } from './stripeConfig'
 import { startPremiumCheckout } from './checkout'
 import { createNotification } from './notifications'
+import { creditCalabiCash, getTierById, spendCalabiCash, creatorCashShare, usdToCashUnits, hasUsedFirstBuy } from './calabiCash'
+import { CREATOR_REV_SHARE } from './revenueSplit'
+import { createDonationRequest } from './donationEscrow'
 
 const PENDING = 'clips_pending_stripe'
 export const TIP_AMOUNTS = [2, 5, 10, 25]
@@ -79,6 +82,95 @@ export async function startTipCheckout({ user, kind, creatorId, contentId, amoun
   return { ok: !!result.url, url: result.url || '', message: result.message, granted: false }
 }
 
+/** Buy a Calabi Cash tier via the same Payment Link return flow. */
+export async function startCalabiCashCheckout({ user, tierId }) {
+  if (!user?.id) return { ok: false, url: '', message: 'Sign in first.' }
+  const tier = getTierById(tierId)
+  if (!tier) return { ok: false, url: '', message: 'Pick a Cash pack.' }
+  if (tier.once) {
+    if (hasUsedFirstBuy(user.id)) return { ok: false, url: '', message: 'First-Time deal already used.' }
+  }
+  stashPendingStripe({
+    kind: 'calabi_cash',
+    donorId: user.id,
+    handle: user.handle,
+    tierId: tier.id,
+    units: tier.units,
+    amount: tier.usd,
+  })
+  const result = await startPremiumCheckout({
+    already: false,
+    email: user.email || '',
+    reference: `cash:${tier.id}:${tier.units}:${user.id}`.slice(0, 200),
+  })
+  return { ok: !!result.url, url: result.url || '', message: result.message, granted: false }
+}
+
+/**
+ * Tip with Calabi Cash balance (instant, no Stripe).
+ * Optional requestText holds funds in escrow until fulfilled + admin release.
+ */
+export function tipWithCalabiCash({
+  user,
+  creatorId,
+  contentId = '',
+  units,
+  kind = 'live_cash',
+  requestText = '',
+}) {
+  if (!user?.id) return { ok: false, error: 'Sign in first.' }
+  if (!creatorId) return { ok: false, error: 'Missing creator.' }
+  const n = Math.floor(Number(units) || 0)
+  if (n < 1) return { ok: false, error: 'Enter Cash amount.' }
+  if (requestText) {
+    return createDonationRequest({
+      donor: user,
+      creatorId,
+      units: n,
+      requestText,
+      contentId,
+      kind: kind === 'post_cash' ? 'post_request' : 'live_request',
+    })
+  }
+  const spent = spendCalabiCash(user.id, n, {
+    kind,
+    note: contentId || 'tip',
+    targetId: creatorId,
+  })
+  if (!spent.ok) return spent
+  const share = creatorCashShare(n, CREATOR_REV_SHARE)
+  creditCalabiCash(creatorId, share.creator, {
+    kind: 'tip_earn',
+    note: `@${user.handle || 'viewer'}`,
+  })
+  addDonation(creatorId, {
+    fromUserId: user.id,
+    handle: user.handle,
+    amount: n / 100,
+    kind,
+    contentId,
+    cashUnits: n,
+  })
+  if (kind === 'live_cash') {
+    postLiveChat(creatorId, {
+      userId: user.id,
+      handle: user.handle,
+      kind: 'donation',
+      amount: n / 100,
+      text: `tipped ${n} Calabi Cash`,
+    })
+  }
+  createNotification({
+    userId: creatorId,
+    type: 'premium',
+    title: `@${user.handle || 'someone'} tipped ${n} Cash`,
+    body: 'Calabi Cash tip',
+    view: kind === 'live_cash' ? 'live' : 'watch',
+    contentId,
+  })
+  return { ok: true, units: n, creatorReceived: share.creator }
+}
+
 function applyTip(pending) {
   const amount = Number(pending.amount) || 0
   addDonation(pending.creatorId, {
@@ -132,6 +224,17 @@ export function claimStripeReturn(user, params = {}, search = '') {
     if (pending.donorId !== user.id) return { ok: false, kind: '' }
     applyTip(pending)
     return { ok: true, kind: pending.kind, amount: pending.amount }
+  }
+  if (pending?.kind === 'calabi_cash') {
+    if (pending.donorId !== user.id) return { ok: false, kind: '' }
+    const units = Math.floor(Number(pending.units) || usdToCashUnits(pending.amount))
+    creditCalabiCash(user.id, units, {
+      kind: 'purchase',
+      tierId: pending.tierId,
+      usd: pending.amount,
+      note: 'Calabi Cash pack',
+    })
+    return { ok: true, kind: 'calabi_cash', units }
   }
   if (pending?.kind === 'post_purchase') {
     if (pending.donorId === user.id && pending.contentId) markContentPurchased(user.id, pending.contentId)

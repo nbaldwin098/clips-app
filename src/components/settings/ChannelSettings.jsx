@@ -3,8 +3,47 @@ import { getUserSettings, saveUserSettings } from '../../lib/storage'
 import { useAuth } from '../../context/AuthContext'
 import { getIdVerificationForUser, isVerifiedChannel } from '../../lib/verification'
 import { isOfficialCreator } from '../../lib/uiFormat'
+import { SOCIAL_PROVIDERS, getSocialConnects, connectSocial, disconnectSocial } from '../../lib/socialConnects'
 
 const field = 'mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#000000] px-3 text-sm text-zinc-100'
+
+function SocialConnectSection({ userId }) {
+  const [, bump] = useState(0)
+  const connects = getSocialConnects(userId)
+  if (!userId) return null
+  return (
+    <section className="pt-6 border-t border-zinc-800 space-y-4">
+      <h2 className="text-sm font-semibold text-white">Connected socials (post & multi-stream)</h2>
+      <p className="text-xs text-zinc-500">
+        Connect once, then push clips from Calabi Studio or Live with one tap. OAuth tokens are mocked until API keys ship — destinations are saved on this device.
+      </p>
+      <div className="space-y-2 max-w-md">
+        {SOCIAL_PROVIDERS.map((p) => {
+          const row = connects[p.id]
+          return (
+            <div key={p.id} className="flex items-center justify-between gap-2 rounded-lg border border-zinc-800 px-3 py-2">
+              <div>
+                <p className="text-sm text-white">{p.label}</p>
+                <p className="text-[11px] text-zinc-500">{row?.connected ? `@${row.handle || 'connected'}` : 'Not connected'}</p>
+              </div>
+              {row?.connected ? (
+                <button type="button" className="text-xs underline text-zinc-300" onClick={() => { disconnectSocial(userId, p.id); bump((n) => n + 1) }}>Disconnect</button>
+              ) : (
+                <button
+                  type="button"
+                  className="h-8 px-3 rounded-lg bg-white text-black text-xs font-semibold"
+                  onClick={() => { connectSocial(userId, p.id, userId); bump((n) => n + 1) }}
+                >
+                  Connect
+                </button>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
 
 export default function ChannelSettings({ onNavigate }) {
   const { user } = useAuth()
@@ -76,6 +115,8 @@ export default function ChannelSettings({ onNavigate }) {
         </div>
         <p className="text-[11px] text-zinc-500">{saved ? 'Saved' : 'Saved as you type.'}</p>
       </section>
+
+      <SocialConnectSection userId={user?.id} />
 
       <section className="pt-6 border-t border-zinc-800 space-y-3">
         <h2 className="text-sm font-semibold text-white">Verified badge</h2>

@@ -70,6 +70,8 @@ const CreatorStudio = lazy(() => import('./components/studio/CreatorStudio'))
 const WatchPage = lazy(() => import('./components/WatchPage'))
 const AdminPortal = lazy(() => import('./components/AdminPortal'))
 const AdvertiserPortal = lazy(() => import('./components/AdvertiserPortal'))
+const CalabiStudioPage = lazy(() => import('./components/CalabiStudioPage'))
+const CalabiCashShopPage = lazy(() => import('./components/CalabiCashShop'))
 
 const KNOWN_VIEWS = new Set([
   'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
@@ -77,6 +79,7 @@ const KNOWN_VIEWS = new Set([
   'notifications', 'pics', 'checkout', 'creator-apply', 'verify', 'advertise', 'advertiser-portal', 'support', 'admin',
   'analytics', 'channel', 'profile', 'content-rules', 'vods',
   'subscriptions', 'playlists', 'community', 'studio-tools', 'stream-settings',
+  'calabi-studio', 'calabi-cash',
   'legal-tos', 'legal-privacy', 'legal-creator', 'legal-community',
   'watch', 'sound', 'tag', 'create',
 ])
@@ -442,6 +445,10 @@ function AppShell() {
       return <AuthRequired title="Analytics" description="Sign in." onOpenAuth={openAuth} />
     if (view === 'studio-tools' && !isAuthenticated)
       return <AuthRequired title="Studio" description="Sign in." onOpenAuth={openAuth} />
+    if (view === 'calabi-studio' && !isAuthenticated)
+      return <AuthRequired title="Calabi Studio" description="Sign in." onOpenAuth={openAuth} />
+    if (view === 'calabi-cash' && !isAuthenticated)
+      return <AuthRequired title="Calabi Cash" description="Sign in." onOpenAuth={openAuth} />
     if (view === 'vods' && !isAuthenticated)
       return <AuthRequired title="VODs" description="Sign in." onOpenAuth={openAuth} />
     if (view === 'admin' && !isAdminSession(user))
@@ -546,6 +553,12 @@ function AppShell() {
       case 'playlists': return <PlaylistsPage onNavigate={navigate} onOpenAuth={openAuth} onPlayItem={openWatch} onOpenPic={openPic} playlistId={routeId} />
       case 'community': return <CommunityPage onNavigate={navigate} onOpenAuth={openAuth} />
       case 'studio-tools': return <StudioToolsPage onNavigate={navigate} />
+      case 'calabi-studio': return <CalabiStudioPage onNavigate={navigate} />
+      case 'calabi-cash': return (
+        <div className="p-4 md:p-6 max-w-3xl mx-auto">
+          <CalabiCashShopPage />
+        </div>
+      )
       case 'stream-settings': return <StreamSettingsPage onNavigate={navigate} />
       case 'settings': return <SettingsHub section={routeId} onNavigate={navigate} />
       case 'explore': return <ExplorePage onPlayItem={openWatch} onOpenPic={openPic} onOpenTag={openTag} initialQuery={searchQuery} onApplyQuery={setSearchQuery} />

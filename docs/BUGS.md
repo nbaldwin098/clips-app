@@ -51,7 +51,7 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 |----|------|-------|-------|--------|
 | BUG-010 | Live | Live ingest not connected — lobby only | Gate on `VITE_LIVE_INGEST_CONNECTED`; OBS/RTMP/HLS still missing | `open` |
 | BUG-011 | Live | Host ad controls / liveAds stubs after ads removal | LiveView + Stream settings controls removed; thin stubs kept for advertise portal | `done` |
-| BUG-012 | Ads | Decide monetization path: AdSense vs none vs later video ads | Head script PR #102 still open/draft; units not placed | `open` |
+| BUG-012 | Ads | Decide monetization path: AdSense vs none vs later video ads | Head script PR #102; keep tiny stream PiP during ads (`ADSENSE_KEEP_STREAM_PIP`) | `open` |
 | BUG-013 | Ads | Wire AdSense units for clip-feed + pic-feed if keeping AdSense | Need slot IDs; Auto ads off | `blocked` |
 | BUG-014 | Creator Studio | Setup hub / earnings / apply badge not on `main` | Draft PR #93 stale; re-land on current main | `open` |
 | BUG-015 | Creator Studio | Orphan AnalyticsPage / channel branding duplication | Consolidate Account + Channel settings | `open` |
@@ -164,4 +164,15 @@ Rules:
 - Link a PR when status → `doing`  
 - Never delete history — move to Done / Won’t fix  
 
-Last updated: 2026-08-26 (dead ad code strip + smoke rewrite)
+Last updated: 2026-08-26 (platform differentiators foundations: Cash, pools, Ghost AI, Studio)
+
+### Product foundations (shipped partial — need ingest/OAuth/Stripe Cash SKUs)
+
+| ID | Area | Issue | Notes | Status |
+|----|------|-------|-------|--------|
+| BUG-060 | Cash | Calabi Cash wallets + web tiers | Local wallet + Payment Link claim; Stripe Cash products still needed | `partial` |
+| BUG-061 | Live | Pools / Ghost AI / PvP challenges | Device-local state; needs cloud sync for multi-device | `partial` |
+| BUG-062 | Live | Group streams + raids | Invite/request UI; ingest multi-host TBD | `partial` |
+| BUG-063 | Studio | Calabi Studio CapCut parity | Trim/filters/avatar/shell; cloud encode TBD | `partial` |
+| BUG-064 | Social | Multi-stream + one-tap post | Connect mocks; real YT/TikTok OAuth TBD | `partial` |
+| BUG-065 | Escrow | Donation-request admin release | Admin Payouts/Live tab | `partial` |

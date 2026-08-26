@@ -1,4 +1,8 @@
-/** Ads system removed from calabi. */
+/** Ads system removed from calabi — AdSense return planned.
+ * When ads return: keep a tiny PiP of the creator stream visible during the ad,
+ * then restore full-size playback when the ad ends.
+ */
+export const ADSENSE_KEEP_STREAM_PIP = true
 export const AD_PLACEMENTS = []
 export const ALL_PLACEMENTS = []
 export function adsAreRunning() { return false }
@@ -24,7 +28,7 @@ export function listAdApplications() { return [] }
 export function submitAdApplication() { return { ok: false } }
 export function approveAdApplication() { return null }
 export function rejectAdApplication() { return null }
-export function getAdSettings() { return {} }
+export function getAdSettings() { return { keepStreamPip: ADSENSE_KEEP_STREAM_PIP } }
 export function setAdSettings() { return {} }
 export function campaignPlacements() { return [] }
 export function advertiserLogin() { return { ok: false, error: 'Ads removed.' } }

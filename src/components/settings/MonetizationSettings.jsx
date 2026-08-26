@@ -9,6 +9,7 @@ import {
   SettingsButton,
   SettingsSaveHint,
 } from './SettingsTemplates'
+import { REV_SPLIT_COPY } from '../../lib/revenueSplit'
 
 export default function MonetizationSettings({ onNavigate }) {
   const { user } = useAuth()
@@ -24,8 +25,10 @@ export default function MonetizationSettings({ onNavigate }) {
     <div className="space-y-8 pb-8">
       <SettingsPageHeader
         title="Monetization"
-        subtitle="Follow is free for anyone. The only price you set is premium membership for livestream. Stripe still has its own Payment Link amount. Views do not pay a dollar rate."
+        subtitle="Follow is free. Premium memberships and Calabi Cash tips use an 80/20 creator split. Stripe Payment Link amounts are separate until Connect ships."
       />
+
+      <SettingsSection title={REV_SPLIT_COPY.title} description={REV_SPLIT_COPY.body} />
 
       <SettingsSection title="Membership list price">
         <SettingsInput
@@ -41,7 +44,7 @@ export default function MonetizationSettings({ onNavigate }) {
         <SettingsSaveHint />
       </SettingsSection>
 
-      <SettingsSection title="Earn" divider description="Site ads always run, but ad money is not a creator share and no ad earnings show on your dashboard.">
+      <SettingsSection title="Earn" divider description="Site AdSense (when enabled) keeps a tiny live picture during ads, then returns to full stream. Ad money is platform revenue, not a creator share.">
         {!approved ? (
           <SettingsNotice>
             <p>Anyone can create. You have to apply to earn.</p>
@@ -56,6 +59,9 @@ export default function MonetizationSettings({ onNavigate }) {
               </SettingsButton>
               <SettingsButton variant="ghost" onClick={() => onNavigate?.('wallet')}>
                 Wallet
+              </SettingsButton>
+              <SettingsButton variant="ghost" onClick={() => onNavigate?.('calabi-cash')}>
+                Calabi Cash
               </SettingsButton>
             </div>
           </SettingsNotice>

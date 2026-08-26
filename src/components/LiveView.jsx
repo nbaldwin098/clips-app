@@ -13,6 +13,9 @@ import { ensureStreamKey } from '../lib/streamKeys'
 import { archiveEndedLive } from '../lib/vods'
 import { canGoLive } from '../lib/trustSafety'
 import { liveListingBlockedReason, liveIngestConnected } from '../lib/liveIngest'
+import LiveHostTools from './LiveHostTools'
+import CalabiCashShop from './CalabiCashShop'
+import { filterCss, getStreamFilter } from '../lib/streamFilters'
 
 function formatElapsed(startedAt) {
   if (!startedAt) return ''
@@ -38,6 +41,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
   const [sharing, setSharing] = useState(false)
   const [screenError, setScreenError] = useState('')
   const [goLiveError, setGoLiveError] = useState('')
+  const [cashOpen, setCashOpen] = useState(false)
   const screenRef = useRef(null)
 
   const [draftReady, setDraftReady] = useState(false)
@@ -173,6 +177,7 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
   }
 
   const subCount = focusedStream?.userId ? getSubscriberCount(focusedStream.userId) : 0
+  const filterStyle = user?.id ? filterCss(getStreamFilter(user.id).filterId) : ''
   return (
     <div className="p-4 md:p-6 max-w-[1400px] mx-auto space-y-6">
       <div>
@@ -186,7 +191,14 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
       {focusedStream && (
         <div className="rounded-2xl border border-[#23232c] bg-[#121218] overflow-hidden">
           <div className="relative aspect-video w-full bg-gradient-to-br from-[#1a1a24] to-[#0c0c10] flex flex-col items-center justify-center text-center p-6">
-            <video ref={screenRef} className={`absolute inset-0 h-full w-full object-contain bg-black ${sharing ? '' : 'hidden'}`} muted playsInline autoPlay />
+            <video
+              ref={screenRef}
+              className={`absolute inset-0 h-full w-full object-contain bg-black ${sharing ? '' : 'hidden'}`}
+              style={filterStyle ? { filter: filterStyle } : undefined}
+              muted
+              playsInline
+              autoPlay
+            />
             {!sharing && (
               <>
             <div className="absolute top-3 left-3 flex items-center gap-2">
@@ -241,6 +253,24 @@ export default function LiveView({ onOpenCheckout, focusedStream, onFocusStream,
           </div>
         </div>
       )}
+
+      {focusedStream ? (
+        <LiveHostTools
+          focusedStream={focusedStream}
+          liveNow={liveNow}
+          onOpenCash={() => setCashOpen(true)}
+        />
+      ) : null}
+
+      {cashOpen ? (
+        <div className="rounded-2xl border border-zinc-800 bg-[#121218] p-5">
+          <div className="flex justify-between items-center mb-3">
+            <p className="text-sm font-semibold text-white">Buy Calabi Cash</p>
+            <button type="button" className="text-xs text-zinc-400" onClick={() => setCashOpen(false)}>Close</button>
+          </div>
+          <CalabiCashShop compact />
+        </div>
+      ) : null}
 
       {/* Real "Live Now" list */}
       <div className="space-y-3">
