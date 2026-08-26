@@ -122,6 +122,8 @@ export default function InteractionBubbleMap({
   onSelectPost,
   postTitle = null,
   creator = null,
+  onRefresh = null,
+  refreshing = false,
 }) {
   const wrapRef = useRef(null)
   const [size, setSize] = useState({ w: 640, h: 420 })
@@ -306,7 +308,7 @@ export default function InteractionBubbleMap({
             Audience network{postTitle ? ` · ${postTitle}` : ''}
           </p>
           <p className="text-[11px] text-zinc-500">
-            Every signed-in viewer appears — including you. Brown ring = viewed only. Colored rings = like, follow, share, comment.
+            Cloud audience — every signed-in viewer/liker. Brown = viewed only. Color rings = like, follow, share, comment.
             {summary.people ? ` · ${summary.people} people` : ''}
             {summary.total ? ` · ${summary.total} actions` : ''}
           </p>
@@ -326,6 +328,16 @@ export default function InteractionBubbleMap({
             </button>
           ))}
         </div>
+        {onRefresh ? (
+          <button
+            type="button"
+            disabled={refreshing}
+            onClick={() => onRefresh()}
+            className="h-7 px-2.5 text-[11px] font-semibold border border-zinc-700 text-zinc-300 hover:text-white disabled:opacity-50"
+          >
+            {refreshing ? 'Syncing…' : 'Sync cloud'}
+          </button>
+        ) : null}
       </div>
 
       <div className="shrink-0 flex flex-wrap gap-1.5 px-3 py-2 border-b border-zinc-800/80">

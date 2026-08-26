@@ -81,7 +81,8 @@ export function pushVote(userId, contentId, direction) {
 /** Push one creator-facing interaction (bubble map). Actor must be signed in. */
 export function pushCreatorInteraction(row) {
   if (!canSync() || !row?.id || !row.creatorId || !row.type) return
-  if (row.actorId && row.actorId !== actor.id) return
+  const actorId = row.actorId || actor.id
+  if (actorId !== actor.id) return
   ;(async () => {
     const sb = await client()
     if (!sb) return
@@ -91,9 +92,9 @@ export function pushCreatorInteraction(row) {
         creator_id: row.creatorId,
         content_id: row.contentId || null,
         type: row.type,
-        actor_id: row.actorId || actor.id,
+        actor_id: actorId,
         title: row.title || '',
-        weight: Math.max(1, Number(row.weight) || 1),
+        weight: 1,
         surface: row.surface || 'unknown',
         content_type: row.contentType || null,
         source: row.source || 'live',
@@ -103,51 +104,177 @@ export function pushCreatorInteraction(row) {
   })()
 }
 
-/** Pull interactions aimed at the signed-in creator into local storage. */
+/**
+ * Rebuild bubble-map events from cloud SOT and REPLACE local cache for this creator.
+ * Sources: creator_interactions + content_views + votes + follows + comments.
+ */
 export async function syncCreatorInteractionsFromCloud() {
   if (!canSync()) return false
   const sb = await client()
   if (!sb) return false
+  const creatorId = actor.id
   try {
-    const { mergeCreatorInteractionsFromCloud } = await import('./creatorInteractions')
+    const {
+      replaceCreatorInteractionsForCreator,
+      stableInteractionId,
+      clearPoisonedInteractionCache,
+    } = await import('./creatorInteractions')
+    clearPoisonedInteractionCache?.()
 
-    // Interactions table may be missing/empty — still pull content_views so every viewer shows.
+    const byId = new Map()
+    const put = (row) => {
+      if (!row?.id || !row.creator_id || !row.type || !row.actor_id) return
+      byId.set(row.id, {
+        id: row.id,
+        creator_id: row.creator_id,
+        content_id: row.content_id || null,
+        type: row.type,
+        actor_id: row.actor_id,
+        title: row.title || '',
+        weight: 1,
+        surface: row.surface || 'unknown',
+        content_type: row.content_type || null,
+        source: 'live',
+        at: row.at || new Date().toISOString(),
+      })
+    }
+
+    // 1) Explicit interaction rows
     try {
       const { data, error } = await sb
         .from('creator_interactions')
         .select('*')
-        .eq('creator_id', actor.id)
+        .eq('creator_id', creatorId)
         .order('at', { ascending: false })
-        .limit(1500)
-      if (!error && Array.isArray(data) && data.length) {
-        mergeCreatorInteractionsFromCloud(data)
+        .limit(2500)
+      if (!error && Array.isArray(data)) {
+        for (const r of data) {
+          if (!r.actor_id) continue
+          put({
+            ...r,
+            id: stableInteractionId(r.type, r.content_id || 'ch', r.actor_id),
+            weight: 1,
+          })
+        }
       }
     } catch {}
 
-    // Every signed-in viewer of the creator's posts must appear on the bubble map (incl. the creator).
+    // 2) Unique signed-in viewers
     try {
       const { pullContentViewsForCreator } = await import('./economySync')
-      const views = await pullContentViewsForCreator(actor.id)
-      if (views?.length) {
-        const asInteractions = views
-          .filter((v) => v.actor_id)
-          .map((v) => ({
-            id: `civ_${v.content_id}_${v.actor_id}_view`.slice(0, 180),
-            creator_id: v.creator_id,
-            content_id: v.content_id,
-            type: 'view',
-            actor_id: v.actor_id,
-            title: '',
-            weight: 1,
-            surface: v.surface || 'unknown',
-            content_type: v.content_type || null,
-            source: 'live',
-            at: v.created_at,
-          }))
-        mergeCreatorInteractionsFromCloud(asInteractions)
+      const views = await pullContentViewsForCreator(creatorId)
+      for (const v of views || []) {
+        if (!v.actor_id || !v.content_id) continue
+        put({
+          id: stableInteractionId('view', v.content_id, v.actor_id),
+          creator_id: creatorId,
+          content_id: v.content_id,
+          type: 'view',
+          actor_id: v.actor_id,
+          title: '',
+          surface: v.surface || 'unknown',
+          content_type: v.content_type || null,
+          at: v.created_at,
+        })
       }
     } catch {}
 
+    // Content ids owned by this creator (cloud videos + local catalog)
+    const contentIds = new Set()
+    try {
+      const { data: vids } = await sb
+        .from('videos')
+        .select('id')
+        .eq('creator_id', creatorId)
+        .limit(2000)
+      for (const v of vids || []) if (v?.id) contentIds.add(String(v.id))
+    } catch {}
+    try {
+      const { getCreatorContent } = await import('./contentService')
+      for (const p of getCreatorContent(creatorId, actor.handle) || []) {
+        if (p?.id) contentIds.add(String(p.id))
+      }
+    } catch {}
+    // Also include content_ids already seen in views/interactions
+    for (const row of byId.values()) {
+      if (row.content_id) contentIds.add(String(row.content_id))
+    }
+
+    const idList = [...contentIds].slice(0, 500)
+
+    // 3) Likes from votes table (public SOT — other accounts always show if they liked)
+    if (idList.length) {
+      try {
+        const { data: votes } = await sb
+          .from('votes')
+          .select('user_id, content_id, direction, created_at')
+          .in('content_id', idList)
+          .eq('direction', 'up')
+          .limit(4000)
+        for (const v of votes || []) {
+          if (!v.user_id || !v.content_id) continue
+          put({
+            id: stableInteractionId('like', v.content_id, v.user_id),
+            creator_id: creatorId,
+            content_id: v.content_id,
+            type: 'like',
+            actor_id: v.user_id,
+            title: '',
+            surface: 'unknown',
+            content_type: null,
+            at: v.created_at,
+          })
+        }
+      } catch {}
+
+      // 4) Comments
+      try {
+        const { data: comments } = await sb
+          .from('comments')
+          .select('id, user_id, content_id, created_at, deleted')
+          .in('content_id', idList)
+          .limit(4000)
+        for (const c of comments || []) {
+          if (!c.user_id || !c.content_id || c.deleted) continue
+          put({
+            id: stableInteractionId('comment', c.content_id, c.user_id),
+            creator_id: creatorId,
+            content_id: c.content_id,
+            type: 'comment',
+            actor_id: c.user_id,
+            title: '',
+            surface: 'unknown',
+            content_type: null,
+            at: c.created_at,
+          })
+        }
+      } catch {}
+    }
+
+    // 5) Follows
+    try {
+      const { data: follows } = await sb
+        .from('follows')
+        .select('follower_id, creator_id, created_at')
+        .eq('creator_id', creatorId)
+        .limit(2000)
+      for (const f of follows || []) {
+        if (!f.follower_id) continue
+        put({
+          id: stableInteractionId('subscribe', 'ch', f.follower_id),
+          creator_id: creatorId,
+          content_id: null,
+          type: 'subscribe',
+          actor_id: f.follower_id,
+          title: 'Channel',
+          surface: 'channel',
+          content_type: 'channel',
+          at: f.created_at,
+        })
+      }
+    } catch {}
+
+    replaceCreatorInteractionsForCreator(creatorId, [...byId.values()])
     return true
   } catch {
     return false

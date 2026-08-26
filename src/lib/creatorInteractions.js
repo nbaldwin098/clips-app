@@ -1,12 +1,26 @@
 /**
  * Creator-facing interaction timeline for the studio bubble map.
- * Cloud (creator_interactions) is source of truth; local cache is display-only after pull/push.
+ * Cloud is source of truth. Local storage is a display cache only — wiped/replaced on sync.
  */
 import { lsGet, lsSet, getImports } from './storage'
 
 const KEY = 'clips_creator_interactions'
+const CLEAR_FLAG = 'clips_interactions_cloud_sot_v2'
 const MAX = 2500
 const INTERACTION_EVENT = 'clips-creator-interactions'
+
+/** One-shot: drop poisoned local tallies (rewatch/loop weight spam). Cloud pull rebuilds. */
+export function clearPoisonedInteractionCache() {
+  try {
+    if (lsGet(CLEAR_FLAG, false)) return false
+    lsSet(KEY, [])
+    lsSet(CLEAR_FLAG, true)
+    return true
+  } catch {
+    return false
+  }
+}
+clearPoisonedInteractionCache()
 
 /** Lightweight tick for studio map — does not refresh the whole catalog. */
 export function notifyInteractionsChanged() {
@@ -50,21 +64,24 @@ export const CONTENT_TYPE_LABELS = {
   channel: 'Channel',
 }
 
+/** Types that belong on the bubble map. Loop/complete/impression are NOT mapped (they inflated counts). */
 const TYPE_ALIASES = {
-  impression: 'view',
-  view: 'view',
   upvote: 'like',
   like: 'like',
+  save: 'like',
   subscribe: 'subscribe',
   share: 'share',
   comment: 'comment',
   early_skip: 'skip',
   skip: 'skip',
   kick: 'skip',
-  complete: 'view',
-  loop: 'view',
-  save: 'like',
+  view: 'view',
 }
+
+/** Taste-engine noise — never becomes a map event. */
+const IGNORE_TYPES = new Set([
+  'impression', 'loop', 'complete', 'watch', 'progress', 'downvote', 'hover',
+])
 
 function all() {
   return lsGet(KEY, []) || []
@@ -75,7 +92,17 @@ function save(list) {
 }
 
 export function normalizeInteractionType(type) {
-  return TYPE_ALIASES[String(type || '').toLowerCase()] || null
+  const raw = String(type || '').toLowerCase()
+  if (IGNORE_TYPES.has(raw)) return null
+  return TYPE_ALIASES[raw] || null
+}
+
+/** Stable cloud/local id — one row per actor × post × action (no rewatch spam). */
+export function stableInteractionId(kind, contentId, actorId) {
+  const k = String(kind || 'x')
+  const c = String(contentId || 'ch')
+  const a = String(actorId || 'guest')
+  return `ci_${k}_${c}_${a}`.replace(/[^a-zA-Z0-9:_-]/g, '_').slice(0, 180)
 }
 
 export function typeMeta(type) {
@@ -114,7 +141,7 @@ export function creatorIdForContent(contentId) {
 
 /**
  * Log one interaction against a creator's post.
- * Safe to call often — duplicates within a short window for the same actor+post+type are coalesced.
+ * One row per actor+post+type (stable id). Weight stays 1 — never inflates from rewatches.
  */
 export function logCreatorInteraction({
   creatorId,
@@ -130,58 +157,52 @@ export function logCreatorInteraction({
 } = {}) {
   const kind = normalizeInteractionType(type)
   if (!creatorId || !kind) return null
-  // Follows are channel-level (no post). Other types need a post id.
   if (kind !== 'subscribe' && !contentId) return null
 
   const resolved = contentId ? resolveContentMeta(contentId) : null
   const cid = creatorId || resolved?.creatorId
   if (!cid) return null
-  // Creators still count as audience when they watch their own posts (maps must show every viewer).
+
   const postTitle = title || resolved?.title || (kind === 'subscribe' ? 'Channel' : 'Post')
   const cType = contentType || resolved?.contentType || (kind === 'subscribe' ? 'channel' : null)
   const surf = SURFACE_LABELS[surface] ? surface : 'unknown'
+  const now = at || new Date().toISOString()
+  const actor = actorId || null
+  const id = stableInteractionId(kind, contentId || 'ch', actor || 'guest')
 
   const list = all()
-  const now = at || new Date().toISOString()
-  // Longer coalesce for views so rapid revisits stay one person node;
-  // distinct actors are never dropped from the map.
-  const windowMs = kind === 'view' ? 60_000 : 8000
-  const recent = list.find(
-    (r) =>
-      r.creatorId === cid
-      && r.contentId === (contentId || null)
-      && r.type === kind
-      && r.actorId === (actorId || null)
-      && Math.abs(Date.parse(r.at) - Date.parse(now)) < windowMs
-  )
-  if (recent) {
-    recent.weight = Math.min(99, (Number(recent.weight) || 1) + (Number(weight) || 1))
-    if (surf !== 'unknown') recent.surface = surf
-    if (cType) recent.contentType = cType
+  const existing = list.find((r) => r.id === id)
+  if (existing) {
+    existing.at = now
+    if (surf !== 'unknown') existing.surface = surf
+    if (cType) existing.contentType = cType
+    if (postTitle) existing.title = String(postTitle).slice(0, 120)
+    existing.weight = 1
+    existing.source = source === 'tally' ? existing.source : source
     save(list)
     notifyInteractionsChanged()
-    queueCloudPush(recent)
-    return recent
+    if (source !== 'tally' && source !== 'cloud') queueCloudPush(existing)
+    return existing
   }
+
   const row = {
-    id: kind === 'view' && (actorId || contentId)
-      ? `civ_${contentId || 'ch'}_${actorId || 'guest'}_view`.slice(0, 180)
-      : `ci_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    id,
     creatorId: cid,
     contentId: contentId || null,
     type: kind,
-    actorId: actorId || null,
+    actorId: actor,
     title: String(postTitle || '').slice(0, 120),
-    weight: Math.max(1, Number(weight) || 1),
+    weight: 1,
     source,
     surface: surf,
     contentType: cType,
     at: now,
   }
+  void weight
   list.unshift(row)
   save(list)
   notifyInteractionsChanged()
-  queueCloudPush(row)
+  if (source !== 'tally' && source !== 'cloud') queueCloudPush(row)
   return row
 }
 
@@ -193,38 +214,97 @@ function queueCloudPush(row) {
   })
 }
 
-/** Merge remote rows into local (by id). Used after cloud pull. */
+function normalizeCloudRow(raw) {
+  if (!raw?.id || !raw.creator_id || !raw.type) return null
+  const kind = normalizeInteractionType(raw.type)
+  if (!kind) return null
+  const actorId = raw.actor_id || null
+  const contentId = raw.content_id || null
+  const id = actorId
+    ? stableInteractionId(kind, contentId || 'ch', actorId)
+    : String(raw.id)
+  return {
+    id,
+    creatorId: String(raw.creator_id),
+    contentId,
+    type: kind,
+    actorId,
+    title: String(raw.title || '').slice(0, 120),
+    weight: 1,
+    source: raw.source === 'tally' ? 'live' : (raw.source || 'live'),
+    surface: SURFACE_LABELS[raw.surface] ? raw.surface : 'unknown',
+    contentType: raw.content_type || null,
+    at: raw.at || new Date().toISOString(),
+  }
+}
+
+/** Merge remote rows into local (by stable id). */
 export function mergeCreatorInteractionsFromCloud(rows = []) {
   if (!rows?.length) return 0
   const list = all()
   const byId = new Map(list.map((r) => [r.id, r]))
   let n = 0
   for (const raw of rows) {
-    if (!raw?.id || !raw.creator_id || !raw.type) continue
-    const kind = normalizeInteractionType(raw.type)
-    if (!kind) continue
-    const row = {
-      id: String(raw.id),
-      creatorId: String(raw.creator_id),
-      contentId: raw.content_id || null,
-      type: kind,
-      actorId: raw.actor_id || null,
-      title: String(raw.title || '').slice(0, 120),
-      weight: Math.max(1, Number(raw.weight) || 1),
-      source: raw.source || 'live',
-      surface: SURFACE_LABELS[raw.surface] ? raw.surface : 'unknown',
-      contentType: raw.content_type || null,
-      at: raw.at || new Date().toISOString(),
-    }
+    const row = normalizeCloudRow(raw)
+    if (!row) continue
     if (!byId.has(row.id)) {
       byId.set(row.id, row)
       n += 1
+    } else {
+      const prev = byId.get(row.id)
+      if (Date.parse(row.at) > Date.parse(prev.at || 0)) {
+        byId.set(row.id, { ...prev, ...row, weight: 1 })
+        n += 1
+      }
     }
   }
   const merged = [...byId.values()].sort((a, b) => Date.parse(b.at) - Date.parse(a.at)).slice(0, MAX)
   save(merged)
   if (n) notifyInteractionsChanged()
   return n
+}
+
+/**
+ * Replace all local rows for one creator with cloud-built rows (cloud SOT).
+ * Drops inflated local junk for that creator.
+ */
+export function replaceCreatorInteractionsForCreator(creatorId, rows = []) {
+  if (!creatorId) return 0
+  const others = all().filter((r) => r.creatorId !== creatorId)
+  const byId = new Map()
+  for (const raw of rows) {
+    let row = null
+    if (raw?.creator_id) {
+      row = normalizeCloudRow(raw)
+    } else if (raw?.creatorId && raw?.type) {
+      const kind = normalizeInteractionType(raw.type) || (
+        INTERACTION_TYPES.some((t) => t.id === raw.type) ? raw.type : null
+      )
+      if (!kind) continue
+      row = {
+        id: raw.id || stableInteractionId(kind, raw.contentId || 'ch', raw.actorId || 'guest'),
+        creatorId: String(raw.creatorId),
+        contentId: raw.contentId || null,
+        type: kind,
+        actorId: raw.actorId || null,
+        title: String(raw.title || '').slice(0, 120),
+        weight: 1,
+        source: raw.source || 'live',
+        surface: SURFACE_LABELS[raw.surface] ? raw.surface : 'unknown',
+        contentType: raw.contentType || null,
+        at: raw.at || new Date().toISOString(),
+      }
+    }
+    if (!row || row.creatorId !== creatorId) continue
+    row.weight = 1
+    byId.set(row.id, row)
+  }
+  const next = [...others, ...byId.values()]
+    .sort((a, b) => Date.parse(b.at) - Date.parse(a.at))
+    .slice(0, MAX)
+  save(next)
+  notifyInteractionsChanged()
+  return byId.size
 }
 
 export function listCreatorInteractions(creatorId, { contentId = null, range = 'all', limit = 800 } = {}) {
@@ -249,8 +329,7 @@ function rangeCutoff(range) {
 }
 
 /**
- * Build bubble nodes for the map. Prefers live event log; seeds from tallies
- * when the log is thin so the map is never empty for creators with real traffic.
+ * Build bubble nodes for the map.
  * @deprecated Prefer buildInteractionNetwork for the studio map (real users).
  */
 export function buildInteractionBubbles(creatorId, posts = [], { contentId = null, range = 'all' } = {}) {
@@ -277,8 +356,7 @@ export function buildInteractionBubbles(creatorId, posts = [], { contentId = nul
 }
 
 /**
- * Meme/solana-style network: one node per real actor, white edges to the creator
- * hub and between people who touched the same post. Tallies are never invented as people.
+ * One node per real actor. Tallies are never invented as people.
  */
 export function buildInteractionNetwork(creatorId, posts = [], { contentId = null, range = 'all' } = {}) {
   const live = listCreatorInteractions(creatorId, { contentId, range, limit: 1500 })
@@ -286,12 +364,10 @@ export function buildInteractionNetwork(creatorId, posts = [], { contentId = nul
   const postById = new Map((posts || []).map((p) => [p.id, p]))
   const byActor = new Map()
   let guestEvents = 0
-  let guestWeight = 0
 
   for (const ev of live) {
     if (!ev.actorId) {
       guestEvents += 1
-      guestWeight += Number(ev.weight) || 1
       continue
     }
     const key = String(ev.actorId)
@@ -308,11 +384,11 @@ export function buildInteractionNetwork(creatorId, posts = [], { contentId = nul
       }
       byActor.set(key, bucket)
     }
-    const w = Number(ev.weight) || 1
+    // Each event counts as 1 (unique action), never inflated weight
     bucket.events.push(ev)
-    bucket.byType[ev.type] = (bucket.byType[ev.type] || 0) + w
+    bucket.byType[ev.type] = (bucket.byType[ev.type] || 0) + 1
     if (ev.contentId) bucket.contentIds.add(ev.contentId)
-    bucket.weight += w
+    bucket.weight += 1
     const t = Date.parse(ev.at) || Date.now()
     if (t < bucket.firstAt) bucket.firstAt = t
     if (t > bucket.lastAt) bucket.lastAt = t
@@ -325,7 +401,7 @@ export function buildInteractionNetwork(creatorId, posts = [], { contentId = nul
     const primaryType = actionTypes[0]?.[0] || types[0]?.[0] || 'view'
     const meta = typeMeta(primaryType)
     const viewOnly = actionTypes.length === 0
-    const topEv = [...bucket.events].sort((a, b) => (Number(b.weight) || 1) - (Number(a.weight) || 1))[0]
+    const topEv = [...bucket.events].sort((a, b) => Date.parse(b.at) - Date.parse(a.at))[0]
     const post = topEv?.contentId ? postById.get(topEv.contentId) : null
     people.push({
       id: `actor_${bucket.actorId}`,
@@ -364,9 +440,9 @@ export function buildInteractionNetwork(creatorId, posts = [], { contentId = nul
       handle: 'guests',
       displayName: 'Unsigned viewers',
       avatarUrl: null,
-      weight: guestWeight || guestEvents,
+      weight: guestEvents,
       eventCount: guestEvents,
-      byType: { view: guestWeight || guestEvents },
+      byType: { view: guestEvents },
       types: ['view'],
       primaryType: 'view',
       primaryLabel: 'Unsigned activity',
@@ -402,7 +478,6 @@ export function buildInteractionNetwork(creatorId, posts = [], { contentId = nul
     })
   }
 
-  // Co-interaction edges: people who touched the same post (meme-coin style clusters).
   const byContent = new Map()
   for (const person of people) {
     if (person.kind !== 'person') continue
@@ -447,11 +522,11 @@ export function summarizeNetwork(people = [], events = []) {
   const bySurface = {}
   let total = 0
   for (const ev of events || []) {
-    const w = Number(ev.weight) || 1
-    byType[ev.type] = (byType[ev.type] || 0) + w
+    // Count unique action rows — never use inflated weight
+    byType[ev.type] = (byType[ev.type] || 0) + 1
     const surf = ev.surface || 'unknown'
-    bySurface[surf] = (bySurface[surf] || 0) + w
-    total += w
+    bySurface[surf] = (bySurface[surf] || 0) + 1
+    total += 1
   }
   return {
     byType,
@@ -468,10 +543,10 @@ export function summarizeBubbles(nodes) {
   const bySurface = {}
   let total = 0
   for (const n of nodes || []) {
-    byType[n.type] = (byType[n.type] || 0) + (n.count || n.weight || 1)
+    byType[n.type] = (byType[n.type] || 0) + 1
     const surf = n.surface || 'unknown'
-    bySurface[surf] = (bySurface[surf] || 0) + (n.count || n.weight || 1)
-    total += n.count || n.weight || 1
+    bySurface[surf] = (bySurface[surf] || 0) + 1
+    total += 1
   }
   return { byType, bySurface, total, nodes: (nodes || []).length }
 }
