@@ -12,6 +12,7 @@ import videosFirstPublished from '../../supabase/migrations/0015_videos_first_pu
 import platformEconomy from '../../supabase/migrations/0016_platform_economy.sql?raw'
 import globalLiveChat from '../../supabase/migrations/0017_global_live_chat.sql?raw'
 import supportMarketplace from '../../supabase/migrations/0018_support_marketplace.sql?raw'
+import siteNews from '../../supabase/migrations/0019_site_news.sql?raw'
 
 export const SETUP_SCRIPTS = [
   {
@@ -97,5 +98,11 @@ export const SETUP_SCRIPTS = [
     title: 'Support tickets + marketplace (sellers, products, orders)',
     file: '0018_support_marketplace.sql',
     sql: String(supportMarketplace || ''),
+  },
+  {
+    id: '0019',
+    title: 'Site News feed (left-menu News tab)',
+    file: '0019_site_news.sql',
+    sql: String(siteNews || ''),
   },
 ]

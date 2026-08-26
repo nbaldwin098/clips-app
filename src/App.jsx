@@ -73,6 +73,7 @@ const AdvertiserPortal = lazy(() => import('./components/AdvertiserPortal'))
 const CalabiStudioPage = lazy(() => import('./components/CalabiStudioPage'))
 const ShopPage = lazy(() => import('./components/ShopPage'))
 const SellerPortal = lazy(() => import('./components/SellerPortal'))
+const NewsPage = lazy(() => import('./components/NewsPage'))
 
 const KNOWN_VIEWS = new Set([
   'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
@@ -80,7 +81,7 @@ const KNOWN_VIEWS = new Set([
   'notifications', 'pics', 'checkout', 'creator-apply', 'verify', 'advertise', 'advertiser-portal', 'support', 'admin',
   'analytics', 'channel', 'profile', 'content-rules', 'vods',
   'subscriptions', 'playlists', 'community', 'studio-tools', 'stream-settings',
-  'calabi-studio', 'calabi-cash', 'shop', 'marketplace', 'seller', 'seller-portal',
+  'calabi-studio', 'calabi-cash', 'shop', 'marketplace', 'seller', 'seller-portal', 'news',
   'legal-tos', 'legal-privacy', 'legal-creator', 'legal-community',
   'watch', 'sound', 'tag', 'create',
 ])
@@ -128,6 +129,7 @@ function AppShell() {
       clips: 'Shorts',
       pics: 'Pics',
       live: 'Live',
+      news: 'News',
       explore: 'Explore',
       watch: routeId ? 'Watch' : 'Watch',
       profile: profileTarget.handle ? `@${profileTarget.handle}` : 'Profile',
@@ -596,6 +598,7 @@ function AppShell() {
       case 'advertise': return <AdvertisePage onNavigate={navigate} />
       case 'advertiser-portal': return <AdvertiserPortal onNavigate={navigate} />
       case 'support': return <SupportPage onOpenAuth={openAuth} />
+      case 'news': return <NewsPage onNavigate={navigate} />
       case 'shop':
       case 'marketplace':
         return <ShopPage onNavigate={navigate} onOpenAuth={openAuth} />

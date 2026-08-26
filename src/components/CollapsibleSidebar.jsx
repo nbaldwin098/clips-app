@@ -24,6 +24,7 @@ import {
   Heart,
   ShoppingBag,
   Store,
+  Newspaper,
 } from 'lucide-react'
 import { lsGet } from '../lib/storage'
 import { listSidebarCreators } from '../lib/contentService'
@@ -131,6 +132,7 @@ export default function CollapsibleSidebar({
           <NavBtn collapsed={collapsed} active={currentView === 'clips' || currentView === 'shorts'} onClick={() => go('clips')} icon={Clapperboard} label="Clips" />
           <NavBtn collapsed={collapsed} active={currentView === 'pics'} onClick={() => go('pics')} icon={ImageIcon} label="Pics" />
           <NavBtn collapsed={collapsed} active={currentView === 'live'} onClick={() => go('live')} icon={Radio} label="Live" />
+          <NavBtn collapsed={collapsed} active={currentView === 'news'} onClick={() => go('news')} icon={Newspaper} label="News" />
           <NavBtn collapsed={collapsed} active={currentView === 'shop' || currentView === 'marketplace'} onClick={() => go('shop')} icon={ShoppingBag} label="Shop" />
           <NavBtn collapsed={collapsed} active={currentView === 'create'} onClick={() => go('create')} icon={Plus} label="Create" />
         </nav>
