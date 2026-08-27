@@ -30,12 +30,12 @@ function ProfileRow({ icon: Icon, label, onClick, danger = false, trailing = nul
     <button
       type="button"
       onClick={onClick}
-      className={`w-full flex items-center gap-2.5 px-3.5 py-2 text-xs hover:bg-[#1f1f2a] ${
-        danger ? 'text-red-400 hover:bg-red-500/10' : 'text-zinc-200 hover:text-white'
+      className={`w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-white hover:bg-white/10 ${
+        danger ? 'text-white hover:bg-white/10' : ''
       }`}
     >
-      {Icon ? <Icon className={`h-4 w-4 ${danger ? '' : 'text-zinc-400'}`} /> : null}
-      <span className="flex-1 text-left">{label}</span>
+      {Icon ? <Icon className="h-4 w-4 text-white" /> : null}
+      <span className="flex-1 text-left text-white">{label}</span>
       {trailing}
     </button>
   )
@@ -192,7 +192,7 @@ export default function StreamingNavbar({
                       icon={Wallet}
                       label="Wallet"
                       onClick={() => handleNav('wallet')}
-                      trailing={<span className="text-[10px] text-amber-400 tabular-nums">{coins}</span>}
+                      trailing={<span className="text-[10px] text-white tabular-nums">{coins}</span>}
                     />
                     <ProfileRow
                       icon={Gift}
@@ -219,6 +219,13 @@ export default function StreamingNavbar({
                     />
 
                     <Divider />
+                    {owner ? (
+                      <ProfileRow
+                        icon={ShieldCheck}
+                        label="Admin"
+                        onClick={() => handleNav('admin')}
+                      />
+                    ) : null}
                     <ProfileRow
                       icon={LogOut}
                       label="Logout"
@@ -229,13 +236,6 @@ export default function StreamingNavbar({
                         handleNav('home')
                       }}
                     />
-                    {owner ? (
-                      <ProfileRow
-                        icon={ShieldCheck}
-                        label="Admin"
-                        onClick={() => handleNav('admin')}
-                      />
-                    ) : null}
                   </div>
                 )}
               </div>
