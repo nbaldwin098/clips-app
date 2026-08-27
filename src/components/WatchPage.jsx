@@ -29,6 +29,7 @@ import PostedStamp from './PostedStamp'
 import ChannelAvatar from './ChannelAvatar'
 import VerifiedBadge from './VerifiedBadge'
 import FollowButton from './FollowButton'
+import EnableNotificationsButton from './EnableNotificationsButton'
 import { creatorDisplayName, isOfficialCreator, likesLabel, viewsLabel, formatDuration } from '../lib/uiFormat'
 import { isVerifiedChannel } from '../lib/verification'
 import { startPremiumCheckout } from '../lib/checkout'
@@ -738,6 +739,7 @@ export default function WatchPage({
                   </p>
                 </div>
                 <FollowButton creatorId={item.creatorId || item.userId} handle={item.handle} onOpenAuth={onOpenAuth} className="ml-2" />
+                <EnableNotificationsButton compact className="ml-2" />
                 {ownCheckoutConfigured() ? (
                   <div className="ml-2 flex items-center gap-1 flex-wrap justify-end">
                     {TIP_AMOUNTS.map((n) => (

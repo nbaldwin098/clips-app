@@ -36,6 +36,7 @@ import VerifiedBadge from './VerifiedBadge'
 import { cn } from '../lib/utils'
 import { isOfficialCreator } from '../lib/uiFormat'
 import { isVerifiedChannel } from '../lib/verification'
+import { t, subscribeLocale } from '../lib/i18n'
 
 const itemCls = (active, collapsed) =>
   cn(
@@ -81,6 +82,9 @@ export default function CollapsibleSidebar({
   const [moreOpen, setMoreOpen] = useState(false)
   const [liveNow, setLiveNow] = useState(() => listLiveBoard(lsGet('live_board', []) || []))
   const [recommendedCreators, setRecommendedCreators] = useState(() => listSidebarCreators(8))
+  const [, bumpLocale] = useState(0)
+
+  useEffect(() => subscribeLocale(() => bumpLocale((n) => n + 1)), [])
 
   const refreshLiveBoard = useCallback(() => {
     import('../lib/graphSync').then(({ syncPublicEngagementFromCloud }) => {
@@ -132,18 +136,18 @@ export default function CollapsibleSidebar({
     <div className="flex flex-col h-full min-h-0 text-zinc-300">
       <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden py-2 px-1.5 space-y-4">
         <nav className="space-y-0.5">
-          <NavBtn collapsed={collapsed} active={currentView === 'home'} onClick={() => go('home')} icon={Home} label="Recommended" />
-          <NavBtn collapsed={collapsed} active={currentView === 'clips' || currentView === 'shorts'} onClick={() => go('clips')} icon={Clapperboard} label="Clips" />
-          <NavBtn collapsed={collapsed} active={currentView === 'pics'} onClick={() => go('pics')} icon={ImageIcon} label="Pics" />
-          <NavBtn collapsed={collapsed} active={currentView === 'live'} onClick={() => go('live')} icon={Radio} label="Live" />
-          <NavBtn collapsed={collapsed} active={currentView === 'news'} onClick={() => go('news')} icon={Newspaper} label="News" />
-          <NavBtn collapsed={collapsed} active={currentView === 'shop' || currentView === 'marketplace'} onClick={() => go('shop')} icon={ShoppingBag} label="Shop" />
-          <NavBtn collapsed={collapsed} active={currentView === 'create'} onClick={() => go('create')} icon={Plus} label="Create" />
+          <NavBtn collapsed={collapsed} active={currentView === 'home'} onClick={() => go('home')} icon={Home} label={t('nav.home')} />
+          <NavBtn collapsed={collapsed} active={currentView === 'clips' || currentView === 'shorts'} onClick={() => go('clips')} icon={Clapperboard} label={t('nav.clips')} />
+          <NavBtn collapsed={collapsed} active={currentView === 'pics'} onClick={() => go('pics')} icon={ImageIcon} label={t('nav.pics')} />
+          <NavBtn collapsed={collapsed} active={currentView === 'live'} onClick={() => go('live')} icon={Radio} label={t('nav.live')} />
+          <NavBtn collapsed={collapsed} active={currentView === 'news'} onClick={() => go('news')} icon={Newspaper} label={t('nav.news')} />
+          <NavBtn collapsed={collapsed} active={currentView === 'shop' || currentView === 'marketplace'} onClick={() => go('shop')} icon={ShoppingBag} label={t('nav.shop')} />
+          <NavBtn collapsed={collapsed} active={currentView === 'create'} onClick={() => go('create')} icon={Plus} label={t('nav.create')} />
         </nav>
 
         {/* Following sits under Create */}
         <div className="pt-2 mt-1 border-t border-[#1e1e27] space-y-0.5">
-          <NavBtn collapsed={collapsed} active={currentView === 'following'} onClick={() => go('following')} icon={Users} label="Following" />
+          <NavBtn collapsed={collapsed} active={currentView === 'following'} onClick={() => go('following')} icon={Users} label={t('nav.following')} />
         </div>
 
         {liveNow.length > 0 ? (
@@ -193,8 +197,8 @@ export default function CollapsibleSidebar({
         ) : null}
 
         <div className="pt-2 border-t border-[#1e1e27] space-y-0.5">
-          {!collapsed && <p className="px-2.5 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Top creators</p>}
-          <NavBtn collapsed={collapsed} active={currentView === 'creators'} onClick={() => go('creators')} icon={Users} label="Top creators" />
+          {!collapsed && <p className="px-2.5 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">{t('nav.creators')}</p>}
+          <NavBtn collapsed={collapsed} active={currentView === 'creators'} onClick={() => go('creators')} icon={Users} label={t('nav.creators')} />
           {recommendedCreators.map((c) => (
             <button
               key={c.id}
