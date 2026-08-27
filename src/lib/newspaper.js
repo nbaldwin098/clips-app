@@ -4,6 +4,7 @@
  */
 import { lsGet, lsSet } from './storage'
 import { newContentId } from './newContentId'
+import { SEED_NEWSPAPER } from '../data/demoNewspaper'
 
 const KEY = 'calabi_newspaper_posts'
 const EVENT = 'clips-newspaper-changed'
@@ -45,8 +46,11 @@ function normalize(row) {
 }
 
 export function listNewspaper(limit = 60) {
-  const rows = (lsGet(KEY, []) || []).map(normalize).filter(Boolean)
-  return rows
+  const stored = (lsGet(KEY, []) || []).map(normalize).filter(Boolean)
+  const seeds = SEED_NEWSPAPER.map(normalize).filter(Boolean)
+  const ids = new Set(stored.map((r) => r.id))
+  const merged = [...stored, ...seeds.filter((s) => !ids.has(s.id))]
+  return merged
     .sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt))
     .slice(0, limit)
 }

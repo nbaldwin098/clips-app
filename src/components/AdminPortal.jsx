@@ -237,9 +237,9 @@ export default function AdminPortal({ initialTab = '' }) {
   const ledger = listPayoutLedger()
 
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] bg-[#09090b] text-white flex">
-      <aside className="w-52 shrink-0 border-r border-white/10 bg-[#0b0b0d] py-4">
-        <p className="px-4 text-[10px] uppercase tracking-wider text-zinc-500 mb-2">Admin</p>
+    <div className="min-h-[calc(100vh-3.5rem)] bg-slate-100 text-slate-900 flex" data-dash="light">
+      <aside className="w-52 shrink-0 border-r border-white/10 bg-[#1c2434] py-4 text-slate-200">
+        <p className="px-4 text-[10px] uppercase tracking-wider text-slate-500 mb-2">Admin</p>
         <nav className="space-y-3 px-2">
           {['Home', 'Ops', 'Money', 'Content', 'Insights'].map((group) => {
             const items = NAV.filter((n) => n.group === group)
@@ -247,7 +247,7 @@ export default function AdminPortal({ initialTab = '' }) {
             return (
               <div key={group}>
                 {group !== 'Home' ? (
-                  <p className="px-3 mb-1 text-[10px] uppercase tracking-wider text-zinc-600">{group}</p>
+                  <p className="px-3 mb-1 text-[10px] uppercase tracking-wider text-slate-500">{group}</p>
                 ) : null}
                 <div className="space-y-0.5">
                   {items.map((item) => {
@@ -258,8 +258,8 @@ export default function AdminPortal({ initialTab = '' }) {
                         key={item.id}
                         type="button"
                         onClick={() => setTab(item.id)}
-                        className={`w-full flex items-center gap-2 h-9 px-3 text-sm ${
-                          active ? 'bg-white/10 text-white' : 'text-zinc-400 hover:bg-white/5'
+                        className={`w-full flex items-center gap-2 h-9 px-3 text-sm rounded-lg ${
+                          active ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5'
                         }`}
                       >
                         <Icon className="h-4 w-4" />
@@ -274,45 +274,45 @@ export default function AdminPortal({ initialTab = '' }) {
         </nav>
       </aside>
       <div className="flex-1 min-w-0 flex flex-col">
-        <header className="h-14 shrink-0 border-b border-white/10 flex items-center px-5 bg-[#0b0b0d]">
-          <p className="text-sm font-medium">{NAV.find((n) => n.id === tab)?.label || 'Admin'}</p>
+        <header className="h-14 shrink-0 border-b border-slate-200 flex items-center px-5 bg-white">
+          <p className="text-sm font-semibold text-slate-900">{NAV.find((n) => n.id === tab)?.label || 'Admin'}</p>
         </header>
         <div className="flex-1 min-h-0 overflow-y-auto">
           {tab === 'overview' && (
             <div className="p-5 space-y-4">
               <div className="grid sm:grid-cols-4 gap-3">
-                <div className="rounded-xl border border-white/10 bg-[#111113] p-4">
-                  <p className="text-[10px] uppercase text-zinc-500">Open tickets</p>
-                  <p className="text-xl font-semibold mt-1">{tickets.filter((t) => t.status !== 'closed').length}</p>
+                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <p className="text-[10px] uppercase text-slate-500">Open tickets</p>
+                  <p className="text-xl font-bold mt-1 text-slate-900">{tickets.filter((t) => t.status !== 'closed').length}</p>
                 </div>
-                <div className="rounded-xl border border-white/10 bg-[#111113] p-4">
-                  <p className="text-[10px] uppercase text-zinc-500">Seller apps</p>
-                  <p className="text-xl font-semibold mt-1">{sellerApps.length}</p>
+                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <p className="text-[10px] uppercase text-slate-500">Seller apps</p>
+                  <p className="text-xl font-bold mt-1 text-slate-900">{sellerApps.length}</p>
                 </div>
-                <div className="rounded-xl border border-white/10 bg-[#111113] p-4">
-                  <p className="text-[10px] uppercase text-zinc-500">Creator apps</p>
-                  <p className="text-xl font-semibold mt-1">{apps.filter((a) => a.status === 'pending').length}</p>
+                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <p className="text-[10px] uppercase text-slate-500">Creator apps</p>
+                  <p className="text-xl font-bold mt-1 text-slate-900">{apps.filter((a) => a.status === 'pending').length}</p>
                 </div>
-                <div className="rounded-xl border border-white/10 bg-[#111113] p-4">
-                  <p className="text-[10px] uppercase text-zinc-500">Shop listings</p>
-                  <p className="text-xl font-semibold mt-1">{shopProducts.length}</p>
+                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <p className="text-[10px] uppercase text-slate-500">Shop listings</p>
+                  <p className="text-xl font-bold mt-1 text-slate-900">{shopProducts.length}</p>
                 </div>
               </div>
               <div className="grid sm:grid-cols-3 gap-3">
                 {Object.entries(stats || {}).map(([k, v]) => (
-                  <div key={k} className="rounded-xl border border-white/10 bg-[#111113] p-4">
-                    <p className="text-[10px] uppercase text-zinc-500">{k}</p>
-                    <p className="text-xl font-semibold mt-1">{String(v)}</p>
+                  <div key={k} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <p className="text-[10px] uppercase text-slate-500">{k}</p>
+                    <p className="text-xl font-bold mt-1 text-slate-900">{String(v)}</p>
                   </div>
                 ))}
               </div>
-              <div className="rounded-xl border border-white/10 bg-[#111113] p-4">
-                <p className="text-xs text-zinc-500">Payouts held: {payoutsHeld() ? 'yes' : 'no'}</p>
+              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p className="text-xs text-slate-500">Payouts held: {payoutsHeld() ? 'yes' : 'no'}</p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <button type="button" className="h-9 px-3 bg-white text-black text-xs font-semibold" onClick={() => setTab('tickets')}>Open support desk</button>
-                <button type="button" className="h-9 px-3 border border-white/20 text-xs" onClick={() => setTab('shop')}>Marketplace</button>
-                <button type="button" className="h-9 px-3 border border-white/20 text-xs" onClick={() => setTab('analytics')}>Analytics</button>
+                <button type="button" className="h-9 px-3 bg-sky-600 text-white text-xs font-semibold rounded-lg" onClick={() => setTab('tickets')}>Open support desk</button>
+                <button type="button" className="h-9 px-3 border border-slate-300 bg-white text-xs text-slate-700 rounded-lg" onClick={() => setTab('shop')}>Marketplace</button>
+                <button type="button" className="h-9 px-3 border border-slate-300 bg-white text-xs text-slate-700 rounded-lg" onClick={() => setTab('analytics')}>Analytics</button>
               </div>
             </div>
           )}

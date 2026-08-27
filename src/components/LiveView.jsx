@@ -3,6 +3,7 @@ import { Radio, MonitorUp } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { lsGet } from '../lib/storage'
 import { listLiveBoard, liveBadgeLabel, isOnAir } from '../lib/liveStatus'
+import { mergeDemoLiveBoard } from '../data/demoLiveStreams'
 import { getSubscriberCount } from '../lib/engagement'
 import FollowButton from './FollowButton'
 import { cn } from '../lib/utils'
@@ -29,17 +30,18 @@ function formatElapsed(startedAt) {
  */
 export default function LiveView({ focusedStream, onFocusStream, onOpenAuth, onNavigate }) {
   const { user, isAuthenticated } = useAuth()
-  const [liveNow, setLiveNow] = useState(() => listLiveBoard(lsGet('live_board', []) || []))
+  const [liveNow, setLiveNow] = useState(() => mergeDemoLiveBoard(listLiveBoard(lsGet('live_board', []) || [])))
   const [, setTick] = useState(0)
   const [sharing, setSharing] = useState(false)
   const [screenError, setScreenError] = useState('')
   const [cashOpen, setCashOpen] = useState(false)
   const [hlsError, setHlsError] = useState('')
+  const [previewNote, setPreviewNote] = useState('')
   const screenRef = useRef(null)
   const hlsRef = useRef(null)
 
   const refreshLiveBoard = useCallback(() => {
-    setLiveNow(listLiveBoard(lsGet('live_board', []) || []))
+    setLiveNow(mergeDemoLiveBoard(listLiveBoard(lsGet('live_board', []) || [])))
   }, [])
 
   useEffect(() => {
@@ -129,7 +131,15 @@ export default function LiveView({ focusedStream, onFocusStream, onOpenAuth, onN
     }
   }
 
-  const selectStream = (entry) => onFocusStream?.(entry)
+  const selectStream = (entry) => {
+    if (entry?.demo || entry?.previewOnly) {
+      setPreviewNote('Preview only — this lobby card has no playable stream.')
+      onFocusStream?.(null)
+      return
+    }
+    setPreviewNote('')
+    onFocusStream?.(entry)
+  }
   const subCount = focusedStream?.userId ? getSubscriberCount(focusedStream.userId) : 0
   const filterStyle = user?.id ? filterCss(getStreamFilter(user.id).filterId) : ''
   const ingestOk = liveIngestConnected()
@@ -249,6 +259,10 @@ export default function LiveView({ focusedStream, onFocusStream, onOpenAuth, onN
             <p className="text-[11px] text-zinc-500">Go live from Create (+)</p>
           </div>
 
+          {previewNote ? (
+            <p className="mb-3 text-xs text-amber-300/90 border border-amber-900/40 bg-amber-950/30 px-3 py-2">{previewNote}</p>
+          ) : null}
+
           {followingLive.length === 0 ? (
             <div className="border border-zinc-800/80 bg-[#0a0a0c] px-6 py-20 text-center">
               <div className="mx-auto h-12 w-12 rounded-full bg-red-950/40 border border-red-900/50 flex items-center justify-center">
@@ -269,19 +283,26 @@ export default function LiveView({ focusedStream, onFocusStream, onOpenAuth, onN
                       focusedStream?.userId === s.userId ? 'ring-2 ring-white' : ''
                     )}
                   >
-                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_20%,#3f1515_0%,#0c0c10_55%,#101018_100%)]" />
-                    <div className="absolute inset-0 opacity-40 bg-[linear-gradient(120deg,transparent_40%,rgba(255,255,255,0.06)_50%,transparent_60%)] group-hover:opacity-70 transition-opacity" />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="h-14 w-14 rounded-full bg-black/50 border border-white/25 flex items-center justify-center text-xl font-bold text-white">
-                        {(s.displayName || s.handle || '?')[0]?.toUpperCase()}
-                      </span>
-                    </div>
+                    {s.thumbUrl ? (
+                      <img src={s.thumbUrl} alt="" className="absolute inset-0 h-full w-full object-cover" draggable={false} />
+                    ) : (
+                      <>
+                        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_20%,#3f1515_0%,#0c0c10_55%,#101018_100%)]" />
+                        <div className="absolute inset-0 opacity-40 bg-[linear-gradient(120deg,transparent_40%,rgba(255,255,255,0.06)_50%,transparent_60%)] group-hover:opacity-70 transition-opacity" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="h-14 w-14 rounded-full bg-black/50 border border-white/25 flex items-center justify-center text-xl font-bold text-white">
+                            {(s.displayName || s.handle || '?')[0]?.toUpperCase()}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                     <span className={cn(
                       'absolute top-2 left-2 inline-flex items-center gap-1 px-1.5 py-0.5 text-white text-[11px] font-bold uppercase',
-                      isOnAir(s) ? 'bg-[#eb0400]' : 'bg-amber-600'
+                      s.demo || s.previewOnly ? 'bg-zinc-700' : isOnAir(s) ? 'bg-[#eb0400]' : 'bg-amber-600'
                     )}>
                       <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-                      {liveBadgeLabel(s)}
+                      {s.demo || s.previewOnly ? 'Preview' : liveBadgeLabel(s)}
                     </span>
                     <span className="absolute bottom-2 left-2 px-1.5 py-0.5 bg-black/80 text-[11px] text-white">
                       {watchingLabel(s.watchers || s.watcherIds?.length || 0)}
@@ -311,8 +332,14 @@ export default function LiveView({ focusedStream, onFocusStream, onOpenAuth, onN
                   className="w-[260px] sm:w-[280px] shrink-0 text-left"
                 >
                   <div className="relative aspect-video overflow-hidden bg-[#121018]">
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#2a1518] to-[#0c0c14]" />
-                    <span className="absolute top-2 left-2 px-1.5 py-0.5 bg-[#eb0400] text-white text-[10px] font-bold uppercase">Live</span>
+                    {s.thumbUrl ? (
+                      <img src={s.thumbUrl} alt="" className="absolute inset-0 h-full w-full object-cover" draggable={false} />
+                    ) : (
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#2a1518] to-[#0c0c14]" />
+                    )}
+                    <span className="absolute top-2 left-2 px-1.5 py-0.5 bg-zinc-700 text-white text-[10px] font-bold uppercase">
+                      {s.demo ? 'Preview' : 'Live'}
+                    </span>
                   </div>
                   <p className="mt-2 text-sm font-medium text-white line-clamp-1">{s.title}</p>
                   <p className="text-xs text-zinc-500">{s.displayName || s.handle}</p>

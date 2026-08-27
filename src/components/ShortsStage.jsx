@@ -19,7 +19,7 @@ function fitPortrait(availW, availH, maxW = 420) {
   return { w, h }
 }
 
-export const PRELOAD_NEAR = 2
+export const PRELOAD_NEAR = 4
 
 export default function ShortsStage({
   count,
