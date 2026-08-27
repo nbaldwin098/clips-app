@@ -442,24 +442,39 @@ export default function ShortsFeed({
   const { user } = useAuth()
   const syncTick = useContentSyncTick()
   const recommended = useMemo(() => getStableShortsFeed(user?.id || null), [user?.id, syncTick])
-  // Keep catalog order stable — never reshuffle on every scroll/URL change (that remounts/jumps the reel).
+  // Freeze reel order for the session so catalog sync cannot remount / jump the stage.
+  const sessionRef = useRef(null)
   const items = useMemo(() => {
     const base = recommended.filter(isFeedable)
-    if (!focusId) return base
-    if (base.some((i) => i.id === focusId)) return base
-    const focused = getWatchItem(focusId)
-    if (!focused || focused.type !== 'short' || !isFeedable(focused)) return base
-    const creatorId = focused.creatorId || focused.userId
-    const creatorClips = getCreatorPublicContent(creatorId, focused.handle)
-      .filter((i) => i.type === 'short' && isFeedable(i) && i.id !== focused.id)
-    return [focused, ...creatorClips, ...base.filter((i) => i.id !== focused.id && !creatorClips.some((c) => c.id === i.id))]
-  }, [recommended, focusId, syncTick])
+    let next = base
+    if (focusId && !base.some((i) => i.id === focusId)) {
+      const focused = getWatchItem(focusId)
+      if (focused && focused.type === 'short' && isFeedable(focused)) {
+        const creatorId = focused.creatorId || focused.userId
+        const creatorClips = getCreatorPublicContent(creatorId, focused.handle)
+          .filter((i) => i.type === 'short' && isFeedable(i) && i.id !== focused.id)
+        next = [focused, ...creatorClips, ...base.filter((i) => i.id !== focused.id && !creatorClips.some((c) => c.id === i.id))]
+      }
+    }
+    if (sessionRef.current?.length) {
+      const byId = new Map(next.map((i) => [i.id, i]))
+      const frozen = sessionRef.current.map((i) => byId.get(i.id) || i).filter(Boolean)
+      for (const i of next) {
+        if (!frozen.some((f) => f.id === i.id)) frozen.push(i)
+      }
+      sessionRef.current = frozen
+      return frozen
+    }
+    if (next.length) sessionRef.current = next
+    return next
+  }, [recommended, focusId])
   const [activeIdx, setActiveIdx] = useState(0)
   const [muted, setMuted] = useState(true)
   const goToRef = useRef(null)
   const prevIdx = useRef(0)
   const shownAt = useRef(Date.now())
   const selfNav = useRef(false)
+  const landedRef = useRef(false)
   // Clips tab opens straight into the reel — no Recommended grid gate.
 
   const startIdx = useMemo(() => {
@@ -477,16 +492,17 @@ export default function ShortsFeed({
     prevIdx.current = startIdx
     shownAt.current = Date.now()
     goToRef.current?.(startIdx, 'auto')
-  }, [startIdx, focusId])
+  }, [focusId]) // only when focus id changes — not on every catalog tick
 
-  // Land on a real clip URL when opening /clips with no id.
+  // Land on a real clip URL when opening /clips with no id (replace, no remount).
   useEffect(() => {
-    if (focusId) return
+    if (focusId || landedRef.current) return
     const first = items[0]?.id
     if (!first) return
+    landedRef.current = true
     selfNav.current = true
-    onNavigate?.('clips', first)
-  }, [focusId, items[0]?.id, onNavigate])
+    replaceHash('content', first)
+  }, [focusId, items])
 
   useEffect(() => {
     const from = Math.max(0, activeIdx)

@@ -86,24 +86,52 @@ body::before {
 
 /* Optional light theme (profile menu toggle) */
 html[data-theme="light"] {
-  --color-bg: #f4f4f5;
-  --color-bg-alt: #fafafa;
+  --color-bg: #f1f5f9;
+  --color-bg-alt: #f8fafc;
   --color-surface: #ffffff;
-  --color-surface-2: #f4f4f5;
-  --color-surface-hover: #e4e4e7;
-  --color-border: #e4e4e7;
-  --color-border-strong: #d4d4d8;
-  --color-text: #18181b;
-  --color-text-secondary: #52525b;
-  --color-muted: #71717a;
-  --color-accent-primary: #18181b;
-  --color-accent-hover: #27272a;
+  --color-surface-2: #f8fafc;
+  --color-surface-hover: #e2e8f0;
+  --color-border: #e2e8f0;
+  --color-border-strong: #cbd5e1;
+  --color-text: #0f172a;
+  --color-text-secondary: #475569;
+  --color-muted: #64748b;
+  --color-accent-primary: #0f172a;
+  --color-accent-hover: #1e293b;
 }
 html[data-theme="light"] body,
 html[data-theme="light"] #__next,
 html[data-theme="light"] #root {
   background-color: var(--color-bg);
   color: var(--color-text);
+}
+
+/* Light theme: pull common dark chrome toward slate/white dashboards */
+html[data-theme="light"] header.sticky {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+html[data-theme="light"] header input[type="search"] {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+html[data-theme="light"] aside,
+html[data-theme="light"] [data-sidebar] {
+  background-color: #1c2434 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #e2e8f0 !important;
+}
+html[data-theme="light"] .dash-light,
+html[data-theme="light"] [data-dash="light"] {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+html[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+html[data-theme="light"] body::before {
+  background: radial-gradient(ellipse 70% 40% at 50% -10%, rgba(59, 130, 246, 0.06), transparent 60%);
 }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }

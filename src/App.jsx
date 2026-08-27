@@ -586,9 +586,7 @@ function AppShell() {
       case 'wallet':
       case 'calabi-cash':
         return (
-          <div className="p-4 md:p-6 max-w-3xl mx-auto">
-            <WalletSettings onNavigate={navigate} initialTab={routeParams.tab} />
-          </div>
+          <WalletSettings onNavigate={navigate} onOpenAuth={openAuth} initialTab={routeParams.tab} />
         )
       case 'stream-settings':
         return (

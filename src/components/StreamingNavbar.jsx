@@ -30,19 +30,19 @@ function ProfileRow({ icon: Icon, label, onClick, danger = false, trailing = nul
     <button
       type="button"
       onClick={onClick}
-      className={`w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-white hover:bg-white/10 ${
-        danger ? 'text-white hover:bg-white/10' : ''
+      className={`w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-zinc-100 hover:bg-[#272727] ${
+        danger ? 'text-zinc-100' : ''
       }`}
     >
-      {Icon ? <Icon className="h-4 w-4 text-white" /> : null}
-      <span className="flex-1 text-left text-white">{label}</span>
+      {Icon ? <Icon className="h-4 w-4 text-zinc-200" /> : null}
+      <span className="flex-1 text-left">{label}</span>
       {trailing}
     </button>
   )
 }
 
 function Divider() {
-  return <div className="border-t border-[#23232d] my-1" />
+  return <div className="border-t border-[#272727] my-1" />
 }
 
 export default function StreamingNavbar({
@@ -154,8 +154,8 @@ export default function StreamingNavbar({
                 </button>
 
                 {menuOpen && (
-                  <div className="absolute right-0 mt-2 w-60 border border-[#2d2d38] bg-[#14141b] shadow-2xl py-1 z-50">
-                    <div className="px-3.5 py-2.5 border-b border-[#23232d]">
+                  <div className="absolute right-0 mt-2 w-60 border border-[#272727] bg-[#0f0f0f] shadow-2xl py-1 z-50">
+                    <div className="px-3.5 py-2.5 border-b border-[#272727]">
                       <p className="text-xs font-semibold text-white truncate">{user?.displayName || 'User'}</p>
                       <p className="text-[11px] text-zinc-400 truncate">@{user?.handle || 'viewer'}</p>
                     </div>
@@ -192,7 +192,7 @@ export default function StreamingNavbar({
                       icon={Wallet}
                       label="Wallet"
                       onClick={() => handleNav('wallet')}
-                      trailing={<span className="text-[10px] text-white tabular-nums">{coins}</span>}
+                      trailing={<span className="text-[10px] text-zinc-300 tabular-nums">{coins}</span>}
                     />
                     <ProfileRow
                       icon={Gift}
@@ -252,7 +252,7 @@ export default function StreamingNavbar({
                 <CircleUserRound className="h-5 w-5" />
               </button>
               {guestOpen ? (
-                <div className="absolute right-0 mt-2 w-44 border border-[#2d2d38] bg-[#14141b] shadow-2xl py-1 z-50">
+                <div className="absolute right-0 mt-2 w-44 border border-[#272727] bg-[#0f0f0f] shadow-2xl py-1 z-50">
                   <ProfileRow
                     icon={CircleUserRound}
                     label="Sign in"

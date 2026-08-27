@@ -860,20 +860,20 @@ export default function CreatorStudio({
   }
 
   return (
-    <div className="h-[calc(100dvh-3.5rem)] min-h-[480px] flex bg-[#000000] text-zinc-100 overflow-hidden">
+    <div className="h-[calc(100dvh-3.5rem)] min-h-[480px] flex bg-slate-100 text-slate-900 overflow-hidden" data-dash="light">
       {/* Labeled studio rail */}
-      <aside className="hidden sm:flex w-56 shrink-0 border-r border-zinc-800 bg-[#050506] flex-col py-4">
+      <aside className="hidden sm:flex w-56 shrink-0 border-r border-white/10 bg-[#1c2434] flex-col py-4 text-slate-200">
         <button
           type="button"
           onClick={() => onNavigate?.('home')}
-          className="mx-3 mb-4 h-9 px-2 inline-flex items-center gap-2 text-xs text-zinc-500 hover:text-white"
+          className="mx-3 mb-4 h-9 px-2 inline-flex items-center gap-2 text-xs text-slate-400 hover:text-white"
         >
           <ChevronLeft className="h-4 w-4" /> Site
         </button>
         <nav className="flex-1 px-3 space-y-5 overflow-y-auto">
           {navGroups.map((g) => (
             <div key={g.name}>
-              <p className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">{g.name}</p>
+              <p className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">{g.name}</p>
               <div className="space-y-1">
                 {g.items.map((item) => {
                   const Icon = item.icon
@@ -884,8 +884,8 @@ export default function CreatorStudio({
                       type="button"
                       onClick={() => setSection(item.id)}
                       className={cn(
-                        'w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-left',
-                        active ? 'bg-white text-black' : 'text-zinc-400 hover:bg-[#141418] hover:text-white'
+                        'w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-left rounded-lg',
+                        active ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'
                       )}
                     >
                       <Icon className="h-4 w-4 shrink-0" />
@@ -900,11 +900,11 @@ export default function CreatorStudio({
       </aside>
 
       {/* Mobile section picker */}
-      <div className="sm:hidden absolute top-14 left-0 right-0 z-10 border-b border-zinc-800 bg-[#050506] px-3 py-2">
+      <div className="sm:hidden absolute top-14 left-0 right-0 z-10 border-b border-slate-200 bg-white px-3 py-2">
         <select
           value={section}
           onChange={(e) => setSection(e.target.value)}
-          className="w-full h-9 border border-zinc-800 bg-[#121218] px-2 text-sm text-white"
+          className="w-full h-9 border border-slate-200 bg-white px-2 text-sm text-slate-900 rounded-lg"
         >
           {STUDIO_NAV.map((s) => (
             <option key={s.id} value={s.id}>{s.label}</option>
@@ -914,11 +914,11 @@ export default function CreatorStudio({
 
       {/* Posts column — only where it helps */}
       {showPostsColumn ? (
-        <section className="w-[280px] max-w-[40vw] shrink-0 border-r border-zinc-800 flex flex-col min-h-0 bg-[#07070a] max-sm:hidden">
-          <div className="shrink-0 px-3 py-3 border-b border-zinc-800 space-y-2">
+        <section className="w-[280px] max-w-[40vw] shrink-0 border-r border-slate-200 flex flex-col min-h-0 bg-white max-sm:hidden">
+          <div className="shrink-0 px-3 py-3 border-b border-slate-200 space-y-2">
             <div>
-              <p className="text-sm font-semibold text-white">Your posts</p>
-              <p className="text-[11px] text-zinc-500">Select one to filter the map</p>
+              <p className="text-sm font-semibold text-slate-900">Your posts</p>
+              <p className="text-[11px] text-slate-500">Select one to filter the map</p>
             </div>
             <div className="flex gap-1">
               {[
@@ -963,9 +963,9 @@ export default function CreatorStudio({
       ) : null}
 
       {/* Main workspace */}
-      <main className="flex-1 min-w-0 min-h-0 flex flex-col max-sm:pt-12">
-        <header className="shrink-0 px-6 md:px-8 py-5 border-b border-zinc-800/80 bg-[#050506]">
-          <p className="text-lg font-semibold text-white tracking-tight">{meta.title}</p>
+      <main className="flex-1 min-w-0 min-h-0 flex flex-col max-sm:pt-12 bg-slate-100">
+        <header className="shrink-0 px-6 md:px-8 py-5 border-b border-slate-200 bg-white">
+          <p className="text-lg font-semibold text-slate-900 tracking-tight">{meta.title}</p>
         </header>
 
         <div className="flex-1 min-h-0 overflow-hidden px-6 md:px-8 py-6 md:py-8">
