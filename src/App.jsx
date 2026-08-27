@@ -12,6 +12,7 @@ import HomeFeed from './components/HomeFeed'
 import ShortsFeed from './components/ShortsFeed'
 import LiveView from './components/LiveView'
 import SettingsHub from './components/settings/SettingsHub'
+import WalletSettings from './components/settings/WalletSettings'
 import LibraryPage from './components/LibraryPage'
 import HistoryPage from './components/HistoryPage'
 import WatchAgainPage from './components/WatchAgainPage'
@@ -572,9 +573,12 @@ function AppShell() {
           />
         )
       case 'wallet':
-        return <SettingsHub section="wallet" onNavigate={navigate} initialTab={routeParams.tab} />
       case 'calabi-cash':
-        return <SettingsHub section="wallet" onNavigate={navigate} initialTab={routeParams.tab} />
+        return (
+          <div className="p-4 md:p-6 max-w-3xl mx-auto">
+            <WalletSettings onNavigate={navigate} initialTab={routeParams.tab} />
+          </div>
+        )
       case 'stream-settings':
         return (
           <CreatorStudio

@@ -95,7 +95,6 @@ export default function ChatSettings() {
           <input type="checkbox" checked={chatPremium} onChange={(e) => setChatPremium(e.target.checked)} />
           <span className="text-sm text-zinc-300">Premium</span>
         </label>
-        <p className="text-[11px] text-zinc-500">Everyone keeps chat open even if Followers or Premium are also checked.</p>
       </section>
 
       <section className="pt-6 border-t border-zinc-800 space-y-3">

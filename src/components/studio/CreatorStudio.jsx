@@ -194,7 +194,7 @@ function OverviewMembershipPrice({ userId }) {
       <input
         type="number"
         min={1}
-        max={50}
+        max={999}
         step={0.01}
         value={price}
         onChange={(e) => {
@@ -984,29 +984,6 @@ export default function CreatorStudio({
                 <GrassBarChart title="Posts / day" series={overviewSeries.posts} />
               </div>
               <OverviewMembershipPrice userId={user?.id} />
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() => setSection('lab')}
-                  className="h-11 px-5 bg-white text-black text-sm font-semibold inline-flex items-center gap-2"
-                >
-                  <Clapperboard className="h-4 w-4" /> Calabi Studio
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSection('content')}
-                  className="h-11 px-5 border border-zinc-700 text-sm text-zinc-200 hover:border-white"
-                >
-                  Content
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSection('analytics')}
-                  className="h-11 px-5 border border-zinc-700 text-sm text-zinc-200 hover:border-white"
-                >
-                  Analytics
-                </button>
-              </div>
             </div>
           ) : null}
 

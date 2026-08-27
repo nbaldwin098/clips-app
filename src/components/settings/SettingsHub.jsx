@@ -4,14 +4,12 @@ import AccountSettings from './AccountSettings'
 import SecuritySettings from './SecuritySettings'
 import NotificationsSettings from './NotificationsSettings'
 import LegalSettings from './LegalSettings'
-import WalletSettings from './WalletSettings'
 
 const SITE_PAGES = {
   account: AccountSettings,
   security: SecuritySettings,
   notifications: NotificationsSettings,
   legal: LegalSettings,
-  wallet: WalletSettings,
 }
 
 /** Site settings shell only. Creator pages open inside Creator Studio. */
