@@ -112,4 +112,4 @@ Generate VAPID (free): `npx web-push generate-vapid-keys`
 7. Native store shells  
 8. Full translations  
 
-Related: `docs/RENDER_ENV.md`, `docs/OWN_CHECKOUT.md`, `docs/OWN_PAYOUTS.md`, `docs/DEPLOY_CHECKLIST.md`, `docs/mediamtx.md`, BUG-010/016/064/081/082/083/086/087.
+Related: `docs/FREE_INFRA.md` (VAPID, translations, free RTMP tunnel, OAuth checklist), `docs/RENDER_ENV.md`, `docs/OWN_CHECKOUT.md`, `docs/OWN_PAYOUTS.md`, `docs/DEPLOY_CHECKLIST.md`, `docs/mediamtx.md`.
