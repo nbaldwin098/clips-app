@@ -199,7 +199,18 @@ function AppShell() {
   }, [user])
 
   const applyRoute = () => {
-    const { kind, id: rawRouteId, params } = parseRoute()
+    const parsed = parseRoute()
+    // Friendly legal URLs: /terms /privacy (and short aliases).
+    const LEGAL_ALIASES = {
+      terms: 'legal-tos',
+      tos: 'legal-tos',
+      privacy: 'legal-privacy',
+      'creator-agreement': 'legal-creator',
+      guidelines: 'legal-community',
+    }
+    const kind = LEGAL_ALIASES[parsed.kind] || parsed.kind
+    const rawRouteId = parsed.id
+    const params = parsed.params
     // Never stash objects in routeId — coerce to string id only.
     const id = rawRouteId && typeof rawRouteId === 'object'
       ? String(rawRouteId.id || '')

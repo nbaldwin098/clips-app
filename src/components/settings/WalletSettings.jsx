@@ -90,7 +90,7 @@ function CoinOrdersPanel({ onBuyCoins }) {
   )
 }
 
-/** Site-settings Coins — buy packs + order history. */
+/** Coins + Orders — mounted at /wallet (not under Site settings). */
 export default function WalletSettings({ onNavigate, initialTab = null }) {
   const start = initialTab === 'orders' ? 'orders' : 'coins'
   const [tab, setTab] = useState(start)
@@ -101,7 +101,7 @@ export default function WalletSettings({ onNavigate, initialTab = null }) {
 
   const onTab = (next) => {
     setTab(next)
-    onNavigate?.('settings', 'wallet', next === 'orders' ? { tab: 'orders' } : {})
+    onNavigate?.('wallet', '', next === 'orders' ? { tab: 'orders' } : {})
   }
 
   return (

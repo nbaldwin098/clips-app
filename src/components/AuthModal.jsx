@@ -6,8 +6,8 @@ import { sanitizeAuthError } from '../lib/authBrand'
 import BrandMark from './BrandMark'
 import { findOwnerLogin } from '../data/ownerLogin'
 
+// Apple omitted until Auth → Providers enables it (broken otherwise).
 const OAUTH = [
-  { id: 'apple', label: 'Continue with Apple' },
   { id: 'azure', label: 'Continue with Microsoft' },
   { id: 'twitter', label: 'Continue with X' },
 ]

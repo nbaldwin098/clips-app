@@ -4,6 +4,7 @@ import { membershipReturnPaid } from './stripeConfig'
 import { startPremiumCheckout } from './checkout'
 import { createNotification } from './notifications'
 import { creditCoins, getTierById, spendCalabiCash, creatorCashShare, usdToCashUnits } from './calabiCash'
+import { accruePurchaseCashback } from './rewards'
 import { CREATOR_REV_SHARE } from './revenueSplit'
 import { createDonationRequest } from './donationEscrow'
 
@@ -273,6 +274,9 @@ export function claimStripeReturn(user, params = {}, search = '') {
         usd: pending.amount,
         note: 'Coin pack',
       })
+      try {
+        accruePurchaseCashback(user.id, pending.amount, 'Coin pack cashback')
+      } catch { /* rewards are best-effort */ }
     }
     return { ok: true, kind: 'coin_pack', coins }
   }
