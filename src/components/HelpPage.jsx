@@ -20,7 +20,7 @@ export default function HelpPage() {
     },
     {
       q: 'Where is Studio, Coins, and analytics?',
-      a: 'Open your profile picture → Creator dashboard. Site settings has Account and Coins (with Orders). Create is in the left sidebar — there is no header hamburger.',
+      a: 'Open your profile picture → Creator dashboard. Site settings has Account and Coins (with Orders). Create is in the left sidebar — there is no hamburger in the header.',
     },
     {
       q: 'Can I watch without an account?',
