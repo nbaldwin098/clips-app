@@ -1,6 +1,6 @@
 /**
  * TailAdmin-style chrome: dark navy rail + white content cards.
- * Used by Creator Studio, Admin, Wallet, Rewards, Appeals, Messages, Settings.
+ * Used by Creator Studio, Admin, Wallet, Appeals, Messages, Settings.
  */
 import { cn } from '../../lib/utils'
 
