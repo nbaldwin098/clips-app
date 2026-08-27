@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import {
   LayoutDashboard, Users, Film, ShieldAlert, Wallet, Flag,
   Radio, LifeBuoy, Settings, ClipboardList, ShoppingBag, BarChart3, Newspaper,
+  Landmark,
 } from 'lucide-react'
 import {
   isAdminSession, adminLogin, adminLogout, listApplications, setApplicationStatus,
@@ -26,6 +27,7 @@ import AdminPeople from './admin/AdminPeople'
 import AdminContent from './admin/AdminContent'
 import AdminSafety from './admin/AdminSafety'
 import AdminWithdrawPanel from './admin/AdminWithdrawPanel'
+import AdminFinancePanel from './admin/AdminFinancePanel'
 import { listEscrow, adminReleaseEscrow, adminRefundEscrow } from '../lib/donationEscrow'
 import { getCreatorAnalytics } from '../lib/engagement'
 import { syncPublicEngagementFromCloud } from '../lib/graphSync'
@@ -71,6 +73,7 @@ const NAV = [
   { id: 'content', label: 'Content', icon: Film, roles: ['owner', 'admin', 'mod'] },
   { id: 'safety', label: 'Safety', icon: ShieldAlert, roles: ['owner', 'admin', 'mod'] },
   { id: 'shop', label: 'Marketplace', icon: ShoppingBag, roles: ['owner', 'admin', 'cs'] },
+  { id: 'finance', label: 'Finance', icon: Landmark, roles: ['owner', 'admin'] },
   { id: 'payouts', label: 'Payouts', icon: Wallet, roles: ['owner', 'admin'] },
   { id: 'promos', label: 'Promos', icon: Flag, roles: ['owner', 'admin'] },
   { id: 'news', label: 'News', icon: Newspaper, roles: ['owner', 'admin'] },
@@ -399,11 +402,12 @@ export default function AdminPortal() {
               {!tickets.length ? <p className="text-sm text-zinc-500">No tickets in cloud yet. Run migration 0018, then users submit from Support.</p> : null}
             </div>
           )}
+          {tab === 'finance' && <AdminFinancePanel />}
           {tab === 'payouts' && (
             <div className="p-5 space-y-4">
               <p className="text-[11px] text-zinc-500">
                 Creators request payouts from Studio → Earnings. Pay them outside Stripe, then mark paid here.
-                Manual record below is for hand ledgers / storage notes.
+                Manual record below is for hand ledgers / storage notes. For every card charge + fee, open Finance.
               </p>
               <AdminWithdrawPanel />
               <AdminEscrowPanel onChange={refresh} />
