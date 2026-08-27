@@ -1,5 +1,14 @@
 import { useState, useEffect } from 'react'
 import { getUserSettings, saveUserSettings } from '../../lib/storage'
+import {
+  pushSupported,
+  pushConfigured,
+  getSavedPushSubscription,
+  enableWebPush,
+  disableWebPush,
+} from '../../lib/webPush'
+import { t } from '../../lib/i18n'
+import { SettingsButton } from './SettingsTemplates'
 
 const DEFAULTS = {
   emailLive: true,
@@ -14,10 +23,14 @@ export default function NotificationsSettings() {
   const [prefs, setPrefs] = useState(DEFAULTS)
   const [ready, setReady] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [pushOn, setPushOn] = useState(false)
+  const [pushBusy, setPushBusy] = useState(false)
+  const [pushNote, setPushNote] = useState('')
 
   useEffect(() => {
     const s = getUserSettings()
     if (s.notifications) setPrefs({ ...DEFAULTS, ...s.notifications })
+    setPushOn(!!getSavedPushSubscription()?.endpoint)
     setReady(true)
   }, [])
 
@@ -27,9 +40,34 @@ export default function NotificationsSettings() {
     if (!ready) return
     saveUserSettings({ notifications: prefs })
     setSaved(true)
-    const t = setTimeout(() => setSaved(false), 1500)
-    return () => clearTimeout(t)
+    const tmr = setTimeout(() => setSaved(false), 1500)
+    return () => clearTimeout(tmr)
   }, [prefs, ready])
+
+  const onEnablePush = async () => {
+    setPushBusy(true)
+    setPushNote('')
+    const res = await enableWebPush()
+    setPushBusy(false)
+    if (res.ok) {
+      setPushOn(true)
+      setPushNote(t('push.enabled'))
+      setPrefs((p) => ({ ...p, pushLive: true }))
+      return
+    }
+    if (res.error === 'unsupported') setPushNote(t('push.unsupported'))
+    else if (res.error === 'need_vapid') setPushNote(t('push.needKey'))
+    else if (res.error === 'denied') setPushNote(t('push.denied'))
+    else setPushNote(res.error || 'Could not enable push.')
+  }
+
+  const onDisablePush = async () => {
+    setPushBusy(true)
+    await disableWebPush()
+    setPushBusy(false)
+    setPushOn(false)
+    setPushNote('')
+  }
 
   const Row = ({ id, label, hint }) => (
     <label className="flex items-start justify-between gap-4 py-3 border-b border-zinc-800 last:border-0">
@@ -46,7 +84,8 @@ export default function NotificationsSettings() {
       <div>
         <h1 className="text-xl font-semibold text-white">Notifications</h1>
         <p className="mt-1 text-sm text-zinc-500">
-          Saved on this device. Email and push are not sent from a server yet except copyright-related mail you configure later.
+          Preference toggles save on this device. Browser push needs a VAPID public key
+          (see docs/INFRA.md). Email delivery needs the mail Edge Function.
         </p>
       </div>
       <section className="rounded-xl border border-zinc-800 bg-[#121218] px-4">
@@ -55,8 +94,29 @@ export default function NotificationsSettings() {
         <Row id="emailSubs" label="New followers" />
         <Row id="emailStrikes" label="Copyright strikes" hint="Keep on for policy mail" />
       </section>
-      <section className="rounded-xl border border-zinc-800 bg-[#121218] px-4">
-        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 pt-3 pb-1">On this device</p>
+      <section className="rounded-xl border border-zinc-800 bg-[#121218] px-4 pb-3">
+        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 pt-3 pb-1">Browser push</p>
+        {!pushSupported() ? (
+          <p className="text-sm text-zinc-500 py-3">{t('push.unsupported')}</p>
+        ) : (
+          <div className="py-3 space-y-2">
+            <div className="flex flex-wrap gap-2">
+              {!pushOn ? (
+                <SettingsButton disabled={pushBusy || !pushConfigured()} onClick={onEnablePush}>
+                  {t('push.enable')}
+                </SettingsButton>
+              ) : (
+                <SettingsButton variant="ghost" disabled={pushBusy} onClick={onDisablePush}>
+                  {t('push.disable')}
+                </SettingsButton>
+              )}
+            </div>
+            {!pushConfigured() ? (
+              <p className="text-xs text-zinc-500">{t('push.needKey')}</p>
+            ) : null}
+            {pushNote ? <p className="text-xs text-zinc-400">{pushNote}</p> : null}
+          </div>
+        )}
         <Row id="pushLive" label="Live alerts" />
         <Row id="pushChat" label="Chat mentions" />
         <Row id="pushMarketing" label="Product updates" />

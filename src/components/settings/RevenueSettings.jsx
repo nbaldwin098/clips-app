@@ -3,6 +3,8 @@ import { useAuth } from '../../context/AuthContext'
 import { creatorBalance, getPayoutContact, setPayoutContact, listPayoutLedger } from '../../lib/payouts'
 import { getMembershipPrice } from '../../lib/engagement'
 import { KICK_TWITCH_PARITY, statusLabel } from '../../lib/creatorStudioCatalog'
+import { connectOnboardingAvailable, startConnectOnboarding } from '../../lib/stripeConnect'
+import { t } from '../../lib/i18n'
 import {
   SettingsPageHeader,
   SettingsSection,
@@ -22,7 +24,10 @@ export default function RevenueSettings({ hideHeader = false, onNavigate }) {
   const b = creatorBalance(user?.id, user?.handle)
   const membershipPrice = getMembershipPrice(user?.id)
   const [contact, setContact] = useState(() => getPayoutContact(user?.id))
+  const [connectBusy, setConnectBusy] = useState(false)
+  const [connectNote, setConnectNote] = useState('')
   const mine = listPayoutLedger().filter((r) => r.userId === user?.id)
+  const canTryConnect = connectOnboardingAvailable()
 
   useEffect(() => {
     if (!user?.id || !approved) return
@@ -98,19 +103,34 @@ export default function RevenueSettings({ hideHeader = false, onNavigate }) {
 
       <SettingsSection
         title="Stripe Connect"
-        description="Auto payouts when Connect is enabled. Today payouts stay manual."
+        description={t('connect.stripeHint')}
         divider
       >
         <SettingsCard>
           <p className="text-sm text-zinc-400 leading-relaxed">
-            Stripe Connect Express is not wired yet. Set server secrets and an onboarding
-            Edge Function when ready (see <code className="text-zinc-300">docs/INFRA.md</code>).
-            Until then, save a payout contact above and Admin marks payouts sent by hand.
+            Edge Function <code className="text-zinc-300">create-connect-account</code> is in the repo.
+            Deploy it, enable Connect in Stripe, and set <code className="text-zinc-300">STRIPE_SECRET_KEY</code>.
+            Until that works, save a payout contact above — Admin marks payouts sent by hand.
           </p>
-          <div className="mt-3">
-            <SettingsButton variant="ghost" disabled title="Needs Stripe Connect infra">
-              Connect Stripe (coming soon)
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <SettingsButton
+              disabled={connectBusy || !canTryConnect || !approved}
+              title={!approved ? 'Apply to earn first' : (!canTryConnect ? 'Needs Supabase' : t('connect.stripe'))}
+              onClick={async () => {
+                setConnectBusy(true)
+                setConnectNote('')
+                const res = await startConnectOnboarding()
+                setConnectBusy(false)
+                if (res.ok && res.url) {
+                  window.location.assign(res.url)
+                  return
+                }
+                setConnectNote(res.message || t('connect.stripeSoon'))
+              }}
+            >
+              {canTryConnect ? t('connect.stripe') : t('connect.stripeSoon')}
             </SettingsButton>
+            {connectNote ? <p className="text-xs text-zinc-500 w-full">{connectNote}</p> : null}
           </div>
         </SettingsCard>
       </SettingsSection>

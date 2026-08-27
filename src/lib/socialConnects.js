@@ -28,6 +28,80 @@ export function anySocialOAuthConfigured() {
   return SOCIAL_PROVIDERS.some((p) => socialOAuthConfigured(p.id))
 }
 
+/** Map UI provider id → Edge Function oauth-start provider slug. */
+const OAUTH_SLUG = {
+  youtube: 'youtube',
+  tiktok: 'tiktok',
+  instagram: 'instagram',
+  x: 'twitter',
+  facebook: 'facebook',
+}
+
+/**
+ * Start real OAuth when client ID + oauth-start URL are available.
+ * Falls back to local handle connect when not configured.
+ */
+export function startSocialOAuth(providerId, { state } = {}) {
+  if (!socialOAuthConfigured(providerId)) {
+    return { ok: false, error: 'not_configured', message: 'Set VITE_OAUTH_*_CLIENT_ID first.' }
+  }
+  const slug = OAUTH_SLUG[providerId] || providerId
+  const base = String(
+    runtimeEnv('VITE_OAUTH_START_URL')
+    || runtimeEnv('NEXT_PUBLIC_OAUTH_START_URL')
+    || ''
+  ).trim()
+  if (!base) {
+    return {
+      ok: false,
+      error: 'no_start_url',
+      message: 'Set VITE_OAUTH_START_URL to the oauth-start Edge Function URL.',
+    }
+  }
+  let url
+  try {
+    url = new URL(base)
+  } catch {
+    return { ok: false, error: 'bad_url', message: 'VITE_OAUTH_START_URL is not a valid URL.' }
+  }
+  url.searchParams.set('provider', slug)
+  if (state) url.searchParams.set('state', String(state))
+  if (typeof window !== 'undefined') {
+    window.location.assign(url.toString())
+  }
+  return { ok: true, url: url.toString() }
+}
+
+/** Apply ?oauth_ok= / ?oauth_error= from oauth-callback redirect. */
+export function consumeOAuthReturn(userId) {
+  if (typeof window === 'undefined' || !userId) return null
+  try {
+    const u = new URL(window.location.href)
+    const ok = u.searchParams.get('oauth_ok')
+    const err = u.searchParams.get('oauth_error')
+    if (!ok && !err) return null
+    if (ok) {
+      const provider = ok === 'twitter' ? 'x' : ok
+      connectSocial(userId, provider, '', { showOnProfile: true })
+      const row = getSocialConnects(userId)[provider]
+      if (row) {
+        const all = lsGet(SOCIAL, {}) || {}
+        all[userId] = {
+          ...(all[userId] || {}),
+          [provider]: { ...row, mock: false, oauthReady: true },
+        }
+        lsSet(SOCIAL, all)
+      }
+    }
+    u.searchParams.delete('oauth_ok')
+    u.searchParams.delete('oauth_error')
+    window.history.replaceState({}, '', u.pathname + u.search + u.hash)
+    return { ok: !!ok, provider: ok || null, error: err || null }
+  } catch {
+    return null
+  }
+}
+
 export function getSocialConnects(userId) {
   if (!userId) return {}
   return (lsGet(SOCIAL, {}) || {})[userId] || {}

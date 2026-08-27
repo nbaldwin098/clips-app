@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { Camera } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { getLocale, setLocale, listLocales, t, subscribeLocale } from '../../lib/i18n'
 import {
   SettingsPageHeader,
   SettingsSection,
   SettingsCard,
   SettingsInput,
   SettingsField,
+  SettingsSelect,
   SETTINGS_TEXTAREA,
   SettingsButton,
 } from './SettingsTemplates'
@@ -39,6 +41,7 @@ export default function AccountSettings({ onNavigate }) {
   const [avatarDraft, setAvatarDraft] = useState(null)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
+  const [locale, setLocaleState] = useState(() => getLocale())
   const avatarRef = useRef(null)
 
   useEffect(() => {
@@ -46,6 +49,8 @@ export default function AccountSettings({ onNavigate }) {
     setHandle(user?.handle || '')
     setBio(user?.bio || '')
   }, [user?.id, user?.displayName, user?.handle, user?.bio])
+
+  useEffect(() => subscribeLocale(setLocaleState), [])
 
   const dirty = Boolean(
     avatarDraft
@@ -144,6 +149,20 @@ export default function AccountSettings({ onNavigate }) {
             {err ? <p className="text-sm text-red-400">{err}</p> : null}
             <p className="text-[11px] text-zinc-500">{busy ? 'Saving…' : 'Saved as you type.'}</p>
           </div>
+        </SettingsCard>
+      </SettingsSection>
+
+      <SettingsSection title={t('i18n.language')} description={t('i18n.hint')} divider>
+        <SettingsCard>
+          <SettingsSelect
+            label={t('i18n.language')}
+            value={locale}
+            onChange={(e) => setLocale(e.target.value)}
+          >
+            {listLocales().map((l) => (
+              <option key={l.id} value={l.id}>{l.label}</option>
+            ))}
+          </SettingsSelect>
         </SettingsCard>
       </SettingsSection>
 
