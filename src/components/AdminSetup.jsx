@@ -60,7 +60,7 @@ export default function AdminSetup() {
         <p className="text-xs text-amber-400/90">
           Start with <strong className="text-amber-300">0001 → 0004</strong> if you have never set up this project.
           Error <code className="text-amber-200">42P01 … profiles does not exist</code> means 0004 was skipped — run 0004, then re-run the script that failed (e.g. 0019 News).
-          Latest listed: <strong className="text-amber-300">0023</strong> (Connect + push scaffolds).
+          Latest listed: <strong className="text-amber-300">0024</strong> (Stripe Connect settlements).
         </p>
         <p className="text-xs text-zinc-500">
           After 0004, promote yourself once (replace the UUID with Authentication → Users → your id):

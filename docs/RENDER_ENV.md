@@ -32,6 +32,7 @@ Health check: `GET /api/health` → 200 when Supabase env present, 503 otherwise
 Deploy notes:
 
 1. Use the **Node** web service on Render — not a Static Site (`render.yaml`).
-2. After migrate, confirm Admin → Setup lists SQL through the latest `supabase/migrations/*.sql` (through `0023`).
+2. After migrate, confirm Admin → Setup lists SQL through the latest `supabase/migrations/*.sql` (through `0024`).
 3. Old Static Render service for this domain must stay deleted (BUG-007).
-4. Full checklist: `docs/DEPLOY_CHECKLIST.md`. Migrations vs Admin Setup explained there.
+4. Stripe Connect: deploy `create-connect-account` + `stripe-webhook` — **`docs/OWN_CONNECT.md`**.
+5. Full checklist: `docs/DEPLOY_CHECKLIST.md`. Migrations vs Admin Setup explained there.

@@ -36,16 +36,17 @@ Window share remains the free fallback without any of the above.
 
 ## 2. Stripe Connect (creator auto-payouts)
 
-**Today:** Tips/memberships/Coins via Checkout Session; creator payouts are **manual**. Revenue calls Edge Function `create-connect-account` when Supabase is configured.
+**Code shipped:** Edge `create-connect-account` + `stripe-webhook`, client `stripeConnect.js`, Revenue status UI, migrations `0023`/`0024`. Guide: **`docs/OWN_CONNECT.md`**.
 
-**To ship:**
+**You still must:**
 1. Stripe Dashboard → Connect → enable Express.
 2. `supabase functions deploy create-connect-account`
-3. Secrets: `STRIPE_SECRET_KEY`, `APP_PUBLIC_URL` / `SITE_URL`
-4. Optional column `profiles.stripe_connect_account_id`
-5. After tip settle, Transfer to connected account (minus platform cut).
+3. `supabase functions deploy stripe-webhook --no-verify-jwt`
+4. Secrets: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `APP_PUBLIC_URL`
+5. Webhook events: `checkout.session.completed`, `account.updated`
+6. Run SQL **0024**
 
-Until then, keep manual payouts. Do not pretend Connect is live without secrets.
+Until Connect is enabled in Stripe, the button returns an honest error and manual payouts stay available.
 
 ---
 

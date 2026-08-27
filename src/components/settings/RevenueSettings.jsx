@@ -3,7 +3,12 @@ import { useAuth } from '../../context/AuthContext'
 import { creatorBalance, getPayoutContact, setPayoutContact, listPayoutLedger } from '../../lib/payouts'
 import { getMembershipPrice } from '../../lib/engagement'
 import { KICK_TWITCH_PARITY, statusLabel } from '../../lib/creatorStudioCatalog'
-import { connectOnboardingAvailable, startConnectOnboarding } from '../../lib/stripeConnect'
+import {
+  connectOnboardingAvailable,
+  startConnectOnboarding,
+  fetchConnectStatus,
+  connectStatusLabel,
+} from '../../lib/stripeConnect'
 import { t } from '../../lib/i18n'
 import {
   SettingsPageHeader,
@@ -26,6 +31,12 @@ export default function RevenueSettings({ hideHeader = false, onNavigate }) {
   const [contact, setContact] = useState(() => getPayoutContact(user?.id))
   const [connectBusy, setConnectBusy] = useState(false)
   const [connectNote, setConnectNote] = useState('')
+  const [connect, setConnect] = useState({
+    status: 'unknown',
+    payoutsEnabled: false,
+    detailsSubmitted: false,
+    accountId: '',
+  })
   const mine = listPayoutLedger().filter((r) => r.userId === user?.id)
   const canTryConnect = connectOnboardingAvailable()
 
@@ -33,6 +44,49 @@ export default function RevenueSettings({ hideHeader = false, onNavigate }) {
     if (!user?.id || !approved) return
     setPayoutContact(user.id, contact)
   }, [user?.id, approved, contact])
+
+  useEffect(() => {
+    if (!user?.id || !approved || !canTryConnect) return
+    let cancelled = false
+    fetchConnectStatus().then((res) => {
+      if (cancelled) return
+      setConnect({
+        status: res.status || 'unknown',
+        payoutsEnabled: !!res.payoutsEnabled,
+        detailsSubmitted: !!res.detailsSubmitted,
+        accountId: res.accountId || '',
+      })
+      if (res.message && res.status === 'not_deployed') setConnectNote(res.message)
+    })
+    return () => { cancelled = true }
+  }, [user?.id, approved, canTryConnect])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const c = params.get('connect')
+    if (!c) return
+    if (c === 'return') setConnectNote('Checking Stripe Connect status…')
+    if (c === 'refresh') setConnectNote('Restart Connect onboarding if the link expired.')
+    params.delete('connect')
+    const next = `${window.location.pathname}${params.toString() ? `?${params}` : ''}${window.location.hash || ''}`
+    window.history.replaceState({}, '', next)
+    if (approved && canTryConnect) {
+      fetchConnectStatus().then((res) => {
+        setConnect({
+          status: res.status || 'unknown',
+          payoutsEnabled: !!res.payoutsEnabled,
+          detailsSubmitted: !!res.detailsSubmitted,
+          accountId: res.accountId || '',
+        })
+        setConnectNote(
+          res.payoutsEnabled
+            ? 'Stripe Connect is ready — tips can auto-pay out (80% creator).'
+            : connectStatusLabel(res.status),
+        )
+      })
+    }
+  }, [approved, canTryConnect])
 
   const kpis = [
     { label: 'Paid out', value: `$${b.paid.toFixed(2)}`, hint: 'Marked sent by hand' },
@@ -47,12 +101,18 @@ export default function RevenueSettings({ hideHeader = false, onNavigate }) {
     { key: 'at', label: 'Date', align: 'right', muted: true, render: (r) => r.at?.slice(0, 10) || '—' },
   ]
 
+  const connectReady = connect.payoutsEnabled || connect.status === 'ready'
+
   return (
     <div className="space-y-8 pb-8">
       {!hideHeader ? (
         <SettingsPageHeader
           title="Revenue"
-          subtitle="Kick-style earnings overview. Payouts are sent by hand after approval — Stripe Connect is not connected."
+          subtitle={
+            connectReady
+              ? 'Earnings overview. Stripe Connect can auto-pay 80% of tips and memberships.'
+              : 'Earnings overview. Connect Stripe for auto payouts, or keep a manual payout contact.'
+          }
         />
       ) : null}
 
@@ -60,11 +120,11 @@ export default function RevenueSettings({ hideHeader = false, onNavigate }) {
 
       {!approved ? (
         <SettingsNotice tone="warn">
-          <p>Anyone can post and go live. Apply to earn if you want manual payouts.</p>
+          <p>Anyone can post and go live. Apply to earn if you want payouts.</p>
           <SettingsButton onClick={() => onNavigate?.('creator-apply')}>Apply to earn</SettingsButton>
         </SettingsNotice>
       ) : (
-        <SettingsSection title="Payout contact" description="Saved as you type. Nicholas marks money sent from Admin after you save a pay-to handle.">
+        <SettingsSection title="Payout contact" description="Fallback if Connect is off. Nicholas can still mark money sent by hand.">
           <SettingsCard>
             <div className="space-y-3 max-w-md">
               <SettingsSelect
@@ -103,14 +163,26 @@ export default function RevenueSettings({ hideHeader = false, onNavigate }) {
 
       <SettingsSection
         title="Stripe Connect"
-        description={t('connect.stripeHint')}
+        description="Creators keep 80% of tips and memberships. Platform keeps 20%."
         divider
       >
         <SettingsCard>
           <p className="text-sm text-zinc-400 leading-relaxed">
-            Edge Function <code className="text-zinc-300">create-connect-account</code> is in the repo.
-            Deploy it, enable Connect in Stripe, and set <code className="text-zinc-300">STRIPE_SECRET_KEY</code>.
-            Until that works, save a payout contact above — Admin marks payouts sent by hand.
+            {connectReady
+              ? 'Your Express account can receive Transfers after each paid tip or membership.'
+              : (
+                <>
+                  Finish Stripe Express onboarding to receive auto payouts.
+                  Setup guide: <code className="text-zinc-300">docs/OWN_CONNECT.md</code>.
+                  Until then, use the payout contact above.
+                </>
+              )}
+          </p>
+          <p className="mt-2 text-xs text-zinc-500">
+            Status: <span className="text-zinc-300">{connectStatusLabel(connect.status)}</span>
+            {connect.accountId ? (
+              <span className="text-zinc-600"> · {connect.accountId.slice(0, 10)}…</span>
+            ) : null}
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <SettingsButton
@@ -128,7 +200,7 @@ export default function RevenueSettings({ hideHeader = false, onNavigate }) {
                 setConnectNote(res.message || t('connect.stripeSoon'))
               }}
             >
-              {canTryConnect ? t('connect.stripe') : t('connect.stripeSoon')}
+              {connectReady ? 'Update Stripe payouts' : (canTryConnect ? t('connect.stripe') : t('connect.stripeSoon'))}
             </SettingsButton>
             {connectNote ? <p className="text-xs text-zinc-500 w-full">{connectNote}</p> : null}
           </div>
