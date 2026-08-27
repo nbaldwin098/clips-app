@@ -275,6 +275,11 @@ export function submitAppeal(row) {
   lsSet(K.appeals, list)
   return list[0]
 }
+export function listAppeals(userId) {
+  const list = lsGet(K.appeals, []) || []
+  if (!userId) return list
+  return list.filter((a) => a.userId === userId)
+}
 export function listDevices(userId) {
   const all = lsGet(K.devices, {})
   if (!all[userId]?.length) {

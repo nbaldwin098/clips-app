@@ -199,7 +199,7 @@ export default function CreatorEarningsPanel() {
     <div className="space-y-5 max-w-3xl overflow-y-auto h-full pr-1">
       <SettingsPageHeader
         title="Earnings"
-        subtitle="Your calabi payout dashboard — balances, methods, and withdrawals. No Stripe Express."
+        subtitle="Balances, payout methods, and withdrawals."
       />
       <SettingsKpiGrid
         items={[

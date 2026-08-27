@@ -9,8 +9,8 @@ export function getSupabaseConfig() {
     const configured = !!(url && anon)
     if (!configured && !_missingLogged) {
       _missingLogged = true
-      console.error(
-        '[calabi] NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY (or VITE_*) missing — cloud sync, auth, and uploads will not work. See docs/RENDER_ENV.md',
+      console.warn(
+        '[calabi] Supabase env missing — cloud sync/auth/uploads need NEXT_PUBLIC_SUPABASE_* (docs/RENDER_ENV.md)',
       )
     }
     return { url, anon, configured }

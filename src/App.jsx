@@ -1,7 +1,8 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
-import { AuthProvider, useAuth } from './context/AuthContext'
+import { useAuth } from './context/AuthContext'
 import { warnIfSupabaseMissing } from './lib/supabaseClient'
 import { initLocale } from './lib/i18n'
+import { initTheme } from './lib/theme'
 import ErrorBoundary from './components/ErrorBoundary'
 import StreamingNavbar from './components/StreamingNavbar'
 import CollapsibleSidebar from './components/CollapsibleSidebar'
@@ -80,6 +81,7 @@ const SellerPortal = lazy(() => import('./components/SellerPortal'))
 const NewsPage = lazy(() => import('./components/NewsPage'))
 const MessagesPage = lazy(() => import('./components/MessagesPage'))
 const BubbleApiPage = lazy(() => import('./components/BubbleApiPage'))
+const AppealsPage = lazy(() => import('./components/AppealsPage'))
 
 const KNOWN_VIEWS = new Set([
   'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
@@ -89,11 +91,11 @@ const KNOWN_VIEWS = new Set([
   'subscriptions', 'playlists', 'community', 'studio-tools', 'stream-settings',
   'calabi-studio', 'calabi-cash', 'shop', 'marketplace', 'seller', 'seller-portal', 'news',
   'legal-tos', 'legal-privacy', 'legal-creator', 'legal-community',
-  'watch', 'sound', 'tag', 'create', 'messages', 'api',
+  'watch', 'sound', 'tag', 'create', 'messages', 'api', 'appeals',
 ])
 
 function AppShell() {
-  const { user, isAuthenticated, authReady, mfaPending, passwordRecovery } = useAuth()
+  const { user, isAuthenticated, mfaPending, passwordRecovery } = useAuth()
   const nextNav = useNextNav()
   const pathname = nextNav?.pathname || (typeof window !== 'undefined' ? window.location.pathname : '/')
   const [view, setView] = useState('home')
@@ -119,6 +121,7 @@ function AppShell() {
   useEffect(() => {
     warnIfSupabaseMissing()
     try { initLocale() } catch { /* ignore */ }
+    try { initTheme() } catch { /* ignore */ }
   }, [])
 
   useEffect(() => {
@@ -471,9 +474,6 @@ function AppShell() {
       || view === 'vods'
       || view === 'verify'
     )
-    if (needsAuth && !authReady) {
-      return <div className="p-8 text-sm text-zinc-500">Checking sign-in…</div>
-    }
     if (needsAuth && !isAuthenticated) {
       const titles = {
         dashboard: 'Creator Studio',
@@ -650,6 +650,8 @@ function AppShell() {
             initialPeerHandle={routeParams.h || ''}
           />
         )
+      case 'appeals':
+        return <AppealsPage onNavigate={navigate} onOpenAuth={openAuth} />
       case 'create': return <CreatePage onCreate={openCreate} onOpenAuth={openAuth} onNavigate={navigate} />
       case 'legal-tos': return <TermsOfService />
       case 'legal-privacy': return <PrivacyPolicy />
@@ -744,9 +746,7 @@ function AppShell() {
 export default function App() {
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <AppShell />
-      </AuthProvider>
+      <AppShell />
     </ErrorBoundary>
   )
 }

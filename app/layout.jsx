@@ -1,4 +1,5 @@
 import './globals.css'
+import Providers from './Providers'
 
 export const metadata = {
   metadataBase: new URL('https://calabi.us'),
@@ -48,7 +49,7 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body className="bg-[#000000] text-zinc-100 antialiased selection:bg-white/30 selection:text-white">
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   )

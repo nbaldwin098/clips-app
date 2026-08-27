@@ -17,7 +17,7 @@ export const RESERVED_PATH_KINDS = new Set([
   'calabi-studio', 'calabi-cash', 'shop', 'marketplace', 'seller', 'seller-portal',
   'legal-tos', 'legal-privacy', 'legal-creator', 'legal-community',
   'watch', 'sound', 'tag', 'create', 'pic', 'playlist', 'v', 'content',
-  'api', 'assets', 'static', 'favicon.ico', 'robots.txt',
+  'api', 'assets', 'static', 'favicon.ico', 'robots.txt', 'appeals',
 ])
 
 function randomChar() {

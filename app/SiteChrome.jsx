@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { AuthProvider } from '../src/context/AuthContext'
 import StreamingNavbar from '../src/components/StreamingNavbar'
 import CollapsibleSidebar from '../src/components/CollapsibleSidebar'
 import AuthModal from '../src/components/AuthModal'
@@ -64,9 +63,5 @@ function ChromeInner({ children }) {
 }
 
 export default function SiteChrome({ children }) {
-  return (
-    <AuthProvider>
-      <ChromeInner>{children}</ChromeInner>
-    </AuthProvider>
-  )
+  return <ChromeInner>{children}</ChromeInner>
 }
