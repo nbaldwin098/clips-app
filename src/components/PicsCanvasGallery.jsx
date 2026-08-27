@@ -46,9 +46,8 @@ function loadImage(url) {
     }
     const img = new Image()
     img.decoding = 'async'
-    if (isHttpUrl(url) && !url.includes(typeof window !== 'undefined' ? window.location.host : '')) {
-      img.crossOrigin = 'anonymous'
-    }
+    // Do not set crossOrigin — many CDN thumbs lack ACAO and fail to load.
+    // Display-only canvas does not need pixel readback.
     img.onload = () => resolve(img)
     img.onerror = () => reject(new Error('load fail'))
     img.src = url
