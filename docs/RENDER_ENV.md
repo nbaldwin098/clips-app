@@ -16,7 +16,12 @@ Optional / legacy aliases still read by client helpers:
 
 - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
 - `VITE_LIVE_INGEST_CONNECTED` — only set `true` when RTMP/HLS is really live
+- `VITE_LIVE_RTMP_URL` / `NEXT_PUBLIC_LIVE_RTMP_URL` — real ingest only
+- `VITE_OAUTH_*_CLIENT_ID` — social publish (see `docs/INFRA.md`)
+- `VITE_MAIL_FUNCTION_URL` — real email codes (else demo code)
 - Do **not** set `VITE_STRIPE_PAYMENT_LINK` (own Checkout only)
+
+Blocked infra (Connect, RTMP host, OAuth apps, push, ffmpeg, native, i18n): **`docs/INFRA.md`**.
 
 Health check: `GET /api/health` → 200 when Supabase env present, 503 otherwise.
 

@@ -2,7 +2,9 @@
 
 CEO directive: execute everything. Track status.
 
-**500-item plan:** see [`docs/IMPROVEMENT_PLAN_500.md`](docs/IMPROVEMENT_PLAN_500.md) (fixes + improvements across live, money, studio, feeds, admin, SEO, etc.). Track bugs in [`docs/BUGS.md`](docs/BUGS.md). Ops: [`docs/DEPLOY_CHECKLIST.md`](docs/DEPLOY_CHECKLIST.md), [`docs/RENDER_ENV.md`](docs/RENDER_ENV.md).
+**500-item plan:** [`docs/IMPROVEMENT_PLAN_500.md`](docs/IMPROVEMENT_PLAN_500.md).  
+**Infra blockers (RTMP, Connect, OAuth, mail/push, transcode, native, i18n):** [`docs/INFRA.md`](docs/INFRA.md).  
+Bugs: [`docs/BUGS.md`](docs/BUGS.md). Ops: [`docs/DEPLOY_CHECKLIST.md`](docs/DEPLOY_CHECKLIST.md), [`docs/RENDER_ENV.md`](docs/RENDER_ENV.md).
 
 Legend: [x] done  [~] partial  [ ] open
 

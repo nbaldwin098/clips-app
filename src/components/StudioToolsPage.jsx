@@ -26,17 +26,9 @@ export default function StudioToolsPage({ onNavigate }) {
 
   return (
     <div className="p-4 md:p-6 max-w-lg mx-auto space-y-5">
-      <PageHeader
-        title="Studio tools"
-        onBack={() => onNavigate?.('dashboard')}
-        actions={
-          <span className="h-7 px-2.5 rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-300 text-[11px] font-bold uppercase tracking-wide inline-flex items-center">
-            Beta
-          </span>
-        }
-      />
+      <PageHeader title="Studio tools" onBack={() => onNavigate?.('dashboard')} />
       <p className="text-xs text-zinc-500">
-        Drafts and scheduled notes on this device. Full cloud scheduler is not shipped yet — treat publish times as best-effort Beta.
+        Drafts and schedule list (beta). Cloud scheduler comes later.
       </p>
 
       <section className="rounded-xl border border-zinc-800 bg-[#121218] p-4 space-y-2">

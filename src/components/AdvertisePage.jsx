@@ -3,8 +3,8 @@ import { FEATURE_ADS, adsEnabled } from '../lib/featureFlags'
 import PageHeader from './PageHeader'
 
 /**
- * Ads are not offered. Route stays usable (not a 404) and steers
- * creators / brands toward tips, premium membership, and Coins.
+ * Monetization explainer — ads are not offered.
+ * Soft brand tone; steers people to tips, premium, and Coins.
  */
 export default function AdvertisePage({ onNavigate }) {
   if (FEATURE_ADS || adsEnabled()) {
@@ -18,16 +18,15 @@ export default function AdvertisePage({ onNavigate }) {
 
   return (
     <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-6">
-      <PageHeader title="Ads are not offered" onBack={() => onNavigate?.('home')} />
+      <PageHeader title="Monetize on calabi" onBack={() => onNavigate?.('home')} />
 
-      <div className="rounded-2xl border border-zinc-800 bg-[#121218] p-6 sm:p-8 space-y-3">
+      <div className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-[#181824] via-[#121218] to-[#0d0d12] p-6 sm:p-8 space-y-3">
         <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-          We do not sell ad inventory
+          Earn with tips, membership, and Coins
         </h1>
         <p className="text-sm text-zinc-400 leading-relaxed">
-          There are no in-stream, clip, pic, or live ads on calabi. We do not run AdSense,
-          brand campaigns, or an advertiser portal. Creators earn through tips, premium
-          membership, and Coins — not ad RPM.
+          calabi does not sell brand ad slots or pay RPM. Creators keep 80% of tips and
+          premium memberships. Coins power chat cosmetics and viewer actions.
         </p>
       </div>
 
@@ -36,21 +35,21 @@ export default function AdvertisePage({ onNavigate }) {
           <Heart className="h-5 w-5 text-white" />
           <h2 className="text-sm font-semibold text-white">Tips</h2>
           <p className="text-xs text-zinc-500 leading-relaxed">
-            Viewers tip creators on lives and posts. Creators keep 80%.
+            Viewers tip on lives and posts. Creators keep 80%.
           </p>
         </div>
         <div className="rounded-xl border border-zinc-800 bg-[#121218] p-4 space-y-2">
           <Crown className="h-5 w-5 text-white" />
           <h2 className="text-sm font-semibold text-white">Premium</h2>
           <p className="text-xs text-zinc-500 leading-relaxed">
-            Paid livestream membership when Stripe is connected. Same 80/20 split.
+            Paid livestream membership when Stripe checkout is live.
           </p>
         </div>
         <div className="rounded-xl border border-zinc-800 bg-[#121218] p-4 space-y-2">
           <Coins className="h-5 w-5 text-white" />
           <h2 className="text-sm font-semibold text-white">Coins</h2>
           <p className="text-xs text-zinc-500 leading-relaxed">
-            Buy Coins packs to tip and unlock viewer actions. No ad spend.
+            Buy packs for chat cosmetics. Orders shows purchase history.
           </p>
         </div>
       </div>
@@ -58,24 +57,24 @@ export default function AdvertisePage({ onNavigate }) {
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
-          onClick={() => onNavigate?.('help')}
-          className="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl bg-white text-black text-xs font-bold hover:bg-zinc-200"
+          onClick={() => onNavigate?.('settings', 'wallet')}
+          className="inline-flex items-center gap-1.5 h-10 px-4 bg-white text-black text-xs font-bold hover:bg-zinc-200"
         >
-          How monetization works <ArrowRight className="h-3.5 w-3.5" />
+          Open Coins <ArrowRight className="h-3.5 w-3.5" />
         </button>
         <button
           type="button"
-          onClick={() => onNavigate?.('checkout')}
-          className="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl border border-zinc-700 text-xs text-zinc-200 hover:text-white"
+          onClick={() => onNavigate?.('help')}
+          className="inline-flex items-center gap-1.5 h-10 px-4 border border-zinc-700 text-xs text-zinc-200 hover:text-white"
         >
-          Buy Coins
+          How it works
         </button>
         <button
           type="button"
           onClick={() => onNavigate?.('creator-apply')}
-          className="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl border border-zinc-700 text-xs text-zinc-200 hover:text-white"
+          className="inline-flex items-center gap-1.5 h-10 px-4 border border-zinc-700 text-xs text-zinc-200 hover:text-white"
         >
-          Creator earnings
+          Apply to earn
         </button>
       </div>
     </div>

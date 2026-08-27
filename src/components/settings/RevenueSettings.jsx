@@ -97,8 +97,27 @@ export default function RevenueSettings({ hideHeader = false, onNavigate }) {
       </SettingsSection>
 
       <SettingsSection
+        title="Stripe Connect"
+        description="Auto payouts when Connect is enabled. Today payouts stay manual."
+        divider
+      >
+        <SettingsCard>
+          <p className="text-sm text-zinc-400 leading-relaxed">
+            Stripe Connect Express is not wired yet. Set server secrets and an onboarding
+            Edge Function when ready (see <code className="text-zinc-300">docs/INFRA.md</code>).
+            Until then, save a payout contact above and Admin marks payouts sent by hand.
+          </p>
+          <div className="mt-3">
+            <SettingsButton variant="ghost" disabled title="Needs Stripe Connect infra">
+              Connect Stripe (coming soon)
+            </SettingsButton>
+          </div>
+        </SettingsCard>
+      </SettingsSection>
+
+      <SettingsSection
         title="Monetization shortcuts"
-        description="Membership pricing and premium posts are configured separately."
+        description="Membership pricing and Coins are configured separately."
         divider
       >
         <div className="flex flex-wrap gap-2">
@@ -106,7 +125,7 @@ export default function RevenueSettings({ hideHeader = false, onNavigate }) {
             Membership price
           </SettingsButton>
           <SettingsButton variant="ghost" onClick={() => onNavigate?.('settings', 'wallet')}>
-            Open wallet
+            Open Coins
           </SettingsButton>
         </div>
       </SettingsSection>
