@@ -18,6 +18,11 @@ import {
   FolderOpen,
   Newspaper,
   ShoppingBag,
+  Eye,
+  Users,
+  DollarSign,
+  CheckCircle2,
+  Circle,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import CreatorOnboarding from '../CreatorOnboarding'
@@ -67,6 +72,7 @@ import {
   SettingsButton,
   SettingsNotice,
 } from '../settings/SettingsTemplates'
+import { StudioKpi, StudioCard, StudioAreaChart, StudioBarChart } from '../dash/StudioShell'
 
 const STUDIO_NAV = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard, group: 'Studio' },
@@ -119,7 +125,7 @@ function dayKey(ms) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-/** Last N days of views / followers / posts for overview grass bars. */
+/** Last N days of views / followers / posts for overview charts. */
 function buildOverviewSeries(creatorId, posts, days = 14) {
   const keys = []
   const now = new Date()
@@ -149,62 +155,69 @@ function buildOverviewSeries(creatorId, posts, days = 14) {
   }
 
   return {
+    keys,
     views: keys.map((k) => ({ day: k.slice(5), value: views[k] })),
     followers: keys.map((k) => ({ day: k.slice(5), value: followers[k] })),
     posts: keys.map((k) => ({ day: k.slice(5), value: postCounts[k] })),
   }
 }
 
-function GrassBarChart({ title, series }) {
-  const rows = Array.isArray(series) && series.length ? series : [{ day: '—', value: 0 }]
-  const max = Math.max(1, ...rows.map((r) => Number(r.value) || 0))
+function OverviewTasks({ postsLen, hasPayout, membershipSet, verified, onNavigate, onOpenUpload }) {
+  const tasks = [
+    {
+      id: 'upload',
+      label: 'Upload your first post',
+      done: postsLen > 0,
+      action: () => onOpenUpload?.('video'),
+    },
+    {
+      id: 'membership',
+      label: 'Set membership price in Earnings',
+      done: membershipSet,
+      action: () => onNavigate?.('dashboard', 'earnings'),
+    },
+    {
+      id: 'payout',
+      label: 'Add a payout method',
+      done: hasPayout,
+      action: () => onNavigate?.('dashboard', 'earnings'),
+    },
+    {
+      id: 'verify',
+      label: 'Get verified',
+      done: verified,
+      action: () => onNavigate?.('dashboard', 'verify'),
+    },
+    {
+      id: 'go-live',
+      label: 'Go live from Calabi Studio',
+      done: false,
+      action: () => onNavigate?.('dashboard', 'stream'),
+    },
+  ]
   return (
-    <div className="border border-zinc-800 bg-[#0a0a0e] p-3">
-      <p className="text-xs text-zinc-400 mb-3">{title}</p>
-      <div className="flex items-end gap-1 h-28">
-        {rows.map((r, i) => {
-          const h = Math.max(2, ((Number(r.value) || 0) / max) * 100)
-          return (
-            <div key={`${r.day}-${i}`} className="flex-1 min-w-0 flex flex-col items-center justify-end h-full gap-1">
-              <div
-                className="w-full bg-[#4ade80]"
-                style={{ height: `${h}%` }}
-                title={`${r.day}: ${r.value}`}
-              />
-            </div>
-          )
-        })}
-      </div>
-      <div className="flex justify-between text-[10px] text-zinc-600 mt-2">
-        <span>{rows[0]?.day || '—'}</span>
-        <span>{rows[rows.length - 1]?.day || '—'}</span>
-      </div>
-    </div>
-  )
-}
-
-function OverviewMembershipPrice({ userId }) {
-  const [price, setPrice] = useState(() => getMembershipPrice(userId))
-  useEffect(() => {
-    setPrice(getMembershipPrice(userId))
-  }, [userId])
-  return (
-    <label className="block max-w-xs">
-      <span className="text-xs font-medium text-zinc-400">Membership price (USD)</span>
-      <input
-        type="number"
-        min={1}
-        max={999}
-        step={0.01}
-        value={price}
-        onChange={(e) => {
-          const next = e.target.value
-          setPrice(next)
-          if (userId) setMembershipPrice(userId, next)
-        }}
-        className="mt-1 w-full h-10 border border-zinc-800 bg-black px-3 text-sm text-white"
-      />
-    </label>
+    <StudioCard title="Tasks">
+      <ul className="space-y-2">
+        {tasks.map((t) => (
+          <li key={t.id}>
+            <button
+              type="button"
+              onClick={t.action}
+              className="w-full flex items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-neutral-50"
+            >
+              {t.done ? (
+                <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+              ) : (
+                <Circle className="h-4 w-4 text-neutral-300 shrink-0" />
+              )}
+              <span className={cn('text-sm', t.done ? 'text-neutral-400 line-through' : 'text-neutral-800')}>
+                {t.label}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </StudioCard>
   )
 }
 
@@ -860,20 +873,20 @@ export default function CreatorStudio({
   }
 
   return (
-    <div className="h-[calc(100dvh-3.5rem)] min-h-[480px] flex bg-slate-100 text-slate-900 overflow-hidden" data-dash="light">
-      {/* Labeled studio rail */}
-      <aside className="hidden sm:flex w-56 shrink-0 border-r border-white/10 bg-[#1c2434] flex-col py-4 text-slate-200">
+    <div className="h-[calc(100dvh-3.5rem)] min-h-[480px] flex bg-[#f8f8f8] text-neutral-900 overflow-hidden" data-studio="tiktok-white">
+      {/* TikTok-white studio rail (profile-menu pages — not TailAdmin) */}
+      <aside className="hidden sm:flex w-56 shrink-0 border-r border-neutral-200 bg-white flex-col py-4 text-neutral-800">
         <button
           type="button"
           onClick={() => onNavigate?.('home')}
-          className="mx-3 mb-4 h-9 px-2 inline-flex items-center gap-2 text-xs text-slate-400 hover:text-white"
+          className="mx-3 mb-4 h-9 px-2 inline-flex items-center gap-2 text-xs text-neutral-500 hover:text-neutral-900"
         >
           <ChevronLeft className="h-4 w-4" /> Site
         </button>
         <nav className="flex-1 px-3 space-y-5 overflow-y-auto">
           {navGroups.map((g) => (
             <div key={g.name}>
-              <p className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">{g.name}</p>
+              <p className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-400">{g.name}</p>
               <div className="space-y-1">
                 {g.items.map((item) => {
                   const Icon = item.icon
@@ -885,7 +898,7 @@ export default function CreatorStudio({
                       onClick={() => setSection(item.id)}
                       className={cn(
                         'w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-left rounded-lg',
-                        active ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'
+                        active ? 'bg-neutral-100 text-neutral-900' : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900'
                       )}
                     >
                       <Icon className="h-4 w-4 shrink-0" />
@@ -900,11 +913,11 @@ export default function CreatorStudio({
       </aside>
 
       {/* Mobile section picker */}
-      <div className="sm:hidden absolute top-14 left-0 right-0 z-10 border-b border-slate-200 bg-white px-3 py-2">
+      <div className="sm:hidden absolute top-14 left-0 right-0 z-10 border-b border-neutral-200 bg-white px-3 py-2">
         <select
           value={section}
           onChange={(e) => setSection(e.target.value)}
-          className="w-full h-9 border border-slate-200 bg-white px-2 text-sm text-slate-900 rounded-lg"
+          className="w-full h-9 border border-neutral-200 bg-white px-2 text-sm text-neutral-900 rounded-lg"
         >
           {STUDIO_NAV.map((s) => (
             <option key={s.id} value={s.id}>{s.label}</option>
@@ -914,11 +927,11 @@ export default function CreatorStudio({
 
       {/* Posts column — only where it helps */}
       {showPostsColumn ? (
-        <section className="w-[280px] max-w-[40vw] shrink-0 border-r border-slate-200 flex flex-col min-h-0 bg-white max-sm:hidden">
-          <div className="shrink-0 px-3 py-3 border-b border-slate-200 space-y-2">
+        <section className="w-[280px] max-w-[40vw] shrink-0 border-r border-neutral-200 flex flex-col min-h-0 bg-white max-sm:hidden">
+          <div className="shrink-0 px-3 py-3 border-b border-neutral-200 space-y-2">
             <div>
-              <p className="text-sm font-semibold text-slate-900">Your posts</p>
-              <p className="text-[11px] text-slate-500">Select one to filter the map</p>
+              <p className="text-sm font-semibold text-neutral-900">Your posts</p>
+              <p className="text-[11px] text-neutral-500">Select one to filter the map</p>
             </div>
             <div className="flex gap-1">
               {[
@@ -932,8 +945,8 @@ export default function CreatorStudio({
                   type="button"
                   onClick={() => setPostFilter(t.id)}
                   className={cn(
-                    'h-7 px-2 text-[11px] font-semibold',
-                    postFilter === t.id ? 'bg-white text-black' : 'bg-[#18181f] text-zinc-400'
+                    'h-7 px-2 text-[11px] font-semibold rounded',
+                    postFilter === t.id ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600'
                   )}
                 >
                   {t.label}
@@ -943,7 +956,7 @@ export default function CreatorStudio({
           </div>
           <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-2">
             {filteredPosts.length === 0 ? (
-              <p className="p-3 text-xs text-zinc-500">No posts yet.</p>
+              <p className="p-3 text-xs text-neutral-500">No posts yet.</p>
             ) : filteredPosts.map((post) => (
               <PostRow
                 key={post.id}
@@ -963,14 +976,14 @@ export default function CreatorStudio({
       ) : null}
 
       {/* Main workspace */}
-      <main className="flex-1 min-w-0 min-h-0 flex flex-col max-sm:pt-12 bg-slate-100">
-        <header className="shrink-0 px-6 md:px-8 py-5 border-b border-slate-200 bg-white">
-          <p className="text-lg font-semibold text-slate-900 tracking-tight">{meta.title}</p>
+      <main className="flex-1 min-w-0 min-h-0 flex flex-col max-sm:pt-12 bg-[#f8f8f8]">
+        <header className="shrink-0 px-6 md:px-8 py-5 border-b border-neutral-200 bg-white">
+          <p className="text-lg font-semibold text-neutral-900 tracking-tight">{meta.title}</p>
         </header>
 
         <div className="flex-1 min-h-0 overflow-hidden px-6 md:px-8 py-6 md:py-8">
           {section === 'overview' ? (
-            <div className="h-full min-h-0 overflow-y-auto space-y-8 max-w-4xl">
+            <div className="h-full min-h-0 overflow-y-auto space-y-6 max-w-6xl">
               {showOnboarding ? (
                 <CreatorOnboarding
                   onOpenUpload={onOpenUpload}
@@ -978,12 +991,58 @@ export default function CreatorStudio({
                   onNavigate={onNavigate}
                 />
               ) : null}
-              <div className="grid gap-3 sm:grid-cols-3">
-                <GrassBarChart title="Views / day" series={overviewSeries.views} />
-                <GrassBarChart title="Followers / day" series={overviewSeries.followers} />
-                <GrassBarChart title="Posts / day" series={overviewSeries.posts} />
+
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <StudioKpi label="Total views" value={formatCount(views)} icon={Eye} />
+                <StudioKpi label="Followers" value={formatCount(followers)} hint={`${formatCount(premiumSubs)} premium`} icon={Users} />
+                <StudioKpi label="Posts" value={String(posts.length)} icon={Film} />
+                <StudioKpi label="Available $" value={`$${Number(balance?.paid || 0).toFixed(2)}`} icon={DollarSign} />
               </div>
-              <OverviewMembershipPrice userId={user?.id} />
+
+              <div className="grid gap-4 lg:grid-cols-3">
+                <StudioCard
+                  title="Views vs followers"
+                  className="lg:col-span-2"
+                  action={<span className="text-[11px] text-neutral-400">Last 14 days</span>}
+                >
+                  <StudioAreaChart
+                    seriesA={overviewSeries.views.map((r) => Number(r.value) || 0)}
+                    seriesB={overviewSeries.followers.map((r) => Number(r.value) || 0)}
+                    labels={[overviewSeries.views[0]?.day || '', overviewSeries.views.at(-1)?.day || '']}
+                    height={200}
+                  />
+                  <div className="mt-2 flex gap-4 text-[11px] text-neutral-500">
+                    <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#161823]" /> Views</span>
+                    <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#fe2c55]" /> Followers</span>
+                  </div>
+                </StudioCard>
+                <StudioCard title="Posts this week" action={<span className="text-[11px] text-neutral-400">7d</span>}>
+                  <StudioBarChart
+                    values={overviewSeries.posts.slice(-7).map((r) => Number(r.value) || 0)}
+                    labels={overviewSeries.posts.slice(-7).map((r) => r.day)}
+                  />
+                </StudioCard>
+              </div>
+
+              <div className="grid gap-4 lg:grid-cols-2">
+                <OverviewTasks
+                  postsLen={posts.length}
+                  hasPayout={Number(balance?.paid || 0) > 0}
+                  membershipSet={Number(getMembershipPrice(user?.id)) > 0}
+                  verified={verified}
+                  onNavigate={onNavigate}
+                  onOpenUpload={onOpenUpload}
+                />
+                <StudioCard title="Channel status">
+                  <ul className="space-y-3 text-sm text-neutral-700">
+                    <li className="flex justify-between gap-3"><span className="text-neutral-500">Creator</span><span className="font-medium">{approved ? 'Approved' : 'Viewer / apply'}</span></li>
+                    <li className="flex justify-between gap-3"><span className="text-neutral-500">Live</span><span className="font-medium">{liveBadgeLabel(live)}</span></li>
+                    <li className="flex justify-between gap-3"><span className="text-neutral-500">Likes</span><span className="font-medium tabular-nums">{formatCount(likes)}</span></li>
+                    <li className="flex justify-between gap-3"><span className="text-neutral-500">VODs</span><span className="font-medium tabular-nums">{vods.length}</span></li>
+                    <li className="flex justify-between gap-3"><span className="text-neutral-500">Verification</span><span className="font-medium">{verified ? 'Verified' : (verifyStatus || 'Not started')}</span></li>
+                  </ul>
+                </StudioCard>
+              </div>
             </div>
           ) : null}
 

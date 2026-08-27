@@ -106,18 +106,20 @@ html[data-theme="light"] #root {
   color: var(--color-text);
 }
 
-/* Light theme: pull common dark chrome toward slate/white dashboards */
+/* Light preference only affects dashboard content shells — site chrome stays Twitch-black. */
 html[data-theme="light"] header.sticky {
-  background-color: #ffffff !important;
-  border-color: #e2e8f0 !important;
+  background-color: #0f0f0f !important;
+  border-color: #272727 !important;
+  color: #f4f4f5 !important;
 }
 html[data-theme="light"] header input[type="search"] {
-  background-color: #f8fafc !important;
-  border-color: #e2e8f0 !important;
-  color: #0f172a !important;
+  background-color: #121212 !important;
+  border-color: #303030 !important;
+  color: #f4f4f5 !important;
 }
-html[data-theme="light"] aside,
-html[data-theme="light"] [data-sidebar] {
+/* Dashboard navy rail only — never recolor the site left rail */
+html[data-theme="light"] [data-dash="light"] > aside,
+html[data-theme="light"] [data-dash="light"] aside {
   background-color: #1c2434 !important;
   border-color: rgba(255, 255, 255, 0.08) !important;
   color: #e2e8f0 !important;

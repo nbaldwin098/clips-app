@@ -11,7 +11,7 @@ import {
   shouldPromptSavePayment,
   clearPaymentSavePrompt,
 } from '../../lib/paymentMethods'
-import DashboardShell, { DashCard, DashKpi } from '../dash/DashboardShell'
+import StudioShell, { StudioCard, StudioKpi } from '../dash/StudioShell'
 import AuthRequired from '../AuthRequired'
 
 function formatWhen(iso) {
@@ -44,7 +44,7 @@ const NAV = [
   { id: 'payments', label: 'Payment methods', icon: CreditCard, group: 'Wallet' },
 ]
 
-/** Coins + Orders + shared payment methods — TailAdmin-style light shell. */
+/** Coins + Orders + payment methods — TikTok-white studio shell (profile menu). */
 export default function WalletSettings({ onNavigate, onOpenAuth, initialTab = null }) {
   const { user, isAuthenticated } = useAuth()
   const start = initialTab === 'orders' || initialTab === 'payments' ? initialTab : 'coins'
@@ -106,7 +106,7 @@ export default function WalletSettings({ onNavigate, onOpenAuth, initialTab = nu
   }
 
   return (
-    <DashboardShell
+    <StudioShell
       title="Wallet"
       nav={NAV}
       activeId={tab}
@@ -115,33 +115,33 @@ export default function WalletSettings({ onNavigate, onOpenAuth, initialTab = nu
     >
       <div className="space-y-5 max-w-4xl">
         <div className="grid sm:grid-cols-3 gap-3">
-          <DashKpi label="Coin balance" value={coins.toLocaleString()} icon={Wallet} />
-          <DashKpi label="Orders" value={String(rows.length)} icon={Wallet} />
-          <DashKpi label="Saved methods" value={String(methods.length)} icon={CreditCard} />
+          <StudioKpi label="Coin balance" value={coins.toLocaleString()} icon={Wallet} />
+          <StudioKpi label="Orders" value={String(rows.length)} icon={Wallet} />
+          <StudioKpi label="Saved methods" value={String(methods.length)} icon={CreditCard} />
         </div>
 
         {savePrompt ? (
-          <DashCard title="Save payment method?">
+          <StudioCard title="Save payment method?">
             <p className="text-sm text-slate-600 mb-3">Use this card again in Shop and Wallet.</p>
             <div className="flex gap-2">
-              <button type="button" onClick={acceptSave} className="h-9 px-3 bg-sky-600 text-white text-xs font-semibold rounded-lg">Save</button>
+              <button type="button" onClick={acceptSave} className="h-9 px-3 bg-neutral-900 text-white text-xs font-semibold rounded-lg">Save</button>
               <button type="button" onClick={() => { clearPaymentSavePrompt(user.id); setSavePrompt(false) }} className="h-9 px-3 border border-slate-300 text-xs rounded-lg">Not now</button>
             </div>
-          </DashCard>
+          </StudioCard>
         ) : null}
 
         {tab === 'coins' ? (
-          <DashCard title="Buy coins">
+          <StudioCard title="Buy coins">
             <CalabiCashShop />
-          </DashCard>
+          </StudioCard>
         ) : null}
 
         {tab === 'orders' ? (
-          <DashCard title="Coin orders">
+          <StudioCard title="Coin orders">
             {!rows.length ? (
               <div className="text-center space-y-3 py-4">
                 <p className="text-sm text-slate-500">No coin orders yet.</p>
-                <button type="button" onClick={() => onTab('coins')} className="h-9 px-4 bg-sky-600 text-white text-xs font-semibold rounded-lg">Buy Coins</button>
+                <button type="button" onClick={() => onTab('coins')} className="h-9 px-4 bg-neutral-900 text-white text-xs font-semibold rounded-lg">Buy Coins</button>
               </div>
             ) : (
               <ul className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden">
@@ -167,11 +167,11 @@ export default function WalletSettings({ onNavigate, onOpenAuth, initialTab = nu
                 })}
               </ul>
             )}
-          </DashCard>
+          </StudioCard>
         ) : null}
 
         {tab === 'payments' ? (
-          <DashCard title="Payment methods">
+          <StudioCard title="Payment methods">
             <p className="text-xs text-slate-500 mb-3">Shared with Shop. Brand + last four only.</p>
             {!methods.length ? (
               <p className="text-sm text-slate-500">No saved methods yet.</p>
@@ -198,9 +198,9 @@ export default function WalletSettings({ onNavigate, onOpenAuth, initialTab = nu
             <button type="button" onClick={() => onNavigate?.('shop')} className="mt-3 text-xs text-sky-600 hover:text-sky-700">
               Open Shop →
             </button>
-          </DashCard>
+          </StudioCard>
         ) : null}
       </div>
-    </DashboardShell>
+    </StudioShell>
   )
 }
