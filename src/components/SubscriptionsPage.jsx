@@ -5,8 +5,8 @@ import { isPremiumSub } from '../lib/engagement'
 import { listIndexedUsers } from '../lib/moderation'
 import { useContentSyncTick } from '../lib/useContentSync'
 import { lsGet } from '../lib/storage'
-import PageHeader from './PageHeader'
 import AuthRequired from './AuthRequired'
+import StudioShell, { StudioCard, StudioKpi } from './dash/StudioShell'
 
 /** Creators where this user holds a premium live membership. */
 function listPremiumMemberships(userId) {
@@ -19,7 +19,6 @@ function listPremiumMemberships(userId) {
     if (u?.id && isPremiumSub(userId, u.id)) ids.add(u.id)
   }
 
-  // Scan local premium_* keys in case creator is not in the index yet.
   if (typeof localStorage !== 'undefined') {
     for (let i = 0; i < localStorage.length; i += 1) {
       const key = localStorage.key(i)
@@ -53,45 +52,50 @@ export default function SubscriptionsPage({ onNavigate, onOpenAuth, onOpenProfil
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-[800px] mx-auto space-y-6">
-      <PageHeader
-        title="Subscriptions"
-        subtitle="Premium live memberships"
-        onBack={() => onNavigate?.('home')}
-      />
-
-      {memberships.length === 0 ? (
-        <div className="border border-zinc-800 bg-[#121218] px-6 py-12 text-center">
-          <Crown className="h-8 w-8 text-zinc-500 mx-auto" />
-          <p className="mt-4 text-sm text-zinc-200">No premium memberships yet.</p>
-          <p className="mt-1 text-xs text-zinc-500">
-            Premium is for livestream channels. Follow stays free on the Following feed.
-          </p>
-        </div>
-      ) : (
-        <ul className="divide-y divide-zinc-800 border border-zinc-800">
-          {memberships.map((c) => (
-            <li key={c.id}>
-              <button
-                type="button"
-                onClick={() => onOpenProfile?.(c.handle, c.id)}
-                className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#181820]"
-              >
-                <div className="h-10 w-10 rounded-full bg-white/15 text-white flex items-center justify-center text-sm font-semibold overflow-hidden shrink-0">
-                  {c.avatarUrl
-                    ? <img src={c.avatarUrl} alt="" className="h-full w-full object-cover" />
-                    : (c.displayName || '?')[0].toUpperCase()}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm text-white truncate">{c.displayName}</p>
-                  <p className="text-[11px] text-zinc-500 truncate">@{c.handle}</p>
-                </div>
-                <span className="text-[10px] uppercase tracking-wide text-amber-400 shrink-0">Premium</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+    <StudioShell
+      title="Subscriptions"
+      nav={[{ id: 'subs', label: 'Memberships', icon: Crown, group: 'Account' }]}
+      activeId="subs"
+      onNav={() => {}}
+      onBack={() => onNavigate?.('home')}
+    >
+      <div className="space-y-5 max-w-2xl">
+        <StudioKpi label="Active memberships" value={String(memberships.length)} icon={Crown} />
+        <StudioCard title="Premium live memberships">
+          {memberships.length === 0 ? (
+            <div className="py-8 text-center">
+              <Crown className="h-8 w-8 text-neutral-300 mx-auto" />
+              <p className="mt-4 text-sm text-neutral-800">No premium memberships yet.</p>
+              <p className="mt-1 text-xs text-neutral-500">
+                Premium is for livestream channels. Follow stays free on the Following feed.
+              </p>
+            </div>
+          ) : (
+            <ul className="divide-y divide-neutral-100">
+              {memberships.map((c) => (
+                <li key={c.id}>
+                  <button
+                    type="button"
+                    onClick={() => onOpenProfile?.(c.handle, c.id)}
+                    className="w-full flex items-center gap-3 px-1 py-3 text-left hover:bg-neutral-50 rounded-lg"
+                  >
+                    <div className="h-10 w-10 rounded-full bg-neutral-100 text-neutral-800 flex items-center justify-center text-sm font-semibold overflow-hidden shrink-0">
+                      {c.avatarUrl
+                        ? <img src={c.avatarUrl} alt="" className="h-full w-full object-cover" />
+                        : (c.displayName || '?')[0].toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-neutral-900 truncate">{c.displayName}</p>
+                      <p className="text-[11px] text-neutral-500 truncate">@{c.handle}</p>
+                    </div>
+                    <span className="text-[10px] uppercase tracking-wide text-[#fe2c55] shrink-0">Premium</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </StudioCard>
+      </div>
+    </StudioShell>
   )
 }

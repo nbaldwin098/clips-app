@@ -30,7 +30,11 @@ export default function SettingsHub({ section, onNavigate, initialTab = null }) 
   const id = SITE_PAGES[section] ? section : 'account'
   const Page = SITE_PAGES[id]
   return (
-    <SettingsLayout section={id} onSection={(next) => onNavigate?.('settings', next)}>
+    <SettingsLayout
+      section={id}
+      onSection={(next) => onNavigate?.('settings', next)}
+      onBack={() => onNavigate?.('home')}
+    >
       <Page onNavigate={onNavigate} initialTab={initialTab} />
     </SettingsLayout>
   )

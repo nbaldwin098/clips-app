@@ -13,56 +13,43 @@ import {
   refreshWalletFromCloud,
 } from '../../lib/calabiCash'
 import { buildMethodSummary, storePayoutSecret, removePayoutSecret, pullPayoutSecretsCloud } from '../../lib/payoutVault'
+import { getMembershipPrice, setMembershipPrice } from '../../lib/engagement'
+import { StudioCard, StudioKpi, StudioAreaChart } from '../dash/StudioShell'
 import {
   SettingsCard,
-  SettingsKpiGrid,
   SettingsButton,
-  SettingsPageHeader,
 } from '../settings/SettingsTemplates'
 
 function usd(n) {
   return `$${(Number(n) || 0).toFixed(2)}`
 }
 
-function IncomeChart({ series }) {
-  const rows = Array.isArray(series) && series.length ? series : [{ day: '', usd: 0 }]
-  const max = Math.max(1, ...rows.map((r) => Number(r.usd) || 0))
-  const w = 560
-  const h = 160
-  const pad = 12
-  const denom = Math.max(1, rows.length - 1)
-  const pts = rows.map((r, i) => {
-    const x = pad + (i / denom) * (w - pad * 2)
-    const y = h - pad - ((Number(r.usd) || 0) / max) * (h - pad * 2)
-    return `${x},${y}`
-  })
-  const poly = pts.join(' ')
-  const area = `${pad},${h - pad} ${poly} ${w - pad},${h - pad}`
-  const last = Number(rows[rows.length - 1]?.usd) || 0
-  const prev = Number(rows[rows.length - 2]?.usd) || 0
-  const delta = last - prev
+function MembershipPriceEditor({ userId }) {
+  const [price, setPrice] = useState(() => getMembershipPrice(userId))
+  useEffect(() => {
+    setPrice(getMembershipPrice(userId))
+  }, [userId])
   return (
-    <div className="rounded-xl border border-zinc-800 bg-[#0a0a0e] p-3">
-      <div className="flex items-baseline justify-between mb-2">
-        <p className="text-xs text-zinc-400">Income / day (30d)</p>
-        <p className={`text-xs font-semibold ${delta >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-          {delta >= 0 ? '+' : ''}{(Number(delta) || 0).toFixed(2)} vs yesterday
-        </p>
-      </div>
-      <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-40">
-        <defs>
-          <linearGradient id="earnFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#34d399" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#34d399" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <polygon points={area} fill="url(#earnFill)" />
-        <polyline points={poly} fill="none" stroke="#34d399" strokeWidth="2.5" strokeLinejoin="round" />
-      </svg>
-      <div className="flex justify-between text-[10px] text-zinc-600 mt-1">
-        <span>{rows[0]?.day || '—'}</span>
-        <span>{rows[rows.length - 1]?.day || '—'}</span>
-      </div>
+    <div className="flex flex-wrap items-end gap-3">
+      <label className="block min-w-[200px] flex-1">
+        <span className="text-xs font-medium text-neutral-500">USD / month</span>
+        <div className="mt-1.5 flex items-center gap-2">
+          <span className="text-lg font-semibold text-neutral-900">$</span>
+          <input
+            type="number"
+            min={1}
+            max={50}
+            step={0.01}
+            value={price}
+            onChange={(e) => {
+              const next = e.target.value
+              setPrice(next)
+              if (userId) setMembershipPrice(userId, next)
+            }}
+            className="h-11 w-full max-w-[200px] rounded-lg border border-neutral-200 bg-white px-3 text-base font-semibold text-neutral-900 tabular-nums"
+          />
+        </div>
+      </label>
     </div>
   )
 }
@@ -196,19 +183,27 @@ export default function CreatorEarningsPanel() {
 
   return (
     <div className="space-y-5 overflow-y-auto h-full pr-1">
-      <SettingsPageHeader
-        title="Earnings"
-        subtitle="Pics, clips, and videos."
-      />
-      <SettingsKpiGrid
-        items={[
-          { label: 'Available', value: usd(earnings.availableUsd) },
-          { label: 'Pending', value: usd(earnings.pendingUsd) },
-          { label: 'Lifetime', value: usd(earnings.lifetimeUsd) },
-          { label: 'Coins', value: String(coins) },
-        ]}
-      />
-      <IncomeChart series={series} />
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <StudioKpi label="Available" value={usd(earnings.availableUsd)} />
+        <StudioKpi label="Pending" value={usd(earnings.pendingUsd)} />
+        <StudioKpi label="Lifetime" value={usd(earnings.lifetimeUsd)} />
+        <StudioKpi label="Coins" value={String(coins)} />
+      </div>
+
+      <StudioCard title="Membership price" action={<span className="text-[11px] text-neutral-400">Monthly USD</span>}>
+        <MembershipPriceEditor userId={uid} />
+        <p className="mt-2 text-xs text-neutral-500">
+          Viewers pay this for premium live membership. Set it here — not on Overview.
+        </p>
+      </StudioCard>
+
+      <StudioCard title="Income / day" action={<span className="text-[11px] text-neutral-400">30d</span>}>
+        <StudioAreaChart
+          seriesA={(series || []).map((r) => Number(r.usd) || 0)}
+          labels={[(series || [])[0]?.day || '', (series || []).at(-1)?.day || '']}
+          height={160}
+        />
+      </StudioCard>
 
       <SettingsCard
         title="Withdraw"
