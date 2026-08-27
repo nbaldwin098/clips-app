@@ -147,18 +147,26 @@ async function onPaymentIntentSucceeded(
   const meta = (pi.metadata || {}) as Record<string, string>
   // Skip PaymentIntents with no calabi metadata (not from our Checkout)
   if (!meta.kind && !meta.userId) return
+  const listCents = Math.round(
+    Number(meta.listAmountCents || meta.amountCents || pi.amount_received || pi.amount || 0) || 0,
+  )
+  const feeCents = Math.round(Number(meta.platformFeeCents || 0) || 0)
   await settlePayment(stripe, sb, {
     settlementId,
     kind: String(meta.kind || ''),
     payerUserId: String(meta.userId || ''),
     creatorId: String(meta.creatorId || ''),
-    amountCents: Math.round(Number(meta.amountCents || pi.amount_received || pi.amount || 0) || 0),
+    amountCents: listCents,
+    feeCents,
     currency: String(pi.currency || 'usd').toLowerCase(),
     extraMeta: {
       contentId: meta.contentId || '',
       tierId: meta.tierId || '',
       orderId: meta.orderId || '',
       payment_intent: pi.id,
+      listAmountCents: listCents,
+      platformFeeCents: feeCents,
+      chargeCents: Math.round(Number(meta.chargeCents || listCents + feeCents) || 0),
     },
   })
 }
@@ -171,18 +179,26 @@ async function onCheckoutCompleted(
   const settlementId = session.id
   if (!settlementId) return
   const meta = (session.metadata || {}) as Record<string, string>
+  const listCents = Math.round(
+    Number(meta.listAmountCents || meta.amountCents || session.amount_total || 0) || 0,
+  )
+  const feeCents = Math.round(Number(meta.platformFeeCents || 0) || 0)
   await settlePayment(stripe, sb, {
     settlementId,
     kind: String(meta.kind || ''),
     payerUserId: String(meta.userId || ''),
     creatorId: String(meta.creatorId || ''),
-    amountCents: Math.round(Number(meta.amountCents || session.amount_total || 0) || 0),
+    amountCents: listCents,
+    feeCents,
     currency: String(session.currency || 'usd').toLowerCase(),
     extraMeta: {
       contentId: meta.contentId || '',
       tierId: meta.tierId || '',
       orderId: meta.orderId || '',
       payment_status: session.payment_status,
+      listAmountCents: listCents,
+      platformFeeCents: feeCents,
+      chargeCents: Math.round(Number(meta.chargeCents || listCents + feeCents) || 0),
     },
   })
 }
@@ -196,6 +212,7 @@ async function settlePayment(
     payerUserId: string
     creatorId: string
     amountCents: number
+    feeCents?: number
     currency: string
     extraMeta: Record<string, unknown>
   },
@@ -207,16 +224,21 @@ async function settlePayment(
     .maybeSingle()
   if (existing) return
 
-  const paysCreator = TIP_KINDS.has(opts.kind) && !!opts.creatorId && opts.amountCents > 0
-  const creatorShareCents = paysCreator ? Math.round(opts.amountCents * CREATOR_SHARE) : 0
-  const platformShareCents = paysCreator ? opts.amountCents - creatorShareCents : opts.amountCents
+  const listCents = opts.amountCents
+  const feeCents = Math.max(0, Math.round(Number(opts.feeCents) || 0))
+  // Creator share is 80% of list price only — platform fee stays 100% platform.
+  const paysCreator = TIP_KINDS.has(opts.kind) && !!opts.creatorId && listCents > 0
+  const creatorShareCents = paysCreator ? Math.round(listCents * CREATOR_SHARE) : 0
+  const platformShareCents = paysCreator
+    ? (listCents - creatorShareCents) + feeCents
+    : listCents + feeCents
 
   const { error: insErr } = await sb.from('stripe_settlements').insert({
     session_id: opts.settlementId,
     kind: opts.kind,
     payer_user_id: opts.payerUserId || null,
     creator_id: opts.creatorId || null,
-    amount_cents: opts.amountCents,
+    amount_cents: listCents + feeCents,
     creator_share_cents: creatorShareCents,
     platform_share_cents: platformShareCents,
     currency: opts.currency,

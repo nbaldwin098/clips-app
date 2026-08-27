@@ -52,20 +52,20 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 
 | ID | Area | Issue | Notes | Status |
 |----|------|-------|-------|--------|
-| BUG-010 | Live | Live ingest not connected — lobby only | Gate on `VITE_LIVE_INGEST_CONNECTED`; OBS/RTMP/HLS still missing | `open` |
+| BUG-010 | Live | Live ingest not connected — lobby only | Gate is `VITE_LIVE_INGEST_CONNECTED` only (URLs alone do not invent connected). OBS/RTMP/HLS still need VPS | `open` |
 | BUG-011 | Live | Host ad controls / liveAds stubs after ads removal | LiveView + Stream settings controls removed; thin stubs kept for advertise portal | `done` |
 | BUG-012 | Ads | Decide monetization path: AdSense vs none vs later video ads | Product decision: no ads for now; tips/premium/Cash | `wontfix` |
 | BUG-013 | Ads | Wire AdSense units for clip-feed + pic-feed if keeping AdSense | Cancelled with BUG-012 | `wontfix` |
 | BUG-014 | Creator Studio | Setup hub / earnings / apply badge not on `main` | Studio hub + grouped rail shipped | `doing` |
 | BUG-015 | Creator Studio | Orphan AnalyticsPage / channel branding duplication | Settings grouped template; Account uses SettingsTemplates | `doing` |
-| BUG-016 | Payouts | Manual payouts only; no Stripe Connect | Honest copy exists; Connect still planned | `open` |
+| BUG-016 | Payouts | Manual payouts only; no Stripe Connect | Connect UI is on Creator Studio → Earnings (not a separate Revenue page). 80% creator share is of list price; buyer Platform fee is separate. Dashboard Connect enable still required | `open` |
 | BUG-017 | SEO | Dynamic sitemap for public content ids | Done in #106 | `done` |
 | BUG-018 | SEO | Server-render real HTML for About/Help/Legal bodies | Done in #106 | `done` |
 | BUG-019 | Watch | Share OG tags depend on Supabase row fetch | Soft unavailable + article HTML in #106 | `done` |
 | BUG-020 | Uploads | Clip 60s / video 24h limits — confirm UX errors are clear | Limits enforced in `publishLocalMedia` | `open` |
 | BUG-021 | iOS | Keep original-file upload path (no WebM re-encode) | Fixed once; add regression test so it doesn’t return | `open` |
-| BUG-022 | Delete | Cloud delete path for admin/creator — verify on Node deploy | Recent fixes around `deleteCatalogItem` + storage remove | `open` |
-| BUG-023 | Chat | Live chat cloud sync reliability | `liveChatSync.js`; test multi-device | `open` |
+| BUG-022 | Delete | Cloud delete path for admin/creator — verify on Node deploy | `deleteCatalogItem` + `deleteHostedMedia` hardened (signed/public URLs, warn on fail) | `open` |
+| BUG-023 | Chat | Live chat cloud sync reliability | Reconnect/poll fallback + dedupe subscribe + channel key normalize | `open` |
 | BUG-024 | Feed | Endless clip/pic scroll edge cases | Prior PRs fixed stalls; re-verify after Next | `open` |
 | BUG-028 | Home | All/Videos/Shorts/Pics chips + empty “No posts yet” | #111 + #112 hydrate/early sync | `done` |
 | BUG-025 | Error reports | ErrorReportPrompt shipped — confirm tickets show in Admin | PR #96 | `open` |

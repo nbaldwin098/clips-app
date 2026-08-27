@@ -11,6 +11,8 @@ import { startCalabiCashCheckout } from '../lib/tips'
 import { redirectSafeUrl } from '../lib/safeUrl'
 import { cn } from '../lib/utils'
 import CoinIcon from './CoinIcon'
+import PlatformFeeLine from './PlatformFeeLine'
+import { withPlatformFee, formatUsdFromCents } from '../lib/platformFee'
 
 export default function CalabiCashShop({ compact = false }) {
   const { user, isAuthenticated } = useAuth()
@@ -88,9 +90,14 @@ export default function CalabiCashShop({ compact = false }) {
             </div>
             <p className="mt-2 text-sm font-bold text-white leading-snug">{t.label}</p>
             <div className="mt-3 w-full rounded-xl bg-zinc-800/90 py-2.5 text-base font-bold text-amber-300">
-              {busy === t.id ? '…' : `$${Number(t.usd).toFixed(2)}`}
+              {busy === t.id
+                ? '…'
+                : formatUsdFromCents(withPlatformFee(Math.round(Number(t.usd) * 100)).totalCents)}
             </div>
-            <p className="text-[10px] text-zinc-500 mt-1.5">Card checkout</p>
+            <div className="mt-1.5 text-left px-1" onClick={(e) => e.stopPropagation()}>
+              <PlatformFeeLine listCents={Math.round(Number(t.usd) * 100)} />
+            </div>
+            <p className="text-[10px] text-zinc-500 mt-1">Card checkout</p>
           </button>
         ))}
       </div>

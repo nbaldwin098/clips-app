@@ -24,9 +24,19 @@ const CLIENT_ENV = {
   VITE_STRIPE_PAYMENT_LINK: (typeof process !== 'undefined' && process.env.VITE_STRIPE_PAYMENT_LINK) || '',
   VITE_PLATFORM_OWNER_ID: (typeof process !== 'undefined' && process.env.VITE_PLATFORM_OWNER_ID) || '',
   VITE_ADMIN_CODE: (typeof process !== 'undefined' && process.env.VITE_ADMIN_CODE) || '',
-  VITE_LIVE_INGEST_CONNECTED: (typeof process !== 'undefined' && process.env.VITE_LIVE_INGEST_CONNECTED) || '',
+  VITE_LIVE_INGEST_CONNECTED:
+    (typeof process !== 'undefined' && (process.env.VITE_LIVE_INGEST_CONNECTED || process.env.NEXT_PUBLIC_LIVE_INGEST_CONNECTED)) || '',
+  NEXT_PUBLIC_LIVE_INGEST_CONNECTED:
+    (typeof process !== 'undefined' && (process.env.NEXT_PUBLIC_LIVE_INGEST_CONNECTED || process.env.VITE_LIVE_INGEST_CONNECTED)) || '',
   VITE_LIVE_RTMP_URL: (typeof process !== 'undefined' && (process.env.VITE_LIVE_RTMP_URL || process.env.NEXT_PUBLIC_LIVE_RTMP_URL)) || '',
   NEXT_PUBLIC_LIVE_RTMP_URL: (typeof process !== 'undefined' && (process.env.NEXT_PUBLIC_LIVE_RTMP_URL || process.env.VITE_LIVE_RTMP_URL)) || '',
+  VITE_LIVE_HLS_BASE: (typeof process !== 'undefined' && (process.env.VITE_LIVE_HLS_BASE || process.env.NEXT_PUBLIC_LIVE_HLS_BASE)) || '',
+  NEXT_PUBLIC_LIVE_HLS_BASE: (typeof process !== 'undefined' && (process.env.NEXT_PUBLIC_LIVE_HLS_BASE || process.env.VITE_LIVE_HLS_BASE)) || '',
+  NEXT_PUBLIC_VAPID_PUBLIC_KEY:
+    (typeof process !== 'undefined' && (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || process.env.VITE_VAPID_PUBLIC_KEY)) || '',
+  VITE_VAPID_PUBLIC_KEY:
+    (typeof process !== 'undefined' && (process.env.VITE_VAPID_PUBLIC_KEY || process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY)) || '',
+  VITE_PUSH_SUBSCRIBE_URL: (typeof process !== 'undefined' && process.env.VITE_PUSH_SUBSCRIBE_URL) || '',
   VITE_MAIL_FUNCTION_URL: (typeof process !== 'undefined' && process.env.VITE_MAIL_FUNCTION_URL) || '',
   VITE_OAUTH_YOUTUBE_CLIENT_ID: (typeof process !== 'undefined' && process.env.VITE_OAUTH_YOUTUBE_CLIENT_ID) || '',
   VITE_OAUTH_TIKTOK_CLIENT_ID: (typeof process !== 'undefined' && process.env.VITE_OAUTH_TIKTOK_CLIENT_ID) || '',

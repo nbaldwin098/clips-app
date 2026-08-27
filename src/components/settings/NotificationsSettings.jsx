@@ -102,7 +102,11 @@ export default function NotificationsSettings() {
           <div className="py-3 space-y-2">
             <div className="flex flex-wrap gap-2">
               {!pushOn ? (
-                <SettingsButton disabled={pushBusy || !pushConfigured()} onClick={onEnablePush}>
+                <SettingsButton
+                  disabled={pushBusy || !pushConfigured()}
+                  onClick={onEnablePush}
+                  title={!pushConfigured() ? t('push.needKey') : undefined}
+                >
                   {t('push.enable')}
                 </SettingsButton>
               ) : (
@@ -112,7 +116,9 @@ export default function NotificationsSettings() {
               )}
             </div>
             {!pushConfigured() ? (
-              <p className="text-xs text-zinc-500">{t('push.needKey')}</p>
+              <p className="text-xs text-zinc-500">
+                {t('push.needKey')} Enable stays off until <code className="text-zinc-400">NEXT_PUBLIC_VAPID_PUBLIC_KEY</code> is set.
+              </p>
             ) : null}
             {pushNote ? <p className="text-xs text-zinc-400">{pushNote}</p> : null}
           </div>

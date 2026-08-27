@@ -10,6 +10,7 @@ import { watchingLabel } from '../lib/uiFormat'
 import LiveHostTools from './LiveHostTools'
 import CalabiCashShop from './CalabiCashShop'
 import { filterCss, getStreamFilter } from '../lib/streamFilters'
+import { liveIngestConnected, liveListingBlockedReason } from '../lib/liveIngest'
 import Footer from './Footer'
 
 function formatElapsed(startedAt) {
@@ -33,7 +34,9 @@ export default function LiveView({ focusedStream, onFocusStream, onOpenAuth, onN
   const [sharing, setSharing] = useState(false)
   const [screenError, setScreenError] = useState('')
   const [cashOpen, setCashOpen] = useState(false)
+  const [hlsError, setHlsError] = useState('')
   const screenRef = useRef(null)
+  const hlsRef = useRef(null)
 
   const refreshLiveBoard = useCallback(() => {
     setLiveNow(listLiveBoard(lsGet('live_board', []) || []))
@@ -57,6 +60,28 @@ export default function LiveView({ focusedStream, onFocusStream, onOpenAuth, onN
   }, [refreshLiveBoard])
 
   useEffect(() => () => onFocusStream?.(null), [onFocusStream])
+
+  // HLS playback only when the lobby entry published a real hlsUrl (ingest connected).
+  useEffect(() => {
+    const el = hlsRef.current
+    const url = String(focusedStream?.hlsUrl || '').trim()
+    setHlsError('')
+    if (!el) return undefined
+    if (sharing || !url || !focusedStream?.ingestConnected) {
+      el.removeAttribute('src')
+      el.load?.()
+      return undefined
+    }
+    el.src = url
+    const onErr = () => setHlsError('HLS stream not reachable yet (ingest offline or CORS/TLS).')
+    el.addEventListener('error', onErr)
+    el.play?.().catch(() => {})
+    return () => {
+      el.removeEventListener('error', onErr)
+      el.removeAttribute('src')
+      el.load?.()
+    }
+  }, [focusedStream?.hlsUrl, focusedStream?.ingestConnected, focusedStream?.userId, sharing])
 
   const shareCamera = async () => {
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
@@ -107,6 +132,8 @@ export default function LiveView({ focusedStream, onFocusStream, onOpenAuth, onN
   const selectStream = (entry) => onFocusStream?.(entry)
   const subCount = focusedStream?.userId ? getSubscriberCount(focusedStream.userId) : 0
   const filterStyle = user?.id ? filterCss(getStreamFilter(user.id).filterId) : ''
+  const ingestOk = liveIngestConnected()
+  const showHls = !!(focusedStream?.ingestConnected && focusedStream?.hlsUrl && !sharing)
 
   const followingLive = liveNow
 
@@ -116,6 +143,12 @@ export default function LiveView({ focusedStream, onFocusStream, onOpenAuth, onN
       <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-red-950/25 via-transparent to-transparent" />
 
       <div className="relative px-4 md:px-6 py-4 max-w-[1600px] mx-auto w-full space-y-8">
+        {!ingestOk ? (
+          <p className="text-[11px] text-zinc-500 border border-zinc-800/80 bg-[#0a0a0c] px-3 py-2">
+            {liveListingBlockedReason()}
+          </p>
+        ) : null}
+
         {focusedStream ? (
           <div className="overflow-hidden border border-zinc-800/80 bg-[#0a0a0c]">
             <div className="relative aspect-video w-full bg-gradient-to-br from-[#1a1010] to-[#0c0c10] flex flex-col items-center justify-center text-center p-6">
@@ -127,7 +160,14 @@ export default function LiveView({ focusedStream, onFocusStream, onOpenAuth, onN
                 playsInline
                 autoPlay
               />
-              {!sharing ? (
+              <video
+                ref={hlsRef}
+                className={cn('absolute inset-0 h-full w-full object-contain bg-black', showHls ? '' : 'hidden')}
+                playsInline
+                autoPlay
+                controls
+              />
+              {!sharing && !showHls ? (
                 <>
                   <div className="absolute top-3 left-3 flex items-center gap-2">
                     <span className="flex items-center gap-1.5 px-2.5 py-1 bg-[#eb0400] text-white font-extrabold text-xs uppercase tracking-wider">
@@ -144,12 +184,23 @@ export default function LiveView({ focusedStream, onFocusStream, onOpenAuth, onN
                   <p className="text-zinc-500 text-xs mt-3">
                     {focusedStream.watchers || focusedStream.watcherIds?.length || 0} watching
                   </p>
+                  <p className="text-zinc-600 text-[11px] mt-4 max-w-sm">
+                    {focusedStream.ingestConnected
+                      ? (focusedStream.note || 'Ingest connected — waiting for HLS URL on this listing.')
+                      : (focusedStream.note || 'Lobby only — host can share camera/screen until RTMP/HLS ingest is connected.')}
+                  </p>
                 </>
-              ) : (
+              ) : null}
+              {sharing ? (
                 <p className="absolute bottom-3 left-3 right-3 text-[11px] text-white/80 bg-black/50 px-2 py-1">
                   Preview on this device only until ingest is connected.
                 </p>
-              )}
+              ) : null}
+              {showHls && hlsError ? (
+                <p className="absolute bottom-3 left-3 right-3 text-[11px] text-amber-200/90 bg-black/60 px-2 py-1">
+                  {hlsError}
+                </p>
+              ) : null}
             </div>
             <div className="p-4 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-800">
               <div className="text-sm text-zinc-400">

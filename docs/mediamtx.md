@@ -22,9 +22,14 @@ In Render / `.env`:
 ```env
 VITE_LIVE_RTMP_URL=rtmp://YOUR_HOST:1935/live
 VITE_LIVE_HLS_BASE=https://YOUR_HOST/live
+# Only after a second device can play the HLS URL:
+VITE_LIVE_INGEST_CONNECTED=true
 ```
 
-Studio Live already uses these via `getLiveRtmpUrl()` / `getLiveHlsBase()` in `src/lib/featureFlags.js`.
+- Studio Stream settings use `getObsConnectInfo()` (`src/lib/liveIngest.js`) — RTMP fields appear when the RTMP URL is set.
+- **`liveIngestConnected()` stays false until `VITE_LIVE_INGEST_CONNECTED=true`** — setting URLs alone must not fake a connected state.
+- Lobby publishes `hlsUrl` for viewers only when ingest is marked connected.
+- Helpers: `getLiveRtmpUrl()` / `getLiveHlsBase()` in `src/lib/featureFlags.js`.
 
 ## Limits (honest)
 

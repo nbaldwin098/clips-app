@@ -793,11 +793,19 @@ export async function deleteCatalogItem(id, actor = null, opts = {}) {
 
   const cloudOk = await deleteContentRecord(id, actor)
 
+  const storageResults = []
   if (raw) {
-    const urls = [raw.mediaUrl, raw.sourceUrl, raw.thumbUrl, raw.mosaicThumb]
+    const urls = [...new Set([raw.mediaUrl, raw.sourceUrl, raw.thumbUrl, raw.mosaicThumb].filter(Boolean))]
     for (const u of urls) {
-      if (String(u || '').includes('/storage/v1/object/public/clips/')) {
-        await deleteHostedMedia(u)
+      const s = String(u || '')
+      if (!s.includes('/storage/v1/object/')) continue
+      try {
+        const removed = await deleteHostedMedia(s)
+        storageResults.push({ url: s, removed })
+        if (!removed) console.warn('[Clips] storage object not removed (may already be gone):', s)
+      } catch (err) {
+        console.warn('[Clips] storage delete threw:', err?.message || err, s)
+        storageResults.push({ url: s, removed: false })
       }
     }
   }
@@ -808,7 +816,7 @@ export async function deleteCatalogItem(id, actor = null, opts = {}) {
   removeImport(id)
   notifyContentChanged()
 
-  return { ok: true, cloudOk }
+  return { ok: true, cloudOk, storageResults }
 }
 
 export function flushScheduledPublishes() {

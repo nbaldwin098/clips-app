@@ -11,9 +11,9 @@ Until Connect is live, creators still save a manual payout contact (PayPal / Ven
 | Onboard + status Edge Function | `supabase/functions/create-connect-account` |
 | Webhook (settle + Transfer + `account.updated`) | `supabase/functions/stripe-webhook` |
 | Client helpers | `src/lib/stripeConnect.js` |
-| Revenue UI | Settings → Revenue |
+| Earnings UI | Creator Studio → Earnings (Connect status + manual payout contact) |
 | SQL | `supabase/migrations/0023_*.sql` + `0024_stripe_connect.sql` |
-| Split | `src/lib/revenueSplit.js` (`CREATOR_REV_SHARE = 0.8`) |
+| Split | `src/lib/revenueSplit.js` (`CREATOR_REV_SHARE = 0.8` of list price; buyer platform fee is separate — see `docs/OWN_CHECKOUT.md`) |
 
 ## One-time setup (you)
 
@@ -53,9 +53,9 @@ Same webhook URL for **Your account** scope.
 Admin → Setup → run **0023** (if not yet) then **0024** (Connect columns + settlement tables).
 
 ### 6. Smoke test
-1. Approved creator → Settings → Revenue → **Connect Stripe** → finish Express onboarding.
+1. Approved creator → Creator Studio → Earnings → **Connect Stripe** → finish Express onboarding.
 2. Status should become **Payouts enabled**.
-3. Another user tips them $5 → webhook credits earnings and creates a Transfer for $4.00 (80%).
+3. Another user tips them $5 → webhook credits earnings and creates a Transfer for $4.00 (80% of list price; buyer may also pay a separate Platform fee at checkout).
 4. If the creator has not finished Connect, the $4 stays in `creator_earnings.available_usd` for manual payout.
 
 ## Behavior (honest)

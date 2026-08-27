@@ -1,5 +1,10 @@
 import { getLiveChat, postLiveChat, isPremiumSub, isSubscribed } from './engagement'
-import { removeLiveChatMessageCloud, isGlobalLiveChannel, GLOBAL_LIVE_CHANNEL_ID } from './liveChatSync'
+import {
+  removeLiveChatMessageCloud,
+  isGlobalLiveChannel,
+  GLOBAL_LIVE_CHANNEL_ID,
+  resolveLiveChatChannelId,
+} from './liveChatSync'
 import { getStreamSettings } from './streamSettings'
 import { getUserSettings } from './storage'
 import { getChannelStaff, isChannelMod } from './channelStaff'
@@ -19,8 +24,9 @@ function blockedPhrases(channelId) {
 }
 
 export function removeLiveChatMessage(streamUserId, messageId) {
-  removeLiveChatMessageCloud(streamUserId, messageId)
-  return getLiveChat(streamUserId)
+  const resolved = resolveLiveChatChannelId(streamUserId)
+  removeLiveChatMessageCloud(resolved, messageId)
+  return getLiveChat(resolved)
 }
 
 export function trySendLiveChat(streamUserId, message, { actor } = {}) {

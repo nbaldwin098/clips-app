@@ -171,20 +171,56 @@ export async function uploadDataUrlToSupabase(dataUrl, userId, name = 'thumb.jpg
 
 function storagePathFromPublicUrl(publicUrl) {
   const u = String(publicUrl || '')
-  const i = u.indexOf(PUBLIC_MARKER)
-  if (i < 0) return ''
-  return decodeURIComponent(u.slice(i + PUBLIC_MARKER.length))
+  if (!u) return ''
+  // Public object URL: .../storage/v1/object/public/clips/<path>
+  let i = u.indexOf(PUBLIC_MARKER)
+  if (i >= 0) {
+    try {
+      return decodeURIComponent(u.slice(i + PUBLIC_MARKER.length).split('?')[0])
+    } catch {
+      return u.slice(i + PUBLIC_MARKER.length).split('?')[0]
+    }
+  }
+  // Signed / render variants — still under the clips bucket
+  const alt = `/storage/v1/object/sign/${BUCKET}/`
+  i = u.indexOf(alt)
+  if (i >= 0) {
+    try {
+      return decodeURIComponent(u.slice(i + alt.length).split('?')[0])
+    } catch {
+      return u.slice(i + alt.length).split('?')[0]
+    }
+  }
+  const authenticated = `/storage/v1/object/authenticated/${BUCKET}/`
+  i = u.indexOf(authenticated)
+  if (i >= 0) {
+    try {
+      return decodeURIComponent(u.slice(i + authenticated.length).split('?')[0])
+    } catch {
+      return u.slice(i + authenticated.length).split('?')[0]
+    }
+  }
+  return ''
 }
 
 export async function deleteHostedMedia(publicUrl) {
   const path = storagePathFromPublicUrl(publicUrl)
-  if (!path || !isSupabaseConfigured()) return false
+  if (!path) return false
+  if (!isSupabaseConfigured()) {
+    console.warn('[Clips] deleteHostedMedia: Supabase not configured', path)
+    return false
+  }
   try {
     const sb = await getSupabase()
     if (!sb) return false
     const { error } = await sb.storage.from(BUCKET).remove([path])
-    return !error
-  } catch {
+    if (error) {
+      console.warn('[Clips] storage remove failed:', error.message || error, path)
+      return false
+    }
+    return true
+  } catch (err) {
+    console.warn('[Clips] deleteHostedMedia error:', err?.message || err)
     return false
   }
 }

@@ -2,10 +2,14 @@ import { useState } from 'react'
 import { X, Heart } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { usePremiumCheckout } from '../hooks/usePremiumCheckout'
+import PlatformFeeLine from './PlatformFeeLine'
+import { withPlatformFee, formatUsdFromCents } from '../lib/platformFee'
 
 export default function CheckoutModal({ open, onClose, creatorId, creatorHandle }) {
   const { user, isAuthenticated } = useAuth()
   const checkout = usePremiumCheckout({ user, isAuthenticated, creatorId, creatorHandle })
+  const priceCents = Math.round((Number(checkout.price) || 0) * 100)
+  const { totalCents } = withPlatformFee(priceCents)
 
   if (!open) return null
 
@@ -25,6 +29,9 @@ export default function CheckoutModal({ open, onClose, creatorId, creatorHandle 
         <p className="mt-4 text-3xl font-semibold text-white">
           ${checkout.price}<span className="text-sm text-zinc-500 font-normal">/mo</span>
         </p>
+        <div className="mt-3">
+          <PlatformFeeLine listCents={priceCents} showTotal />
+        </div>
         <ul className="mt-3 text-xs text-zinc-400 space-y-1 list-disc list-inside">
           <li>Badge in chat when chat exists</li>
           <li>{checkout.configured && checkout.hasLink ? 'Pays on Stripe Checkout' : 'Card checkout is not set up on this site yet.'}</li>
@@ -34,7 +41,7 @@ export default function CheckoutModal({ open, onClose, creatorId, creatorHandle 
           <p className="mt-4 text-sm text-white">You already have premium on this channel.</p>
         ) : (
           <button type="button" disabled={checkout.busy || !isAuthenticated} onClick={checkout.pay} className="mt-5 w-full h-11 rounded-xl bg-white text-black font-bold text-sm disabled:opacity-40 hover:bg-zinc-200 transition-all">
-            {!isAuthenticated ? 'Sign in for premium' : checkout.busy ? 'Working…' : checkout.hasLink ? `Pay $${checkout.price}/mo on Stripe` : `Premium $${checkout.price}/mo`}
+            {!isAuthenticated ? 'Sign in for premium' : checkout.busy ? 'Working…' : checkout.hasLink ? `Pay ${formatUsdFromCents(totalCents)} on Stripe` : `Premium $${checkout.price}/mo`}
           </button>
         )}
         {checkout.status && <p className="mt-3 text-[11px] text-zinc-500">{checkout.status}</p>}

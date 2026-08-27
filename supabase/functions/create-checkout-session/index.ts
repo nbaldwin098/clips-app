@@ -4,6 +4,9 @@
 // Optional:
 //   SITE_URL=https://calabi.us
 //
+// amountCents = list price (tip / premium / pack / item+shipping).
+// A 4% platform fee is added automatically; buyers never see the %.
+//
 // Deploy:
 //   supabase functions deploy create-checkout-session
 
@@ -15,11 +18,17 @@ const cors = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const PLATFORM_FEE_RATE = 0.04
+
 function json(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { ...cors, 'Content-Type': 'application/json' },
   })
+}
+
+function platformFeeCents(listCents: number) {
+  return Math.round(Math.max(0, listCents) * PLATFORM_FEE_RATE)
 }
 
 Deno.serve(async (req) => {
@@ -55,15 +64,18 @@ Deno.serve(async (req) => {
   }
 
   const kind = String(body.kind || 'premium')
-  const amountCents = Math.round(Number(body.amountCents) || 0)
+  const listCents = Math.round(Number(body.amountCents) || 0)
   // Coin packs start at $0.99; tips/premium stay ≥ $1.00
   const minCents = (kind === 'coin_pack' || kind === 'calabi_cash') ? 99 : 100
-  if (!Number.isFinite(amountCents) || amountCents < minCents) {
+  if (!Number.isFinite(listCents) || listCents < minCents) {
     return json({ error: `Minimum charge is $${(minCents / 100).toFixed(2)}.` }, 400)
   }
-  if (amountCents > 500_00) {
+  if (listCents > 500_00) {
     return json({ error: 'Maximum charge is $500.00.' }, 400)
   }
+
+  const feeCents = platformFeeCents(listCents)
+  const chargeCents = listCents + feeCents
 
   const originRaw = String(body.origin || Deno.env.get('SITE_URL') || 'https://calabi.us').replace(/\/$/, '')
   let origin = 'https://calabi.us'
@@ -86,8 +98,22 @@ Deno.serve(async (req) => {
 
   const reference = String(
     body.reference
-    || `${kind}:${user.id}:${creatorId || orderId || contentId || tierId}:${amountCents}`,
+    || `${kind}:${user.id}:${creatorId || orderId || contentId || tierId}:${listCents}`,
   ).slice(0, 200)
+
+  const meta = {
+    kind,
+    userId: user.id,
+    creatorId,
+    contentId,
+    tierId,
+    orderId,
+    // list = creator split base; fee is platform-only
+    amountCents: String(listCents),
+    listAmountCents: String(listCents),
+    platformFeeCents: String(feeCents),
+    chargeCents: String(chargeCents),
+  }
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -99,7 +125,7 @@ Deno.serve(async (req) => {
           quantity: 1,
           price_data: {
             currency: 'usd',
-            unit_amount: amountCents,
+            unit_amount: listCents,
             product_data: {
               name: productName,
               metadata: {
@@ -112,35 +138,39 @@ Deno.serve(async (req) => {
             },
           },
         },
+        ...(feeCents > 0
+          ? [{
+              quantity: 1,
+              price_data: {
+                currency: 'usd',
+                unit_amount: feeCents,
+                product_data: {
+                  name: 'Platform fee',
+                  description: 'Platform and fraud protection',
+                },
+              },
+            }]
+          : []),
       ],
       success_url: `${origin}/checkout?paid=1&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/checkout?canceled=1`,
-      metadata: {
-        kind,
-        userId: user.id,
-        creatorId,
-        contentId,
-        tierId,
-        orderId,
-        amountCents: String(amountCents),
-      },
+      metadata: meta,
       // Accounts v2 / Event Destinations often only expose payment_intent.succeeded —
       // copy the same metadata onto the PaymentIntent so the webhook can settle.
       payment_intent_data: {
-        metadata: {
-          kind,
-          userId: user.id,
-          creatorId,
-          contentId,
-          tierId,
-          orderId,
-          amountCents: String(amountCents),
-        },
+        metadata: meta,
       },
     })
 
     if (!session.url) return json({ error: 'Stripe did not return a checkout URL.' }, 502)
-    return json({ ok: true, url: session.url, sessionId: session.id })
+    return json({
+      ok: true,
+      url: session.url,
+      sessionId: session.id,
+      listCents,
+      feeCents,
+      chargeCents,
+    })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Stripe error'
     return json({ error: message }, 502)
