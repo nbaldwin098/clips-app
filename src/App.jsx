@@ -12,6 +12,7 @@ import HomeFeed from './components/HomeFeed'
 import ShortsFeed from './components/ShortsFeed'
 import LiveView from './components/LiveView'
 import SettingsHub from './components/settings/SettingsHub'
+import WalletSettings from './components/settings/WalletSettings'
 import LibraryPage from './components/LibraryPage'
 import HistoryPage from './components/HistoryPage'
 import WatchAgainPage from './components/WatchAgainPage'
@@ -39,6 +40,7 @@ import CreatorsPage from './components/CreatorsPage'
 import ChannelPage from './components/ChannelPage'
 import ProfilePage from './components/ProfilePage'
 import SubscriptionsPage from './components/SubscriptionsPage'
+import FollowingPage from './components/FollowingPage'
 import PlaylistsPage from './components/PlaylistsPage'
 import CommunityPage from './components/CommunityPage'
 import StudioToolsPage from './components/StudioToolsPage'
@@ -82,16 +84,17 @@ const NewsPage = lazy(() => import('./components/NewsPage'))
 const MessagesPage = lazy(() => import('./components/MessagesPage'))
 const BubbleApiPage = lazy(() => import('./components/BubbleApiPage'))
 const AppealsPage = lazy(() => import('./components/AppealsPage'))
+const RewardsPage = lazy(() => import('./components/RewardsPage'))
 
 const KNOWN_VIEWS = new Set([
   'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
   'explore', 'history', 'watch-again', 'hearts', 'liked', 'watch-later', 'library', 'stats', 'help', 'about',
   'notifications', 'pics', 'checkout', 'creator-apply', 'verify', 'advertise', 'advertiser-portal', 'support', 'admin',
   'analytics', 'channel', 'profile', 'content-rules', 'vods',
-  'subscriptions', 'playlists', 'community', 'studio-tools', 'stream-settings',
+  'subscriptions', 'following', 'playlists', 'community', 'studio-tools', 'stream-settings',
   'calabi-studio', 'calabi-cash', 'shop', 'marketplace', 'seller', 'seller-portal', 'news',
   'legal-tos', 'legal-privacy', 'legal-creator', 'legal-community',
-  'watch', 'sound', 'tag', 'create', 'messages', 'api', 'appeals',
+  'watch', 'sound', 'tag', 'create', 'messages', 'api', 'appeals', 'rewards',
 ])
 
 function AppShell() {
@@ -555,7 +558,7 @@ function AppShell() {
             onPlayItem={openWatch}
             onOpenAuth={openAuth}
             initialSection={routeId || 'overview'}
-            initialSettingsPage={routeParams.tab || 'channel'}
+            initialSettingsPage={routeParams.tab || 'chat'}
           />
         )
       case 'vods':
@@ -570,9 +573,12 @@ function AppShell() {
           />
         )
       case 'wallet':
-        return <SettingsHub section="wallet" onNavigate={navigate} initialTab={routeParams.tab} />
       case 'calabi-cash':
-        return <SettingsHub section="wallet" onNavigate={navigate} initialTab={routeParams.tab} />
+        return (
+          <div className="p-4 md:p-6 max-w-3xl mx-auto">
+            <WalletSettings onNavigate={navigate} initialTab={routeParams.tab} />
+          </div>
+        )
       case 'stream-settings':
         return (
           <CreatorStudio
@@ -597,7 +603,8 @@ function AppShell() {
         )
       case 'channel': return <ChannelPage onNavigate={navigate} />
       case 'profile': return <ProfilePage onNavigate={navigate} profileHandle={profileTarget.handle} profileUserId={profileTarget.userId} onPlayItem={openWatch} onOpenPic={openPic} onOpenProfile={openProfile} onOpenAuth={openAuth} onOpenCheckout={openCheckout} />
-      case 'subscriptions': return <SubscriptionsPage onNavigate={navigate} onOpenAuth={openAuth} onPlayItem={openWatch} onOpenPic={openPic} onOpenProfile={openProfile} />
+      case 'subscriptions': return <SubscriptionsPage onNavigate={navigate} onOpenAuth={openAuth} onOpenProfile={openProfile} />
+      case 'following': return <FollowingPage onNavigate={navigate} onOpenAuth={openAuth} onPlayItem={openWatch} onOpenPic={openPic} onOpenProfile={openProfile} />
       case 'playlists': return <PlaylistsPage onNavigate={navigate} onOpenAuth={openAuth} onPlayItem={openWatch} onOpenPic={openPic} playlistId={routeId} />
       case 'community': return <CommunityPage onNavigate={navigate} onOpenAuth={openAuth} />
       case 'studio-tools': return <StudioToolsPage onNavigate={navigate} />
@@ -652,6 +659,8 @@ function AppShell() {
         )
       case 'appeals':
         return <AppealsPage onNavigate={navigate} onOpenAuth={openAuth} />
+      case 'rewards':
+        return <RewardsPage onNavigate={navigate} onOpenAuth={openAuth} />
       case 'create': return <CreatePage onCreate={openCreate} onOpenAuth={openAuth} onNavigate={navigate} />
       case 'legal-tos': return <TermsOfService />
       case 'legal-privacy': return <PrivacyPolicy />

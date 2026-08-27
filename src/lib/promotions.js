@@ -97,7 +97,7 @@ export const PROMO_PRESETS = [
     headline: 'Follow creators',
     body: 'See their uploads on Following.',
     ctaLabel: 'Following',
-    destView: 'subscriptions',
+    destView: 'following',
     destId: '',
     featureContentId: '',
     placement: 'banner',

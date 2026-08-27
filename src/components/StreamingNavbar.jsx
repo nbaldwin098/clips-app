@@ -8,12 +8,13 @@ import {
   ShieldCheck,
   Wallet,
   MessageSquare,
-  Radio,
+  RadioTower,
   Scale,
   Users,
   Languages,
   Moon,
   Sun,
+  Gift,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { isPlatformOwner } from '../lib/moderation'
@@ -165,9 +166,9 @@ export default function StreamingNavbar({
                       onClick={() => handleNav('dashboard')}
                     />
                     <ProfileRow
-                      icon={Radio}
+                      icon={RadioTower}
                       label="Live Stream"
-                      onClick={() => handleNav('live')}
+                      onClick={() => handleNav('dashboard', 'stream')}
                     />
                     <ProfileRow
                       icon={Scale}
@@ -189,9 +190,14 @@ export default function StreamingNavbar({
                     />
                     <ProfileRow
                       icon={Wallet}
-                      label="Rewards wallet"
-                      onClick={() => handleNav('settings', 'wallet')}
+                      label="Wallet"
+                      onClick={() => handleNav('wallet')}
                       trailing={<span className="text-[10px] text-amber-400 tabular-nums">{coins}</span>}
+                    />
+                    <ProfileRow
+                      icon={Gift}
+                      label="Rewards"
+                      onClick={() => handleNav('rewards')}
                     />
 
                     <Divider />
@@ -212,17 +218,6 @@ export default function StreamingNavbar({
                       onClick={onToggleTheme}
                     />
 
-                    {owner ? (
-                      <>
-                        <Divider />
-                        <ProfileRow
-                          icon={ShieldCheck}
-                          label="Admin"
-                          onClick={() => handleNav('admin')}
-                        />
-                      </>
-                    ) : null}
-
                     <Divider />
                     <ProfileRow
                       icon={LogOut}
@@ -234,6 +229,13 @@ export default function StreamingNavbar({
                         handleNav('home')
                       }}
                     />
+                    {owner ? (
+                      <ProfileRow
+                        icon={ShieldCheck}
+                        label="Admin"
+                        onClick={() => handleNav('admin')}
+                      />
+                    ) : null}
                   </div>
                 )}
               </div>

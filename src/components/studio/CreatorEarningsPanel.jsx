@@ -17,7 +17,6 @@ import {
   SettingsCard,
   SettingsKpiGrid,
   SettingsButton,
-  SettingsNotice,
   SettingsPageHeader,
 } from '../settings/SettingsTemplates'
 
@@ -196,10 +195,10 @@ export default function CreatorEarningsPanel() {
   }
 
   return (
-    <div className="space-y-5 max-w-3xl overflow-y-auto h-full pr-1">
+    <div className="space-y-5 overflow-y-auto h-full pr-1">
       <SettingsPageHeader
         title="Earnings"
-        subtitle="Balances, payout methods, and withdrawals."
+        subtitle="Pics, clips, and videos."
       />
       <SettingsKpiGrid
         items={[
@@ -210,23 +209,6 @@ export default function CreatorEarningsPanel() {
         ]}
       />
       <IncomeChart series={series} />
-      <div className="grid gap-3 sm:grid-cols-3">
-        <SettingsCard title="Tips">
-          <p className="text-lg font-semibold text-white">{usd(earnings.tipsUsd)}</p>
-        </SettingsCard>
-        <SettingsCard title="Memberships">
-          <p className="text-lg font-semibold text-white">{usd(earnings.subsUsd)}</p>
-        </SettingsCard>
-        <SettingsCard title="Pack share">
-          <p className="text-lg font-semibold text-white">{usd(earnings.packsUsd)}</p>
-        </SettingsCard>
-      </div>
-      <SettingsNotice>
-        <p>
-          Tips and memberships credit here after Stripe confirms payment (you keep 80% of the list price).
-          Request a withdrawal below — calabi pays you from your saved method. Minimum $10.
-        </p>
-      </SettingsNotice>
 
       <SettingsCard
         title="Withdraw"

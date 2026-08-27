@@ -63,9 +63,9 @@ export function liveHlsPlayUrl(streamKey) {
 export function liveListingBlockedReason() {
   if (liveIngestConnected()) return ''
   if (liveRtmpServerUrl() && !LIVE_INGEST_CONNECTED) {
-    return 'RTMP URL is set, but ingest is not marked connected yet (set VITE_LIVE_INGEST_CONNECTED after HLS plays). Window share still works.'
+    return 'RTMP ingest is not marked connected yet. Browser screen share still works.'
   }
-  return 'Live RTMP ingest is not connected yet. You can still go live with a free OBS window share on this browser (Screen / OBS window).'
+  return 'Live ingest is not connected yet. You can still go live with browser screen share.'
 }
 
 /**

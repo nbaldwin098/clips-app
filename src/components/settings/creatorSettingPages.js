@@ -1,5 +1,3 @@
-import ChannelSettings from './ChannelSettings'
-import StreamSettings from './StreamSettings'
 import ChatSettings from './ChatSettings'
 import CommentSettings from './CommentSettings'
 import MonetizationSettings from './MonetizationSettings'
@@ -9,8 +7,6 @@ import CopyrightSettings from './CopyrightSettings'
 
 /** Creator setting pages — used by Creator Studio → Settings. */
 export const CREATOR_PAGES = {
-  channel: ChannelSettings,
-  stream: StreamSettings,
   chat: ChatSettings,
   comments: CommentSettings,
   monetization: MonetizationSettings,

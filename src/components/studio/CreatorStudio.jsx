@@ -17,13 +17,21 @@ import {
   Radio,
   FolderOpen,
   Newspaper,
+  ShoppingBag,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import CreatorOnboarding from '../CreatorOnboarding'
 import { lsGet, lsSet } from '../../lib/storage'
 import { liveBadgeLabel } from '../../lib/liveStatus'
 import { getCreatorContent, deleteCatalogItem, setContentVisibility } from '../../lib/contentService'
-import { getViews, getVotes, getSubscriberCount, getCreatorAnalytics } from '../../lib/engagement'
+import {
+  getViews,
+  getVotes,
+  getSubscriberCount,
+  getCreatorAnalytics,
+  getMembershipPrice,
+  setMembershipPrice,
+} from '../../lib/engagement'
 import { creatorBalance } from '../../lib/payouts'
 import { listVods, setVodVisibility, getVodChannel } from '../../lib/vods'
 import {
@@ -32,7 +40,7 @@ import {
   confirmVodAccountLink,
   unlinkVodAccount,
 } from '../../lib/vodAccountLink'
-import { buildInteractionNetwork } from '../../lib/creatorInteractions'
+import { buildInteractionNetwork, listCreatorInteractions } from '../../lib/creatorInteractions'
 import { formatCount } from '../../lib/uiFormat'
 import { formatPostedAt, postedAtOf } from '../../lib/mediaMeta'
 import { cn } from '../../lib/utils'
@@ -46,6 +54,7 @@ import StreamSettings from '../settings/StreamSettings'
 import { CREATOR_PAGES } from '../settings/creatorSettingPages'
 import { CREATOR_SETTING_PAGES } from '../settings/SettingsLayout'
 import VerifyPage from '../VerifyPage'
+import SellerPortal from '../SellerPortal'
 import {
   getIdVerificationForUser,
   isVerifiedChannel,
@@ -66,6 +75,7 @@ const STUDIO_NAV = [
   { id: 'analytics', label: 'Analytics', icon: BarChart3, group: 'Studio' },
   { id: 'socials', label: 'Socials', icon: Share2, group: 'Studio' },
   { id: 'earnings', label: 'Earnings', icon: CircleDollarSign, group: 'Money' },
+  { id: 'shop', label: 'Shop', icon: ShoppingBag, group: 'Money' },
   { id: 'settings', label: 'Settings', icon: Settings, group: 'Account' },
   { id: 'verify', label: 'Get verified', icon: BadgeCheck, group: 'Account' },
 ]
@@ -79,10 +89,11 @@ const SECTION_META = {
   controls: { title: 'Calabi Studio' },
   socials: { title: 'Socials' },
   earnings: { title: 'Earnings' },
+  shop: { title: 'Shop' },
   settings: { title: 'Settings' },
   vods: { title: 'Content' },
   stream: { title: 'Calabi Studio' },
-  verify: { title: 'Verification' },
+  verify: { title: 'Get verified' },
 }
 
 function typeLabel(type) {
@@ -100,6 +111,101 @@ function groupNav(items) {
     else last.items.push(item)
   }
   return groups
+}
+
+function dayKey(ms) {
+  const d = new Date(ms)
+  if (!Number.isFinite(d.getTime())) return null
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+/** Last N days of views / followers / posts for overview grass bars. */
+function buildOverviewSeries(creatorId, posts, days = 14) {
+  const keys = []
+  const now = new Date()
+  for (let i = days - 1; i >= 0; i -= 1) {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i)
+    keys.push(dayKey(d.getTime()))
+  }
+  const views = Object.fromEntries(keys.map((k) => [k, 0]))
+  const followers = Object.fromEntries(keys.map((k) => [k, 0]))
+  const postCounts = Object.fromEntries(keys.map((k) => [k, 0]))
+
+  for (const p of posts || []) {
+    const at = Date.parse(postedAtOf(p) || p.createdAt || p.publishedAt || '')
+    const k = dayKey(at)
+    if (k && postCounts[k] != null) {
+      postCounts[k] += 1
+      views[k] += getViews(p.id) || 0
+    }
+  }
+
+  const events = listCreatorInteractions(creatorId, { range: '30d', limit: 2000, includeSubscribe: true }) || []
+  for (const ev of events) {
+    if (ev.type !== 'subscribe') continue
+    const t = Date.parse(ev.at)
+    const k = dayKey(t)
+    if (k && followers[k] != null) followers[k] += 1
+  }
+
+  return {
+    views: keys.map((k) => ({ day: k.slice(5), value: views[k] })),
+    followers: keys.map((k) => ({ day: k.slice(5), value: followers[k] })),
+    posts: keys.map((k) => ({ day: k.slice(5), value: postCounts[k] })),
+  }
+}
+
+function GrassBarChart({ title, series }) {
+  const rows = Array.isArray(series) && series.length ? series : [{ day: '—', value: 0 }]
+  const max = Math.max(1, ...rows.map((r) => Number(r.value) || 0))
+  return (
+    <div className="border border-zinc-800 bg-[#0a0a0e] p-3">
+      <p className="text-xs text-zinc-400 mb-3">{title}</p>
+      <div className="flex items-end gap-1 h-28">
+        {rows.map((r, i) => {
+          const h = Math.max(2, ((Number(r.value) || 0) / max) * 100)
+          return (
+            <div key={`${r.day}-${i}`} className="flex-1 min-w-0 flex flex-col items-center justify-end h-full gap-1">
+              <div
+                className="w-full bg-[#4ade80]"
+                style={{ height: `${h}%` }}
+                title={`${r.day}: ${r.value}`}
+              />
+            </div>
+          )
+        })}
+      </div>
+      <div className="flex justify-between text-[10px] text-zinc-600 mt-2">
+        <span>{rows[0]?.day || '—'}</span>
+        <span>{rows[rows.length - 1]?.day || '—'}</span>
+      </div>
+    </div>
+  )
+}
+
+function OverviewMembershipPrice({ userId }) {
+  const [price, setPrice] = useState(() => getMembershipPrice(userId))
+  useEffect(() => {
+    setPrice(getMembershipPrice(userId))
+  }, [userId])
+  return (
+    <label className="block max-w-xs">
+      <span className="text-xs font-medium text-zinc-400">Membership price (USD)</span>
+      <input
+        type="number"
+        min={1}
+        max={999}
+        step={0.01}
+        value={price}
+        onChange={(e) => {
+          const next = e.target.value
+          setPrice(next)
+          if (userId) setMembershipPrice(userId, next)
+        }}
+        className="mt-1 w-full h-10 border border-zinc-800 bg-black px-3 text-sm text-white"
+      />
+    </label>
+  )
 }
 
 function PostRow({ post, active, deleting, onSelect, onPlay, onDelete, onVisibility }) {
@@ -338,12 +444,13 @@ function StudioControls({ onNavigate, approved }) {
   )
 }
 
-function StudioSettingsPanel({ onNavigate, initialPage = 'channel', pages, PageMap }) {
+function StudioSettingsPanel({ onNavigate, initialPage = 'chat', pages, PageMap }) {
   const list = pages || []
-  const [page, setPage] = useState(list.some((p) => p.id === initialPage) ? initialPage : (list[0]?.id || 'channel'))
+  const [page, setPage] = useState(list.some((p) => p.id === initialPage) ? initialPage : (list[0]?.id || 'chat'))
   useEffect(() => {
     if (list.some((p) => p.id === initialPage)) setPage(initialPage)
-  }, [initialPage])
+    else if (list[0]?.id) setPage(list[0].id)
+  }, [initialPage, list])
   const Page = (PageMap && PageMap[page]) || null
   return (
     <div className="h-full min-h-0 overflow-y-auto max-w-3xl space-y-4">
@@ -571,7 +678,7 @@ export default function CreatorStudio({
   onPlayItem,
   onOpenAuth,
   initialSection = 'overview',
-  initialSettingsPage = 'channel',
+  initialSettingsPage = 'chat',
 }) {
   const { user } = useAuth()
   const syncTick = useContentSyncTick()
@@ -676,6 +783,10 @@ export default function CreatorStudio({
   }
 
   const posts = useMemo(() => getCreatorContent(user?.id, user?.handle), [user?.id, user?.handle, syncTick])
+  const overviewSeries = useMemo(
+    () => buildOverviewSeries(user?.id, posts, 14),
+    [user?.id, posts, syncTick, mapTick]
+  )
   const showOnboarding = !onboardingDone && posts.length === 0
   const live = lsGet(`live_state_${user?.id}`, null)
   const views = posts.reduce((n, c) => n + getViews(c.id), 0)
@@ -859,7 +970,7 @@ export default function CreatorStudio({
 
         <div className="flex-1 min-h-0 overflow-hidden px-6 md:px-8 py-6 md:py-8">
           {section === 'overview' ? (
-            <div className="h-full min-h-0 overflow-y-auto space-y-10 max-w-3xl">
+            <div className="h-full min-h-0 overflow-y-auto space-y-8 max-w-4xl">
               {showOnboarding ? (
                 <CreatorOnboarding
                   onOpenUpload={onOpenUpload}
@@ -867,54 +978,12 @@ export default function CreatorStudio({
                   onNavigate={onNavigate}
                 />
               ) : null}
-              <div>
-                <h2 className="text-2xl font-semibold text-white tracking-tight">Welcome back</h2>
-                <p className="mt-3 text-sm text-zinc-500 leading-relaxed max-w-md">
-                  Open Calabi Studio to post, edit, or go live. Numbers live under Analytics.
-                </p>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <GrassBarChart title="Views / day" series={overviewSeries.views} />
+                <GrassBarChart title="Followers / day" series={overviewSeries.followers} />
+                <GrassBarChart title="Posts / day" series={overviewSeries.posts} />
               </div>
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() => setSection('lab')}
-                  className="h-11 px-5 bg-white text-black text-sm font-semibold inline-flex items-center gap-2"
-                >
-                  <Clapperboard className="h-4 w-4" /> Calabi Studio
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSection('content')}
-                  className="h-11 px-5 border border-zinc-700 text-sm text-zinc-200 hover:border-white"
-                >
-                  Content
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSection('analytics')}
-                  className="h-11 px-5 border border-zinc-700 text-sm text-zinc-200 hover:border-white"
-                >
-                  Analytics
-                </button>
-              </div>
-              {posts.length > 0 ? (
-                <div className="space-y-3 pt-2">
-                  <p className="text-xs uppercase tracking-wider text-zinc-600">Recent</p>
-                  <ul className="space-y-2">
-                    {posts.slice(0, 5).map((p) => (
-                      <li key={p.id}>
-                        <button
-                          type="button"
-                          onClick={() => openPost(p)}
-                          className="w-full text-left px-3 py-3 border border-zinc-800/80 hover:border-zinc-600"
-                        >
-                          <p className="text-sm text-white truncate">{p.title || 'Untitled'}</p>
-                          <p className="text-[11px] text-zinc-500 mt-1">{typeLabel(p.type)} · {formatCount(getViews(p.id))} views</p>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
+              <OverviewMembershipPrice userId={user?.id} />
             </div>
           ) : null}
 
@@ -1024,6 +1093,12 @@ export default function CreatorStudio({
           {section === 'earnings' ? (
             <div className="h-full overflow-hidden">
               <CreatorEarningsPanel />
+            </div>
+          ) : null}
+
+          {section === 'shop' ? (
+            <div className="h-full overflow-y-auto">
+              <SellerPortal onOpenAuth={onOpenAuth} onNavigate={onNavigate} />
             </div>
           ) : null}
 

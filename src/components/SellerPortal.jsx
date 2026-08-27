@@ -173,7 +173,7 @@ function OrderRow({ order, sellerId, onDone }) {
   return (
     <div className="border border-zinc-800 px-3 py-3 text-xs text-zinc-400 space-y-2">
       <p className="text-sm text-white">{order.productTitle}</p>
-      <p>{order.status} · total {formatUsdFromCents(order.totalCents)} · fee {formatUsdFromCents(order.platformFeeCents)}</p>
+      <p>{order.status} · total {formatUsdFromCents(order.totalCents)}</p>
       {order.kind === 'physical' && (order.status === 'paid' || order.status === 'shipped') ? (
         <div className="flex flex-wrap gap-2">
           <input value={tracking} onChange={(e) => setTracking(e.target.value)} placeholder="Tracking number" className="h-9 flex-1 min-w-[10rem] border border-zinc-800 bg-black px-2 text-white" />

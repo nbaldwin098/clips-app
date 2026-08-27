@@ -26,7 +26,10 @@ export function TermsOfService() {
       <h2>5. Copyright</h2>
       <p>calabi operates a notice-and-takedown process under the DMCA. See Settings → Copyright &amp; DMCA for intake addresses, strike policy, and counter-notification procedures.</p>
       <h2>6. Monetization</h2>
-      <p>Membership list prices are shown at checkout. Payouts to creators are not live until Stripe Connect is connected. We do not promise a split we cannot pay.</p>
+      <p>
+        Membership and product list prices are shown at checkout. A platform fee of 4% is added at card checkout for platform and fraud protection; it is not shown on product pages or creator dashboards.
+        Creators receive payouts through calabi Earnings withdrawals.
+      </p>
       <h2>7. Disclaimers</h2>
       <p>The service is provided “as is.” To the fullest extent permitted by law, calabi disclaims warranties of merchantability, fitness for a particular purpose, and non-infringement.</p>
       <h2>8. Limitation of liability</h2>
