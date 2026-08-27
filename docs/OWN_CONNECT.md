@@ -42,11 +42,11 @@ Stripe → Developers → Webhooks → Add endpoint:
 https://YOUR_PROJECT.supabase.co/functions/v1/stripe-webhook
 ```
 
-Events:
-- `checkout.session.completed`
-- `account.updated`
+Events (Accounts v2 Event Destination — what Stripe shows you):
+- `payment_intent.succeeded`  ← under Subscriptions list
+- `v2.core.account.updated`   ← under Accounts v2 list
 
-Copy the signing secret → `STRIPE_WEBHOOK_SECRET`.
+Same webhook URL for **Your account** scope.
 
 ### 5. Run SQL
 Admin → Setup → run **0023** (if not yet) then **0024** (Connect columns + settlement tables).
