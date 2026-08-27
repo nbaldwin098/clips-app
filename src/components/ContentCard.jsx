@@ -200,8 +200,9 @@ export default function ContentCard({ item, onOpen, onOpenProfile, variant }) {
         <div className="flex gap-3 pt-3">
           <button
             type="button"
+            data-avatar-btn
             onClick={openProfile}
-            className="shrink-0 mt-0.5"
+            className="shrink-0 mt-0.5 rounded-full"
             aria-label={`Open ${name}'s channel`}
           >
             <ChannelAvatar src={item.avatarUrl} name={name} size={36} />

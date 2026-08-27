@@ -1,7 +1,19 @@
 import { Component } from 'react'
 import ErrorReportPrompt from './ErrorReportPrompt'
 
-function ErrorFallback({ message, stack, onGoHome }) {
+function isStaleChunkError(error) {
+  const msg = String(error?.message || error || '')
+  const name = String(error?.name || '')
+  return (
+    name === 'ChunkLoadError'
+    || /Loading chunk [\d]+ failed/i.test(msg)
+    || /Failed to fetch dynamically imported module/i.test(msg)
+    || /Importing a module script failed/i.test(msg)
+    || /error loading dynamically imported module/i.test(msg)
+  )
+}
+
+function ErrorFallback({ message, stack, onGoHome, onReload }) {
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-[#000000] text-zinc-100">
       <div className="max-w-md w-full text-center rounded-2xl border border-zinc-800 bg-[#121218] p-8">
@@ -19,7 +31,7 @@ function ErrorFallback({ message, stack, onGoHome }) {
           <button type="button" onClick={onGoHome} className="h-10 px-5 rounded-xl bg-white text-black text-sm font-medium hover:bg-zinc-200">
             Go home
           </button>
-          <button type="button" onClick={() => window.location.reload()} className="h-10 px-5 rounded-xl border border-zinc-700 text-zinc-300 text-sm font-medium hover:bg-zinc-800">
+          <button type="button" onClick={onReload} className="h-10 px-5 rounded-xl border border-zinc-700 text-zinc-300 text-sm font-medium hover:bg-zinc-800">
             Reload
           </button>
         </div>
@@ -41,6 +53,16 @@ export default class ErrorBoundary extends Component {
   componentDidCatch(error, info) {
     console.error('Clips error boundary', error, info)
     this.setState({ stack: info?.componentStack || error?.stack || '' })
+    // After a deploy, old tabs often fail loading removed JS chunks — one hard reload recovers.
+    if (isStaleChunkError(error) && typeof window !== 'undefined') {
+      try {
+        const key = 'calabi_chunk_reload'
+        if (!sessionStorage.getItem(key)) {
+          sessionStorage.setItem(key, '1')
+          window.location.reload()
+        }
+      } catch { /* ignore */ }
+    }
   }
 
   goHome = () => {
@@ -59,6 +81,7 @@ export default class ErrorBoundary extends Component {
           message={this.state.message}
           stack={this.state.stack}
           onGoHome={this.goHome}
+          onReload={() => window.location.reload()}
         />
       )
     }

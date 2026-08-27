@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Youtube, Instagram } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { getCreatorContent } from '../../lib/contentService'
 import { listVods } from '../../lib/vods'
@@ -49,8 +48,20 @@ function providerAccepts(providerId, contentType) {
 }
 
 function ProviderGlyph({ id, className = 'h-5 w-5' }) {
-  if (id === 'youtube') return <Youtube className={className} aria-hidden />
-  if (id === 'instagram') return <Instagram className={className} aria-hidden />
+  if (id === 'youtube') {
+    return (
+      <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
+        <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31.5 31.5 0 0 0 0 12a31.5 31.5 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31.5 31.5 0 0 0 24 12a31.5 31.5 0 0 0-.5-5.8zM9.8 15.5v-7l6.3 3.5-6.3 3.5z" />
+      </svg>
+    )
+  }
+  if (id === 'instagram') {
+    return (
+      <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
+        <path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm0 2a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3H7zm11 1.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2zM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" />
+      </svg>
+    )
+  }
   if (id === 'tiktok') {
     return (
       <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>

@@ -3,7 +3,7 @@ import {
   listPendingWithdrawals,
   markWithdrawalPaid,
   rejectWithdrawal,
-} from '../lib/adminWithdraw'
+} from '../../lib/adminWithdraw'
 
 function secretHint(secret) {
   if (!secret || typeof secret !== 'object') return '—'

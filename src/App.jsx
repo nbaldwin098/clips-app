@@ -494,7 +494,7 @@ function AppShell() {
       if (user && !isPlatformOwner(user) && !isAdminSession(user)) {
         return <NotFoundPage onNavigate={navigate} />
       }
-      return <AdminPortal onNavigate={navigate} />
+      return <AdminPortal onNavigate={navigate} initialTab={routeId || ''} />
     }
 
     switch (view) {
@@ -663,8 +663,10 @@ function AppShell() {
   const studioChrome = view === 'dashboard' || view === 'analytics' || view === 'wallet' || view === 'vods' || view === 'verify' || view === 'settings'
   const lockStage = view === 'clips' || view === 'shorts' || view === 'pics' || studioChrome
 
+  // Always bound to the viewport. Inside Next's fixed SpaShell overlay, min-h-screen
+  // grows with content and main never overflows — home/explore cannot scroll.
   return (
-    <div className={`${lockStage ? 'h-dvh overflow-hidden' : 'min-h-screen'} bg-[#000000] text-zinc-100 flex flex-col selection:bg-white selection:text-black`}>
+    <div className="h-dvh overflow-hidden bg-[#000000] text-zinc-100 flex flex-col selection:bg-white selection:text-black">
       <ToastLiveRegion />
       <StreamingNavbar
         onNavigate={navigate}
