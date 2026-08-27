@@ -1,0 +1,26 @@
+# Self-host RTMP ingest + HLS for Calabi Live (free alternative to Mux/Cloudflare Stream).
+# Docs: docs/mediamtx.md
+#
+# Usage:
+#   cd docker/mediamtx && docker compose up -d
+# Point OBS → rtmp://YOUR_HOST:1935/live/STREAM_KEY
+# Playback HLS → http://YOUR_HOST:8888/live/STREAM_KEY/index.m3u8
+#
+# Then set on Render / .env:
+#   VITE_LIVE_RTMP_URL=rtmp://YOUR_HOST:1935/live
+#   VITE_LIVE_HLS_BASE=http://YOUR_HOST:8888/live
+
+services:
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    container_name: calabi-mediamtx
+    restart: unless-stopped
+    ports:
+      - "1935:1935" # RTMP
+      - "8554:8554" # RTSP
+      - "8888:8888" # HLS
+      - "8889:8889" # WebRTC (optional)
+    volumes:
+      - ./mediamtx.yml:/mediamtx.yml:ro
+    environment:
+      MTX_PROTOCOLS: tcp

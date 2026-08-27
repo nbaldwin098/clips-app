@@ -17,17 +17,22 @@ Optional / legacy aliases still read by client helpers:
 - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
 - `VITE_LIVE_INGEST_CONNECTED` — only set `true` when RTMP/HLS is really live
 - `VITE_LIVE_RTMP_URL` / `NEXT_PUBLIC_LIVE_RTMP_URL` — real ingest only
+- `VITE_LIVE_HLS_BASE` — HLS play base (MediaMTX / CDN)
 - `VITE_OAUTH_*_CLIENT_ID` — social publish (see `docs/INFRA.md`)
+- `VITE_OAUTH_START_URL` — Edge `oauth-start` URL
 - `VITE_MAIL_FUNCTION_URL` — real email codes (else demo code)
+- `NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `VITE_PUSH_SUBSCRIBE_URL` — Web Push
+- `VITE_CLIENT_TRANSCODE=1` — optional browser ffmpeg.wasm (off by default)
 - Do **not** set `VITE_STRIPE_PAYMENT_LINK` (own Checkout only)
 
-Blocked infra (Connect, RTMP host, OAuth apps, push, ffmpeg, native, i18n): **`docs/INFRA.md`**.
+Free scaffolds + blocked infra (Connect secrets, RTMP host, OAuth apps, push keys, native, full translations): **`docs/INFRA.md`**. MediaMTX: **`docs/mediamtx.md`**.
 
 Health check: `GET /api/health` → 200 when Supabase env present, 503 otherwise.
 
 Deploy notes:
 
 1. Use the **Node** web service on Render — not a Static Site (`render.yaml`).
-2. After migrate, confirm Admin → Setup lists SQL through the latest `supabase/migrations/*.sql` (through `0022`).
+2. After migrate, confirm Admin → Setup lists SQL through the latest `supabase/migrations/*.sql` (through `0024`).
 3. Old Static Render service for this domain must stay deleted (BUG-007).
-4. Full checklist: `docs/DEPLOY_CHECKLIST.md`. Migrations vs Admin Setup explained there.
+4. Stripe Connect: deploy `create-connect-account` + `stripe-webhook` — **`docs/OWN_CONNECT.md`**.
+5. Full checklist: `docs/DEPLOY_CHECKLIST.md`. Migrations vs Admin Setup explained there.

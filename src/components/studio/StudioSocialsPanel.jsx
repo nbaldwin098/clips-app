@@ -16,6 +16,9 @@ import {
   queueSocialPost,
   listSocialJobs,
   anySocialOAuthConfigured,
+  socialOAuthConfigured,
+  startSocialOAuth,
+  consumeOAuthReturn,
 } from '../../lib/socialConnects'
 import {
   SettingsCard,
@@ -91,6 +94,15 @@ export default function StudioSocialsPanel({ onNavigate }) {
   const jobs = listSocialJobs(uid, 24)
   const connectedIds = SOCIAL_PROVIDERS.filter((p) => connects[p.id]?.connected).map((p) => p.id)
 
+  useEffect(() => {
+    if (!uid) return
+    const ret = consumeOAuthReturn(uid)
+    if (ret) {
+      setNote(ret.ok ? `Connected ${ret.provider}.` : `OAuth: ${ret.error || 'failed'}`)
+      bump((n) => n + 1)
+    }
+  }, [uid])
+
   const posts = useMemo(() => getCreatorContent(uid, user?.handle) || [], [uid, user?.handle, bump])
   const vods = useMemo(
     () => (listVods(uid) || []).map((v) => ({
@@ -141,9 +153,14 @@ export default function StudioSocialsPanel({ onNavigate }) {
   }
 
   const onConnect = (providerId) => {
+    if (socialOAuthConfigured(providerId)) {
+      const oauth = startSocialOAuth(providerId, { state: uid })
+      if (oauth.ok) return
+      setNote(oauth.message || 'OAuth start URL missing — saving handle locally.')
+    }
     const handle = handleDraft[providerId] || user?.handle || ''
     const res = connectSocial(uid, providerId, handle, { showOnProfile: true })
-    setNote(res.ok ? 'Connected.' : (res.error || 'Could not connect.'))
+    setNote(res.ok ? 'Connected (profile link).' : (res.error || 'Could not connect.'))
     bump((n) => n + 1)
   }
 
@@ -172,13 +189,16 @@ export default function StudioSocialsPanel({ onNavigate }) {
     <div className="h-full min-h-0 overflow-y-auto space-y-4 pb-8">
       <SettingsPageHeader
         title="Socials"
-        subtitle="Connect profile links anytime. Publish to networks stays disabled until OAuth is configured."
+        subtitle="Connect profile links anytime. Publish needs OAuth apps + oauth-start Edge Function."
       />
 
       <SettingsNotice>
         <p>
-          Save handles and toggle Show on profile anytime. Publish is disabled without OAuth client IDs
-          (VITE_OAUTH_*_CLIENT_ID). Profile icons still work; we do not fake a successful post.
+          Save handles and toggle Show on profile anytime.
+          {anySocialOAuthConfigured()
+            ? ' OAuth client IDs are set — connect will redirect when VITE_OAUTH_START_URL is deployed.'
+            : ' Publish stays off until VITE_OAUTH_*_CLIENT_ID keys are set (see docs/INFRA.md).'}
+          {' '}Profile icons still work; we do not fake a successful post.
         </p>
       </SettingsNotice>
 

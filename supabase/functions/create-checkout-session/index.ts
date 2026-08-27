@@ -124,6 +124,19 @@ Deno.serve(async (req) => {
         orderId,
         amountCents: String(amountCents),
       },
+      // Accounts v2 / Event Destinations often only expose payment_intent.succeeded —
+      // copy the same metadata onto the PaymentIntent so the webhook can settle.
+      payment_intent_data: {
+        metadata: {
+          kind,
+          userId: user.id,
+          creatorId,
+          contentId,
+          tierId,
+          orderId,
+          amountCents: String(amountCents),
+        },
+      },
     })
 
     if (!session.url) return json({ error: 'Stripe did not return a checkout URL.' }, 502)

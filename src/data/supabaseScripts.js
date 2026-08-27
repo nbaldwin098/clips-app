@@ -20,6 +20,8 @@ import siteNews from '../../supabase/migrations/0019_site_news.sql?raw'
 import uniqueViews from '../../supabase/migrations/0020_unique_content_views.sql?raw'
 import visibilityPayoutSecrets from '../../supabase/migrations/0021_visibility_payout_secrets.sql?raw'
 import directMessages from '../../supabase/migrations/0022_direct_messages.sql?raw'
+import connectPushScaffolds from '../../supabase/migrations/0023_connect_push_scaffolds.sql?raw'
+import stripeConnect from '../../supabase/migrations/0024_stripe_connect.sql?raw'
 
 /** Run in order. 0001–0004 are required before anything that references profiles. */
 export const SETUP_SCRIPTS = [
@@ -154,5 +156,17 @@ export const SETUP_SCRIPTS = [
     title: 'Direct messages (participants-only RLS)',
     file: '0022_direct_messages.sql',
     sql: String(directMessages || ''),
+  },
+  {
+    id: '0023',
+    title: 'Stripe Connect account id + push_subscriptions',
+    file: '0023_connect_push_scaffolds.sql',
+    sql: String(connectPushScaffolds || ''),
+  },
+  {
+    id: '0024',
+    title: 'Stripe Connect status + settlements + transfers',
+    file: '0024_stripe_connect.sql',
+    sql: String(stripeConnect || ''),
   },
 ]

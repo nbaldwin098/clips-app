@@ -2,6 +2,7 @@ import { getImports, saveImport, updateImport, removeImport, parseExternalShort,
 import { rankForUser, computeContentQuality, computeVelocity } from './algorithmEngine'
 import { notifyFollowersOfUpload } from './notifications'
 import { prepareVideoForUpload, transcodeVideoForUpload } from './videoStorage'
+import { prepareVideoForUploadMaybeTranscode } from './videoTranscode'
 import {
   uploadVideoToSupabase,
   uploadDataUrlToSupabase,
@@ -604,7 +605,10 @@ export async function publishLocalMedia(file, actor = null, {
 
   try {
     const asClip = type === 'short'
-    const prepare = prepareVideoForUpload || transcodeVideoForUpload
+    // Optional ffmpeg.wasm when VITE_CLIENT_TRANSCODE=1; otherwise original-file path.
+    const prepare = prepareVideoForUploadMaybeTranscode
+      || prepareVideoForUpload
+      || transcodeVideoForUpload
     const processed = await prepare(file)
     const dur = Number(processed.durationSec) || 0
     const w = Number(processed.width) || 0

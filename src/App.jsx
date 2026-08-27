@@ -1,6 +1,7 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { warnIfSupabaseMissing } from './lib/supabaseClient'
+import { initLocale } from './lib/i18n'
 import ErrorBoundary from './components/ErrorBoundary'
 import StreamingNavbar from './components/StreamingNavbar'
 import CollapsibleSidebar from './components/CollapsibleSidebar'
@@ -117,6 +118,7 @@ function AppShell() {
 
   useEffect(() => {
     warnIfSupabaseMissing()
+    initLocale()
   }, [])
 
   useEffect(() => {
