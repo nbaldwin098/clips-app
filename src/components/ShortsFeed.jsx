@@ -232,6 +232,7 @@ function ClipSlide({
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); onOpenProfile?.(item.handle, creatorId) }}
+        data-avatar-btn
         className="h-11 w-11 rounded-full overflow-hidden bg-white/20 text-white text-sm font-semibold flex items-center justify-center ring-2 ring-white/80"
         aria-label={handle}
       >

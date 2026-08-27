@@ -109,6 +109,7 @@ export default function HourlyHitsCarousel({ onPlayItem, onOpenPic, onOpenProfil
             <div className="absolute bottom-0 inset-x-0 p-4 sm:p-5 flex items-center gap-2.5 min-w-0 z-10 pointer-events-none">
               <button
                 type="button"
+                data-avatar-btn
                 onClick={openProfile}
                 className="pointer-events-auto shrink-0 rounded-full ring-2 ring-white/20 hover:ring-white/50"
                 aria-label={`Open @${String(current.handle || 'creator').replace(/^@/, '')} profile`}

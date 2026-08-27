@@ -8,6 +8,9 @@ import {
   ShieldCheck,
   Wallet,
   MessageSquare,
+  Landmark,
+  CircleDollarSign,
+  ShoppingBag,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { isPlatformOwner } from '../lib/moderation'
@@ -16,6 +19,32 @@ import ChannelAvatar from './ChannelAvatar'
 import NotificationsMenu from './NotificationsMenu'
 import { getCoinBalance, refreshWalletFromCloud } from '../lib/calabiCash'
 import CoinIcon from './CoinIcon'
+
+function ProfileRow({ icon: Icon, label, onClick, danger = false, indent = false }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full flex items-center gap-2.5 px-3.5 py-2 text-xs hover:bg-[#1f1f2a] ${
+        danger ? 'text-red-400 hover:bg-red-500/10' : 'text-zinc-200 hover:text-white'
+      } ${indent ? 'pl-9' : ''}`}
+    >
+      {Icon ? <Icon className={`h-4 w-4 ${danger ? '' : 'text-zinc-400'}`} /> : null}
+      {label}
+    </button>
+  )
+}
+
+function ProfileGroup({ label, children }) {
+  return (
+    <div className="py-1">
+      <p className="px-3.5 pt-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
+        {label}
+      </p>
+      {children}
+    </div>
+  )
+}
 
 export default function StreamingNavbar({
   onNavigate,
@@ -29,6 +58,7 @@ export default function StreamingNavbar({
   const menuRef = useRef(null)
   const [, setWalletTick] = useState(0)
   const coins = getCoinBalance(user?.id)
+  const owner = isPlatformOwner(user)
 
   useEffect(() => {
     if (!user?.id) return
@@ -63,9 +93,14 @@ export default function StreamingNavbar({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const handleNav = (v) => {
+  const handleNav = (v, id = '', params = null) => {
     setMenuOpen(false)
-    onNavigate(v)
+    onNavigate(v, id, params)
+  }
+
+  const goSettings = (section, params = null) => {
+    setMenuOpen(false)
+    onNavigate?.('settings', section, params)
   }
 
   return (
@@ -120,92 +155,99 @@ export default function StreamingNavbar({
               <div className="relative shrink-0" ref={menuRef}>
                 <button
                   type="button"
+                  data-avatar-btn
                   onClick={() => setMenuOpen((o) => !o)}
-                  className="flex h-9 w-9 items-center justify-center hover:bg-white/10 shrink-0"
+                  className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-white/10 shrink-0"
                   aria-label="Account"
                 >
                   <ChannelAvatar src={user?.avatarUrl} name={user?.displayName || user?.handle} size={28} />
                 </button>
 
                 {menuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 rounded-xl border border-[#2d2d38] bg-[#14141b] shadow-2xl py-1 z-50">
+                  <div className="absolute right-0 mt-2 w-60 border border-[#2d2d38] bg-[#14141b] shadow-2xl py-1 z-50">
                     <div className="px-3.5 py-2.5 border-b border-[#23232d]">
                       <p className="text-xs font-semibold text-white truncate">{user?.displayName || 'User'}</p>
                       <p className="text-[11px] text-zinc-400 truncate">@{user?.handle || 'viewer'}</p>
-                      <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
-                        <span className="inline-flex items-center gap-1 text-amber-400 font-semibold">
-                          <CoinIcon className="h-3.5 w-3.5" /> {coins} Coins
-                        </span>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleNav('dashboard')}
-                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-zinc-200 hover:bg-[#1f1f2a] hover:text-white"
-                    >
-                      <SlidersHorizontal className="h-4 w-4 text-zinc-400" /> Creator dashboard
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleNav('messages')}
-                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-zinc-200 hover:bg-[#1f1f2a] hover:text-white"
-                    >
-                      <MessageSquare className="h-4 w-4 text-zinc-400" /> Messages
-                    </button>
-                    <p className="px-3.5 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
-                      Site settings
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMenuOpen(false)
-                        onNavigate?.('settings', 'account')
-                      }}
-                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-zinc-200 hover:bg-[#1f1f2a] hover:text-white"
-                    >
-                      <Settings className="h-4 w-4 text-zinc-400" /> Account
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMenuOpen(false)
-                        onNavigate?.('settings', 'wallet')
-                      }}
-                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-zinc-200 hover:bg-[#1f1f2a] hover:text-white"
-                    >
-                      <Wallet className="h-4 w-4 text-zinc-400" /> Coins
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMenuOpen(false)
-                        onNavigate?.('settings', 'wallet', { tab: 'orders' })
-                      }}
-                      className="w-full flex items-center gap-2.5 px-3.5 py-2 pl-9 text-xs text-zinc-200 hover:bg-[#1f1f2a] hover:text-white"
-                    >
-                      Orders
-                    </button>
-                    {isPlatformOwner(user) && (
                       <button
                         type="button"
-                        onClick={() => handleNav('admin')}
-                        className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-zinc-200 hover:bg-[#1f1f2a] hover:text-white"
+                        onClick={() => goSettings('wallet')}
+                        className="mt-2 inline-flex items-center gap-1 text-[11px] text-amber-400 font-semibold hover:text-amber-300"
                       >
-                        <ShieldCheck className="h-4 w-4 text-zinc-400" /> Admin
+                        <CoinIcon className="h-3.5 w-3.5" /> {coins} Coins
                       </button>
-                    )}
+                    </div>
+
+                    <ProfileRow
+                      icon={SlidersHorizontal}
+                      label="Creator dashboard"
+                      onClick={() => handleNav('dashboard')}
+                    />
+                    <ProfileRow
+                      icon={MessageSquare}
+                      label="Messages"
+                      onClick={() => handleNav('messages')}
+                    />
+
+                    <ProfileGroup label="Accounts">
+                      <ProfileRow
+                        icon={CircleDollarSign}
+                        label="Payouts"
+                        onClick={() => handleNav('dashboard', 'earnings')}
+                      />
+                      <ProfileRow
+                        icon={Wallet}
+                        label="Coins"
+                        onClick={() => goSettings('wallet')}
+                      />
+                      <ProfileRow
+                        icon={ShoppingBag}
+                        label="Orders"
+                        indent
+                        onClick={() => goSettings('wallet', { tab: 'orders' })}
+                      />
+                      {owner ? (
+                        <>
+                          <ProfileRow
+                            icon={Landmark}
+                            label="Stripe ledger"
+                            onClick={() => handleNav('admin', 'finance')}
+                          />
+                          <ProfileRow
+                            icon={Wallet}
+                            label="Pay creators"
+                            onClick={() => handleNav('admin', 'payouts')}
+                          />
+                        </>
+                      ) : null}
+                    </ProfileGroup>
+
+                    <ProfileGroup label="Settings">
+                      <ProfileRow
+                        icon={Settings}
+                        label="Account"
+                        onClick={() => goSettings('account')}
+                      />
+                    </ProfileGroup>
+
+                    {owner ? (
+                      <ProfileRow
+                        icon={ShieldCheck}
+                        label="Admin"
+                        onClick={() => handleNav('admin')}
+                      />
+                    ) : null}
+
                     <div className="border-t border-[#23232d] my-1" />
-                    <button
-                      type="button"
+                    <ProfileRow
+                      icon={LogOut}
+                      label="Sign Out"
+                      danger
                       onClick={() => {
                         logout()
                         setMenuOpen(false)
                         handleNav('home')
                       }}
-                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-red-400 hover:bg-red-500/10"
-                    >
-                      <LogOut className="h-4 w-4" /> Sign Out
-                    </button>
+                    />
                   </div>
                 )}
               </div>

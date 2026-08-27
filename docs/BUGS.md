@@ -47,6 +47,10 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 | BUG-090 | Auth | Admin unlock broken; owner still treated as cs1 on live | #121 + #124 | `done` |
 | BUG-091 | Clips | Clips open glitched sideways (object routeId) | openClip + scrollbar-gutter | `doing` |
 | BUG-092 | UX | Taste picker / banners / messy create | Removed picker; avatars; YT-style upload filters | `doing` |
+| BUG-114 | Home | Cannot scroll homepage (fixed SpaShell + min-h-screen) | App shell always `h-dvh`; main scrolls | `doing` |
+| BUG-115 | Home | Square boxes over circular profile avatars | Global square-button CSS vs rounded-full | `doing` |
+| BUG-116 | Crash | Client-side exception / failed resource after deploys | global-error + chunk reload once | `doing` |
+| BUG-117 | Admin | Close session button; Stripe money hard to find | Removed close; Accounts menu → Stripe ledger / Pay creators | `doing` |
 
 ### P1 — important
 

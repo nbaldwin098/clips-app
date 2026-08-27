@@ -5,7 +5,7 @@ import {
   Landmark,
 } from 'lucide-react'
 import {
-  isAdminSession, adminLogin, adminLogout, listApplications, setApplicationStatus,
+  isAdminSession, adminLogin, listApplications, setApplicationStatus,
   listTickets, updateTicket, isPlatformOwner,
 } from '../lib/moderation'
 import { pullSupportTickets } from '../lib/supportSync'
@@ -84,7 +84,9 @@ const NAV = [
 
 const ADMIN_UNLOCK_KEY = 'clips_admin_ui_unlocked'
 
-export default function AdminPortal() {
+const ADMIN_TAB_IDS = new Set(NAV.map((n) => n.id))
+
+export default function AdminPortal({ initialTab = '' }) {
   const { user, login } = useAuth()
   const [unlocked, setUnlocked] = useState(() => {
     try { return sessionStorage.getItem(ADMIN_UNLOCK_KEY) === '1' } catch { return false }
@@ -95,9 +97,14 @@ export default function AdminPortal() {
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const authed = unlocked || isAdminSession(user) || isPlatformOwner(user)
-  const [tab, setTab] = useState('tickets')
+  const startTab = ADMIN_TAB_IDS.has(String(initialTab || '')) ? String(initialTab) : 'overview'
+  const [tab, setTab] = useState(startTab)
   const [, bump] = useState(0)
   const refresh = () => bump((n) => n + 1)
+
+  useEffect(() => {
+    if (ADMIN_TAB_IDS.has(String(initialTab || ''))) setTab(String(initialTab))
+  }, [initialTab])
   const [payMsg, setPayMsg] = useState('')
   const [sellerApps, setSellerApps] = useState([])
   const [shopProducts, setShopProducts] = useState([])
@@ -257,16 +264,11 @@ export default function AdminPortal() {
         </nav>
       </aside>
       <div className="flex-1 min-w-0 flex flex-col">
-        <header className="h-14 shrink-0 border-b border-white/10 flex items-center justify-between px-5 bg-[#0b0b0d]">
+        <header className="h-14 shrink-0 border-b border-white/10 flex items-center px-5 bg-[#0b0b0d]">
           <div>
             <p className="text-sm font-medium">{NAV.find((n) => n.id === tab)?.label || 'Admin'}</p>
             <p className="text-[10px] text-zinc-500">CS / mod desk · cloud data · {ORG.productName}</p>
           </div>
-          <button type="button" onClick={() => {
-            adminLogout()
-            try { sessionStorage.removeItem(ADMIN_UNLOCK_KEY) } catch {}
-            setUnlocked(false)
-          }} className="text-xs text-zinc-500 hover:text-white">Close session</button>
         </header>
         <div className="flex-1 min-h-0 overflow-y-auto">
           {tab === 'overview' && (
