@@ -1,6 +1,6 @@
 import { cn } from '../../lib/utils'
 import {
-  User, Shield, Bell, Wallet, FileText,
+  User, Shield, Bell, FileText,
 } from 'lucide-react'
 
 /** Site / account settings only — opened from the profile dropdown. */
@@ -8,14 +8,11 @@ export const SITE_SECTIONS = [
   { id: 'account', label: 'Account', icon: User },
   { id: 'security', label: 'Security', icon: Shield },
   { id: 'notifications', label: 'Notifications', icon: Bell },
-  { id: 'wallet', label: 'Coins', icon: Wallet },
   { id: 'legal', label: 'Legal', icon: FileText },
 ]
 
 /** Creator tools live in Creator Studio → Settings (not a second settings app). */
 export const CREATOR_SETTING_PAGES = [
-  { id: 'channel', label: 'Channel' },
-  { id: 'stream', label: 'Stream & OBS' },
   { id: 'chat', label: 'Chat' },
   { id: 'comments', label: 'Comments' },
   { id: 'roles', label: 'Roles' },

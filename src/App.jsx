@@ -555,7 +555,7 @@ function AppShell() {
             onPlayItem={openWatch}
             onOpenAuth={openAuth}
             initialSection={routeId || 'overview'}
-            initialSettingsPage={routeParams.tab || 'channel'}
+            initialSettingsPage={routeParams.tab || 'chat'}
           />
         )
       case 'vods':

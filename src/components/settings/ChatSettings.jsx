@@ -3,19 +3,43 @@ import { useAuth } from '../../context/AuthContext'
 import { getStreamSettings, setStreamSettings } from '../../lib/streamSettings'
 import { getUserSettings, saveUserSettings } from '../../lib/storage'
 
+function audienceFromStream(s) {
+  if (
+    s.chatEveryone !== undefined
+    || s.chatFollowers !== undefined
+    || s.chatPremium !== undefined
+  ) {
+    return {
+      chatEveryone: s.chatEveryone !== false,
+      chatFollowers: !!s.chatFollowers,
+      chatPremium: !!s.chatPremium,
+    }
+  }
+  if (s.subscriberOnlyChat) {
+    return { chatEveryone: false, chatFollowers: true, chatPremium: true }
+  }
+  return { chatEveryone: true, chatFollowers: false, chatPremium: false }
+}
+
 export default function ChatSettings() {
   const { user } = useAuth()
   const stream = getStreamSettings(user?.id)
+  const initialAudience = audienceFromStream(stream)
   const [slowMode, setSlowMode] = useState(stream.slowModeSeconds || 0)
-  const [subOnly, setSubOnly] = useState(!!stream.subscriberOnlyChat)
+  const [chatEveryone, setChatEveryone] = useState(initialAudience.chatEveryone)
+  const [chatFollowers, setChatFollowers] = useState(initialAudience.chatFollowers)
+  const [chatPremium, setChatPremium] = useState(initialAudience.chatPremium)
   const [blockedTerms, setBlockedTerms] = useState(() => getUserSettings().blockedTerms || '')
   const [saved, setSaved] = useState(false)
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
     const s = getStreamSettings(user?.id)
+    const a = audienceFromStream(s)
     setSlowMode(s.slowModeSeconds || 0)
-    setSubOnly(!!s.subscriberOnlyChat)
+    setChatEveryone(a.chatEveryone)
+    setChatFollowers(a.chatFollowers)
+    setChatPremium(a.chatPremium)
     setBlockedTerms(getUserSettings().blockedTerms || '')
     setReady(true)
   }, [user?.id])
@@ -24,21 +48,23 @@ export default function ChatSettings() {
     if (!ready) return
     setStreamSettings(user?.id, {
       slowModeSeconds: Number(slowMode) || 0,
-      subscriberOnlyChat: subOnly,
+      chatEveryone,
+      chatFollowers,
+      chatPremium,
+      // Backward compat for older chat gates
+      subscriberOnlyChat: !chatEveryone && (chatFollowers || chatPremium),
     })
     saveUserSettings({ blockedTerms })
     setSaved(true)
     const t = setTimeout(() => setSaved(false), 1500)
     return () => clearTimeout(t)
-  }, [ready, user?.id, slowMode, subOnly, blockedTerms])
+  }, [ready, user?.id, slowMode, chatEveryone, chatFollowers, chatPremium, blockedTerms])
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-xl font-semibold text-white">Chat & Moderation</h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          Slow mode, followers-only, and blocked terms run when someone chats on this site. They are stored on this device’s origin — not a Twitch/TikTok server.
-        </p>
+        <h1 className="text-xl font-semibold text-white">Chat</h1>
+        <p className="mt-1 text-sm text-zinc-500">Slow mode, audience, and blocked terms.</p>
       </div>
 
       <section className="space-y-4">
@@ -58,9 +84,18 @@ export default function ChatSettings() {
       <section className="pt-6 border-t border-zinc-800 space-y-3">
         <h2 className="text-sm font-semibold text-white">Audience</h2>
         <label className="flex items-center gap-3">
-          <input type="checkbox" checked={subOnly} onChange={(e) => setSubOnly(e.target.checked)} />
-          <span className="text-sm text-zinc-300">Followers or premium only</span>
+          <input type="checkbox" checked={chatEveryone} onChange={(e) => setChatEveryone(e.target.checked)} />
+          <span className="text-sm text-zinc-300">Everyone</span>
         </label>
+        <label className="flex items-center gap-3">
+          <input type="checkbox" checked={chatFollowers} onChange={(e) => setChatFollowers(e.target.checked)} />
+          <span className="text-sm text-zinc-300">Followers</span>
+        </label>
+        <label className="flex items-center gap-3">
+          <input type="checkbox" checked={chatPremium} onChange={(e) => setChatPremium(e.target.checked)} />
+          <span className="text-sm text-zinc-300">Premium</span>
+        </label>
+        <p className="text-[11px] text-zinc-500">Everyone keeps chat open even if Followers or Premium are also checked.</p>
       </section>
 
       <section className="pt-6 border-t border-zinc-800 space-y-3">

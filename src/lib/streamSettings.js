@@ -19,6 +19,9 @@ export const DEFAULT_STREAM_SETTINGS = {
   vodVisibility: 'public',
   chatReplayOnVod: true,
   subscriberOnlyChat: false,
+  chatEveryone: true,
+  chatFollowers: false,
+  chatPremium: false,
   slowModeSeconds: 0,
   followersOnlyMinutes: 0,
   hideVodFromHome: false,
@@ -31,7 +34,20 @@ export const DEFAULT_STREAM_SETTINGS = {
 export function getStreamSettings(userId) {
   if (!userId) return { ...DEFAULT_STREAM_SETTINGS }
   const all = lsGet(KEY, {})
-  return { ...DEFAULT_STREAM_SETTINGS, ...(all[userId] || {}) }
+  const raw = all[userId] || {}
+  const merged = { ...DEFAULT_STREAM_SETTINGS, ...raw }
+  // Prefer new audience fields; migrate from subscriberOnlyChat when unset
+  if (
+    raw.chatEveryone === undefined
+    && raw.chatFollowers === undefined
+    && raw.chatPremium === undefined
+    && raw.subscriberOnlyChat
+  ) {
+    merged.chatEveryone = false
+    merged.chatFollowers = true
+    merged.chatPremium = true
+  }
+  return merged
 }
 
 export function setStreamSettings(userId, partial) {
