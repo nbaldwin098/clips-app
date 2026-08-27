@@ -43,7 +43,11 @@ const OAUTH_SLUG = {
  */
 export function startSocialOAuth(providerId, { state } = {}) {
   if (!socialOAuthConfigured(providerId)) {
-    return { ok: false, error: 'not_configured', message: 'Set VITE_OAUTH_*_CLIENT_ID first.' }
+    return {
+      ok: false,
+      error: 'not_configured',
+      message: 'Free developer app key missing — see docs/FREE_INFRA.md (Social OAuth). Handles still save on your profile.',
+    }
   }
   const slug = OAUTH_SLUG[providerId] || providerId
   const base = String(

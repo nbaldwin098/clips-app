@@ -76,13 +76,21 @@ export async function enableWebPush() {
     }
     const json = sub.toJSON()
     lsSet(SUB_KEY, json)
-    // Best-effort POST to optional Edge Function
+    // Best-effort POST to optional Edge Function (include auth when signed in)
     const url = String(runtimeEnv('VITE_PUSH_SUBSCRIBE_URL') || '').trim()
     if (url) {
       try {
+        const headers = { 'Content-Type': 'application/json' }
+        try {
+          const { getSupabase } = await import('./supabaseClient')
+          const sb = await getSupabase()
+          const { data: sess } = await sb?.auth?.getSession?.() || {}
+          const token = sess?.session?.access_token
+          if (token) headers.Authorization = `Bearer ${token}`
+        } catch { /* guest subscribe still ok */ }
         await fetch(url, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({ subscription: json }),
         })
       } catch { /* local save is enough for scaffold */ }

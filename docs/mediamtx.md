@@ -31,13 +31,30 @@ VITE_LIVE_INGEST_CONNECTED=true
 - Lobby publishes `hlsUrl` for viewers only when ingest is marked connected.
 - Helpers: `getLiveRtmpUrl()` / `getLiveHlsBase()` in `src/lib/featureFlags.js`.
 
+## Free public HLS (no VPS) — Cloudflare Tunnel
+
+1. `docker compose up -d` on your PC (as above).
+2. Install free **cloudflared**, then:
+   ```bash
+   cloudflared tunnel --url http://127.0.0.1:8888
+   ```
+3. Use the printed `https://….trycloudflare.com` as HLS base:
+   ```env
+   VITE_LIVE_HLS_BASE=https://YOUR_TRYCLOUDFLARE_HOST/live
+   ```
+4. OBS RTMP still needs a reachable host on port **1935** (port-forward your home IP, or keep using **window share** which needs zero RTMP).
+5. Only then set `VITE_LIVE_INGEST_CONNECTED=true`.
+
+Full free checklist: **`docs/FREE_INFRA.md`**.
+
 ## Limits (honest)
 
 | Free self-host | Still costs money / ops |
 |----------------|-------------------------|
-| Software + config in this repo | A VPS with public IP + bandwidth |
-| Local LAN testing | TLS certs / domain for public HLS |
-| One box, few concurrent streams | Multi-region CDN, recording, DVR |
+| Software + config in this repo | A VPS with public IP + bandwidth (optional) |
+| Cloudflare Tunnel for HLS | Stable custom domain / TCP tunnel for RTMP |
+| Local LAN testing | Multi-region CDN, recording, DVR |
+| Window share (always free) | — |
 
 Mux / Cloudflare Stream remain the paid managed options — see `docs/INFRA.md`.
 
