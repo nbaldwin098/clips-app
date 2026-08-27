@@ -15,6 +15,7 @@ import FollowButton from './FollowButton'
 import { followersLabel, isOfficialCreator } from '../lib/uiFormat'
 import { isVerifiedChannel } from '../lib/verification'
 import { listProfileSocials } from '../lib/socialConnects'
+import EnableNotificationsButton from './EnableNotificationsButton'
 
 function SocialGlyph({ id, className = 'h-4 w-4' }) {
   if (id === 'youtube') {
@@ -131,7 +132,7 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
             {[followersLabel(subs), videos.length ? `${videos.length} videos` : '', clips.length ? `${clips.length} clips` : '', pics.length ? `${pics.length} pics` : ''].filter(Boolean).join(' · ')}
           </p>
         </div>
-        <div className="flex gap-2 pb-1">
+        <div className="flex gap-2 pb-1 flex-wrap justify-center sm:justify-start">
           {isSelf ? (
             <button type="button" onClick={() => onNavigate?.('channel')} className="h-9 px-4 rounded-full border border-zinc-700 text-xs text-zinc-200">Customize channel</button>
           ) : (
@@ -158,6 +159,7 @@ export default function ProfilePage({ onNavigate, profileHandle, profileUserId, 
               ) : null}
             </>
           )}
+          <EnableNotificationsButton compact />
         </div>
       </div>
       {bio && <p className="px-4 mt-2 text-sm text-zinc-400 max-w-2xl text-center sm:text-left">{bio}</p>}

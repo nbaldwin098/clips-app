@@ -13,6 +13,7 @@ import CalabiCashShop from './CalabiCashShop'
 import { filterCss, getStreamFilter } from '../lib/streamFilters'
 import { liveIngestConnected, liveListingBlockedReason } from '../lib/liveIngest'
 import Footer from './Footer'
+import EnableNotificationsButton from './EnableNotificationsButton'
 
 function formatElapsed(startedAt) {
   if (!startedAt) return ''
@@ -256,7 +257,10 @@ export default function LiveView({ focusedStream, onFocusStream, onOpenAuth, onN
         <section>
           <div className="flex items-baseline justify-between gap-3 mb-4">
             <h2 className="text-lg font-semibold text-white tracking-tight">On now</h2>
-            <p className="text-[11px] text-zinc-500">Go live from Create (+)</p>
+            <div className="flex items-center gap-3">
+              <EnableNotificationsButton compact variant="ghost" />
+              <p className="text-[11px] text-zinc-500">Go live from Create (+)</p>
+            </div>
           </div>
 
           {previewNote ? (

@@ -84,7 +84,6 @@ const NewsPage = lazy(() => import('./components/NewsPage'))
 const MessagesPage = lazy(() => import('./components/MessagesPage'))
 const BubbleApiPage = lazy(() => import('./components/BubbleApiPage'))
 const AppealsPage = lazy(() => import('./components/AppealsPage'))
-const RewardsPage = lazy(() => import('./components/RewardsPage'))
 
 const KNOWN_VIEWS = new Set([
   'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
@@ -94,7 +93,7 @@ const KNOWN_VIEWS = new Set([
   'subscriptions', 'following', 'playlists', 'community', 'studio-tools', 'stream-settings',
   'calabi-studio', 'calabi-cash', 'shop', 'marketplace', 'seller', 'seller-portal', 'news',
   'legal-tos', 'legal-privacy', 'legal-creator', 'legal-community',
-  'watch', 'sound', 'tag', 'create', 'messages', 'api', 'appeals', 'rewards',
+  'watch', 'sound', 'tag', 'create', 'messages', 'api', 'appeals',
 ])
 
 function AppShell() {
@@ -669,7 +668,8 @@ function AppShell() {
       case 'appeals':
         return <AppealsPage onNavigate={navigate} onOpenAuth={openAuth} />
       case 'rewards':
-        return <RewardsPage onNavigate={navigate} onOpenAuth={openAuth} />
+        // Rewards removed — send old links to Wallet
+        return <WalletSettings onNavigate={navigate} onOpenAuth={openAuth} />
       case 'create': return <CreatePage onCreate={openCreate} onOpenAuth={openAuth} onNavigate={navigate} />
       case 'legal-tos': return <TermsOfService />
       case 'legal-privacy': return <PrivacyPolicy />
