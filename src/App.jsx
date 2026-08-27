@@ -93,7 +93,7 @@ const KNOWN_VIEWS = new Set([
   'subscriptions', 'following', 'playlists', 'community', 'studio-tools', 'stream-settings',
   'calabi-studio', 'calabi-cash', 'shop', 'marketplace', 'seller', 'seller-portal', 'news',
   'legal-tos', 'legal-privacy', 'legal-creator', 'legal-community',
-  'watch', 'sound', 'tag', 'create', 'messages', 'api', 'appeals', 'rewards',
+  'watch', 'sound', 'tag', 'create', 'messages', 'api', 'appeals',
 ])
 
 function AppShell() {
