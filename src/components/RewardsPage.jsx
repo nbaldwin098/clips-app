@@ -25,7 +25,7 @@ export default function RewardsPage({ onNavigate, onOpenAuth }) {
     <div className="p-4 md:p-6 max-w-lg mx-auto space-y-6">
       <PageHeader
         title="Rewards"
-        subtitle="5% coins back on purchases"
+        subtitle="Reward coins from purchases"
         onBack={() => onNavigate?.('home')}
       />
 
@@ -38,21 +38,18 @@ export default function RewardsPage({ onNavigate, onOpenAuth }) {
           {ledger.balance}
           <span className="ml-2 text-sm font-normal text-zinc-500">coins</span>
         </p>
-        <p className="mt-2 text-xs text-zinc-500">
-          Cashback is 5% of USD spent (floor of cents × 0.05). Entries appear after purchases credit this ledger.
-        </p>
       </div>
 
       <div className="space-y-2">
-        <p className="text-sm font-medium text-white">Cashback history</p>
+        <p className="text-sm font-medium text-white">History</p>
         {!ledger.entries.length ? (
-          <p className="text-sm text-zinc-500">No cashback yet.</p>
+          <p className="text-sm text-zinc-500">No rewards yet.</p>
         ) : (
           <ul className="divide-y divide-zinc-800 border border-zinc-800">
             {ledger.entries.map((e) => (
               <li key={e.id} className="px-3 py-3 text-sm flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-zinc-200 truncate">{e.note || 'Cashback'}</p>
+                  <p className="text-zinc-200 truncate">{e.note || 'Reward'}</p>
                   <p className="text-[10px] text-zinc-600 mt-0.5">
                     {e.at?.slice?.(0, 16)?.replace('T', ' ') || ''}
                     {e.usd != null ? ` · $${Number(e.usd).toFixed(2)}` : ''}

@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
-import { X, Share2, Download, Heart, Film, Radio, Play } from 'lucide-react'
+import { X, Share2, Download, Heart } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getPicsFeed, pickImmediatePhotoSrc, isHttpUrl, isDataImageUrl } from '../lib/picsService'
 import { isFeedable, hideBrokenMedia } from '../lib/catalogHealth'
@@ -14,6 +14,7 @@ import ShortsStage, { ShortsCard } from './ShortsStage'
 import { downloadPostedMedia } from '../lib/mediaDownload'
 import { preloadPostedItems } from '../lib/preloadMedia'
 import { cn } from '../lib/utils'
+import PicsCanvasGallery from './PicsCanvasGallery'
 
 function PicImage({ pic, className, alt = '', full = false, fill = false, eager = false, onUnplayable, style }) {
   const immediate = pickImmediatePhotoSrc(pic, { full })
@@ -96,18 +97,6 @@ function PicImage({ pic, className, alt = '', full = false, fill = false, eager 
   )
 }
 
-function AttachmentBadge({ attachments }) {
-  if (!attachments?.length) return null
-  const a = attachments[0]
-  const Icon = a.type === 'live' ? Radio : a.type === 'gif' ? Play : Film
-  return (
-    <span className="absolute bottom-1 left-1 z-10 inline-flex items-center gap-0.5 bg-black/70 px-1 py-0.5 text-[9px] font-semibold uppercase text-white">
-      <Icon className="h-2.5 w-2.5" />
-      {a.type}
-    </span>
-  )
-}
-
 function PicHeartBtn({ pic, active, onOpenAuth, className = '' }) {
   const { user } = useAuth()
   const syncTick = useContentSyncTick()
@@ -139,6 +128,95 @@ function PicHeartBtn({ pic, active, onOpenAuth, className = '' }) {
         </div>
       ) : null}
     </>
+  )
+}
+
+/** Focus view: contain by default; wheel zooms image overflow; drag pans overflow. */
+function FocusPicImage({ pic, active, eager }) {
+  const wrapRef = useRef(null)
+  const [scale, setScale] = useState(1)
+  const [pan, setPan] = useState({ x: 0, y: 0 })
+  const scaleRef = useRef(1)
+  const panRef = useRef({ x: 0, y: 0 })
+  const dragRef = useRef(null)
+  scaleRef.current = scale
+  panRef.current = pan
+
+  useEffect(() => {
+    setScale(1)
+    setPan({ x: 0, y: 0 })
+  }, [pic.id])
+
+  useEffect(() => {
+    if (!active) return undefined
+    const el = wrapRef.current
+    if (!el) return undefined
+    const onWheel = (e) => {
+      // Vertical reel nav at scale 1 uses ShortsStage; when zoomed, pan/zoom the photo.
+      if (scaleRef.current <= 1.02 && Math.abs(e.deltaY) > Math.abs(e.deltaX)) return
+      e.preventDefault()
+      e.stopPropagation()
+      const rect = el.getBoundingClientRect()
+      const sx = e.clientX - rect.left
+      const sy = e.clientY - rect.top
+      const prev = scaleRef.current
+      const factor = e.deltaY > 0 ? 0.9 : 1.12
+      const next = Math.min(8, Math.max(1, prev * factor))
+      if (next === prev) return
+      const wx = (sx - panRef.current.x) / prev
+      const wy = (sy - panRef.current.y) / prev
+      const nextPan = { x: sx - wx * next, y: sy - wy * next }
+      setScale(next)
+      setPan(next === 1 ? { x: 0, y: 0 } : nextPan)
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [active])
+
+  const onPointerDown = (e) => {
+    if (scaleRef.current <= 1.02) return
+    try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* ignore */ }
+    dragRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      panX: panRef.current.x,
+      panY: panRef.current.y,
+    }
+  }
+  const onPointerMove = (e) => {
+    if (!dragRef.current) return
+    setPan({
+      x: dragRef.current.panX + (e.clientX - dragRef.current.x),
+      y: dragRef.current.panY + (e.clientY - dragRef.current.y),
+    })
+  }
+  const onPointerUp = () => { dragRef.current = null }
+
+  return (
+    <div
+      ref={wrapRef}
+      className="absolute inset-0 overflow-hidden bg-black flex items-center justify-center touch-none"
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+    >
+      <div
+        style={{
+          transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
+          transformOrigin: 'center center',
+          willChange: 'transform',
+        }}
+        className="flex h-full w-full items-center justify-center"
+      >
+        <PicImage
+          pic={pic}
+          full
+          eager={eager}
+          className="max-h-full max-w-full w-auto h-auto object-contain select-none"
+        />
+      </div>
+    </div>
   )
 }
 
@@ -185,24 +263,22 @@ function PicSlide({ pic, active, onOpenProfile, onOpenAuth, eager = true }) {
 
   return (
     <ShortsCard actions={actions}>
-      <div className="absolute inset-0 bg-black flex items-center justify-center">
-        <PicImage pic={pic} full eager={eager} className="max-h-full max-w-full w-auto h-auto object-contain" />
-        {attach?.url && (attach.type === 'video' || attach.type === 'gif') ? (
-          <video
-            src={attach.url}
-            className="absolute bottom-16 right-4 w-28 sm:w-36 border border-white/20 shadow-lg object-cover aspect-[9/16] bg-black"
-            muted
-            loop
-            playsInline
-            autoPlay={active}
-          />
-        ) : null}
-        {attach?.type === 'live' ? (
-          <span className="absolute top-4 left-4 bg-[#eb0400] text-white text-[10px] font-bold uppercase px-2 py-1">
-            Live attached
-          </span>
-        ) : null}
-      </div>
+      <FocusPicImage pic={pic} active={active} eager={eager} />
+      {attach?.url && (attach.type === 'video' || attach.type === 'gif') ? (
+        <video
+          src={attach.url}
+          className="absolute bottom-16 right-4 w-28 sm:w-36 border border-white/20 shadow-lg object-cover aspect-[9/16] bg-black"
+          muted
+          loop
+          playsInline
+          autoPlay={active}
+        />
+      ) : null}
+      {attach?.type === 'live' ? (
+        <span className="absolute top-4 left-4 bg-[#eb0400] text-white text-[10px] font-bold uppercase px-2 py-1">
+          Live attached
+        </span>
+      ) : null}
       {handle ? (
         <div className="absolute inset-x-0 bottom-0 z-10">
           <div className="pt-16 pb-2 px-3 bg-gradient-to-t from-black/70 to-transparent">
@@ -217,163 +293,12 @@ function PicSlide({ pic, active, onOpenProfile, onOpenAuth, eager = true }) {
   )
 }
 
-/**
- * Mosaic under the header. Wheel zooms the whole grid (camera).
- * Zooming toward the center of the screen focuses that photo and opens the reel.
- */
-function ZoomMosaic({ items, onOpenAuth, onEnterPic, onUnplayable }) {
-  const wrapRef = useRef(null)
-  const gridRef = useRef(null)
-  const tileRefs = useRef(new Map())
-  const { user } = useAuth()
-  const syncTick = useContentSyncTick()
-  const [cam, setCam] = useState({ zoom: 1, x: 0, y: 0 })
-  const camRef = useRef(cam)
-  camRef.current = cam
-  const ENTER_ZOOM = 2.35
-  const MAX_ZOOM = 3.2
-
-  const setTileRef = (id, el) => {
-    if (!el) tileRefs.current.delete(id)
-    else tileRefs.current.set(id, el)
-  }
-
-  const tileAtViewportCenter = useCallback(() => {
-    const wrap = wrapRef.current
-    if (!wrap) return null
-    const wr = wrap.getBoundingClientRect()
-    const cx = wr.left + wr.width / 2
-    const cy = wr.top + wr.height / 2
-    let best = null
-    let bestDist = Infinity
-    for (const [id, el] of tileRefs.current.entries()) {
-      const r = el.getBoundingClientRect()
-      const tx = r.left + r.width / 2
-      const ty = r.top + r.height / 2
-      const d = Math.hypot(tx - cx, ty - cy)
-      if (d < bestDist) {
-        bestDist = d
-        best = id
-      }
-    }
-    return best
-  }, [])
-
-  useEffect(() => {
-    const el = wrapRef.current
-    if (!el) return undefined
-    const onWheel = (e) => {
-      e.preventDefault()
-      const zoomingOut = e.deltaY > 0
-      const factor = zoomingOut ? 0.9 : 1.12
-      const prev = camRef.current
-      let nextZoom = Math.min(MAX_ZOOM, Math.max(1, prev.zoom * factor))
-      if (nextZoom <= 1.02) {
-        setCam({ zoom: 1, x: 0, y: 0 })
-        return
-      }
-
-      const rect = el.getBoundingClientRect()
-      const px = e.clientX - rect.left
-      const py = e.clientY - rect.top
-      // Zoom toward pointer (usually mid-screen when scrolling there)
-      const wx = (px - prev.x) / prev.zoom
-      const wy = (py - prev.y) / prev.zoom
-      const next = {
-        zoom: nextZoom,
-        x: px - wx * nextZoom,
-        y: py - wy * nextZoom,
-      }
-      setCam(next)
-
-      if (!zoomingOut && nextZoom >= ENTER_ZOOM) {
-        const id = tileAtViewportCenter()
-        if (id) {
-          const idx = items.findIndex((p) => p.id === id)
-          if (idx >= 0) {
-            onEnterPic?.(idx, id)
-          }
-        }
-      }
-    }
-    el.addEventListener('wheel', onWheel, { passive: false })
-    return () => el.removeEventListener('wheel', onWheel)
-  }, [items, onEnterPic, tileAtViewportCenter])
-
-  const gridClass = 'grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-0.5 p-0.5 origin-top-left will-change-transform'
-
-  return (
-    <div ref={wrapRef} className="h-full min-h-0 overflow-hidden bg-black relative touch-none">
-      {items.length === 0 ? (
-        <div className="px-6 py-24 text-center">
-          <p className="text-sm text-zinc-500">No pics yet — post from Create (+)</p>
-        </div>
-      ) : (
-        <div
-          ref={gridRef}
-          className={gridClass}
-          style={{
-            transform: `translate(${cam.x}px, ${cam.y}px) scale(${cam.zoom})`,
-          }}
-        >
-          {items.map((pic) => {
-            const hearted = isPicHearted(pic.id)
-            return (
-              <div
-                key={pic.id}
-                ref={(node) => setTileRef(pic.id, node)}
-                className="relative aspect-square overflow-hidden bg-zinc-900 cursor-pointer"
-                onClick={() => {
-                  const idx = items.findIndex((p) => p.id === pic.id)
-                  if (idx >= 0) onEnterPic?.(idx, pic.id)
-                }}
-              >
-                <PicImage pic={pic} fill onUnplayable={onUnplayable} />
-                <AttachmentBadge attachments={pic.attachments} />
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    if (!user?.id) { onOpenAuth?.(); return }
-                    togglePicHeart(pic.id, {
-                      creatorId: pic.creatorId || pic.userId,
-                      actorId: user.id,
-                      title: pic.title,
-                    })
-                  }}
-                  className={cn(
-                    'absolute top-1 right-1 z-10 h-6 w-6 flex items-center justify-center text-white',
-                    hearted ? 'opacity-100' : 'opacity-0 hover:opacity-100'
-                  )}
-                  aria-label={hearted ? 'Unheart' : 'Heart'}
-                >
-                  <Heart className={cn('h-3.5 w-3.5 drop-shadow', hearted && 'fill-red-500 text-red-500')} />
-                </button>
-                <span className="sr-only">{syncTick}</span>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {cam.zoom > 1.05 ? (
-        <div className="pointer-events-none fixed bottom-3 left-1/2 -translate-x-1/2 z-30 px-3 py-1 bg-black/70 text-[11px] text-zinc-300">
-          Zoom the mosaic · keep zooming center to open a photo · then scroll
-        </div>
-      ) : (
-        <div className="pointer-events-none fixed bottom-3 left-1/2 -translate-x-1/2 z-30 px-3 py-1 bg-black/50 text-[11px] text-zinc-400">
-          Scroll to zoom all pics · click a photo to open
-        </div>
-      )}
-    </div>
-  )
-}
-
 export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
   const { user } = useAuth()
   const [items, setItems] = useState(() => getPicsFeed())
   const [viewerIndex, setViewerIndex] = useState(() => (initialPicId ? 0 : null))
   const [openedAt, setOpenedAt] = useState(0)
+  const [camera, setCamera] = useState(null)
   const goToRef = useRef(null)
   const skipAutoOpen = useRef(false)
   const selfNav = useRef(false)
@@ -383,8 +308,6 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
     const list = (items || []).filter(isFeedable)
     if (!initialPicId) return list
     if (list.some((p) => p.id === initialPicId)) return list
-    const focused = list.find((p) => p.id === initialPicId)
-    if (focused) return list
     return list
   }, [items, initialPicId])
 
@@ -452,7 +375,7 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [viewerIndex])
 
-  // Deep-link / mosaic zoom-enter opens the reel; then scroll between pics.
+  // Deep-link / canvas zoom-enter opens the reel; then scroll between pics.
   if (viewerIndex != null && scrollItems.length > 0) {
     return (
       <div className="h-full min-h-0 flex flex-col bg-black">
@@ -474,7 +397,7 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
           header={(
             <div className="shrink-0 flex items-center justify-between px-3 py-2">
               <button type="button" onClick={closeViewer} className="h-9 px-3 bg-white/10 text-white text-xs inline-flex items-center gap-1.5">
-                <X className="h-4 w-4" /> Mosaic
+                <X className="h-4 w-4" /> Canvas
               </button>
               <p className="text-[11px] text-white/50">{viewerIndex + 1}/{scrollItems.length}</p>
             </div>
@@ -492,11 +415,12 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
 
   return (
     <div className="h-full min-h-0 bg-black">
-      <ZoomMosaic
+      <PicsCanvasGallery
         items={scrollItems}
-        onOpenAuth={onOpenAuth}
         onEnterPic={enterPic}
         onUnplayable={dropBroken}
+        restoreCamera={camera}
+        onCameraChange={setCamera}
       />
     </div>
   )
