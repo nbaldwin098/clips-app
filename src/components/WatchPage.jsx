@@ -35,8 +35,6 @@ import { startPremiumCheckout } from '../lib/checkout'
 import { stashPendingStripe, startTipCheckout, TIP_AMOUNTS, TIP_AMOUNT_MIN, TIP_AMOUNT_MAX } from '../lib/tips'
 import { ownCheckoutConfigured } from '../lib/stripeCheckout'
 import { preloadPostedItem } from '../lib/preloadMedia'
-import PlatformFeeLine from './PlatformFeeLine'
-import { withPlatformFee, formatUsdFromCents } from '../lib/platformFee'
 
 function Pill({ children, onClick, active = false, title, disabled }) {
   return (
@@ -605,24 +603,21 @@ export default function WatchPage({
               <div className="absolute inset-0 z-40 bg-black/85 flex flex-col items-center justify-center p-6 text-center gap-3">
                 <p className="text-lg font-semibold text-white">Paid post</p>
                 <p className="text-sm text-zinc-400 max-w-sm">
-                  Following is free. This post is listed at ${Number(item.priceUsd).toFixed(2)}. A platform fee is added at checkout.
+                  Following is free. This post is ${Number(item.priceUsd).toFixed(2)}.
                 </p>
                 {purchasePending ? (
-                  <p className="text-xs text-amber-400">Payment pending — complete checkout in the other tab, then return here.</p>
+                  <p className="text-xs text-amber-400">Payment pending — complete checkout, then return here.</p>
                 ) : null}
-                <div className="w-full max-w-xs text-left">
-                  <PlatformFeeLine listCents={Math.round(Number(item.priceUsd) * 100)} showTotal className="mb-3" />
-                </div>
                 <button
                   type="button"
                   disabled={payBusy}
                   onClick={buyPost}
-                  className="h-10 px-5 rounded-full bg-white text-black text-sm font-semibold disabled:opacity-50"
+                  className="h-10 px-5 bg-white text-black text-sm font-semibold disabled:opacity-50"
                 >
                   {payBusy
                     ? 'Opening…'
                     : ownCheckoutConfigured()
-                      ? `Pay ${formatUsdFromCents(withPlatformFee(Math.round(Number(item.priceUsd) * 100)).totalCents)}`
+                      ? `Pay $${Number(item.priceUsd).toFixed(2)}`
                       : 'Checkout not configured'}
                 </button>
               </div>
@@ -774,10 +769,6 @@ export default function WatchPage({
                     >
                       {tipBusy === customTip ? '…' : 'Give'}
                     </button>
-                    <PlatformFeeLine
-                      listCents={Math.round((Number(customTip) || TIP_AMOUNTS[0]) * 100)}
-                      className="basis-full text-right"
-                    />
                   </div>
                 ) : null}
               </div>

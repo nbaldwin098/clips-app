@@ -143,7 +143,7 @@ export default function CollapsibleSidebar({
 
         {/* Following sits under Create */}
         <div className="pt-2 mt-1 border-t border-[#1e1e27] space-y-0.5">
-          <NavBtn collapsed={collapsed} active={currentView === 'subscriptions'} onClick={() => go('subscriptions')} icon={Users} label="Following" />
+          <NavBtn collapsed={collapsed} active={currentView === 'following'} onClick={() => go('following')} icon={Users} label="Following" />
         </div>
 
         {liveNow.length > 0 ? (

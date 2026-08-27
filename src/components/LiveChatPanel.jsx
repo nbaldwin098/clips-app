@@ -18,7 +18,6 @@ import { startTipCheckout, TIP_AMOUNTS, TIP_AMOUNT_MIN, TIP_AMOUNT_MAX } from '.
 import { ownCheckoutConfigured } from '../lib/stripeCheckout'
 import CoinIcon from './CoinIcon'
 import { redirectSafeUrl } from '../lib/safeUrl'
-import PlatformFeeLine from './PlatformFeeLine'
 
 const QUICK_EMOTES = [
   '😀', '😂', '❤️', '🔥', '👏', '🎉', '👀', '💯', '🙌', '😮', '😢', '🤔',
@@ -378,10 +377,6 @@ export default function LiveChatPanel({
                     {tipBusy === customTip ? '…' : 'Give'}
                   </button>
                 </div>
-                <PlatformFeeLine
-                  listCents={Math.round((Number(customTip) || TIP_AMOUNTS[0]) * 100)}
-                  className="pt-0.5"
-                />
               </div>
             ) : !isGlobal ? (
               <p className="text-[10px] text-zinc-600">Live donate needs own Stripe Checkout (deploy create-checkout-session).</p>

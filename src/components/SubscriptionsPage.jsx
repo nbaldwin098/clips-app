@@ -1,70 +1,96 @@
 import { useMemo } from 'react'
-import { Users } from 'lucide-react'
+import { Crown } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { getSubscriptionsForUser } from '../lib/engagement'
-import { getFollowingFeed } from '../lib/contentService'
+import { isPremiumSub } from '../lib/engagement'
 import { listIndexedUsers } from '../lib/moderation'
 import { useContentSyncTick } from '../lib/useContentSync'
+import { lsGet } from '../lib/storage'
 import PageHeader from './PageHeader'
-import MediaShelves from './MediaShelves'
+import AuthRequired from './AuthRequired'
 
-export default function SubscriptionsPage({ onNavigate, onOpenAuth, onPlayItem, onOpenPic, onOpenProfile }) {
+/** Creators where this user holds a premium live membership. */
+function listPremiumMemberships(userId) {
+  if (!userId) return []
+  const index = listIndexedUsers() || []
+  const byId = new Map(index.map((u) => [u.id, u]))
+  const ids = new Set()
+
+  for (const u of index) {
+    if (u?.id && isPremiumSub(userId, u.id)) ids.add(u.id)
+  }
+
+  // Scan local premium_* keys in case creator is not in the index yet.
+  if (typeof localStorage !== 'undefined') {
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i)
+      if (!key || !key.startsWith('premium_')) continue
+      const creatorId = key.slice('premium_'.length)
+      if (!creatorId || ids.has(creatorId)) continue
+      const list = lsGet(key, []) || []
+      if (list.includes(userId)) ids.add(creatorId)
+    }
+  }
+
+  return [...ids].map((id) => byId.get(id) || { id, displayName: 'Creator', handle: id.slice(0, 8) })
+}
+
+export default function SubscriptionsPage({ onNavigate, onOpenAuth, onOpenProfile }) {
   const { user, isAuthenticated } = useAuth()
   const syncTick = useContentSyncTick()
-  const channels = useMemo(() => {
-    if (!user?.id) return []
-    const ids = getSubscriptionsForUser(user.id)
-    const index = Object.fromEntries(listIndexedUsers().map((u) => [u.id, u]))
-    return ids.map((id) => index[id] || { id, displayName: 'Creator', handle: id.slice(0, 8) })
-  }, [user?.id, syncTick])
-  const uploads = useMemo(() => (user?.id ? getFollowingFeed(user.id) : []), [user?.id, syncTick])
+  const memberships = useMemo(
+    () => (user?.id ? listPremiumMemberships(user.id) : []),
+    [user?.id, syncTick],
+  )
 
   if (!isAuthenticated) {
     return (
-      <div className="p-6 max-w-md mx-auto text-sm text-zinc-400">
-        <button type="button" onClick={onOpenAuth} className="text-white font-medium">Sign in</button> to see uploads from people you follow.
-      </div>
+      <AuthRequired
+        title="Subscriptions"
+        description="Sign in to see your premium live memberships."
+        onOpenAuth={onOpenAuth}
+      />
     )
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-[1200px] mx-auto space-y-8">
-      <PageHeader title="Following" subtitle="Uploads from people you follow" onBack={() => onNavigate?.('home')} />
+    <div className="p-4 md:p-6 max-w-[800px] mx-auto space-y-6">
+      <PageHeader
+        title="Subscriptions"
+        subtitle="Premium live memberships"
+        onBack={() => onNavigate?.('home')}
+      />
 
-      {channels.length === 0 ? (
-        <div className="rounded-2xl border border-zinc-800 bg-[#121218] px-6 py-12 text-center">
-          <Users className="h-8 w-8 text-white mx-auto" />
-          <p className="mt-4 text-sm text-zinc-200">Not following anyone yet</p>
-          <p className="mt-1 text-xs text-zinc-500">Follow on a channel or watch page. It is free. Premium membership is only for livestream.</p>
+      {memberships.length === 0 ? (
+        <div className="border border-zinc-800 bg-[#121218] px-6 py-12 text-center">
+          <Crown className="h-8 w-8 text-zinc-500 mx-auto" />
+          <p className="mt-4 text-sm text-zinc-200">No premium memberships yet.</p>
+          <p className="mt-1 text-xs text-zinc-500">
+            Premium is for livestream channels. Follow stays free on the Following feed.
+          </p>
         </div>
       ) : (
-        <div className="flex gap-3 overflow-x-auto pb-1">
-          {channels.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => onOpenProfile?.(c.handle, c.id)}
-              className="shrink-0 w-28 text-center"
-            >
-              <div className="h-12 w-12 mx-auto rounded-full bg-white/20 text-white flex items-center justify-center text-sm font-semibold overflow-hidden">
-                {c.avatarUrl ? <img src={c.avatarUrl} alt="" className="h-full w-full object-cover" /> : (c.displayName || '?')[0].toUpperCase()}
-              </div>
-              <p className="mt-1.5 text-xs text-zinc-100 truncate">{c.displayName}</p>
-              <p className="text-[10px] text-zinc-500 truncate">@{c.handle}</p>
-            </button>
+        <ul className="divide-y divide-zinc-800 border border-zinc-800">
+          {memberships.map((c) => (
+            <li key={c.id}>
+              <button
+                type="button"
+                onClick={() => onOpenProfile?.(c.handle, c.id)}
+                className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#181820]"
+              >
+                <div className="h-10 w-10 rounded-full bg-white/15 text-white flex items-center justify-center text-sm font-semibold overflow-hidden shrink-0">
+                  {c.avatarUrl
+                    ? <img src={c.avatarUrl} alt="" className="h-full w-full object-cover" />
+                    : (c.displayName || '?')[0].toUpperCase()}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm text-white truncate">{c.displayName}</p>
+                  <p className="text-[11px] text-zinc-500 truncate">@{c.handle}</p>
+                </div>
+                <span className="text-[10px] uppercase tracking-wide text-amber-400 shrink-0">Premium</span>
+              </button>
+            </li>
           ))}
-        </div>
-      )}
-
-      {uploads.length === 0 ? (
-        channels.length > 0 ? (
-          <div className="rounded-2xl border border-zinc-800 bg-[#121218] px-6 py-12 text-center">
-            <p className="text-sm text-zinc-200">No public posts from people you follow yet</p>
-            <p className="mt-1 text-xs text-zinc-500">When they publish videos, clips, or pics, they show up here.</p>
-          </div>
-        ) : null
-      ) : (
-        <MediaShelves items={uploads} onPlayItem={onPlayItem} onOpenPic={onOpenPic} />
+        </ul>
       )}
     </div>
   )
