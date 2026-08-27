@@ -15,10 +15,10 @@ export const SEED_NEWS = [
   {
     id: 'seed_cash_coins',
     title: 'Coins for chat',
-    body: 'Buy Coins under Site settings → Coins for chat cosmetics (bigger messages, creator emojis & GIFs). Tips and premium memberships use card checkout. Check Orders for purchase history.',
+    body: 'Buy Coins under profile → Wallet for chat cosmetics (bigger messages, creator emojis & GIFs). Tips and premium memberships use card checkout. Check Orders for purchase history.',
     tag: 'Money',
-    destView: 'settings',
-    destId: 'wallet',
+    destView: 'wallet',
+    destId: '',
     ctaLabel: 'Open Coins',
     publishedAt: '2026-08-20T12:00:00.000Z',
   },

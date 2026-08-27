@@ -86,16 +86,12 @@ export default function CreatorOnboarding({ onOpenUpload, onDone, onNavigate }) 
           </div>
           <div className="rounded-lg bg-[#0c0c10] border border-zinc-800 p-3 text-xs text-zinc-400 space-y-1">
             <div className="flex justify-between">
-              <span>You receive</span>
-              <span className="font-semibold text-white">${checkout.creatorReceives.toFixed(2)}</span>
+              <span>Membership price</span>
+              <span className="font-medium text-white">${Number(price).toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
-              <span>Buyer fee (approx)</span>
-              <span>${checkout.buyerFee.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between border-t border-zinc-800 pt-1 mt-1">
-              <span>Buyer pays total</span>
-              <span className="font-medium text-white">${checkout.totalCharged.toFixed(2)}</span>
+              <span>You receive</span>
+              <span className="font-semibold text-white">${checkout.creatorReceives.toFixed(2)}</span>
             </div>
           </div>
           <button

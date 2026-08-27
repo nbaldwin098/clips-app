@@ -57,7 +57,7 @@ export default function AdvertisePage({ onNavigate }) {
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
-          onClick={() => onNavigate?.('settings', 'wallet')}
+          onClick={() => onNavigate?.('wallet')}
           className="inline-flex items-center gap-1.5 h-10 px-4 bg-white text-black text-xs font-bold hover:bg-zinc-200"
         >
           Open Coins <ArrowRight className="h-3.5 w-3.5" />

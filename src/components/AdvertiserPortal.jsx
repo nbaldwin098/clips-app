@@ -26,7 +26,7 @@ export default function AdvertiserPortal({ onNavigate }) {
           </button>
           <button
             type="button"
-            onClick={() => onNavigate?.('settings', 'wallet')}
+            onClick={() => onNavigate?.('wallet')}
             className="inline-flex items-center gap-1.5 h-10 px-4 border border-zinc-700 text-xs text-zinc-200"
           >
             Open Coins

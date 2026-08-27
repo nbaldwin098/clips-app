@@ -104,12 +104,19 @@ export async function pullMarketplaceCatalog() {
   const client = await sb()
   if (!client) return { ok: false, products: cachedProducts() }
   try {
-    const [{ data: products }, { data: sellers }] = await Promise.all([
+    const [prodRes, sellRes] = await Promise.all([
       client.from('marketplace_products').select('*').eq('active', true).order('created_at', { ascending: false }).limit(200),
       client.from('marketplace_sellers').select('*').eq('status', 'approved').limit(200),
     ])
-    const p = (products || []).map(mapProduct).filter(Boolean)
-    const s = (sellers || []).map(mapSeller).filter(Boolean)
+    if (prodRes.error || sellRes.error) {
+      return {
+        ok: false,
+        products: cachedProducts(),
+        error: String(prodRes.error?.message || sellRes.error?.message || 'marketplace unavailable'),
+      }
+    }
+    const p = (prodRes.data || []).map(mapProduct).filter(Boolean)
+    const s = (sellRes.data || []).map(mapSeller).filter(Boolean)
     lsSet(PRODUCTS_CACHE, p)
     lsSet(SELLERS_CACHE, s)
     return { ok: true, products: p, sellers: s }

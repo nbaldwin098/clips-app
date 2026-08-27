@@ -4,7 +4,7 @@ export default function HelpPage() {
   const faqs = [
     {
       q: 'How do I sign in?',
-      a: 'Use email and password, a phone code, Apple, Microsoft, or X. CapCut cannot sign people in — export the file, then upload it here.',
+      a: 'Use email and password, a phone code, Microsoft, or X. CapCut cannot sign people in — export the file, then upload it here.',
     },
     {
       q: 'How do I upload or go live?',
@@ -12,7 +12,7 @@ export default function HelpPage() {
     },
     {
       q: 'How do creators make money?',
-      a: 'Tips, premium livestream membership, and Coins — not ads or RPM. Creators keep 80% of tips and memberships. Apply from Creator dashboard → Earnings for payouts. Coins packs and Orders history are under Site settings → Coins.',
+      a: 'Tips, premium livestream membership, and Coins — not ads or RPM. Creators keep 80% of tips and memberships. Apply from Creator dashboard → Earnings for payouts. Coins packs and Orders history are under profile menu → Wallet.',
     },
     {
       q: 'Can I donate on live or on a video?',
@@ -20,7 +20,7 @@ export default function HelpPage() {
     },
     {
       q: 'Where is Studio, Coins, and analytics?',
-      a: 'Open your profile picture → Creator dashboard. Site settings has Account and Coins (with Orders). Create is in the left sidebar — there is no hamburger in the header.',
+      a: 'Open your profile picture → Creator dashboard. Wallet (Coins + Orders) is in the same menu. Create is in the left sidebar — there is no hamburger in the header.',
     },
     {
       q: 'Can I watch without an account?',
