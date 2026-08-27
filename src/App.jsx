@@ -714,6 +714,7 @@ function AppShell() {
   }
 
   const isLiveView = view === 'live'
+<<<<<<< HEAD
   // Immersive TailAdmin shells — hide Twitch site rail (dashboard pages have their own navy rail).
   const studioChrome = (
     view === 'dashboard'
@@ -729,6 +730,10 @@ function AppShell() {
     || view === 'subscriptions'
     || view === 'admin'
   )
+=======
+  // Immersive creator shells keep their own TailAdmin nav; keep site rail for wallet/settings.
+  const studioChrome = view === 'dashboard' || view === 'analytics' || view === 'vods' || view === 'verify'
+>>>>>>> origin/main
   const lockStage = view === 'clips' || view === 'shorts' || view === 'pics' || studioChrome
 
   // Always bound to the viewport. Inside Next's fixed SpaShell overlay, min-h-screen

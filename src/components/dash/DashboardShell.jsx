@@ -1,6 +1,11 @@
 /**
+<<<<<<< HEAD
  * TailAdmin chrome: dark navy rail + white content cards.
  * Used by Admin portal. Profile-menu pages use StudioShell (TikTok-white).
+=======
+ * TailAdmin-style chrome: dark navy rail + white content cards.
+ * Used by Creator Studio, Admin, Wallet, Appeals, Messages, Settings.
+>>>>>>> origin/main
  */
 import { cn } from '../../lib/utils'
 
