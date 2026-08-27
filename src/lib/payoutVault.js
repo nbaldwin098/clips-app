@@ -148,6 +148,22 @@ export function buildMethodSummary(type, fields = {}) {
       },
     }
   }
+  if (type === 'venmo') {
+    const handle = String(fields.handle || '').trim().replace(/^@/, '')
+    return {
+      label: fields.label || 'Venmo',
+      details: handle ? `@${handle}` : 'Venmo',
+      secret: { kind: 'venmo', handle },
+    }
+  }
+  if (type === 'cashapp') {
+    const tag = String(fields.tag || '').trim().replace(/^\$/, '')
+    return {
+      label: fields.label || 'Cash App',
+      details: tag ? `$${tag}` : 'Cash App',
+      secret: { kind: 'cashapp', tag },
+    }
+  }
   return {
     label: fields.label || 'PayPal',
     details: String(fields.email || fields.details || '').trim(),

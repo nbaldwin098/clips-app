@@ -12,7 +12,7 @@ Code scaffolds gates and empty states; production still needs the services below
 | **i18n** | `src/lib/i18n.js` catalogs + Account language picker | Full translations / RTL |
 | **Client transcode** | `src/lib/videoTranscode.js` behind `VITE_CLIENT_TRANSCODE` | Prefer server queue long-term |
 | **Web Push** | `public/sw-push.js`, `src/lib/webPush.js`, Notifications UI | VAPID keys + `push-subscribe` deploy |
-| **Stripe Connect** | Edge `create-connect-account` + Studio → Earnings | Stripe Connect enable + secret |
+| **Stripe Connect** | **OFF** — own Earnings + Admin withdraw queue | Optional rollback only (`docs/OWN_PAYOUTS.md`) |
 | **Social OAuth** | `oauth-start` / `oauth-callback` + Studio redirect | Per-network apps + secrets |
 | **RTMP/HLS** | `docker/mediamtx/` + `docs/mediamtx.md` + honest gates in `liveIngest.js` | A VPS/public IP + env URLs |
 
@@ -34,21 +34,16 @@ Window share remains the free fallback without any of the above. Stream settings
 
 ---
 
-## 2. Stripe Connect (creator auto-payouts)
+## 2. Creator payouts (calabi-owned — Stripe Express OFF)
 
-**Code shipped:** Edge `create-connect-account` + `stripe-webhook`, client `stripeConnect.js`, **Creator Studio → Earnings** Connect status UI, migrations `0023`/`0024`. Guide: **`docs/OWN_CONNECT.md`**.
+**Product:** Studio → Earnings + Admin → Payouts. Guide: **`docs/OWN_PAYOUTS.md`**.
 
-Buyer checkouts also add a **Platform fee** (4% of list, label only — see `docs/OWN_CHECKOUT.md`). Creator 80% is of list price only.
+**Deploy:**
+1. `supabase functions deploy stripe-webhook --no-verify-jwt`
+2. `supabase functions deploy admin-withdraw`
+3. `supabase functions deploy create-checkout-session` (buyers)
 
-**You still must:**
-1. Stripe Dashboard → Connect → enable Express.
-2. `supabase functions deploy create-connect-account`
-3. `supabase functions deploy stripe-webhook --no-verify-jwt`
-4. Secrets: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `APP_PUBLIC_URL`
-5. Webhook events: `checkout.session.completed`, `account.updated`
-6. Run SQL **0024**
-
-Until Connect is enabled in Stripe, the button returns an honest error and manual payouts stay available.
+Buyer checkouts add a **Platform fee** (4% of list). Creator 80% is of list price only. No Connect Transfers.
 
 ---
 
@@ -108,7 +103,7 @@ Generate VAPID (free): `npx web-push generate-vapid-keys`
 
 ## Priority order (practical)
 
-1. Stripe Connect secrets + deploy `create-connect-account`  
+1. Deploy `admin-withdraw` + `stripe-webhook` + `create-checkout-session` (OWN_PAYOUTS)  
 2. MediaMTX VPS or managed RTMP/HLS  
 3. Mail function (no demo codes in prod)  
 4. Social OAuth apps  
@@ -117,4 +112,4 @@ Generate VAPID (free): `npx web-push generate-vapid-keys`
 7. Native store shells  
 8. Full translations  
 
-Related: `docs/RENDER_ENV.md`, `docs/OWN_CHECKOUT.md`, `docs/DEPLOY_CHECKLIST.md`, `docs/mediamtx.md`, BUG-010/016/064/081/082/083/086/087.
+Related: `docs/RENDER_ENV.md`, `docs/OWN_CHECKOUT.md`, `docs/OWN_PAYOUTS.md`, `docs/DEPLOY_CHECKLIST.md`, `docs/mediamtx.md`, BUG-010/016/064/081/082/083/086/087.

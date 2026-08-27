@@ -58,7 +58,7 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 | BUG-013 | Ads | Wire AdSense units for clip-feed + pic-feed if keeping AdSense | Cancelled with BUG-012 | `wontfix` |
 | BUG-014 | Creator Studio | Setup hub / earnings / apply badge not on `main` | Studio hub + grouped rail shipped | `doing` |
 | BUG-015 | Creator Studio | Orphan AnalyticsPage / channel branding duplication | Settings grouped template; Account uses SettingsTemplates | `doing` |
-| BUG-016 | Payouts | Manual payouts only; no Stripe Connect | Connect UI is on Creator Studio → Earnings (not a separate Revenue page). 80% creator share is of list price; buyer Platform fee is separate. Dashboard Connect enable still required | `open` |
+| BUG-016 | Payouts | Own Earnings + Admin withdraw queue (Stripe Express off) | See `docs/OWN_PAYOUTS.md`; deploy `admin-withdraw` | `doing` |
 | BUG-017 | SEO | Dynamic sitemap for public content ids | Done in #106 | `done` |
 | BUG-018 | SEO | Server-render real HTML for About/Help/Legal bodies | Done in #106 | `done` |
 | BUG-019 | Watch | Share OG tags depend on Supabase row fetch | Soft unavailable + article HTML in #106 | `done` |

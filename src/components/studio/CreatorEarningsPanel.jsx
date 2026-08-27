@@ -14,12 +14,6 @@ import {
 } from '../../lib/calabiCash'
 import { buildMethodSummary, storePayoutSecret, removePayoutSecret, pullPayoutSecretsCloud } from '../../lib/payoutVault'
 import {
-  connectOnboardingAvailable,
-  startConnectOnboarding,
-  fetchConnectStatus,
-  connectStatusLabel,
-} from '../../lib/stripeConnect'
-import {
   SettingsCard,
   SettingsKpiGrid,
   SettingsButton,
@@ -80,19 +74,17 @@ export default function CreatorEarningsPanel() {
   const [, bump] = useState(0)
   const [amount, setAmount] = useState('25')
   const [methodId, setMethodId] = useState('')
-  const [type, setType] = useState('bank')
+  const [type, setType] = useState('paypal')
   const [routingNumber, setRoutingNumber] = useState('')
   const [accountNumber, setAccountNumber] = useState('')
   const [accountName, setAccountName] = useState('')
   const [chain, setChain] = useState('sol')
   const [cryptoAddress, setCryptoAddress] = useState('')
   const [paypalEmail, setPaypalEmail] = useState('')
+  const [venmoHandle, setVenmoHandle] = useState('')
+  const [cashTag, setCashTag] = useState('')
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
-  const [connectBusy, setConnectBusy] = useState(false)
-  const [connectNote, setConnectNote] = useState('')
-  const [connect, setConnect] = useState({ status: 'unknown', payoutsEnabled: false, accountId: '' })
-  const canTryConnect = connectOnboardingAvailable()
 
   useEffect(() => {
     if (!uid) return
@@ -104,20 +96,6 @@ export default function CreatorEarningsPanel() {
       .then(() => bump((n) => n + 1))
       .catch(() => {})
   }, [uid])
-
-  useEffect(() => {
-    if (!uid || !canTryConnect) return
-    let cancelled = false
-    fetchConnectStatus().then((res) => {
-      if (cancelled) return
-      setConnect({
-        status: res.status || 'unknown',
-        payoutsEnabled: !!res.payoutsEnabled,
-        accountId: res.accountId || '',
-      })
-    }).catch(() => {})
-    return () => { cancelled = true }
-  }, [uid, canTryConnect])
 
   const raw = getCreatorEarnings(uid)
   const earnings = {
@@ -149,7 +127,11 @@ export default function CreatorEarningsPanel() {
       ? { routingNumber, accountNumber, accountName, label: accountName || 'Bank account' }
       : type === 'crypto'
         ? { chain, address: cryptoAddress, label: chain === 'btc' ? 'Bitcoin' : 'Solana' }
-        : { email: paypalEmail, label: 'PayPal' }
+        : type === 'venmo'
+          ? { handle: venmoHandle, label: 'Venmo' }
+          : type === 'cashapp'
+            ? { tag: cashTag, label: 'Cash App' }
+            : { email: paypalEmail, label: 'PayPal' }
 
     if (type === 'bank' && (!String(routingNumber).replace(/\D/g, '') || !String(accountNumber).replace(/\D/g, ''))) {
       setBusy(false)
@@ -164,6 +146,16 @@ export default function CreatorEarningsPanel() {
     if (type === 'paypal' && !String(paypalEmail).trim()) {
       setBusy(false)
       setNote('Enter your PayPal email.')
+      return
+    }
+    if (type === 'venmo' && !String(venmoHandle).trim()) {
+      setBusy(false)
+      setNote('Enter your Venmo username.')
+      return
+    }
+    if (type === 'cashapp' && !String(cashTag).trim()) {
+      setBusy(false)
+      setNote('Enter your Cash App $cashtag.')
       return
     }
 
@@ -183,12 +175,14 @@ export default function CreatorEarningsPanel() {
       setNote(res.error || 'Could not save')
       return
     }
-    setNote('Payout method saved in the secure vault.')
+    setNote('Payout method saved.')
     setRoutingNumber('')
     setAccountNumber('')
     setAccountName('')
     setCryptoAddress('')
     setPaypalEmail('')
+    setVenmoHandle('')
+    setCashTag('')
     bump((n) => n + 1)
   }
 
@@ -205,7 +199,7 @@ export default function CreatorEarningsPanel() {
     <div className="space-y-5 max-w-3xl overflow-y-auto h-full pr-1">
       <SettingsPageHeader
         title="Earnings"
-        subtitle="Cloud balances, sales, and withdrawals — same account across devices."
+        subtitle="Your calabi payout dashboard — balances, methods, and withdrawals. No Stripe Express."
       />
       <SettingsKpiGrid
         items={[
@@ -229,14 +223,14 @@ export default function CreatorEarningsPanel() {
       </div>
       <SettingsNotice>
         <p>
-          Available balance is cloud earnings (tips, memberships, packs). Manual admin hand-payouts are tracked separately for ops — they are not double-counted here.
-          Bank and crypto details sync to the secure payout_secrets table when cloud is signed in.
+          Tips and memberships credit here after Stripe confirms payment (you keep 80% of the list price).
+          Request a withdrawal below — calabi pays you from your saved method. Minimum $10.
         </p>
       </SettingsNotice>
 
       <SettingsCard
         title="Withdraw"
-        description="Add a bank or crypto payout method, then request a withdrawal. Minimum $10."
+        description="Add PayPal, Venmo, Cash App, bank, or crypto — then request a payout."
       >
         <div className="space-y-4">
           {methods.length === 0 ? (
@@ -265,9 +259,11 @@ export default function CreatorEarningsPanel() {
             <p className="text-xs font-semibold text-zinc-300">Add payment method</p>
             <div className="flex flex-wrap gap-2">
               {[
+                { id: 'paypal', label: 'PayPal' },
+                { id: 'venmo', label: 'Venmo' },
+                { id: 'cashapp', label: 'Cash App' },
                 { id: 'bank', label: 'Bank' },
                 { id: 'crypto', label: 'Crypto' },
-                { id: 'paypal', label: 'PayPal' },
               ].map((t) => (
                 <button
                   key={t.id}
@@ -341,6 +337,24 @@ export default function CreatorEarningsPanel() {
               />
             ) : null}
 
+            {type === 'venmo' ? (
+              <input
+                value={venmoHandle}
+                onChange={(e) => setVenmoHandle(e.target.value)}
+                placeholder="@venmo-username"
+                className="h-9 w-full border border-zinc-800 bg-black px-2 text-xs text-white"
+              />
+            ) : null}
+
+            {type === 'cashapp' ? (
+              <input
+                value={cashTag}
+                onChange={(e) => setCashTag(e.target.value)}
+                placeholder="$cashtag"
+                className="h-9 w-full border border-zinc-800 bg-black px-2 text-xs text-white"
+              />
+            ) : null}
+
             <SettingsButton disabled={busy} onClick={onAddMethod}>Save payment method</SettingsButton>
           </div>
 
@@ -360,8 +374,13 @@ export default function CreatorEarningsPanel() {
                   ))}
                 </select>
               </label>
-              <SettingsButton disabled={busy || !methodId} onClick={onWithdraw}>Request withdrawal</SettingsButton>
+              <SettingsButton disabled={busy || !methodId || user?.creatorStatus !== 'approved'} onClick={onWithdraw}>
+                Request withdrawal
+              </SettingsButton>
             </div>
+            {user?.creatorStatus !== 'approved' ? (
+              <p className="text-[11px] text-zinc-500">Apply to earn before requesting a withdrawal.</p>
+            ) : null}
             {requests.length ? (
               <ul className="mt-2 space-y-1 text-xs text-zinc-500">
                 {requests.map((r) => (
@@ -373,33 +392,6 @@ export default function CreatorEarningsPanel() {
             ) : null}
           </div>
         </div>
-      </SettingsCard>
-
-      <SettingsCard
-        title="Stripe Connect"
-        description="Auto payouts (80% creator). Status shows here — there is no separate Revenue page."
-      >
-        <p className="text-xs text-zinc-500 mb-3">
-          {connectStatusLabel(connect.status)}
-          {connect.accountId ? ` · ${connect.accountId.slice(0, 10)}…` : ''}
-        </p>
-        <SettingsButton
-          disabled={connectBusy || !canTryConnect || user?.creatorStatus !== 'approved'}
-          onClick={async () => {
-            setConnectBusy(true)
-            setConnectNote('')
-            const res = await startConnectOnboarding()
-            setConnectBusy(false)
-            if (res.ok && res.url) {
-              window.location.assign(res.url)
-              return
-            }
-            setConnectNote(res.message || 'Connect unavailable')
-          }}
-        >
-          {connect.payoutsEnabled ? 'Update Stripe payouts' : 'Connect Stripe'}
-        </SettingsButton>
-        {connectNote ? <p className="mt-2 text-xs text-zinc-500">{connectNote}</p> : null}
       </SettingsCard>
 
       {note ? <p className="text-xs text-amber-400">{note}</p> : null}
