@@ -19,6 +19,11 @@ Creators **do not** onboard to Stripe Express.
 Edge Function: `admin-withdraw`  
 Deploy: `supabase functions deploy admin-withdraw`
 
+## Finance (master ledger)
+
+Every card charge + platform fee: **Admin → Finance** (`docs/ADMIN_FINANCE.md`).  
+Deploy: `supabase functions deploy admin-finance`
+
 Optional secret: `PLATFORM_OWNER_EMAILS=kiddnixk@gmail.com`
 
 ## Webhook
