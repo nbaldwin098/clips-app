@@ -524,7 +524,7 @@ export default function ShortsFeed({
     return (
       <div className="h-full min-h-0 flex flex-col items-center justify-center gap-4 bg-[#000000] px-6 text-center">
         <p className="text-sm text-zinc-300">
-          {focusId ? 'This clip was removed or is no longer available.' : 'No clips yet.'}
+          {focusId ? 'This clip is unavailable — it may have been deleted or set to private.' : 'No clips yet.'}
         </p>
         <button
           type="button"
