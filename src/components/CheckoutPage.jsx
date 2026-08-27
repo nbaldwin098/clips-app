@@ -4,13 +4,14 @@ import { membershipReturnPaid, isStripeConfigured, stripeMode } from '../lib/str
 import { ownCheckoutConfigured } from '../lib/stripeCheckout'
 import { usePremiumCheckout } from '../hooks/usePremiumCheckout'
 import PageHeader from './PageHeader'
-import { calcPlatformFeeCents, PLATFORM_FEE_EXPLAINER, formatUsdFromCents } from '../lib/marketplaceSync'
+import PlatformFeeLine from './PlatformFeeLine'
+import { withPlatformFee, formatUsdFromCents } from '../lib/platformFee'
 
 export default function CheckoutPage({ onNavigate, creatorId, returnParams = {} }) {
   const { user, isAuthenticated } = useAuth()
   const checkout = usePremiumCheckout({ user, isAuthenticated, creatorId })
   const priceCents = Math.round((Number(checkout.price) || 0) * 100)
-  const fee = calcPlatformFeeCents(priceCents)
+  const { totalCents } = withPlatformFee(priceCents)
   const canPay = ownCheckoutConfigured()
   const mode = stripeMode()
 
@@ -32,16 +33,7 @@ export default function CheckoutPage({ onNavigate, creatorId, returnParams = {} 
           <li>Charged through calabi’s own Stripe Checkout</li>
         </ul>
         <div className="rounded-lg border border-zinc-800 bg-black/40 p-3 space-y-1 text-xs text-zinc-400">
-          <p className="flex items-center gap-1 text-zinc-300">
-            Platform fee {formatUsdFromCents(fee)}
-            <span
-              className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-sky-600 text-[10px] text-white"
-              title={PLATFORM_FEE_EXPLAINER}
-            >
-              ?
-            </span>
-          </p>
-          <p className="text-[11px] text-sky-300/90">{PLATFORM_FEE_EXPLAINER}</p>
+          <PlatformFeeLine listCents={priceCents} showTotal />
           <p className="text-white pt-1">Stripe hosts the card form; money is confirmed on return to calabi.</p>
         </div>
         <p className="text-[11px] text-zinc-500">
@@ -54,7 +46,7 @@ export default function CheckoutPage({ onNavigate, creatorId, returnParams = {} 
         ) : (
           <button type="button" disabled={!isAuthenticated || !canPay} onClick={checkout.pay} className="w-full h-11 rounded-lg bg-white text-black text-sm font-medium disabled:opacity-40">
             {isAuthenticated
-              ? (canPay ? `Pay $${checkout.price}/mo` : 'Checkout not configured')
+              ? (canPay ? `Pay ${formatUsdFromCents(totalCents)}` : 'Checkout not configured')
               : 'Sign in for premium'}
           </button>
         )}

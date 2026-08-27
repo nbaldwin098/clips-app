@@ -45,7 +45,8 @@ Legend: [x] done  [~] partial  [ ] open
 - [x] Coin packs + Orders tab (Cash→Coins catalog labels)
 - [x] Own Stripe Checkout Session path
 - [~] Escrow (donation requests + marketplace 7-day release) — timeout policy documented
-- [ ] Stripe Connect creator payouts
+- [~] Stripe Connect creator payouts (Edge + Earnings UI; enable Connect in Stripe Dashboard)
+- [x] Buyer platform fee (4% auto, labeled “Platform fee” + fraud/protection ?)
 
 ## H. Ads & advertise honesty
 - [x] Product ads off (`FEATURE_ADS = false`); ExoClick/VAST removed

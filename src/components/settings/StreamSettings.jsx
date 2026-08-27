@@ -79,7 +79,8 @@ export default function StreamSettings() {
       <div>
         <h1 className="text-xl font-semibold text-white">Stream & OBS</h1>
         <p className="mt-1 text-sm text-zinc-500">
-          OBS Studio is free. Connect it here — window share works now; Custom RTMP shows when an ingest server URL is configured.
+          OBS Studio is free. Window share works now; Custom RTMP shows when an ingest server URL is configured.
+          Ingest is only marked connected when ops set <code className="text-zinc-400">VITE_LIVE_INGEST_CONNECTED</code>.
         </p>
       </div>
 
@@ -90,6 +91,7 @@ export default function StreamSettings() {
             <p className="text-[11px] text-zinc-400 mt-0.5">
               OBS Studio is free open-source software — no paid plan required.
             </p>
+            <p className="text-[11px] text-zinc-500 mt-1.5 leading-relaxed">{obs.statusNote}</p>
           </div>
           <a
             href={obs.obsDownloadUrl}
@@ -99,6 +101,18 @@ export default function StreamSettings() {
           >
             Download OBS
           </a>
+        </div>
+
+        <div className="flex flex-wrap gap-2 text-[11px]">
+          <span className={`px-2 py-1 rounded border ${obs.ingestConnected ? 'border-emerald-700 text-emerald-300' : 'border-zinc-700 text-zinc-500'}`}>
+            Ingest {obs.ingestConnected ? 'connected' : 'not connected'}
+          </span>
+          <span className={`px-2 py-1 rounded border ${obs.rtmpReady ? 'border-zinc-500 text-zinc-300' : 'border-zinc-800 text-zinc-600'}`}>
+            RTMP {obs.rtmpReady ? 'URL set' : 'URL missing'}
+          </span>
+          <span className={`px-2 py-1 rounded border ${obs.hlsReady ? 'border-zinc-500 text-zinc-300' : 'border-zinc-800 text-zinc-600'}`}>
+            HLS {obs.hlsReady ? 'base set' : 'base missing'}
+          </span>
         </div>
 
         <ol className="space-y-3">
@@ -120,6 +134,12 @@ export default function StreamSettings() {
             <p className="text-xs font-semibold text-zinc-300">OBS → Settings → Stream → Service: Custom</p>
             <CopyField label="Server" value={obs.serverUrl} />
             <CopyField label="Stream key" value={key || obs.streamKey} />
+            {!obs.ingestConnected ? (
+              <p className="text-[11px] text-amber-400/90 leading-relaxed">
+                RTMP fields are shown because the server URL is set, but ingest is not marked connected yet.
+                Use window share for viewers until <code className="text-amber-300/90">VITE_LIVE_INGEST_CONNECTED=true</code>.
+              </p>
+            ) : null}
             <button
               type="button"
               className="h-9 px-3 rounded-lg border border-zinc-700 text-white text-xs"
@@ -144,6 +164,7 @@ export default function StreamSettings() {
             <p className="text-[11px] text-zinc-500 leading-relaxed">
               Server URL appears here when <code className="text-zinc-400">VITE_LIVE_RTMP_URL</code> is set on the deploy
               (for example <code className="text-zinc-400">rtmp://your-ingest/live</code>). Until then, use the free window-share path above on Live.
+              See <code className="text-zinc-400">docs/mediamtx.md</code>.
             </p>
           </div>
         )}

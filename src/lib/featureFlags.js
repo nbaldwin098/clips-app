@@ -41,8 +41,10 @@ export function getLiveHlsBase() {
   return String(runtimeEnv('VITE_LIVE_HLS_BASE') || runtimeEnv('NEXT_PUBLIC_LIVE_HLS_BASE') || '').trim()
 }
 
+/**
+ * Env URLs present (RTMP and/or HLS). Does NOT mean ingest is live —
+ * use liveIngestConnected() from liveIngest.js for that gate.
+ */
 export function liveIngestConfigured() {
-  const flag = String(runtimeEnv('VITE_LIVE_INGEST_CONNECTED') || runtimeEnv('NEXT_PUBLIC_LIVE_INGEST_CONNECTED') || '')
-  if (flag === '1' || flag.toLowerCase() === 'true') return true
-  return !!getLiveRtmpUrl()
+  return !!(getLiveRtmpUrl() || getLiveHlsBase())
 }

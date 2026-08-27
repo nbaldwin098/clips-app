@@ -1,26 +1,24 @@
 /**
  * Marketplace — products, sellers, orders. Supabase source of truth (0018).
- * Platform fee = Stripe processing labeled for buyer/seller protection: 2.9% + $0.30.
+ * Platform fee = 4% of item+shipping (buyer-facing; UI never shows %).
  */
 import { lsGet, lsSet } from './storage'
 import { getSupabase, isSupabaseConfigured } from './supabaseClient'
 import { getGraphActor } from './graphSync'
 import { createCheckoutSession } from './stripeCheckout'
 import { stashPendingStripe } from './tips'
+import {
+  calcPlatformFeeCents,
+  PLATFORM_FEE_EXPLAINER,
+  PLATFORM_FEE_LABEL,
+  formatUsdFromCents,
+} from './platformFee'
 
 const PRODUCTS_CACHE = 'marketplace_products_cache'
 const SELLERS_CACHE = 'marketplace_sellers_cache'
 const ORDERS_CACHE = 'marketplace_orders_cache'
 
-/** Stripe-style processing fee, shown as platform fee for protection. */
-export function calcPlatformFeeCents(subtotalPlusShippingCents) {
-  const n = Math.max(0, Math.floor(Number(subtotalPlusShippingCents) || 0))
-  return Math.round(n * 0.029) + 30
-}
-
-export const PLATFORM_FEE_EXPLAINER =
-  'This platform fee covers payment processing plus buyer and seller protection (insurance-style coverage for disputes and fraud). It is 2.9% + $0.30 of the product and shipping total.'
-
+export { calcPlatformFeeCents, PLATFORM_FEE_EXPLAINER, PLATFORM_FEE_LABEL, formatUsdFromCents }
 function canCloud(userId) {
   const actor = getGraphActor()
   return !!(isSupabaseConfigured() && actor?.id && (!userId || actor.id === userId))
@@ -240,13 +238,15 @@ export async function startMarketplaceCheckout({ buyer, product }) {
     amount: total / 100,
   })
 
+  // Pass list (item + shipping only). Edge Function adds the platform fee once.
+  const listCents = subtotal + shipping
   const checkout = await createCheckoutSession({
     kind: 'marketplace',
-    amountCents: total,
+    amountCents: listCents,
     productName: product.title || 'Shop order',
     email: buyer.email || '',
     orderId: id,
-    reference: `marketplace:${id}:${total}`,
+    reference: `marketplace:${id}:${listCents}`,
   })
   if (!checkout.ok || !checkout.url) {
     return {
@@ -342,11 +342,4 @@ export async function setSellerStatus(userId, status) {
   }).eq('user_id', userId)
   if (error) return { ok: false, error: error.message }
   return { ok: true }
-}
-
-export function formatUsdFromCents(cents) {
-  return (Math.max(0, Number(cents) || 0) / 100).toLocaleString(undefined, {
-    style: 'currency',
-    currency: 'USD',
-  })
 }

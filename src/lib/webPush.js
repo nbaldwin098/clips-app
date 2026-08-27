@@ -1,6 +1,7 @@
 /**
  * Web Push scaffold — free VAPID-based subscriptions.
  * Needs NEXT_PUBLIC_VAPID_PUBLIC_KEY (and a server to store endpoints).
+ * When VAPID is missing: pushConfigured() is false; enableWebPush returns need_vapid — no crash.
  */
 import { runtimeEnv } from './runtimeEnv'
 import { lsGet, lsSet } from './storage'
@@ -25,7 +26,11 @@ export function pushConfigured() {
 }
 
 export function getSavedPushSubscription() {
-  return lsGet(SUB_KEY, null)
+  try {
+    return lsGet(SUB_KEY, null)
+  } catch {
+    return null
+  }
 }
 
 function urlBase64ToUint8Array(base64String) {
@@ -38,43 +43,72 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 export async function enableWebPush() {
-  if (!pushSupported()) return { ok: false, error: 'unsupported' }
-  if (!pushConfigured()) return { ok: false, error: 'need_vapid' }
-  const perm = await Notification.requestPermission()
-  if (perm !== 'granted') return { ok: false, error: 'denied' }
+  try {
+    if (!pushSupported()) return { ok: false, error: 'unsupported' }
+    if (!pushConfigured()) return { ok: false, error: 'need_vapid' }
 
-  const reg = await navigator.serviceWorker.register(SW_PATH, { scope: '/' })
-  await navigator.serviceWorker.ready
-  let sub = await reg.pushManager.getSubscription()
-  if (!sub) {
-    sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey()),
-    })
-  }
-  const json = sub.toJSON()
-  lsSet(SUB_KEY, json)
-  // Best-effort POST to optional Edge Function
-  const url = String(runtimeEnv('VITE_PUSH_SUBSCRIBE_URL') || '').trim()
-  if (url) {
+    let perm = 'default'
     try {
-      await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscription: json }),
+      perm = await Notification.requestPermission()
+    } catch {
+      return { ok: false, error: 'denied' }
+    }
+    if (perm !== 'granted') return { ok: false, error: 'denied' }
+
+    const key = vapidPublicKey()
+    if (!key) return { ok: false, error: 'need_vapid' }
+
+    let applicationServerKey
+    try {
+      applicationServerKey = urlBase64ToUint8Array(key)
+    } catch {
+      return { ok: false, error: 'need_vapid' }
+    }
+
+    const reg = await navigator.serviceWorker.register(SW_PATH, { scope: '/' })
+    await navigator.serviceWorker.ready
+    let sub = await reg.pushManager.getSubscription()
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey,
       })
-    } catch { /* local save is enough for scaffold */ }
+    }
+    const json = sub.toJSON()
+    lsSet(SUB_KEY, json)
+    // Best-effort POST to optional Edge Function
+    const url = String(runtimeEnv('VITE_PUSH_SUBSCRIBE_URL') || '').trim()
+    if (url) {
+      try {
+        await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subscription: json }),
+        })
+      } catch { /* local save is enough for scaffold */ }
+    }
+    return { ok: true, subscription: json }
+  } catch (err) {
+    console.warn('[webPush] enable failed:', err?.message || err)
+    return { ok: false, error: err?.message || 'push_failed' }
   }
-  return { ok: true, subscription: json }
 }
 
 export async function disableWebPush() {
-  if (!pushSupported()) return { ok: true }
   try {
-    const reg = await navigator.serviceWorker.getRegistration(SW_PATH)
-    const sub = await reg?.pushManager?.getSubscription()
-    if (sub) await sub.unsubscribe()
-  } catch { /* ignore */ }
-  lsSet(SUB_KEY, null)
-  return { ok: true }
+    if (!pushSupported()) {
+      try { lsSet(SUB_KEY, null) } catch { /* ignore */ }
+      return { ok: true }
+    }
+    try {
+      const reg = await navigator.serviceWorker.getRegistration(SW_PATH)
+      const sub = await reg?.pushManager?.getSubscription()
+      if (sub) await sub.unsubscribe()
+    } catch { /* ignore */ }
+    lsSet(SUB_KEY, null)
+    return { ok: true }
+  } catch {
+    try { lsSet(SUB_KEY, null) } catch { /* ignore */ }
+    return { ok: true }
+  }
 }

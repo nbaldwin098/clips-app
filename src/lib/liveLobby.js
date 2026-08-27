@@ -4,7 +4,12 @@
  */
 import { lsGet, lsSet } from './storage'
 import { pushLiveLobby, endLiveLobby } from './graphSync'
-import { liveIngestConnected, liveListingBlockedReason } from './liveIngest'
+import { ensureStreamKey } from './streamKeys'
+import {
+  liveIngestConnected,
+  liveListingBlockedReason,
+  liveHlsPlayUrl,
+} from './liveIngest'
 
 export function getMyLiveState(userId) {
   if (!userId) return null
@@ -28,6 +33,9 @@ export function clearLivePresence(userId) {
 export async function startLiveLobby(user, { title = '', category = '' } = {}) {
   if (!user?.id) return { ok: false, error: 'Sign in required.' }
   const startedAt = new Date().toISOString()
+  const connected = liveIngestConnected()
+  const streamKey = connected ? ensureStreamKey(user.id) : ''
+  const hlsUrl = connected && streamKey ? liveHlsPlayUrl(streamKey) : ''
   const payload = {
     userId: user.id,
     handle: user.handle || '',
@@ -39,9 +47,12 @@ export async function startLiveLobby(user, { title = '', category = '' } = {}) {
     startedAt,
     watchers: 0,
     watcherIds: [],
-    ingestConnected: liveIngestConnected(),
-    note: liveIngestConnected()
-      ? ''
+    ingestConnected: connected,
+    // Only publish HLS when ingest is marked connected — never invent a play URL.
+    hlsUrl: hlsUrl || '',
+    streamKey: streamKey || '',
+    note: connected
+      ? (hlsUrl ? 'HLS playback URL published for viewers.' : 'Ingest marked connected; set VITE_LIVE_HLS_BASE for viewer HLS.')
       : liveListingBlockedReason() || 'Lobby listing only until RTMP ingest or browser share is connected.',
   }
   lsSet(`live_state_${user.id}`, payload)

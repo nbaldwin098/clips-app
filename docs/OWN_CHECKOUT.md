@@ -43,10 +43,21 @@ Full list: [`docs/RENDER_ENV.md`](RENDER_ENV.md). Incident steps: [`docs/RUNBOOK
 ## Auth note
 Checkout requires a **signed-in cloud user** (email is fine). The Edge Function rejects requests without a Supabase JWT.
 
+## Platform fee (buyer-facing)
+
+Every card checkout adds a **Platform fee** on top of the list price (tips, Coin packs, shop, paid posts).
+
+- Rate: **4%** of item (+ shipping when applicable) — internal only; **UI never shows the percentage**.
+- Buyer label: **Platform fee**
+- Explainer (blue ?): **Platform and fraud protection**
+- Creator **80%** share is of the **list price only** (not of the fee). The fee is platform revenue.
+
+Client helpers: `src/lib/platformFee.js`, `src/components/PlatformFeeLine.jsx`. Edge Function adds the fee once on session create.
+
 ## Test
 1. Sign in on calabi.us  
 2. Open Coins → buy a pack, or tip $2 / buy a shop item  
-3. You should land on Stripe’s hosted checkout page  
+3. You should land on Stripe’s hosted checkout page (line items include Platform fee when applicable)  
 4. After pay, return to `/checkout?paid=1&session_id=...` and the pending action applies  
 
 ## Stripe Dashboard

@@ -12,12 +12,21 @@ const MAX = 200
 export const GLOBAL_LIVE_ROOM = 'lobby'
 export const GLOBAL_LIVE_CHANNEL_ID = '__calabi_global__'
 
+/** Active realtime channels by resolved id — avoid duplicate subscribe. */
+const activeSubs = new Map()
+
 function isUuid(id) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(id || ''))
 }
 
 export function isGlobalLiveChannel(channelId) {
   return !channelId || channelId === GLOBAL_LIVE_CHANNEL_ID || channelId === GLOBAL_LIVE_ROOM
+}
+
+/** Normalize lobby aliases to one cache/subscribe key. */
+export function resolveLiveChatChannelId(channelId) {
+  if (isGlobalLiveChannel(channelId)) return GLOBAL_LIVE_CHANNEL_ID
+  return channelId || ''
 }
 
 function rowToMessage(row) {
@@ -38,7 +47,9 @@ function cache(channelId, list) {
 }
 
 export function readLocalLiveChat(channelId) {
-  return lsGet(`${LOCAL_PREFIX}${channelId}`, []) || []
+  const key = resolveLiveChatChannelId(channelId)
+  if (!key) return []
+  return lsGet(`${LOCAL_PREFIX}${key}`, []) || []
 }
 
 async function fetchGlobalChat() {
@@ -65,30 +76,31 @@ async function fetchGlobalChat() {
 
 export async function fetchLiveChat(channelId) {
   if (isGlobalLiveChannel(channelId)) return fetchGlobalChat()
-  if (!channelId) return []
-  if (!isSupabaseConfigured() || !isUuid(channelId)) {
-    return readLocalLiveChat(channelId)
+  const resolved = resolveLiveChatChannelId(channelId)
+  if (!resolved) return []
+  if (!isSupabaseConfigured() || !isUuid(resolved)) {
+    return readLocalLiveChat(resolved)
   }
   try {
     const sb = await getSupabase()
-    if (!sb) return readLocalLiveChat(channelId)
+    if (!sb) return readLocalLiveChat(resolved)
     const { data, error } = await sb
       .from('live_chat_messages')
       .select('id, channel_id, user_id, handle, body, kind, amount, created_at')
-      .eq('channel_id', channelId)
+      .eq('channel_id', resolved)
       .order('created_at', { ascending: true })
       .limit(MAX)
-    if (error || !Array.isArray(data)) return readLocalLiveChat(channelId)
+    if (error || !Array.isArray(data)) return readLocalLiveChat(resolved)
     const mapped = data.map(rowToMessage).filter(Boolean)
-    cache(channelId, mapped)
+    cache(resolved, mapped)
     return mapped
   } catch {
-    return readLocalLiveChat(channelId)
+    return readLocalLiveChat(resolved)
   }
 }
 
 export function pushLiveChatMessage(channelId, message) {
-  const resolved = isGlobalLiveChannel(channelId) ? GLOBAL_LIVE_CHANNEL_ID : channelId
+  const resolved = resolveLiveChatChannelId(channelId)
   const row = {
     id: message.id || `msg_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
     userId: message.userId,
@@ -109,7 +121,7 @@ export function pushLiveChatMessage(channelId, message) {
     if (!sb) return
     try {
       if (isGlobalLiveChannel(channelId)) {
-        await sb.from('global_live_chat').upsert({
+        const { error } = await sb.from('global_live_chat').upsert({
           id: row.id,
           room_id: GLOBAL_LIVE_ROOM,
           user_id: String(row.userId || ''),
@@ -119,12 +131,13 @@ export function pushLiveChatMessage(channelId, message) {
           amount: row.amount ?? null,
           created_at: row.at,
         })
+        if (error) console.warn('[liveChat] global upsert failed:', error.message)
         return
       }
-      if (!isUuid(channelId)) return
-      await sb.from('live_chat_messages').upsert({
+      if (!isUuid(resolved)) return
+      const { error } = await sb.from('live_chat_messages').upsert({
         id: row.id,
-        channel_id: channelId,
+        channel_id: resolved,
         user_id: String(row.userId || ''),
         handle: row.handle,
         body: row.text,
@@ -132,14 +145,17 @@ export function pushLiveChatMessage(channelId, message) {
         amount: row.amount ?? null,
         created_at: row.at,
       })
-    } catch { /* cache still works */ }
+      if (error) console.warn('[liveChat] upsert failed:', error.message)
+    } catch (err) {
+      console.warn('[liveChat] upsert threw:', err?.message || err)
+    }
   })()
 
   return row
 }
 
 export async function removeLiveChatMessageCloud(channelId, messageId) {
-  const resolved = isGlobalLiveChannel(channelId) ? GLOBAL_LIVE_CHANNEL_ID : channelId
+  const resolved = resolveLiveChatChannelId(channelId)
   const local = readLocalLiveChat(resolved).filter((m) => m.id !== messageId)
   cache(resolved, local)
   if (!isSupabaseConfigured()) return local
@@ -148,75 +164,121 @@ export async function removeLiveChatMessageCloud(channelId, messageId) {
     if (!sb) return local
     if (isGlobalLiveChannel(channelId)) {
       await sb.from('global_live_chat').delete().eq('id', messageId)
-    } else if (isUuid(channelId)) {
-      await sb.from('live_chat_messages').delete().eq('id', messageId).eq('channel_id', channelId)
+    } else if (isUuid(resolved)) {
+      await sb.from('live_chat_messages').delete().eq('id', messageId).eq('channel_id', resolved)
     }
   } catch { /* ignore */ }
   return local
 }
 
+function tearDownChannel(sb, channel) {
+  if (!sb || !channel) return
+  try { sb.removeChannel(channel) } catch { /* ignore */ }
+}
+
 export function subscribeLiveChat(channelId, onMessages) {
-  const resolved = isGlobalLiveChannel(channelId) ? GLOBAL_LIVE_CHANNEL_ID : channelId
+  const resolved = resolveLiveChatChannelId(channelId)
   if (!resolved) return () => {}
   let cancelled = false
-  let unsub = () => {}
+  let channel = null
+  let pollTimer = null
+  let sbRef = null
 
-  fetchLiveChat(resolved).then((list) => {
+  const emit = (list) => {
     if (!cancelled) onMessages(list)
-  })
+  }
 
-  if (isSupabaseConfigured() && (isGlobalLiveChannel(channelId) || isUuid(channelId))) {
+  fetchLiveChat(resolved).then(emit).catch(() => emit(readLocalLiveChat(resolved)))
+
+  const startPoll = () => {
+    if (pollTimer || cancelled) return
+    pollTimer = window.setInterval(() => {
+      emit(readLocalLiveChat(resolved))
+    }, 4000)
+  }
+
+  const stopPoll = () => {
+    if (pollTimer) {
+      window.clearInterval(pollTimer)
+      pollTimer = null
+    }
+  }
+
+  const prev = activeSubs.get(resolved)
+  if (prev) {
+    try { prev() } catch { /* ignore */ }
+    activeSubs.delete(resolved)
+  }
+
+  if (isSupabaseConfigured() && (isGlobalLiveChannel(channelId) || isUuid(resolved))) {
     ;(async () => {
       const sb = await getSupabase()
-      if (!sb || cancelled) return
-      if (isGlobalLiveChannel(channelId)) {
-        const channel = sb
-          .channel(`global-live-chat:${GLOBAL_LIVE_ROOM}`)
-          .on(
-            'postgres_changes',
-            { event: '*', schema: 'public', table: 'global_live_chat', filter: `room_id=eq.${GLOBAL_LIVE_ROOM}` },
-            () => {
-              fetchGlobalChat().then((list) => {
-                if (!cancelled) onMessages(list)
-              })
-            },
-          )
-          .subscribe()
-        unsub = () => {
-          try { sb.removeChannel(channel) } catch { /* ignore */ }
-        }
+      sbRef = sb
+      if (!sb || cancelled) {
+        startPoll()
         return
       }
-      const channel = sb
-        .channel(`live-chat:${channelId}`)
-        .on(
+
+      const topic = isGlobalLiveChannel(channelId)
+        ? `global-live-chat:${GLOBAL_LIVE_ROOM}`
+        : `live-chat:${resolved}`
+
+      const refresh = () => {
+        fetchLiveChat(resolved).then(emit).catch(() => emit(readLocalLiveChat(resolved)))
+      }
+
+      const ch = sb.channel(topic)
+      if (isGlobalLiveChannel(channelId)) {
+        ch.on(
           'postgres_changes',
-          { event: '*', schema: 'public', table: 'live_chat_messages', filter: `channel_id=eq.${channelId}` },
-          () => {
-            fetchLiveChat(channelId).then((list) => {
-              if (!cancelled) onMessages(list)
-            })
-          },
+          { event: '*', schema: 'public', table: 'global_live_chat', filter: `room_id=eq.${GLOBAL_LIVE_ROOM}` },
+          refresh,
         )
-        .subscribe()
-      unsub = () => {
-        try { sb.removeChannel(channel) } catch { /* ignore */ }
+      } else {
+        ch.on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'live_chat_messages', filter: `channel_id=eq.${resolved}` },
+          refresh,
+        )
+      }
+
+      ch.subscribe((status) => {
+        if (cancelled) return
+        if (status === 'SUBSCRIBED') {
+          stopPoll()
+          refresh()
+          return
+        }
+        // TIMED_OUT / CHANNEL_ERROR / CLOSED — keep local poll + refetch
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          console.warn('[liveChat] realtime', status, topic)
+          startPoll()
+          refresh()
+        }
+      })
+
+      channel = ch
+      if (cancelled) {
+        tearDownChannel(sb, ch)
+        channel = null
       }
     })()
   } else {
-    const interval = window.setInterval(() => {
-      onMessages(readLocalLiveChat(resolved))
-    }, 4000)
-    unsub = () => window.clearInterval(interval)
+    startPoll()
   }
 
-  return () => {
+  const unsub = () => {
     cancelled = true
-    unsub()
+    stopPoll()
+    tearDownChannel(sbRef, channel)
+    channel = null
+    if (activeSubs.get(resolved) === unsub) activeSubs.delete(resolved)
   }
+  activeSubs.set(resolved, unsub)
+  return unsub
 }
 
 export function canSyncLiveChat(channelId) {
   if (isGlobalLiveChannel(channelId)) return !!(getGraphActor()?.id && isSupabaseConfigured())
-  return !!(getGraphActor()?.id && isUuid(channelId))
+  return !!(getGraphActor()?.id && isUuid(resolveLiveChatChannelId(channelId)))
 }

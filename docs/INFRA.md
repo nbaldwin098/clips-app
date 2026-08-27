@@ -12,15 +12,15 @@ Code scaffolds gates and empty states; production still needs the services below
 | **i18n** | `src/lib/i18n.js` catalogs + Account language picker | Full translations / RTL |
 | **Client transcode** | `src/lib/videoTranscode.js` behind `VITE_CLIENT_TRANSCODE` | Prefer server queue long-term |
 | **Web Push** | `public/sw-push.js`, `src/lib/webPush.js`, Notifications UI | VAPID keys + `push-subscribe` deploy |
-| **Stripe Connect** | Edge `create-connect-account` + Revenue button | Stripe Connect enable + secret |
+| **Stripe Connect** | Edge `create-connect-account` + Studio → Earnings | Stripe Connect enable + secret |
 | **Social OAuth** | `oauth-start` / `oauth-callback` + Studio redirect | Per-network apps + secrets |
-| **RTMP/HLS** | `docker/mediamtx/` + `docs/mediamtx.md` | A VPS/public IP + env URLs |
+| **RTMP/HLS** | `docker/mediamtx/` + `docs/mediamtx.md` + honest gates in `liveIngest.js` | A VPS/public IP + env URLs |
 
 ---
 
 ## 1. RTMP / HLS live ingest
 
-**Today:** Lobby + free OBS/browser window share (`src/lib/liveIngest.js`). Custom RTMP when `VITE_LIVE_RTMP_URL` is set. Self-host recipe: **`docs/mediamtx.md`** + `docker/mediamtx/docker-compose.yml`.
+**Today:** Lobby + free OBS/browser window share (`src/lib/liveIngest.js`). Custom RTMP fields show when `VITE_LIVE_RTMP_URL` is set. **`liveIngestConnected()` is true only when `VITE_LIVE_INGEST_CONNECTED` is set** — never invented from RTMP/HLS URLs alone. Self-host recipe: **`docs/mediamtx.md`** + `docker/mediamtx/docker-compose.yml`.
 
 **Missing for production:** A machine with public IP (or Mux / Cloudflare Stream / IVS).
 
@@ -28,15 +28,17 @@ Code scaffolds gates and empty states; production still needs the services below
 1. `cd docker/mediamtx && docker compose up -d` on a VPS (or buy managed ingest).
 2. Set `VITE_LIVE_RTMP_URL=rtmp://YOUR_HOST:1935/live`
 3. Set `VITE_LIVE_HLS_BASE=https://YOUR_HOST/live` (TLS via reverse proxy)
-4. Set `VITE_LIVE_INGEST_CONNECTED=true` only after a second device can play HLS.
+4. Set `VITE_LIVE_INGEST_CONNECTED=true` **only** after a second device can play HLS.
 
-Window share remains the free fallback without any of the above.
+Window share remains the free fallback without any of the above. Stream settings show clear RTMP / HLS / connected badges.
 
 ---
 
 ## 2. Stripe Connect (creator auto-payouts)
 
-**Code shipped:** Edge `create-connect-account` + `stripe-webhook`, client `stripeConnect.js`, Revenue status UI, migrations `0023`/`0024`. Guide: **`docs/OWN_CONNECT.md`**.
+**Code shipped:** Edge `create-connect-account` + `stripe-webhook`, client `stripeConnect.js`, **Creator Studio → Earnings** Connect status UI, migrations `0023`/`0024`. Guide: **`docs/OWN_CONNECT.md`**.
+
+Buyer checkouts also add a **Platform fee** (4% of list, label only — see `docs/OWN_CHECKOUT.md`). Creator 80% is of list price only.
 
 **You still must:**
 1. Stripe Dashboard → Connect → enable Express.
