@@ -24,7 +24,7 @@ export default function MonetizationSettings({ onNavigate }) {
   return (
     <div className="space-y-8 pb-8">
       <SettingsPageHeader
-        title="Monetization"
+        title="Membership"
         subtitle="Follow is free. Premium memberships and card tips use an 80/20 creator split. Coins are for chat cosmetics."
       />
 
@@ -52,13 +52,13 @@ export default function MonetizationSettings({ onNavigate }) {
           </SettingsNotice>
         ) : (
           <SettingsNotice tone="success">
-            <p>You are approved. Save where to send money on Revenue or Wallet. Stripe Connect is not connected, so there is no withdraw button.</p>
+            <p>You are approved. Save payout details on Earnings.</p>
             <div className="flex flex-wrap gap-2">
-              <SettingsButton variant="ghost" onClick={() => onNavigate?.('settings', 'revenue')}>
-                Revenue dashboard
+              <SettingsButton variant="ghost" onClick={() => onNavigate?.('dashboard', 'earnings')}>
+                Open Earnings
               </SettingsButton>
               <SettingsButton variant="ghost" onClick={() => onNavigate?.('settings', 'wallet')}>
-                Wallet & Coins
+                Coins
               </SettingsButton>
               <SettingsButton variant="ghost" onClick={() => onNavigate?.('calabi-cash')}>
                 Buy Coins

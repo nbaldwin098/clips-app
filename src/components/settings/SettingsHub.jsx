@@ -1,42 +1,38 @@
-import SettingsLayout, { settingsModeForSection } from './SettingsLayout'
+import { useEffect } from 'react'
+import SettingsLayout, { isCreatorSettingsSection } from './SettingsLayout'
 import AccountSettings from './AccountSettings'
 import SecuritySettings from './SecuritySettings'
-import ChannelSettings from './ChannelSettings'
-import StreamSettings from './StreamSettings'
-import ChatSettings from './ChatSettings'
-import CommentSettings from './CommentSettings'
-import MonetizationSettings from './MonetizationSettings'
-import RevenueSettings from './RevenueSettings'
 import NotificationsSettings from './NotificationsSettings'
-import RolesSettings from './RolesSettings'
-import AnalyticsSettings from './AnalyticsSettings'
-import CopyrightSettings from './CopyrightSettings'
 import LegalSettings from './LegalSettings'
 import WalletSettings from './WalletSettings'
 
-const PAGES = {
+const SITE_PAGES = {
   account: AccountSettings,
   security: SecuritySettings,
-  channel: ChannelSettings,
-  stream: StreamSettings,
-  chat: ChatSettings,
-  comments: CommentSettings,
-  monetization: MonetizationSettings,
-  revenue: RevenueSettings,
   notifications: NotificationsSettings,
-  roles: RolesSettings,
-  analytics: AnalyticsSettings,
-  copyright: CopyrightSettings,
   legal: LegalSettings,
   wallet: WalletSettings,
 }
 
+/** Site settings shell only. Creator pages open inside Creator Studio. */
 export default function SettingsHub({ section, onNavigate, initialTab = null }) {
-  const id = PAGES[section] ? section : 'account'
-  const Page = PAGES[id]
-  const mode = settingsModeForSection(id)
+  const redirectCreator = section === 'revenue' || (isCreatorSettingsSection(section) && !SITE_PAGES[section])
+
+  useEffect(() => {
+    if (!redirectCreator) return
+    if (section === 'revenue') onNavigate?.('dashboard', 'earnings')
+    else if (section === 'analytics') onNavigate?.('dashboard', 'analytics')
+    else onNavigate?.('dashboard', 'settings', { tab: section })
+  }, [redirectCreator, section, onNavigate])
+
+  if (redirectCreator) {
+    return <p className="p-6 text-sm text-zinc-500">Opening Creator Studio…</p>
+  }
+
+  const id = SITE_PAGES[section] ? section : 'account'
+  const Page = SITE_PAGES[id]
   return (
-    <SettingsLayout section={id} mode={mode} onSection={(next) => onNavigate?.('settings', next)}>
+    <SettingsLayout section={id} onSection={(next) => onNavigate?.('settings', next)}>
       <Page onNavigate={onNavigate} initialTab={initialTab} />
     </SettingsLayout>
   )

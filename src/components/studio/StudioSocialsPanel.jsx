@@ -255,8 +255,8 @@ export default function StudioSocialsPanel({ onNavigate }) {
         </div>
         <p className="text-[11px] text-zinc-600 mt-3">
           Branding URLs stay in{' '}
-          <button type="button" className="underline text-zinc-400" onClick={() => onNavigate?.('settings', 'channel')}>
-            Settings → Channel
+          <button type="button" className="underline text-zinc-400" onClick={() => onNavigate?.('dashboard', 'settings', { tab: 'channel' })}>
+            Studio → Settings → Channel
           </button>
           .
         </p>
