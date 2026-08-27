@@ -7,71 +7,37 @@ export const CREATOR_STUDIO_GROUPS = [
   {
     id: 'content',
     label: 'Content',
-    description: 'Upload, drafts, and VOD library',
+    description: 'Upload and library',
     items: [
-      { id: 'upload', label: 'Upload', route: { view: 'dashboard', action: 'upload' }, status: 'live' },
       { id: 'calabi-studio', label: 'Calabi Studio', route: { view: 'dashboard', section: 'lab' }, status: 'live' },
-      { id: 'make-post', label: 'Make a post', route: { view: 'dashboard', section: 'lab' }, status: 'live' },
-      { id: 'studio-tools', label: 'Drafts & schedule (Beta)', route: { view: 'studio-tools' }, status: 'partial' },
-      { id: 'vods', label: 'VOD channel', route: { view: 'dashboard', section: 'content' }, status: 'live' },
-      { id: 'socials', label: 'Post to socials', route: { view: 'dashboard', section: 'socials' }, status: 'partial' },
-      { id: 'controls', label: 'Controls', route: { view: 'dashboard', section: 'lab' }, status: 'live' },
+      { id: 'content', label: 'Content library', route: { view: 'dashboard', section: 'content' }, status: 'live' },
+      { id: 'socials', label: 'Socials', route: { view: 'dashboard', section: 'socials' }, status: 'partial' },
     ],
   },
   {
     id: 'live',
     label: 'Live',
-    description: 'Stream settings and OBS',
+    description: 'Stream tools',
     items: [
-      { id: 'stream-settings', label: 'Stream & OBS', route: { view: 'dashboard', section: 'lab' }, status: 'live' },
-      { id: 'stream-key', label: 'OBS connect', route: { view: 'dashboard', section: 'lab' }, status: 'live' },
-      { id: 'go-live-studio', label: 'Go live (Calabi Studio)', route: { view: 'calabi-studio' }, status: 'partial' },
+      { id: 'stream-settings', label: 'Stream & OBS', route: { view: 'dashboard', section: 'settings', params: { tab: 'stream' } }, status: 'live' },
     ],
   },
   {
-    id: 'community',
-    label: 'Community',
-    description: 'Chat, mods, roles, and channel branding',
+    id: 'money',
+    label: 'Money',
+    description: 'Earnings and membership',
     items: [
-      { id: 'channel', label: 'Channel page', route: { view: 'channel' }, status: 'live' },
-      { id: 'chat', label: 'Chat & moderation', route: { view: 'settings', section: 'chat' }, status: 'live' },
-      { id: 'roles', label: 'Roles & permissions', route: { view: 'settings', section: 'roles' }, status: 'live' },
-      { id: 'comments', label: 'Comments', route: { view: 'settings', section: 'comments' }, status: 'live' },
-      { id: 'emotes', label: 'Custom emotes', route: { view: 'settings', section: 'chat' }, status: 'partial' },
-    ],
-  },
-  {
-    id: 'growth',
-    label: 'Growth',
-    description: 'Analytics and discovery',
-    items: [
-      { id: 'analytics', label: 'Analytics', route: { view: 'analytics' }, status: 'live' },
-      { id: 'analytics-settings', label: 'Analytics settings', route: { view: 'settings', section: 'analytics' }, status: 'live' },
-      { id: 'notifications', label: 'Alerts', route: { view: 'settings', section: 'notifications' }, status: 'partial' },
-    ],
-  },
-  {
-    id: 'revenue',
-    label: 'Revenue',
-    description: 'Memberships, payouts, and monetization',
-    items: [
-      { id: 'earnings', label: 'Earnings portal', route: { view: 'dashboard', section: 'earnings' }, status: 'live' },
-      { id: 'revenue', label: 'Revenue dashboard', route: { view: 'settings', section: 'revenue' }, status: 'live' },
-      { id: 'wallet', label: 'Coins', route: { view: 'settings', section: 'wallet' }, status: 'live' },
-      { id: 'calabi-cash', label: 'Coins', route: { view: 'settings', section: 'wallet' }, status: 'live' },
-      { id: 'monetization', label: 'Membership & 80/20 split', route: { view: 'settings', section: 'monetization' }, status: 'live' },
-      { id: 'stripe-connect', label: 'Stripe Connect', route: { view: 'settings', section: 'revenue' }, status: 'partial' },
+      { id: 'earnings', label: 'Earnings', route: { view: 'dashboard', section: 'earnings' }, status: 'live' },
+      { id: 'monetization', label: 'Membership', route: { view: 'dashboard', section: 'settings', params: { tab: 'monetization' } }, status: 'live' },
     ],
   },
   {
     id: 'account',
-    label: 'Account & safety',
-    description: 'Profile, security, copyright, and legal',
+    label: 'Settings',
+    description: 'Creator settings in Studio',
     items: [
-      { id: 'account', label: 'Account', route: { view: 'settings', section: 'account' }, status: 'live' },
-      { id: 'security', label: 'Security & privacy', route: { view: 'settings', section: 'security' }, status: 'live' },
-      { id: 'copyright', label: 'Copyright & DMCA', route: { view: 'settings', section: 'copyright' }, status: 'live' },
-      { id: 'verify', label: 'Verified badge', route: { view: 'verify' }, status: 'live' },
+      { id: 'settings', label: 'Creator settings', route: { view: 'dashboard', section: 'settings' }, status: 'live' },
+      { id: 'verify', label: 'Verified badge', route: { view: 'dashboard', section: 'verify' }, status: 'live' },
     ],
   },
 ]
@@ -87,7 +53,7 @@ export const KICK_TWITCH_PARITY = [
   { feature: 'Mod roles & permissions', kick: 'live', twitch: 'live', clips: 'live' },
   { feature: 'Custom emotes', kick: 'live', twitch: 'live', clips: 'partial' },
   { feature: 'Premium memberships (livestream)', kick: 'live', twitch: 'live', clips: 'partial', note: 'Price and premium list; Stripe Payment Link amount is separate. Free follow is separate.' },
-  { feature: 'Revenue dashboard', kick: 'live', twitch: 'live', clips: 'live', note: 'Connect Transfers when onboarded; manual payout contact remains.' },
+  { feature: 'Earnings', kick: 'live', twitch: 'live', clips: 'live', note: 'Creator Studio → Earnings (not a separate Revenue page).' },
   { feature: 'Stripe / bank payouts', kick: 'live', twitch: 'live', clips: 'partial', note: 'Express Connect + webhook Transfers (80%); needs Stripe Connect enabled.' },
   { feature: 'Live analytics', kick: 'live', twitch: 'live', clips: 'partial', note: 'Post views, likes, subs; no concurrent viewer graph yet.' },
   { feature: 'Content analytics by post', kick: 'live', twitch: 'live', clips: 'live' },
@@ -118,7 +84,7 @@ export function countParityByStatus(rows = KICK_TWITCH_PARITY, platform = 'clips
 
 export function navigateStudioItem(onNavigate, item, handlers = {}) {
   if (!item?.route) return false
-  const { view, section, action } = item.route
+  const { view, section, action, params } = item.route
   if (action === 'upload' && handlers.onOpenUpload) {
     handlers.onOpenUpload()
     return true
@@ -128,7 +94,7 @@ export function navigateStudioItem(onNavigate, item, handlers = {}) {
     return true
   }
   if (section) {
-    onNavigate?.(view, section)
+    onNavigate?.(view, section, params || null)
     return true
   }
   onNavigate?.(view)

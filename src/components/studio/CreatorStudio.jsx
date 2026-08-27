@@ -17,6 +17,7 @@ import {
   Radio,
   FolderOpen,
   Newspaper,
+  User,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import CreatorOnboarding from '../CreatorOnboarding'
@@ -43,6 +44,8 @@ import CreatorEarningsPanel from './CreatorEarningsPanel'
 import StudioSocialsPanel from './StudioSocialsPanel'
 import CreatorLab from './CreatorLab'
 import StreamSettings from '../settings/StreamSettings'
+import { CREATOR_PAGES } from '../settings/creatorSettingPages'
+import { CREATOR_SETTING_PAGES } from '../settings/SettingsLayout'
 import VerifyPage from '../VerifyPage'
 import {
   getIdVerificationForUser,
@@ -50,11 +53,6 @@ import {
 } from '../../lib/verification'
 import { isOfficialCreator } from '../../lib/uiFormat'
 import { listNewspaper } from '../../lib/newspaper'
-import {
-  CREATOR_STUDIO_GROUPS,
-  navigateStudioItem,
-  statusLabel,
-} from '../../lib/creatorStudioCatalog'
 import {
   SettingsCard,
   SettingsKpiGrid,
@@ -69,6 +67,7 @@ const STUDIO_NAV = [
   { id: 'analytics', label: 'Analytics', icon: BarChart3, group: 'Studio' },
   { id: 'socials', label: 'Socials', icon: Share2, group: 'Studio' },
   { id: 'earnings', label: 'Earnings', icon: CircleDollarSign, group: 'Money' },
+  { id: 'settings', label: 'Settings', icon: Settings, group: 'Account' },
   { id: 'verify', label: 'Get verified', icon: BadgeCheck, group: 'Account' },
 ]
 
@@ -81,6 +80,7 @@ const SECTION_META = {
   controls: { title: 'Calabi Studio' },
   socials: { title: 'Socials' },
   earnings: { title: 'Earnings' },
+  settings: { title: 'Settings' },
   vods: { title: 'Content' },
   stream: { title: 'Calabi Studio' },
   verify: { title: 'Verification' },
@@ -316,76 +316,51 @@ function VodsPanel({ user }) {
   )
 }
 
-function StudioControls({
-  onNavigate,
-  onOpenUpload,
-  approved,
-  compact = false,
-}) {
-  const handlers = { onOpenUpload }
-  const buttons = CREATOR_STUDIO_GROUPS
-    .filter((g) => g.id !== 'account')
-    .flatMap((group) => group.items)
-    .filter((item) => item.status !== 'planned' && item.route && item.id !== 'import')
-
-  if (compact) {
-    return (
-      <div className="flex flex-wrap gap-1.5">
-        {buttons.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => navigateStudioItem(onNavigate, item, handlers)}
-            className="h-8 px-2.5 border border-zinc-700 bg-[#0e0e14] text-[11px] font-medium text-zinc-300 hover:border-white hover:text-white"
-          >
-            {item.label}
-          </button>
-        ))}
-        {!approved ? (
-          <button
-            type="button"
-            onClick={() => onNavigate?.('creator-apply')}
-            className="h-8 px-2.5 border border-zinc-700 text-[11px] text-zinc-400 hover:border-white hover:text-white"
-          >
-            Apply to earn
-          </button>
-        ) : null}
-      </div>
-    )
-  }
-
+function StudioControls({ onNavigate, approved }) {
   return (
-    <div className="space-y-8 max-w-4xl">
-      <div className="space-y-8">
-        {CREATOR_STUDIO_GROUPS.filter((g) => g.id !== 'account').map((group) => (
-          <div key={group.id} className="space-y-3">
-            <p className="text-sm font-semibold text-white">{group.label}</p>
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {group.items
-                .filter((item) => item.status !== 'planned' && item.route && item.id !== 'import')
-                .map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => navigateStudioItem(onNavigate, item, handlers)}
-                    className="h-11 px-4 inline-flex items-center justify-between gap-2 border border-zinc-700 bg-[#0e0e14] text-sm font-medium text-zinc-200 hover:border-white hover:text-white hover:bg-[#16161f] transition-colors"
-                  >
-                    <span className="truncate">{item.label}</span>
-                    <span className="shrink-0 text-[10px] uppercase tracking-wide text-zinc-500">
-                      {statusLabel(item.status)}
-                    </span>
-                  </button>
-                ))}
-            </div>
-          </div>
-        ))}
-      </div>
+    <div className="flex flex-wrap gap-2">
+      <button
+        type="button"
+        onClick={() => onNavigate?.('dashboard', 'earnings')}
+        className="h-9 px-3 border border-zinc-700 text-xs text-zinc-300 hover:border-white hover:text-white"
+      >
+        Earnings
+      </button>
       {!approved ? (
-        <SettingsNotice>
-          <p>Anyone can create. Apply when you want payouts.</p>
-          <SettingsButton onClick={() => onNavigate?.('creator-apply')}>Apply to earn</SettingsButton>
-        </SettingsNotice>
+        <button
+          type="button"
+          onClick={() => onNavigate?.('creator-apply')}
+          className="h-9 px-3 border border-zinc-700 text-xs text-zinc-400 hover:border-white hover:text-white"
+        >
+          Apply to earn
+        </button>
       ) : null}
+    </div>
+  )
+}
+
+function StudioSettingsPanel({ onNavigate, initialPage = 'channel', pages, PageMap }) {
+  const list = pages || []
+  const [page, setPage] = useState(list.some((p) => p.id === initialPage) ? initialPage : (list[0]?.id || 'channel'))
+  useEffect(() => {
+    if (list.some((p) => p.id === initialPage)) setPage(initialPage)
+  }, [initialPage])
+  const Page = (PageMap && PageMap[page]) || null
+  return (
+    <div className="h-full min-h-0 overflow-y-auto max-w-3xl space-y-4">
+      <label className="block max-w-xs">
+        <span className="sr-only">Creator settings section</span>
+        <select
+          value={page}
+          onChange={(e) => setPage(e.target.value)}
+          className="w-full h-10 border border-zinc-700 bg-[#0c0c10] px-3 text-sm text-white"
+        >
+          {list.map((p) => (
+            <option key={p.id} value={p.id}>{p.label}</option>
+          ))}
+        </select>
+      </label>
+      {Page ? <Page onNavigate={onNavigate} /> : null}
     </div>
   )
 }
@@ -597,6 +572,7 @@ export default function CreatorStudio({
   onPlayItem,
   onOpenAuth,
   initialSection = 'overview',
+  initialSettingsPage = 'channel',
 }) {
   const { user } = useAuth()
   const syncTick = useContentSyncTick()
@@ -814,10 +790,10 @@ export default function CreatorStudio({
         <div className="px-2 pt-2 border-t border-zinc-800 space-y-0.5">
           <button
             type="button"
-            onClick={() => onNavigate?.('settings', 'channel')}
+            onClick={() => onNavigate?.('settings', 'account')}
             className="w-full flex items-center gap-2.5 px-2.5 py-2 text-sm text-zinc-400 hover:bg-[#18181f] hover:text-white"
           >
-            <Settings className="h-4 w-4" /> Creator settings
+            <User className="h-4 w-4" /> Site account
           </button>
         </div>
       </aside>
@@ -979,9 +955,7 @@ export default function CreatorStudio({
               {labTool === 'controls' ? (
                 <StudioControls
                   onNavigate={onNavigate}
-                  onOpenUpload={onOpenUpload}
                   approved={approved}
-                  compact
                 />
               ) : null}
               {labTool === 'stream' ? (
@@ -1061,6 +1035,15 @@ export default function CreatorStudio({
             <div className="h-full overflow-hidden">
               <CreatorEarningsPanel />
             </div>
+          ) : null}
+
+          {section === 'settings' ? (
+            <StudioSettingsPanel
+              onNavigate={onNavigate}
+              initialPage={initialSettingsPage}
+              pages={CREATOR_SETTING_PAGES}
+              PageMap={CREATOR_PAGES}
+            />
           ) : null}
 
           {section === 'verify' ? (

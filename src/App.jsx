@@ -118,7 +118,7 @@ function AppShell() {
 
   useEffect(() => {
     warnIfSupabaseMissing()
-    initLocale()
+    try { initLocale() } catch { /* ignore */ }
   }, [])
 
   useEffect(() => {
@@ -555,6 +555,7 @@ function AppShell() {
             onPlayItem={openWatch}
             onOpenAuth={openAuth}
             initialSection={routeId || 'overview'}
+            initialSettingsPage={routeParams.tab || 'channel'}
           />
         )
       case 'vods':

@@ -138,7 +138,7 @@ export function t(key, vars) {
   let out = table[id] ?? EN[id] ?? id
   if (vars && typeof vars === 'object') {
     for (const [k, v] of Object.entries(vars)) {
-      out = out.replaceAll(`{${k}}`, String(v))
+      out = String(out).split(`{${k}}`).join(String(v))
     }
   }
   return out

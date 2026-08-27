@@ -14,6 +14,12 @@ import {
 } from '../../lib/calabiCash'
 import { buildMethodSummary, storePayoutSecret, removePayoutSecret, pullPayoutSecretsCloud } from '../../lib/payoutVault'
 import {
+  connectOnboardingAvailable,
+  startConnectOnboarding,
+  fetchConnectStatus,
+  connectStatusLabel,
+} from '../../lib/stripeConnect'
+import {
   SettingsCard,
   SettingsKpiGrid,
   SettingsButton,
@@ -83,6 +89,10 @@ export default function CreatorEarningsPanel() {
   const [paypalEmail, setPaypalEmail] = useState('')
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
+  const [connectBusy, setConnectBusy] = useState(false)
+  const [connectNote, setConnectNote] = useState('')
+  const [connect, setConnect] = useState({ status: 'unknown', payoutsEnabled: false, accountId: '' })
+  const canTryConnect = connectOnboardingAvailable()
 
   useEffect(() => {
     if (!uid) return
@@ -94,6 +104,20 @@ export default function CreatorEarningsPanel() {
       .then(() => bump((n) => n + 1))
       .catch(() => {})
   }, [uid])
+
+  useEffect(() => {
+    if (!uid || !canTryConnect) return
+    let cancelled = false
+    fetchConnectStatus().then((res) => {
+      if (cancelled) return
+      setConnect({
+        status: res.status || 'unknown',
+        payoutsEnabled: !!res.payoutsEnabled,
+        accountId: res.accountId || '',
+      })
+    }).catch(() => {})
+    return () => { cancelled = true }
+  }, [uid, canTryConnect])
 
   const raw = getCreatorEarnings(uid)
   const earnings = {
@@ -349,6 +373,33 @@ export default function CreatorEarningsPanel() {
             ) : null}
           </div>
         </div>
+      </SettingsCard>
+
+      <SettingsCard
+        title="Stripe Connect"
+        description="Auto payouts (80% creator). Status shows here — there is no separate Revenue page."
+      >
+        <p className="text-xs text-zinc-500 mb-3">
+          {connectStatusLabel(connect.status)}
+          {connect.accountId ? ` · ${connect.accountId.slice(0, 10)}…` : ''}
+        </p>
+        <SettingsButton
+          disabled={connectBusy || !canTryConnect || user?.creatorStatus !== 'approved'}
+          onClick={async () => {
+            setConnectBusy(true)
+            setConnectNote('')
+            const res = await startConnectOnboarding()
+            setConnectBusy(false)
+            if (res.ok && res.url) {
+              window.location.assign(res.url)
+              return
+            }
+            setConnectNote(res.message || 'Connect unavailable')
+          }}
+        >
+          {connect.payoutsEnabled ? 'Update Stripe payouts' : 'Connect Stripe'}
+        </SettingsButton>
+        {connectNote ? <p className="mt-2 text-xs text-zinc-500">{connectNote}</p> : null}
       </SettingsCard>
 
       {note ? <p className="text-xs text-amber-400">{note}</p> : null}
