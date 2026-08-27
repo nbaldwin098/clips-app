@@ -49,7 +49,7 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 | BUG-092 | UX | Taste picker / banners / messy create | Removed picker; avatars; YT-style upload filters | `doing` |
 | BUG-114 | Home | Cannot scroll homepage (fixed SpaShell + min-h-screen) | App shell always `h-dvh`; main scrolls | `doing` |
 | BUG-115 | Home | Square boxes over circular profile avatars | Global square-button CSS vs rounded-full | `doing` |
-| BUG-116 | Crash | Client-side exception / failed resource after deploys | global-error + chunk reload once | `doing` |
+| BUG-116 | Crash | Client-side exception / failed resource after deploys | global-error + chunk reload; fix `/` vs `[[...slug]]` conflict | `doing` |
 | BUG-117 | Admin | Close session button; Stripe money hard to find | Removed close; Accounts menu → Stripe ledger / Pay creators | `doing` |
 
 ### P1 — important

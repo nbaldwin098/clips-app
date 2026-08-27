@@ -154,7 +154,7 @@ assert(existsSync(new URL('../app/playlist/[id]/page.jsx', import.meta.url)), 'p
 assert(readFileSync(new URL('../app/shorts/page.jsx', import.meta.url), 'utf8').includes("redirect('/clips')"), 'shorts redirects to clips')
 assert(readFileSync(new URL('../app/robots.js', import.meta.url), 'utf8').includes('/notifications'), 'robots disallows private surfaces')
 assert(readFileSync(new URL('../app/sectionMeta.js', import.meta.url), 'utf8').includes('noindex'), 'sectionMeta supports noindex shells')
-assert(readFileSync(new URL('../app/[[...slug]]/page.jsx', import.meta.url), 'utf8').includes('Last-resort'), 'catch-all is last-resort only')
+assert(readFileSync(new URL('../app/[...slug]/page.jsx', import.meta.url), 'utf8').includes('Last-resort'), 'catch-all is last-resort only')
 
 function isPromoLive(promo, now = Date.now()) {
   if (!promo || promo.published !== true) return false
@@ -799,6 +799,14 @@ assert(readFileSync(new URL('../app/globals.css', import.meta.url), 'utf8').incl
 assert(existsSync(new URL('../app/global-error.jsx', import.meta.url)), 'Next global-error recovers client crashes')
 assert(existsSync(new URL('../app/error.jsx', import.meta.url)), 'Next error.jsx recovers segment crashes')
 assert(readFileSync(new URL('../app/SpaShell.jsx', import.meta.url), 'utf8').includes('calabi_chunk_reload'), 'SpaShell reloads once on stale chunk errors')
+assert(existsSync(new URL('../app/[...slug]/page.jsx', import.meta.url)), 'required catch-all exists')
+assert(!existsSync(new URL('../app/[[...slug]]/page.jsx', import.meta.url)), 'optional catch-all removed (conflicts with /)')
+assert(existsSync(new URL('../app/dashboard/[section]/page.jsx', import.meta.url)), 'dashboard section route exists')
+assert(existsSync(new URL('../app/admin/[tab]/page.jsx', import.meta.url)), 'admin tab route exists')
+assert(readFileSync(new URL('../src/components/admin/AdminWithdrawPanel.jsx', import.meta.url), 'utf8').includes('../../lib/adminWithdraw'), 'admin withdraw import path is correct')
+assert(!/from 'lucide-react'/.test(readFileSync(new URL('../src/components/ProfilePage.jsx', import.meta.url), 'utf8').split('\n').find((l) => l.includes('Youtube')) || ''), 'ProfilePage does not import removed Youtube lucide icon')
+assert(!readFileSync(new URL('../src/components/ProfilePage.jsx', import.meta.url), 'utf8').includes("Youtube, Instagram"), 'ProfilePage uses SVG social glyphs')
+assert(!readFileSync(new URL('../src/components/studio/StudioSocialsPanel.jsx', import.meta.url), 'utf8').includes("from 'lucide-react'"), 'StudioSocialsPanel does not import lucide brand icons')
 const indexCss = readFileSync(new URL('../src/index.css', import.meta.url), 'utf8')
 assert(indexCss.includes('--radius-button: 0'), 'buttons use square corners globally')
 assert(appSrc.includes('migrateHashToPath'), 'old hash urls redirect to paths')
