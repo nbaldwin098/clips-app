@@ -20,9 +20,6 @@ export default function CommunityPage({ onNavigate, onOpenAuth }) {
   return (
     <div className="p-4 md:p-6 max-w-lg mx-auto">
       <PageHeader title="Community" onBack={() => onNavigate?.('home')} />
-      <p className="text-xs text-amber-400/90 mb-3 leading-relaxed">
-        Community posts are saved on this device only until cloud migration ships. Clearing site data or switching browsers will lose them.
-      </p>
       <form
         className="space-y-2 mb-4"
         onSubmit={(e) => {
@@ -33,7 +30,7 @@ export default function CommunityPage({ onNavigate, onOpenAuth }) {
           setText('')
         }}
       >
-        <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} placeholder="Share an update…" className="w-full rounded-lg border border-[#2f2f37] bg-[#1f1f23] px-3 py-2 text-sm" />
+        <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} placeholder="Share an update… (saved on this device)" className="w-full rounded-lg border border-[#2f2f37] bg-[#1f1f23] px-3 py-2 text-sm" />
         <button type="submit" className="h-9 px-3 rounded-lg bg-white text-black text-sm">Post</button>
       </form>
       <ul className="space-y-2">

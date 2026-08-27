@@ -28,7 +28,7 @@ export default function Footer({ onNavigate }) {
             {link('Create', 'create')}
             {FEATURE_ADS
               ? link('Advertise', 'advertise')
-              : link('Creator earnings', 'creator-apply')}
+              : link('Monetize', 'advertise')}
             {link('Coins', 'wallet')}
             {link('Help', 'help')}
             {link('Support', 'support')}

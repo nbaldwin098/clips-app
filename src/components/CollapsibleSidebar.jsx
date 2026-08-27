@@ -257,7 +257,7 @@ export default function CollapsibleSidebar({
               {FEATURE_ADS ? (
                 <NavBtn collapsed={collapsed} active={currentView === 'advertise' || currentView === 'advertiser-portal'} onClick={() => go('advertise')} icon={Megaphone} label="Advertise with us" />
               ) : (
-                <NavBtn collapsed={collapsed} active={currentView === 'creator-apply' || currentView === 'help'} onClick={() => go('help')} icon={Megaphone} label="How creators earn" />
+                <NavBtn collapsed={collapsed} active={currentView === 'advertise' || currentView === 'advertiser-portal'} onClick={() => go('advertise')} icon={Megaphone} label="Monetize" />
               )}
               <NavBtn collapsed={collapsed} active={currentView === 'about'} onClick={() => go('about')} icon={BookOpen} label="About" />
               <NavBtn collapsed={collapsed} active={currentView === 'help'} onClick={() => go('help')} icon={HelpCircle} label="Help" />

@@ -5,7 +5,11 @@ Grounded in `docs/BUGS.md`, `PRODUCT_BACKLOG.md`, creator studio catalog, and cu
 
 ## Progress
 
-**101 / 500** checked in-repo this batch. Blocked items (RTMP, Stripe Connect, OAuth publish, push/email, ffmpeg.wasm, native, full i18n) stay open until infra exists.
+Wave 1 shipped **UX honesty, docs, and reliability guards** — not full product features for blocked infra.
+Treat `[x]` items as “addressed in-repo for that wave,” not “RTMP/Connect/OAuth are live.”
+
+**Infra that still needs services (not more copy):** see [`docs/INFRA.md`](INFRA.md)
+(RTMP/HLS, Stripe Connect, social OAuth, push/email, ffmpeg/transcode, native stores, full i18n).
 
 ## How to use
 
