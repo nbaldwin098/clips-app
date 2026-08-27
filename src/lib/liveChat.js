@@ -27,6 +27,15 @@ export function trySendLiveChat(streamUserId, message, { actor } = {}) {
   const channelId = streamUserId || GLOBAL_LIVE_CHANNEL_ID
   const text = String(message?.text || '').trim().slice(0, 500)
   if (!text) return { ok: false, error: 'Write a message.' }
+  // Soft filter: emoji/symbol-only spam (allow a single emoji reaction).
+  const noSpace = text.replace(/\s+/g, '')
+  const withoutEmoji = noSpace.replace(
+    /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}\u{1F1E0}-\u{1F1FF}]/gu,
+    ''
+  )
+  if (noSpace.length >= 6 && withoutEmoji.length === 0) {
+    return { ok: false, error: 'Ease up on emoji-only spam.' }
+  }
   const userId = message.userId
 
   if (isGlobalLiveChannel(channelId)) {

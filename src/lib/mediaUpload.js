@@ -78,12 +78,27 @@ export function uploadFailedMessage() {
   return "Couldn't upload. Try again."
 }
 
-export function clipLimitsMessage() {
-  return `Clips must be ${MAX_CLIP_DURATION_SEC} seconds or shorter. MP4 works best on phones.`
+export function clipLimitsMessage(durationSec = null) {
+  const limit = MAX_CLIP_DURATION_SEC
+  const got = Number(durationSec)
+  if (Number.isFinite(got) && got > 0) {
+    return `This clip is ${Math.ceil(got)}s — clips must be ${limit} seconds or shorter. Trim it or upload as a video instead.`
+  }
+  return `Clips must be ${limit} seconds or shorter. MP4 works best on phones.`
 }
 
-export function videoLimitsMessage() {
-  return `Videos must be ${MAX_VIDEO_DURATION_SEC / 3600} hours or shorter.`
+export function videoLimitsMessage(durationSec = null) {
+  const hours = MAX_VIDEO_DURATION_SEC / 3600
+  const got = Number(durationSec)
+  if (Number.isFinite(got) && got > 0) {
+    const gotHours = (got / 3600).toFixed(1)
+    return `This file is about ${gotHours}h — videos must be ${hours} hours or shorter.`
+  }
+  return `Videos must be ${hours} hours or shorter.`
+}
+
+export function audioOnlyMessage() {
+  return 'This file looks audio-only. Upload a video with a picture track (MP4 works best).'
 }
 
 function bucketMissingMessage() {

@@ -21,6 +21,7 @@ import {
 import { useAuth } from '../../context/AuthContext'
 import CreatorOnboarding from '../CreatorOnboarding'
 import { lsGet, lsSet } from '../../lib/storage'
+import { liveBadgeLabel } from '../../lib/liveStatus'
 import { getCreatorContent, deleteCatalogItem, setContentVisibility } from '../../lib/contentService'
 import { getViews, getVotes, getSubscriberCount, getCreatorAnalytics } from '../../lib/engagement'
 import { creatorBalance } from '../../lib/payouts'
@@ -614,6 +615,13 @@ export default function CreatorStudio({
   const [cloudSyncBusy, setCloudSyncBusy] = useState(false)
   const [untilMs, setUntilMs] = useState(null)
   const [labTool, setLabTool] = useState(null) // 'controls' | 'stream' | null
+  const [mapTick, setMapTick] = useState(0)
+
+  // Debounce analytics map rebuilds so 12s sync ticks do not remount the bubble.
+  useEffect(() => {
+    const t = setTimeout(() => setMapTick(interactionTick + syncTick), 900)
+    return () => clearTimeout(t)
+  }, [interactionTick, syncTick])
 
   const refreshAudienceFromCloud = async () => {
     if (!user?.id || user.provider !== 'supabase') return
@@ -740,7 +748,9 @@ export default function CreatorStudio({
       untilMs: untilMs ?? Date.now(),
       sinceMs: postStartMs || undefined,
     }),
-    [user?.id, posts, selectedPostId, untilMs, postStartMs, syncTick, interactionTick]
+    // mapTick is debounced — avoid rebuilding the bubble on every sync pulse.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [user?.id, posts, selectedPostId, untilMs, postStartMs, mapTick]
   )
 
   const openPost = (c) => {
@@ -1009,7 +1019,7 @@ export default function CreatorStudio({
                   { label: 'Likes', value: formatCount(likes) },
                   { label: 'Followers', value: formatCount(followers), hint: `${formatCount(premiumSubs)} premium` },
                   { label: 'VODs', value: String(vods.length) },
-                  { label: 'Lobby', value: live?.isLive ? 'Live' : 'Off', hint: approved ? `$${balance.paid.toFixed(2)} paid` : 'Apply to earn' },
+                  { label: 'Status', value: liveBadgeLabel(live), hint: approved ? `$${balance.paid.toFixed(2)} paid` : 'Apply to earn' },
                 ]}
               />
               <div className="h-[min(78vh,820px)] min-h-[520px] overflow-hidden rounded-xl border border-zinc-800">
@@ -1020,7 +1030,7 @@ export default function CreatorStudio({
                   onSelectPost={setSelectedPostId}
                   postTitle={selectedPost?.title}
                   creator={user}
-                  untilMs={untilMs ?? Date.now()}
+                  untilMs={untilMs}
                   onUntilChange={setUntilMs}
                   postStartMs={postStartMs}
                 />
@@ -1033,8 +1043,8 @@ export default function CreatorStudio({
                   onSelectPost={setSelectedPostId}
                   range={range}
                   onRangeChange={setRange}
-                  tick={interactionTick + syncTick}
-                  untilMs={untilMs ?? Date.now()}
+                  tick={mapTick}
+                  untilMs={untilMs}
                   forcePostTab
                 />
               </div>

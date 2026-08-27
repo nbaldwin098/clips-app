@@ -265,8 +265,20 @@ export default function LiveChatPanel({
                 </span>
                 <ChatBody text={m.text} />
                 {canMod && m.kind !== 'bot' && m.userId !== channel?.userId && (
-                  <span className="ml-2 inline-flex gap-1">
-                    <button type="button" className="text-[10px] text-zinc-500 hover:text-white" onClick={() => { timeoutChatUser(streamUserId, m.userId, 60); setChatError('Timed out 60s.') }}>Timeout</button>
+                  <span className="ml-2 inline-flex flex-wrap gap-1">
+                    {[30, 60, 300, 600].map((sec) => (
+                      <button
+                        key={sec}
+                        type="button"
+                        className="text-[10px] text-zinc-500 hover:text-white"
+                        onClick={() => {
+                          timeoutChatUser(streamUserId, m.userId, sec)
+                          setChatError(`Timed out ${sec >= 60 ? `${sec / 60}m` : `${sec}s`}.`)
+                        }}
+                      >
+                        {sec < 60 ? `${sec}s` : `${sec / 60}m`}
+                      </button>
+                    ))}
                     <button type="button" className="text-[10px] text-zinc-500 hover:text-white" onClick={() => { banChatUser(streamUserId, m.userId, true); setChatError('Banned.') }}>Ban</button>
                     <button type="button" className="text-[10px] text-zinc-500 hover:text-white" onClick={() => { removeLiveChatMessage(streamUserId, m.id) }}>Delete</button>
                   </span>

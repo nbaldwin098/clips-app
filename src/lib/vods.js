@@ -132,6 +132,11 @@ export function setVodVisibility(vodId, visibility) {
 
 export function archiveEndedLive(user, liveState) {
   if (!user?.id || !liveState) return null
+  const mediaUrl = String(liveState.mediaUrl || liveState.recordingUrl || liveState.hlsUrl || '').trim()
+  const hadRecording = !!(mediaUrl || liveState.ingestConnected)
+  // No empty archive rows when ingest was off and nothing was recorded.
+  if (!hadRecording) return null
+
   const id = `vod_${user.id}_${Date.now()}`
   const started = liveState.startedAt ? new Date(liveState.startedAt).getTime() : Date.now()
   const durationSec = Math.max(0, Math.round((Date.now() - started) / 1000))
@@ -149,13 +154,14 @@ export function archiveEndedLive(user, liveState) {
     visibility,
     contentId: null,
     watchers: liveState.watchers || 0,
+    mediaUrl: mediaUrl || '',
   }
-  if (visibility === 'public' && channel.enabled && channel.handle) {
+  if (visibility === 'public' && channel.enabled && channel.handle && mediaUrl) {
     const rec = {
       id: `livevod_${id}`,
       type: 'video',
       title: vod.title,
-      description: `Past lobby from @${user.handle}. Live video ingest is not connected, so this is a record of the session — not a video file.`,
+      description: `Past broadcast from @${user.handle}.`,
       origin: 'live-vod',
       creatorId: vodChannelId(user.id),
       userId: vodChannelId(user.id),
@@ -164,7 +170,7 @@ export function archiveEndedLive(user, liveState) {
       publishedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
       durationSec,
-      mediaUrl: '',
+      mediaUrl,
       hosted: false,
       views: 0,
       tags: ['vod', 'live'],
@@ -192,7 +198,7 @@ export function archiveEndedLive(user, liveState) {
         duration_sec: vod.durationSec,
         visibility: vod.visibility,
         category: vod.category || null,
-        meta: { watchers: vod.watchers || 0, contentId: vod.contentId || null },
+        meta: { watchers: vod.watchers || 0, contentId: vod.contentId || null, mediaUrl: vod.mediaUrl || '' },
         created_at: vod.endedAt,
       })
     }).catch(() => {})

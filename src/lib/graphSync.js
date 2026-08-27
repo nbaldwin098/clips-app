@@ -561,10 +561,21 @@ export async function endLiveLobby(userId) {
         id: userId,
         handle: liveState.handle || '',
       }
-      archiveEndedLive(user, { ...liveState, isLive: false })
+      archiveEndedLive(user, {
+        ...liveState,
+        isLive: false,
+        watcherIds: [],
+        watchers: 0,
+      })
       try {
-        lsSet(`live_state_${userId}`, { ...liveState, isLive: false, endedAt: new Date().toISOString() })
+        lsSet(`live_state_${userId}`, null)
       } catch {}
+      try {
+        const board = (lsGet('live_board', []) || []).filter((b) => b.userId !== userId)
+        lsSet('live_board', board)
+      } catch {}
+    } else {
+      try { lsSet(`live_state_${userId}`, null) } catch {}
       try {
         const board = (lsGet('live_board', []) || []).filter((b) => b.userId !== userId)
         lsSet('live_board', board)

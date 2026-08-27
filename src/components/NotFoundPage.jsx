@@ -1,4 +1,4 @@
-import { Home, Compass } from 'lucide-react'
+import { Home, Compass, Clapperboard, Plus } from 'lucide-react'
 
 export default function NotFoundPage({ onNavigate }) {
   return (
@@ -25,6 +25,22 @@ export default function NotFoundPage({ onNavigate }) {
           >
             <Compass className="h-4 w-4" />
             Search
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate?.('clips')}
+            className="inline-flex items-center gap-2 h-10 px-5 rounded-xl border border-zinc-800 bg-[#121218] text-sm font-medium text-zinc-300 hover:bg-zinc-800"
+          >
+            <Clapperboard className="h-4 w-4" />
+            Clips
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate?.('create')}
+            className="inline-flex items-center gap-2 h-10 px-5 rounded-xl border border-zinc-800 bg-[#121218] text-sm font-medium text-zinc-300 hover:bg-zinc-800"
+          >
+            <Plus className="h-4 w-4" />
+            Create
           </button>
         </div>
       </div>

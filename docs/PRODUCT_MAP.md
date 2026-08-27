@@ -21,15 +21,19 @@
 | Import / Upload modals | Sign in |
 | dashboard / wallet | AuthRequired |
 | settings | Profile / security / stream / monetization |
+| messages / admin | Auth + role gates |
 
 ## Stripe
 
-- `VITE_STRIPE_PUBLISHABLE_KEY` on Render (pk_test or pk_live)
-- Secret key server-only later
-- Never commit sk_ keys
+- Publishable: Render `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` or `VITE_STRIPE_PUBLISHABLE_KEY`
+- Secret: Supabase Edge Function `STRIPE_SECRET_KEY` only
+- Never commit `sk_` keys; do not use Payment Links
 
-## Render
+## Render (production)
 
-- Static Site
+- **Node web service** (not Static Site) — required for App Router SSR / SEO
 - Build: `npm install && npm run build`
-- Publish: `dist`
+- Start: `npm run start`
+- Blueprint: `render.yaml`
+- Env: see [`docs/RENDER_ENV.md`](RENDER_ENV.md)
+- Deploy steps: [`docs/DEPLOY_CHECKLIST.md`](DEPLOY_CHECKLIST.md)

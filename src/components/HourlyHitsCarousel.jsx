@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { getHourlyHits, nextFeaturedRefreshAt } from '../lib/hourlyHits'
 import { creatorDisplayName } from '../lib/uiFormat'
 import { useContentSyncTick } from '../lib/useContentSync'
+import ChannelAvatar from './ChannelAvatar'
 
 function Thumb({ item, className }) {
   const src = item?.thumbUrl || item?.mosaicThumb || item?.mediaUrl || ''
@@ -105,7 +106,19 @@ export default function HourlyHitsCarousel({ onPlayItem, onOpenPic, onOpenProfil
               <Thumb item={current} className="absolute inset-0 h-full w-full group-hover:scale-[1.02] transition-transform duration-500" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
             </button>
-            <div className="absolute bottom-0 inset-x-0 p-4 sm:p-5 flex items-center gap-2 min-w-0 z-10 pointer-events-none">
+            <div className="absolute bottom-0 inset-x-0 p-4 sm:p-5 flex items-center gap-2.5 min-w-0 z-10 pointer-events-none">
+              <button
+                type="button"
+                onClick={openProfile}
+                className="pointer-events-auto shrink-0 rounded-full ring-2 ring-white/20 hover:ring-white/50"
+                aria-label={`Open @${String(current.handle || 'creator').replace(/^@/, '')} profile`}
+              >
+                <ChannelAvatar
+                  src={current.avatarUrl}
+                  name={creatorDisplayName(current) || current.handle}
+                  size={36}
+                />
+              </button>
               <button
                 type="button"
                 onClick={openProfile}

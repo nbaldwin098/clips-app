@@ -326,17 +326,25 @@ export default function StudioRealtimeAnalytics({
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              <Kpi label="Views" value={formatCount(postSnap.views)} />
+              <Kpi label="Total views" value={formatCount(postSnap.views)} hint="All plays counted" />
+              <Kpi
+                label="Unique people"
+                value={formatCount(postSnap.people)}
+                hint="Distinct viewers in events"
+              />
               <Kpi label="Likes" value={formatCount(postSnap.likes)} />
               <Kpi label="Comments" value={formatCount(postSnap.comments)} />
               <Kpi label="Shares" value={formatCount(postSnap.shares)} />
-              <Kpi label="Engagement" value={`${postSnap.engagementRate}%`} hint="Likes+comments+shares / views" />
               <Kpi
                 label="Last hour"
                 value={formatCount(postSnap.lastHourViews)}
                 tone={postSnap.lastHourViews ? 'hot' : 'default'}
               />
             </div>
+            <p className="text-[11px] text-zinc-600 leading-relaxed">
+              <span className="text-zinc-400 font-medium">Views glossary:</span>{' '}
+              Total views count every play. Unique people count distinct accounts (or guest ids) that interacted — not inflated ad RPM or estimated revenue.
+            </p>
 
             <div className="rounded-xl border border-zinc-800 bg-[#0a0a0e] p-3">
               <p className="text-xs font-semibold text-zinc-300 mb-1">Post activity · 24h</p>
