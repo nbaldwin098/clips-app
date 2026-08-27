@@ -21,6 +21,11 @@ export function getSupabaseConfig() {
 export function isSupabaseConfigured() {
   return getSupabaseConfig().configured
 }
+
+/** Explicit fail-loud entry for boot (console.error once via getSupabaseConfig). */
+export function warnIfSupabaseMissing() {
+  return !isSupabaseConfigured()
+}
 let _client = null
 let _clientPromise = null
 export async function getSupabase() {

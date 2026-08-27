@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from 'react'
 import { Sparkles, Radio } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getStableHomeFeed, getStableFollowingFeed, getWatchItem } from '../lib/contentService'
+import { getPicsFeed } from '../lib/picsService'
 import { listContinueWatching } from '../lib/watchProgress'
 import { getActivePromotion, recordPromoClick } from '../lib/promotions'
 import MediaShelves from './MediaShelves'
@@ -28,7 +29,14 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onOpenProfile, onNavig
   const syncTick = useContentSyncTick()
   const hydrated = isCatalogHydrated()
   const [chip, setChip] = useState('all')
-  const items = useMemo(() => getStableHomeFeed(user?.id || null), [user?.id, syncTick])
+  const items = useMemo(() => {
+    const feed = getStableHomeFeed(user?.id || null)
+    // Home shelf is video/clip-first; merge public pics so the Pics chip is honest.
+    const pics = (getPicsFeed() || []).map((p) => ({ ...p, type: 'pic' }))
+    const seen = new Set(feed.map((i) => i.id))
+    const extra = pics.filter((p) => p?.id && !seen.has(p.id))
+    return [...feed, ...extra]
+  }, [user?.id, syncTick])
   const following = useMemo(() => getStableFollowingFeed(user?.id || null), [user?.id, syncTick])
   const promo = useMemo(() => getActivePromotion(), [syncTick])
   const featured = useMemo(() => {

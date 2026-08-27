@@ -31,9 +31,7 @@ export default function SpaShell() {
       >
         Skip to content
       </a>
-      <div id="main-content">
-        <App />
-      </div>
+      <App />
     </NextNavContext.Provider>
   )
 }

@@ -662,12 +662,6 @@ function AppShell() {
 
   return (
     <div className={`${lockStage ? 'h-dvh overflow-hidden' : 'min-h-screen'} bg-[#000000] text-zinc-100 flex flex-col selection:bg-white selection:text-black`}>
-      <a
-        href="#main-content"
-        className="skip-to-content sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-[100] focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:font-semibold focus:text-black"
-      >
-        Skip to content
-      </a>
       <ToastLiveRegion />
       <StreamingNavbar
         onNavigate={navigate}
