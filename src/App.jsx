@@ -143,14 +143,52 @@ function AppShell() {
     const titles = {
       home: 'Recommended',
       clips: 'Shorts',
+      shorts: 'Shorts',
       pics: 'Pics',
       live: 'Live',
       news: 'News',
+      shop: 'Shop',
+      marketplace: 'Shop',
       explore: 'Explore',
-      watch: routeId ? 'Watch' : 'Watch',
+      creators: 'Top creators',
+      create: 'Create',
+      following: 'Following',
+      subscriptions: 'Subscriptions',
+      history: 'History',
+      'watch-again': 'Watch again',
+      'watch-later': 'Watch later',
+      liked: 'Liked',
+      hearts: 'Hearts',
+      playlists: 'Playlists',
+      library: 'Library',
+      messages: 'Messages',
+      notifications: 'Notifications',
+      settings: 'Settings',
+      wallet: 'Wallet',
+      'calabi-cash': 'Wallet',
+      rewards: 'Wallet',
+      help: 'Help',
+      about: 'About',
+      support: 'Support',
+      appeals: 'Appeals',
+      stats: 'Stats',
+      api: 'API',
+      seller: 'Seller portal',
+      'seller-portal': 'Seller portal',
+      advertise: 'Monetize',
+      'advertiser-portal': 'Monetize',
+      admin: 'Admin',
+      watch: 'Watch',
       profile: profileTarget.handle ? `@${profileTarget.handle}` : 'Profile',
       checkout: 'Premium',
       dashboard: 'Creator Studio',
+      analytics: 'Analytics',
+      vods: 'VODs',
+      verify: 'Get verified',
+      'legal-tos': 'Terms',
+      'legal-privacy': 'Privacy',
+      'legal-creator': 'Creator Agreement',
+      'legal-community': 'Community Guidelines',
     }
     document.title = titles[view] ? `${titles[view]} · calabi` : 'calabi'
   }, [view, routeId, profileTarget.handle])
@@ -477,26 +515,22 @@ function AppShell() {
     if (!KNOWN_VIEWS.has(view)) return <NotFoundPage onNavigate={navigate} />
     const needsAuth = (
       view === 'dashboard'
-      || view === 'wallet'
       || view === 'settings'
       || view === 'channel'
       || view === 'analytics'
       || view === 'studio-tools'
       || view === 'calabi-studio'
-      || view === 'calabi-cash'
       || view === 'vods'
       || view === 'verify'
     )
     if (needsAuth && !isAuthenticated) {
       const titles = {
         dashboard: 'Creator Studio',
-        wallet: 'Wallet',
         settings: 'Settings',
         channel: 'Channel',
         analytics: 'Analytics',
         'studio-tools': 'Studio',
         'calabi-studio': 'Calabi Studio',
-        'calabi-cash': 'Coins',
         vods: 'VODs',
         verify: 'Verification',
       }
@@ -680,7 +714,8 @@ function AppShell() {
   }
 
   const isLiveView = view === 'live'
-  const studioChrome = view === 'dashboard' || view === 'analytics' || view === 'wallet' || view === 'vods' || view === 'verify' || view === 'settings'
+  // Immersive creator shells keep their own TailAdmin nav; keep site rail for wallet/settings.
+  const studioChrome = view === 'dashboard' || view === 'analytics' || view === 'vods' || view === 'verify'
   const lockStage = view === 'clips' || view === 'shorts' || view === 'pics' || studioChrome
 
   // Always bound to the viewport. Inside Next's fixed SpaShell overlay, min-h-screen

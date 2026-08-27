@@ -155,7 +155,7 @@ export default function CollapsibleSidebar({
             {!collapsed && (
               <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-1 flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#eb0400]" />
-                {liveNow.some(isOnAir) ? 'Live' : 'Lobby'} ({liveNow.length})
+                {liveNow.some(isOnAir) ? t('live.onNow') : t('live.lobby')} ({liveNow.length})
               </p>
             )}
             {liveNow.map((s) => (
@@ -232,43 +232,43 @@ export default function CollapsibleSidebar({
         </div>
 
         <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
-          {!collapsed && <p className="px-2.5 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Library</p>}
-          <NavBtn collapsed={collapsed} active={currentView === 'history'} onClick={() => go('history')} icon={History} label="History" />
-          <NavBtn collapsed={collapsed} active={currentView === 'watch-again'} onClick={() => go('watch-again')} icon={RotateCcw} label="Watch again" />
-          <NavBtn collapsed={collapsed} active={currentView === 'watch-later'} onClick={() => go('watch-later')} icon={Clock} label="Watch later" />
-          <NavBtn collapsed={collapsed} active={currentView === 'liked'} onClick={() => go('liked')} icon={ThumbsUp} label="Liked" />
-          <NavBtn collapsed={collapsed} active={currentView === 'hearts'} onClick={() => go('hearts')} icon={Heart} label="Hearts" />
-          <NavBtn collapsed={collapsed} active={currentView === 'playlists'} onClick={() => go('playlists')} icon={ListVideo} label="Playlists" />
+          {!collapsed && <p className="px-2.5 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">{t('nav.library')}</p>}
+          <NavBtn collapsed={collapsed} active={currentView === 'history'} onClick={() => go('history')} icon={History} label={t('nav.history')} />
+          <NavBtn collapsed={collapsed} active={currentView === 'watch-again'} onClick={() => go('watch-again')} icon={RotateCcw} label={t('nav.watchAgain')} />
+          <NavBtn collapsed={collapsed} active={currentView === 'watch-later'} onClick={() => go('watch-later')} icon={Clock} label={t('nav.watchLater')} />
+          <NavBtn collapsed={collapsed} active={currentView === 'liked'} onClick={() => go('liked')} icon={ThumbsUp} label={t('nav.liked')} />
+          <NavBtn collapsed={collapsed} active={currentView === 'hearts'} onClick={() => go('hearts')} icon={Heart} label={t('nav.hearts')} />
+          <NavBtn collapsed={collapsed} active={currentView === 'playlists'} onClick={() => go('playlists')} icon={ListVideo} label={t('nav.playlists')} />
         </div>
 
         <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
           {collapsed ? (
-            <button type="button" onClick={() => setMoreOpen((v) => !v)} className={itemCls(false, true)} title="More">
+            <button type="button" onClick={() => setMoreOpen((v) => !v)} className={itemCls(false, true)} title={t('nav.more')}>
               {moreOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
             </button>
           ) : (
             <button type="button" onClick={() => setMoreOpen((v) => !v)} className={itemCls(false, false)}>
               {moreOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-              <span>More</span>
+              <span>{t('nav.more')}</span>
             </button>
           )}
           {moreOpen && (
             <div className={cn('space-y-0.5', collapsed ? '' : 'ml-2 border-l border-[#23232c] pl-2')}>
-              <NavBtn collapsed={collapsed} active={currentView === 'seller' || currentView === 'seller-portal'} onClick={() => go('seller')} icon={Store} label="Seller portal" />
-              <NavBtn collapsed={collapsed} active={currentView === 'stats'} onClick={() => go('stats')} icon={Activity} label="Stats" />
-              <NavBtn collapsed={collapsed} active={currentView === 'api'} onClick={() => go('api')} icon={Code2} label="API" />
-              <NavBtn collapsed={collapsed} active={currentView === 'support'} onClick={() => go('support')} icon={LifeBuoy} label="Support" />
+              <NavBtn collapsed={collapsed} active={currentView === 'seller' || currentView === 'seller-portal'} onClick={() => go('seller')} icon={Store} label={t('nav.seller')} />
+              <NavBtn collapsed={collapsed} active={currentView === 'stats'} onClick={() => go('stats')} icon={Activity} label={t('nav.stats')} />
+              <NavBtn collapsed={collapsed} active={currentView === 'api'} onClick={() => go('api')} icon={Code2} label={t('nav.api')} />
+              <NavBtn collapsed={collapsed} active={currentView === 'support'} onClick={() => go('support')} icon={LifeBuoy} label={t('nav.support')} />
               {FEATURE_ADS ? (
-                <NavBtn collapsed={collapsed} active={currentView === 'advertise' || currentView === 'advertiser-portal'} onClick={() => go('advertise')} icon={Megaphone} label="Advertise with us" />
+                <NavBtn collapsed={collapsed} active={currentView === 'advertise' || currentView === 'advertiser-portal'} onClick={() => go('advertise')} icon={Megaphone} label={t('nav.advertise')} />
               ) : (
-                <NavBtn collapsed={collapsed} active={currentView === 'advertise' || currentView === 'advertiser-portal'} onClick={() => go('advertise')} icon={Megaphone} label="Monetize" />
+                <NavBtn collapsed={collapsed} active={currentView === 'advertise' || currentView === 'advertiser-portal'} onClick={() => go('advertise')} icon={Megaphone} label={t('nav.monetize')} />
               )}
-              <NavBtn collapsed={collapsed} active={currentView === 'about'} onClick={() => go('about')} icon={BookOpen} label="About" />
-              <NavBtn collapsed={collapsed} active={currentView === 'help'} onClick={() => go('help')} icon={HelpCircle} label="Help" />
-              <NavBtn collapsed={collapsed} active={currentView === 'legal-tos'} onClick={() => go('legal-tos')} icon={FileText} label="Terms of Service" />
-              <NavBtn collapsed={collapsed} active={currentView === 'legal-privacy'} onClick={() => go('legal-privacy')} icon={Shield} label="Privacy Policy" />
-              <NavBtn collapsed={collapsed} active={currentView === 'legal-creator'} onClick={() => go('legal-creator')} icon={Scale} label="Creator Agreement" />
-              <NavBtn collapsed={collapsed} active={currentView === 'legal-community'} onClick={() => go('legal-community')} icon={Users} label="Community Guidelines" />
+              <NavBtn collapsed={collapsed} active={currentView === 'about'} onClick={() => go('about')} icon={BookOpen} label={t('nav.about')} />
+              <NavBtn collapsed={collapsed} active={currentView === 'help'} onClick={() => go('help')} icon={HelpCircle} label={t('nav.help')} />
+              <NavBtn collapsed={collapsed} active={currentView === 'legal-tos'} onClick={() => go('legal-tos')} icon={FileText} label={t('nav.tos')} />
+              <NavBtn collapsed={collapsed} active={currentView === 'legal-privacy'} onClick={() => go('legal-privacy')} icon={Shield} label={t('nav.privacy')} />
+              <NavBtn collapsed={collapsed} active={currentView === 'legal-creator'} onClick={() => go('legal-creator')} icon={Scale} label={t('nav.creatorAgreement')} />
+              <NavBtn collapsed={collapsed} active={currentView === 'legal-community'} onClick={() => go('legal-community')} icon={Users} label={t('nav.community')} />
             </div>
           )}
         </div>

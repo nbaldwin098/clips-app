@@ -83,7 +83,10 @@ export default function StreamingNavbar({
         setMenuOpen(false)
         setLangOpen(false)
       }
-      if (guestRef.current && !guestRef.current.contains(e.target)) setGuestOpen(false)
+      if (guestRef.current && !guestRef.current.contains(e.target)) {
+        setGuestOpen(false)
+        setLangOpen(false)
+      }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
@@ -267,14 +270,14 @@ export default function StreamingNavbar({
               <button
                 type="button"
                 data-avatar-btn
-                onClick={() => setGuestOpen((o) => !o)}
+                onClick={() => { setGuestOpen((o) => !o); setLangOpen(false) }}
                 className="flex h-9 w-9 items-center justify-center rounded-full border border-[#3ea6ff]/40 text-[#3ea6ff] hover:bg-[#3ea6ff]/10 shrink-0"
                 aria-label={t('nav.account')}
               >
                 <CircleUserRound className="h-5 w-5" />
               </button>
               {guestOpen ? (
-                <div className="absolute right-0 mt-2 w-44 border border-[#272727] bg-[#0f0f0f] shadow-2xl py-1 z-50">
+                <div className="absolute right-0 mt-2 w-64 border border-[#272727] bg-[#0f0f0f] shadow-2xl py-1 z-50 max-h-[min(80vh,520px)] overflow-y-auto">
                   <ProfileRow
                     icon={CircleUserRound}
                     label={t('common.signIn')}
@@ -283,6 +286,29 @@ export default function StreamingNavbar({
                       onOpenAuth?.()
                     }}
                   />
+                  <Divider />
+                  <ProfileRow
+                    icon={Languages}
+                    label={`${t('i18n.language')}: ${localeLabel}`}
+                    onClick={() => setLangOpen((o) => !o)}
+                  />
+                  {langOpen ? (
+                    <div className="border-y border-[#272727] bg-[#121212] py-1">
+                      {locales.map((l) => (
+                        <button
+                          key={l.id}
+                          type="button"
+                          onClick={() => pickLanguage(l.id)}
+                          className={`w-full flex items-center gap-2 px-3.5 py-1.5 text-xs text-left hover:bg-[#272727] ${
+                            locale === l.id ? 'bg-[#1a1a1a] text-white' : 'text-zinc-200'
+                          }`}
+                        >
+                          <span className="flex-1">{l.label}</span>
+                          {locale === l.id ? <Check className="h-3.5 w-3.5 text-zinc-300" /> : null}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
             </div>

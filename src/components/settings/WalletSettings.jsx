@@ -68,12 +68,27 @@ export default function WalletSettings({ onNavigate, onOpenAuth, initialTab = nu
   const coins = getCoinBalance(user?.id)
 
   if (!isAuthenticated) {
+    const packs = listCoinPacks()
     return (
-      <AuthRequired
-        title="Wallet"
-        description="Sign in to buy coins and manage payment methods."
-        onOpenAuth={onOpenAuth}
-      />
+      <div className="mx-auto max-w-3xl px-4 py-8 space-y-6">
+        <div>
+          <h1 className="text-xl font-semibold text-white">Wallet</h1>
+          <p className="mt-1 text-sm text-zinc-400">Sign in to buy coins and manage payment methods.</p>
+        </div>
+        <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
+          {packs.map((p) => (
+            <div key={p.id} className="border border-zinc-700/80 bg-zinc-900/90 p-4 text-center">
+              <p className="text-sm font-bold text-white">{p.label}</p>
+              <p className="mt-2 text-base font-bold text-amber-300">${Number(p.usd).toFixed(2)}</p>
+            </div>
+          ))}
+        </div>
+        <AuthRequired
+          title="Sign in to buy"
+          description="Cloud account required to purchase Coins."
+          onOpenAuth={onOpenAuth}
+        />
+      </div>
     )
   }
 

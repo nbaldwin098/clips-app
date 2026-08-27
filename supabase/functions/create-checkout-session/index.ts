@@ -65,8 +65,8 @@ Deno.serve(async (req) => {
 
   const kind = String(body.kind || 'premium')
   const listCents = Math.round(Number(body.amountCents) || 0)
-  // Coin packs start at $0.99; tips/premium stay ≥ $1.00
-  const minCents = (kind === 'coin_pack' || kind === 'calabi_cash') ? 99 : 100
+  // Coin packs start at $1.99; tips/premium stay ≥ $1.00
+  const minCents = (kind === 'coin_pack' || kind === 'calabi_cash') ? 199 : 100
   if (!Number.isFinite(listCents) || listCents < minCents) {
     return json({ error: `Minimum charge is $${(minCents / 100).toFixed(2)}.` }, 400)
   }

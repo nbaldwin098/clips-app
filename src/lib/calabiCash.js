@@ -23,7 +23,7 @@ import {
 
 /** Coin packs (USD → coins). No Cash. */
 export const COIN_PACKS = [
-  { id: 'c100', usd: 0.99, coins: 100, label: '100 Coins', stack: 1 },
+  { id: 'c200', usd: 1.99, coins: 200, label: '200 Coins', stack: 1 },
   { id: 'c550', usd: 4.49, coins: 550, label: '550 Coins', stack: 2, badge: 'Popular' },
   { id: 'c1350', usd: 9.99, coins: 1350, label: '1,350 Coins', stack: 3 },
   { id: 'c3250', usd: 19.99, coins: 3250, label: '3,250 Coins', stack: 4 },
@@ -84,6 +84,9 @@ export function listCoinPacks() {
 }
 
 export function getTierById(id) {
+  if (!id) return null
+  // Legacy Stripe returns may still carry the retired $0.99 / 100 pack id.
+  if (id === 'c100') return COIN_PACKS.find((p) => p.id === 'c200') || null
   return COIN_PACKS.find((p) => p.id === id) || null
 }
 
