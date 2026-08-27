@@ -53,10 +53,14 @@ export default function AdminSetup() {
             Open SQL Editor
           </a>
           , paste one script, then Run. Do not type the file name into the box.
+          Same scripts live under <code className="text-zinc-300">supabase/migrations/</code>
+          — Admin Setup is the copy-paste path; SQL Editor is fine for greenfield
+          (see <code className="text-zinc-300">docs/DEPLOY_CHECKLIST.md</code>).
         </p>
         <p className="text-xs text-amber-400/90">
           Start with <strong className="text-amber-300">0001 → 0004</strong> if you have never set up this project.
           Error <code className="text-amber-200">42P01 … profiles does not exist</code> means 0004 was skipped — run 0004, then re-run the script that failed (e.g. 0019 News).
+          Latest listed: <strong className="text-amber-300">0022</strong> (DMs).
         </p>
         <p className="text-xs text-zinc-500">
           After 0004, promote yourself once (replace the UUID with Authentication → Users → your id):
@@ -72,14 +76,37 @@ export default function AdminSetup() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-white">Site paths</h2>
+        <h2 className="text-sm font-semibold text-white">Render (Node)</h2>
         <p className="text-sm text-zinc-400">
-          calabi.us is a single-page app. Render must rewrite every missing path to index.html, or /clips, /watch/…, and /about return Not Found. In the static site: Redirects/Rewrites → add this rewrite (or apply the repo Blueprint).
+          Production is a <strong className="text-zinc-200">Node web service</strong> running Next.js
+          (<code className="text-zinc-300">npm run build</code> + <code className="text-zinc-300">npm run start</code>),
+          not a Static Site. SPA path rewrites to <code className="text-zinc-300">index.html</code> are not used.
+          Env checklist: <code className="text-zinc-300">docs/RENDER_ENV.md</code>. Health: <code className="text-zinc-300">/api/health</code>.
         </p>
         <CopyBlock
-          title="Render rewrite"
+          title="Render start (Node)"
           preview
-          text={'Source: /*\nDestination: /index.html\nAction: Rewrite'}
+          text={'Build: npm install && npm run build\nStart: npm run start\nBlueprint: render.yaml'}
+        />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold text-white">CS macros & chargebacks</h2>
+        <p className="text-sm text-zinc-400">
+          Coins/Orders reply templates and chargeback wording live in{' '}
+          <code className="text-zinc-300">docs/SUPPORT_MACROS.md</code>. Escrow timers:{' '}
+          <code className="text-zinc-300">docs/ESCROW_TIMEOUT_POLICY.md</code>. Stripe incidents:{' '}
+          <code className="text-zinc-300">docs/RUNBOOK_STRIPE_WEBHOOK.md</code>.
+        </p>
+        <CopyBlock
+          title="Coins missing after pay (short)"
+          preview
+          text={'Thanks — Coins credit when Checkout returns to calabi. Reply with account email, approx time/amount, and Stripe receipt if you have it. We will match the Payment and credit the ledger if the return page was closed early.'}
+        />
+        <CopyBlock
+          title="Chargeback hold (short)"
+          preview
+          text={'We received a card dispute. Related Coins may be reversed and creator payouts held until Stripe closes the case. If accidental, withdraw the dispute with your bank and tell us.'}
         />
       </section>
 

@@ -5,6 +5,7 @@
 import { lsGet, lsSet } from './storage'
 import { getSupabase, isSupabaseConfigured } from './supabaseClient'
 import { notifyContentChanged } from './contentSync'
+import { FEATURE_ADS } from './featureFlags'
 
 const LIST_KEY = 'clips_site_promos'
 const DISMISS_KEY = 'clips_promo_dismissed'
@@ -45,17 +46,29 @@ export const PROMO_PRESETS = [
     featureContentId: '',
     placement: 'banner',
   },
-  {
-    id: 'advertise',
-    name: 'Advertise',
-    headline: 'Advertise on calabi',
-    body: 'Apply to run a real campaign. Empty inventory never shows sample ads.',
-    ctaLabel: 'Advertise',
-    destView: 'advertise',
-    destId: '',
-    featureContentId: '',
-    placement: 'banner',
-  },
+  ...(FEATURE_ADS
+    ? [{
+        id: 'advertise',
+        name: 'Advertise',
+        headline: 'Advertise on calabi',
+        body: 'Apply to run a real campaign when inventory is live.',
+        ctaLabel: 'Advertise',
+        destView: 'advertise',
+        destId: '',
+        featureContentId: '',
+        placement: 'banner',
+      }]
+    : [{
+        id: 'monetize',
+        name: 'Monetize',
+        headline: 'Tips, premium, and Coins — no ads',
+        body: 'calabi does not sell ad inventory. Creators earn through tips, memberships, and Coins.',
+        ctaLabel: 'How monetization works',
+        destView: 'help',
+        destId: '',
+        featureContentId: '',
+        placement: 'banner',
+      }]),
   {
     id: 'clips-pics',
     name: 'Clips + Pics',

@@ -166,6 +166,9 @@ export default function StatsPage({ onNavigate }) {
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-8">
       <PageHeader title="Platform Stats" onBack={() => onNavigate?.('home')} />
+      <p className="text-xs text-zinc-500 mb-3">
+        Disclaimer: likes and dislikes still read this browser’s localStorage engagement map. Cloud catalog and the bubble map are the source of truth for posts and audience — not a full analytics export.
+      </p>
 
       <SiteBubbleMap
         videos={numVideos}

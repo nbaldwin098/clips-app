@@ -1,5 +1,6 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { warnIfSupabaseMissing } from './lib/supabaseClient'
 import ErrorBoundary from './components/ErrorBoundary'
 import StreamingNavbar from './components/StreamingNavbar'
 import CollapsibleSidebar from './components/CollapsibleSidebar'
@@ -61,9 +62,12 @@ import { parseRoute, pushHash, migrateHashToPath, buildHash } from './lib/routes
 import { useNextNav } from './lib/NextNavContext'
 import { syncPromotionsFromCloud } from './lib/promotions'
 import PromoBanner from './components/PromoBanner'
+import EnvConfigBanner from './components/EnvConfigBanner'
+import ToastLiveRegion from './components/ToastLiveRegion'
 import { claimStripeReturn } from './lib/tips'
 import { membershipReturnPaid } from './lib/stripeConfig'
 import { addPremiumSub } from './lib/engagement'
+import { isPlatformOwner, isAdminSession } from './lib/moderation'
 
 const CreatorStudio = lazy(() => import('./components/studio/CreatorStudio'))
 const WatchPage = lazy(() => import('./components/WatchPage'))
@@ -110,6 +114,10 @@ function AppShell() {
   const [chatCollapsed, setChatCollapsed] = useState(() => lsGet('chat_collapsed', false) === true)
   const [mobileChatOpen, setMobileChatOpen] = useState(false)
   const [focusedLiveStream, setFocusedLiveStream] = useState(null)
+
+  useEffect(() => {
+    warnIfSupabaseMissing()
+  }, [])
 
   useEffect(() => {
     if (isAuthenticated && user?.id) startSession(user.id)
@@ -183,8 +191,12 @@ function AppShell() {
   }, [user])
 
   const applyRoute = () => {
-    const { kind, id, params } = parseRoute()
-    setRouteParams(params || {})
+    const { kind, id: rawRouteId, params } = parseRoute()
+    // Never stash objects in routeId — coerce to string id only.
+    const id = rawRouteId && typeof rawRouteId === 'object'
+      ? String(rawRouteId.id || '')
+      : String(rawRouteId || '')
+    setRouteParams(params && typeof params === 'object' ? params : {})
     // Bare calabi.us/<id> (and /content/<id>) → open the right player by type.
     if ((kind === 'content' || kind === 'v') && id) {
       setMiniItem(null)
@@ -327,9 +339,9 @@ function AppShell() {
       return
     }
     setMiniItem(null)
-    setRouteId(item.id)
+    setRouteId(String(item.id || ''))
     setView('watch')
-    goPath('content', item.id)
+    goPath('content', String(item.id || ''))
     try { window.scrollTo({ top: 0, behavior: 'smooth' }) } catch {}
   }
 
@@ -475,7 +487,13 @@ function AppShell() {
       }
       return <AuthRequired title={titles[view] || 'Sign in'} description="Sign in." onOpenAuth={openAuth} />
     }
-    if (view === 'admin') return <AdminPortal onNavigate={navigate} />
+    if (view === 'admin') {
+      // Signed-in non-owners never see Admin UI (navbar already hides the link).
+      if (user && !isPlatformOwner(user) && !isAdminSession(user)) {
+        return <NotFoundPage onNavigate={navigate} />
+      }
+      return <AdminPortal onNavigate={navigate} />
+    }
 
     switch (view) {
       case 'home': return <HomeFeed onPlayItem={openWatch} onOpenPic={openPic} onOpenProfile={openProfile} onNavigate={navigate} />
@@ -644,6 +662,7 @@ function AppShell() {
 
   return (
     <div className={`${lockStage ? 'h-dvh overflow-hidden' : 'min-h-screen'} bg-[#000000] text-zinc-100 flex flex-col selection:bg-white selection:text-black`}>
+      <ToastLiveRegion />
       <StreamingNavbar
         onNavigate={navigate}
         onOpenAuth={openAuth}
@@ -655,6 +674,7 @@ function AppShell() {
           goPath('explore', '', q?.trim() ? { q: q.trim() } : null)
         }}
       />
+      <EnvConfigBanner />
       <PromoBanner onNavigate={navigate} onOpenWatch={openWatch} />
 
       <div className="flex flex-1 min-h-0 relative">
@@ -669,7 +689,11 @@ function AppShell() {
           />
         ) : null}
 
-        <main className={`flex-1 min-h-0 min-w-0 bg-[#000000] ${lockStage ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className={`flex-1 min-h-0 min-w-0 bg-[#000000] ${lockStage ? 'overflow-hidden' : 'overflow-y-auto'}`}
+        >
           <Suspense fallback={<div className="p-8 text-sm text-zinc-500">Loading…</div>}>
             {renderMain()}
           </Suspense>

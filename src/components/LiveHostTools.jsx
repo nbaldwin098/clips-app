@@ -24,7 +24,7 @@ import { raidToStream } from '../lib/liveRaids'
 import { listEscrow, markRequestFulfilled } from '../lib/donationEscrow'
 import { VIEWER_ACTIONS, triggerViewerAction, listViewerActions } from '../lib/viewerActions'
 import { getCoinBalance } from '../lib/calabiCash'
-import { getMultiStreamDest, setMultiStreamDest, queueAiHighlight } from '../lib/socialConnects'
+import { getMultiStreamDest, setMultiStreamDest } from '../lib/socialConnects'
 import { lsGet } from '../lib/storage'
 import CoinIcon from './CoinIcon'
 
@@ -359,7 +359,7 @@ export default function LiveHostTools({ focusedStream, liveNow = [], onOpenCash 
       {isHost ? (
         <section className="space-y-2">
           <p className="text-xs font-semibold text-zinc-300">Multi-stream destinations</p>
-          <p className="text-[11px] text-zinc-500">Broadcast to calabi + YouTube + TikTok at once when ingest/OAuth are connected. Unify chats in one UI.</p>
+          <p className="text-[11px] text-zinc-500">Broadcast to calabi + YouTube + TikTok at once when ingest/OAuth are connected. Unify chats in one UI. Auto AI highlight clips are not available yet.</p>
           <div className="flex flex-wrap gap-3 text-[11px] text-zinc-300">
             {['calabi', 'youtube', 'tiktok', 'unifyChat'].map((k) => (
               <label key={k} className="flex items-center gap-1">
@@ -372,16 +372,6 @@ export default function LiveHostTools({ focusedStream, liveNow = [], onOpenCash 
               </label>
             ))}
           </div>
-          <button
-            type="button"
-            className="h-8 px-3 rounded border border-zinc-600 text-xs"
-            onClick={() => {
-              const r = queueAiHighlight({ userId: user.id, streamId: hostId, label: 'Auto clip' })
-              setNote(r.ok ? 'Clip queued for connected socials' : r.error)
-            }}
-          >
-            Clip → socials
-          </button>
         </section>
       ) : null}
     </div>

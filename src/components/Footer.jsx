@@ -1,4 +1,5 @@
 import BrandMark from './BrandMark'
+import { FEATURE_ADS } from '../lib/featureFlags'
 
 export default function Footer({ onNavigate }) {
   const link = (label, view) => (
@@ -25,13 +26,17 @@ export default function Footer({ onNavigate }) {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-10 gap-y-2">
             {link('About', 'about')}
             {link('Create', 'create')}
-            {link('Advertise', 'advertise')}
+            {FEATURE_ADS
+              ? link('Advertise', 'advertise')
+              : link('Creator earnings', 'creator-apply')}
+            {link('Coins', 'wallet')}
             {link('Help', 'help')}
+            {link('Support', 'support')}
             {link('Terms of Service', 'legal-tos')}
             {link('Privacy Policy', 'legal-privacy')}
             {link('Creator Agreement', 'legal-creator')}
             {link('Community Guidelines', 'legal-community')}
-            {link('Copyright & DMCA', 'help')}
+            {link('Copyright & DMCA', 'content-rules')}
           </div>
         </div>
         <p className="mt-8 text-[11px] text-zinc-600">

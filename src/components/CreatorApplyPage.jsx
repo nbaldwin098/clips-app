@@ -97,7 +97,7 @@ export default function CreatorApplyPage({ onOpenAuth, onNavigate }) {
         <div className="rounded-xl border border-zinc-800 bg-[#121218] p-4">
           <p className="text-sm font-semibold text-white">What is not live</p>
           <ul className="mt-2 text-xs text-zinc-400 space-y-1.5 list-disc pl-4">
-            <li>Ad RPM / a shared ad pool / $1 per 1,000 views</li>
+            <li>Ad RPM / shared ad pool / ads of any kind (not offered)</li>
             <li>Bank payouts (Stripe Connect is not connected)</li>
             <li>Live video ingest — Live is a lobby</li>
             <li>Auto captions or Content ID</li>

@@ -2,6 +2,7 @@
 
 ## What you already have
 - `STRIPE_SECRET_KEY` in Supabase → Edge Functions → Secrets
+- Hosted Checkout Sessions from `create-checkout-session` (tips, Coin packs, shop)
 
 ## Deploy the function
 
@@ -27,20 +28,24 @@ Optional:
 supabase secrets set SITE_URL=https://calabi.us
 ```
 
-## Render (frontend)
+## Render (frontend — Node service)
+
 You still need:
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
-- Optional: `VITE_STRIPE_PUBLISHABLE_KEY` (not required for hosted Checkout Sessions)
+
+- `NEXT_PUBLIC_SUPABASE_URL` (or `VITE_SUPABASE_URL`)
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` (or `VITE_SUPABASE_ANON_KEY`)
+- Optional: `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` / `VITE_STRIPE_PUBLISHABLE_KEY` (not required for hosted Checkout Sessions)
 
 Do **not** set `VITE_STRIPE_PAYMENT_LINK`.
+
+Full list: [`docs/RENDER_ENV.md`](RENDER_ENV.md). Incident steps: [`docs/RUNBOOK_STRIPE_WEBHOOK.md`](RUNBOOK_STRIPE_WEBHOOK.md).
 
 ## Auth note
 Checkout requires a **signed-in cloud user** (email is fine). The Edge Function rejects requests without a Supabase JWT.
 
 ## Test
 1. Sign in on calabi.us  
-2. Open Checkout / tip $2 / buy a shop item  
+2. Open Coins → buy a pack, or tip $2 / buy a shop item  
 3. You should land on Stripe’s hosted checkout page  
 4. After pay, return to `/checkout?paid=1&session_id=...` and the pending action applies  
 
@@ -48,3 +53,4 @@ Checkout requires a **signed-in cloud user** (email is fine). The Edge Function 
 - Use **test** mode keys first (`sk_test_` / `pk_test_`)  
 - Enable card payments  
 - Later switch to live keys and redeploy secrets  
+- Live mode: confirm the same Edge Function secret is `sk_live_…` and Render redeployed

@@ -1,5 +1,5 @@
 /**
- * Cloud economy — Calabi Cash, Gold Coins, creator earnings.
+ * Cloud economy — Coins, creator earnings.
  * Supabase is source of truth. Local cache is display-only after a successful pull/push.
  */
 import { lsGet, lsSet } from './storage'
@@ -207,7 +207,7 @@ export async function cloudSpendCash(userId, units, meta = {}) {
   try {
     const row = await ensureWalletRow(client, userId)
     const bal = Math.floor(Number(row.cash_units) || 0)
-    if (bal < n) return { ok: false, error: 'Not enough Calabi Cash.', balance: bal }
+    if (bal < n) return { ok: false, error: 'Not enough Coins.', balance: bal }
     const next = bal - n
     const { error } = await client.from('wallets').update({ cash_units: next, updated_at: new Date().toISOString() }).eq('user_id', userId)
     if (error) return { ok: false, error: error.message }

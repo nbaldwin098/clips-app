@@ -36,6 +36,24 @@ export default function StreamingNavbar({
   }, [user?.id])
 
   useEffect(() => {
+    if (!user?.id || typeof document === 'undefined') return undefined
+    let timer = null
+    const pull = () => {
+      if (document.visibilityState !== 'visible') return
+      refreshWalletFromCloud(user.id).then(() => setWalletTick((n) => n + 1)).catch(() => {})
+    }
+    const onVis = () => {
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(pull, 400)
+    }
+    document.addEventListener('visibilitychange', onVis)
+    return () => {
+      document.removeEventListener('visibilitychange', onVis)
+      if (timer) clearTimeout(timer)
+    }
+  }, [user?.id])
+
+  useEffect(() => {
     const handleClickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
         setMenuOpen(false)

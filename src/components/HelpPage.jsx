@@ -8,7 +8,15 @@ export default function HelpPage() {
     },
     {
       q: 'How do I upload or go live?',
-      a: 'Open Create in the left menu (under Live). Upload a video, clip, or pic, or go live from there. Live opens a lobby until ingest is connected — it does not start a video stream by itself.',
+      a: 'Open Create in the left sidebar (under Live). On mobile, open the sidebar from the header controls — there is no hamburger menu. Upload a video, clip, or pic, or go live from Create. Go Live opens a lobby listing — it does not start RTMP video by itself.',
+    },
+    {
+      q: 'Lobby vs real stream — what am I watching?',
+      a: 'A Live lobby is a listing so people can find you. Video only appears after you share an OBS window or connect Custom RTMP when an ingest URL is set. Xbox/PS5 need an HDMI capture card into a PC running OBS. Site-wide lobby listing still needs RTMP ingest configured.',
+    },
+    {
+      q: 'How do creators make money?',
+      a: 'Tips, premium livestream membership, and Coins — not ads. There is no ad inventory, AdSense, or ad RPM. Creators keep 80% of tips and memberships; calabi keeps 20%. Apply from Creator dashboard → Earnings when you want payouts.',
     },
     {
       q: 'Can I donate on live or on a video?',
@@ -16,11 +24,15 @@ export default function HelpPage() {
     },
     {
       q: 'How do I stream from a PC, Xbox, or PS5?',
-      a: 'OBS Studio is free. Studio → Stream has setup steps. On Live, use Connect OBS window and pick your OBS preview (or OBS Virtual Camera). Xbox/PS5 need an HDMI capture card into a PC running OBS. Site-wide lobby listing still needs RTMP ingest configured.',
+      a: 'OBS Studio is free. Studio → Stream has setup steps. On Live, use Connect OBS window and pick your OBS preview (or OBS Virtual Camera). Xbox/PS5 need an HDMI capture card into a PC running OBS.',
     },
     {
-      q: 'Where is Studio, Wallet, and analytics?',
-      a: 'Open your profile picture → Creator dashboard (Analytics, Earnings, VODs, Stream, Verify). Under Site settings: Account and Wallet & Coins. Create (upload / go live) is in the left menu.',
+      q: 'Where is Studio, Coins, and analytics?',
+      a: 'Open your profile picture → Creator dashboard (Analytics, Earnings, VODs, Stream, Verify). Under Site settings: Account and Coins (Orders tab for purchase history). Create (upload / go live) is in the left sidebar — not a header hamburger.',
+    },
+    {
+      q: 'What are Coins and Orders?',
+      a: 'Coins are packs you buy for tips and chat cosmetics. Profile → Coins shows packs; Orders lists purchases and spends. Tips and premium memberships use card checkout when Stripe is connected — they are not ad spend. Stripe Checkout must return to the site for credit to apply.',
     },
     {
       q: 'Can I watch without an account?',
@@ -40,7 +52,15 @@ export default function HelpPage() {
     },
     {
       q: 'How do creator payouts work?',
-      a: 'Anyone signed in can upload or go live from Create. To earn, apply from Creator dashboard → Earnings or the apply page. Admin sends payouts after approval. Withdrawals are requested from Earnings. Views are not worth $1 per 1,000.',
+      a: 'Anyone signed in can upload or go live from Create. To earn, apply from Creator dashboard → Earnings or the apply page. Admin sends payouts after approval. Withdrawals are requested from Earnings. Views are not worth $1 per 1,000. There is no ad revenue share.',
+    },
+    {
+      q: 'How long is escrow held?',
+      a: 'Live request tips stay held until the creator fulfills and Admin releases. Target: refund donors if still held after 14 days. Marketplace: funds release ~7 days after delivery with a 7-day buyer dispute window. Details: docs/ESCROW_TIMEOUT_POLICY.md for operators.',
+    },
+    {
+      q: 'What happens on a chargeback?',
+      a: 'If your bank disputes a Coins or shop payment, we may reverse Coins and hold related creator payouts until Stripe closes the case. Contact support with the receipt id — see chargeback macros for CS in docs/SUPPORT_MACROS.md.',
     },
     {
       q: 'How do I report copyright infringement?',
@@ -52,7 +72,7 @@ export default function HelpPage() {
     },
     {
       q: 'How do I contact support?',
-      a: `Email ${ORG.supportEmail}.`,
+      a: `Email ${ORG.supportEmail}. For Coins/Orders issues, include your account email, approximate time, and Stripe receipt if you have one.`,
     },
   ]
 

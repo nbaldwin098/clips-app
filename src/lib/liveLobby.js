@@ -1,6 +1,6 @@
 /**
  * Start / end live lobby presence. Cloud live_lobby is SOT when configured.
- * Ending always archives a VOD row (session record; mediaUrl only when ingest recorded one).
+ * Ending clears presence; VOD archive only when a recording / ingest existed.
  */
 import { lsGet, lsSet } from './storage'
 import { pushLiveLobby, endLiveLobby } from './graphSync'
@@ -11,6 +11,18 @@ export function getMyLiveState(userId) {
   const local = lsGet(`live_state_${userId}`, null)
   if (local?.isLive) return local
   return (lsGet('live_board', []) || []).find((b) => b.userId === userId && b.isLive) || null
+}
+
+/** Drop local lobby presence for a user (board + live_state). */
+export function clearLivePresence(userId) {
+  if (!userId) return
+  try {
+    lsSet(`live_state_${userId}`, null)
+  } catch {}
+  try {
+    const board = (lsGet('live_board', []) || []).filter((b) => b.userId !== userId)
+    lsSet('live_board', board)
+  } catch {}
 }
 
 export async function startLiveLobby(user, { title = '', category = '' } = {}) {
@@ -45,5 +57,6 @@ export async function startLiveLobby(user, { title = '', category = '' } = {}) {
 export async function stopLiveLobby(user) {
   if (!user?.id) return { ok: false, error: 'Sign in required.' }
   const ended = await endLiveLobby(user.id)
+  clearLivePresence(user.id)
   return { ok: !!ended, archived: true }
 }

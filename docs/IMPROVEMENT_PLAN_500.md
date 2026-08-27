@@ -3,6 +3,10 @@
 Living engineering/product backlog of **500** concrete fixes and improvements for calabi.us (clips-app).
 Grounded in `docs/BUGS.md`, `PRODUCT_BACKLOG.md`, creator studio catalog, and current code surfaces.
 
+## Progress
+
+**101 / 500** checked in-repo this batch. Blocked items (RTMP, Stripe Connect, OAuth publish, push/email, ffmpeg.wasm, native, full i18n) stay open until infra exists.
+
 ## How to use
 
 1. Pick next by priority: **live ingest / money / data integrity** before polish.
@@ -38,22 +42,22 @@ Grounded in `docs/BUGS.md`, `PRODUCT_BACKLOG.md`, creator studio catalog, and cu
 
 ## 1. Reliability & P0
 
-- [ ] **001.** Confirm old Static Render service stays deleted (BUG-007)
+- [x] **001.** Confirm old Static Render service stays deleted (BUG-007)
 - [ ] **002.** Verify cloud delete removes storage objects on prod (BUG-022)
-- [ ] **003.** Regression test: iOS uploads never re-encode to WebM (BUG-021)
+- [x] **003.** Regression test: iOS uploads never re-encode to WebM (BUG-021)
 - [ ] **004.** Confirm ErrorReportPrompt tickets show in Admin (BUG-025)
 - [ ] **005.** Spot-check MFA enroll/verify on Next (BUG-053)
 - [ ] **006.** Audit RLS on videos + clips storage (BUG-048)
-- [ ] **007.** Document required Render env vars (BUG-046)
+- [x] **007.** Document required Render env vars (BUG-046)
 - [ ] **008.** Heal empty Supabase catalog without wiping paid prices
-- [ ] **009.** Fail loudly when NEXT_PUBLIC_SUPABASE_* missing
-- [ ] **010.** Health endpoint: Supabase + Stripe + storage
+- [x] **009.** Fail loudly when NEXT_PUBLIC_SUPABASE_* missing
+- [x] **010.** Health endpoint: Supabase + Stripe + storage
 - [ ] **011.** Prevent routeId object sideways clip opens
 - [ ] **012.** SpaShell hydration never blanks /clips /watch
-- [ ] **013.** Deploy checklist: migrations vs AdminSetup
+- [x] **013.** Deploy checklist: migrations vs AdminSetup
 - [ ] **014.** Alert on wallet_ledger failure after coin credit
-- [ ] **015.** Guard double-credit on Stripe return refresh
-- [ ] **016.** claimStripeReturn idempotent across tabs
+- [x] **015.** Guard double-credit on Stripe return refresh
+- [x] **016.** claimStripeReturn idempotent across tabs
 - [ ] **017.** Non-owners never see Admin
 - [ ] **018.** Guest device id survives cache clear
 - [ ] **019.** Catalog backup dry-run before mass repair
@@ -68,7 +72,7 @@ Grounded in `docs/BUGS.md`, `PRODUCT_BACKLOG.md`, creator studio catalog, and cu
 - [ ] **025.** OBS key rotation/revoke without breaking session
 - [ ] **026.** Multi-host group stream ingest rooms (BUG-062)
 - [ ] **027.** Raid picker + accept handoff
-- [ ] **028.** End lobby cleans all viewer presence
+- [x] **028.** End lobby cleans all viewer presence
 - [ ] **029.** HLS stall buffering UI + auto-recover
 - [ ] **030.** Picture-in-picture for live
 - [ ] **031.** Low-latency vs standard HLS toggle
@@ -77,15 +81,15 @@ Grounded in `docs/BUGS.md`, `PRODUCT_BACKLOG.md`, creator studio catalog, and cu
 - [ ] **034.** Host disconnect viewer synced to mods
 - [ ] **035.** Stream health meter (bitrate/drops)
 - [ ] **036.** Go-live reminder from schedule
-- [ ] **037.** VOD archive only when recording exists
-- [ ] **038.** No empty VOD rows when ingest off
+- [x] **037.** VOD archive only when recording exists
+- [x] **038.** No empty VOD rows when ingest off
 - [ ] **039.** Concurrent live viewer graph (BUG-055)
-- [ ] **040.** Lobby vs on-air badge consistency
+- [x] **040.** Lobby vs on-air badge consistency
 - [ ] **041.** Live categories/tags
-- [ ] **042.** Featured live on home when truly live
+- [x] **042.** Featured live on home when truly live
 - [ ] **043.** Ghost AI fairness + presence (BUG-061)
 - [ ] **044.** PvP challenge → accept → settle
-- [ ] **045.** Pool UI when live_feature_state missing
+- [x] **045.** Pool UI when live_feature_state missing
 - [ ] **046.** Live thumbnail keyframe/avatar
 - [ ] **047.** Clip-from-live when recordings exist
 - [ ] **048.** Raid chat announcement + deep link
@@ -107,9 +111,9 @@ Grounded in `docs/BUGS.md`, `PRODUCT_BACKLOG.md`, creator studio catalog, and cu
 - [ ] **061.** Pinned host message
 - [ ] **062.** Host chat search 24h
 - [ ] **063.** Global chat rate limits
-- [ ] **064.** Global composer never hides wrongly
+- [x] **064.** Global composer never hides wrongly
 - [ ] **065.** Bot commands cloud-synced
-- [ ] **066.** aria-live chat (BUG-050)
+- [x] **066.** aria-live chat (BUG-050)
 - [ ] **067.** Chat font size a11y
 - [ ] **068.** Block list → chat filter
 - [ ] **069.** Auto-mod keyword lists
@@ -137,10 +141,10 @@ Grounded in `docs/BUGS.md`, `PRODUCT_BACKLOG.md`, creator studio catalog, and cu
 - [ ] **088.** Featured posts drag-reorder
 - [ ] **089.** Thumbnail from video frames
 - [ ] **090.** Overview KPIs == Analytics source
-- [ ] **091.** Catalog label Cash → Coins
+- [x] **091.** Catalog label Cash → Coins
 - [ ] **092.** Lab undo/redo + crash recovery
 - [ ] **093.** Lab project JSON export
-- [ ] **094.** Studio empty states
+- [x] **094.** Studio empty states
 - [ ] **095.** Mobile analytics map layout
 - [ ] **096.** Keyboard shortcuts sheet
 - [ ] **097.** Visibility toggle from Content
@@ -155,19 +159,19 @@ Grounded in `docs/BUGS.md`, `PRODUCT_BACKLOG.md`, creator studio catalog, and cu
 - [ ] **106.** Kick/Twitch planned rows (BUG-084)
 - [ ] **107.** Debounce analytics; don’t remount map each tick
 - [ ] **108.** Templates gallery
-- [ ] **109.** OBS connect path clarity
+- [x] **109.** OBS connect path clarity
 - [ ] **110.** Green screen / stream markers
 
 ## 5. Analytics & bubble maps
 
-- [ ] **111.** No invented tally bubbles (regression)
+- [x] **111.** No invented tally bubbles (regression)
 - [ ] **112.** Bubble perf at 10k+ people
 - [ ] **113.** Site bubble Views truthfulness
 - [ ] **114.** Concurrent viewers chart vs audience map
 - [ ] **115.** Analytics CSV export
 - [ ] **116.** Revenue vs engagement (no fake RPM)
 - [ ] **117.** Pinch-zoom + double-click reset + keyboard pan
-- [ ] **118.** Filter chips without second legend
+- [x] **118.** Filter chips without second legend
 - [ ] **119.** Time scrubber aria
 - [ ] **120.** Selected post persists across tabs
 - [ ] **121.** StatsPage leave localStorage engagement
@@ -191,7 +195,7 @@ Grounded in `docs/BUGS.md`, `PRODUCT_BACKLOG.md`, creator studio catalog, and cu
 - [ ] **136.** Stripe Connect onboarding (BUG-016 / BUG-082)
 - [ ] **137.** Auto payouts after Connect
 - [ ] **138.** Coin Payment Links always in prod
-- [ ] **139.** Orders pulls full wallet_ledger
+- [x] **139.** Orders pulls full wallet_ledger
 - [ ] **140.** Orders receipt email
 - [ ] **141.** Admin coin-pack refunds
 - [ ] **142.** Tips never unlock without Stripe return
@@ -199,7 +203,7 @@ Grounded in `docs/BUGS.md`, `PRODUCT_BACKLOG.md`, creator studio catalog, and cu
 - [ ] **144.** Creator tip/TTS/membership pricing page
 - [ ] **145.** TTS purchase E2E test
 - [ ] **146.** Donation escrow release (BUG-065)
-- [ ] **147.** Escrow timeout policy documented
+- [x] **147.** Escrow timeout policy documented
 - [ ] **148.** Payout vault encryption verify
 - [ ] **149.** Crypto address checksums
 - [ ] **150.** Withdraw status notifications
@@ -207,11 +211,11 @@ Grounded in `docs/BUGS.md`, `PRODUCT_BACKLOG.md`, creator studio catalog, and cu
 - [ ] **152.** Tax/1099 section when US payouts ship
 - [ ] **153.** No double withdraw while pending
 - [ ] **154.** Coins: bigger/highlight/GIF gates work
-- [ ] **155.** Navbar balance after purchase return
+- [x] **155.** Navbar balance after purchase return
 - [ ] **156.** Checkout cancel → Coins
 - [ ] **157.** Webhook credit coins + idempotency keys
 - [ ] **158.** Admin payout CSV
-- [ ] **159.** Remove obsolete Cash naming
+- [x] **159.** Remove obsolete Cash naming
 - [ ] **160.** Marketplace escrow disputes (BUG-098)
 - [ ] **161.** Shop photos + seller fulfillment + fees
 - [ ] **162.** Rate limit tip attempts
@@ -223,7 +227,7 @@ Grounded in `docs/BUGS.md`, `PRODUCT_BACKLOG.md`, creator studio catalog, and cu
 
 - [ ] **166.** Endless clip scroll re-verify (BUG-024)
 - [ ] **167.** Endless pic scroll re-verify
-- [ ] **168.** Home chips honest empty states
+- [x] **168.** Home chips honest empty states
 - [ ] **169.** Hourly Hits all-views ranking + a11y
 - [ ] **170.** Pause Hourly Hits on hover/focus
 - [ ] **171.** Watch theater/mini consistency
@@ -246,7 +250,7 @@ Grounded in `docs/BUGS.md`, `PRODUCT_BACKLOG.md`, creator studio catalog, and cu
 - [ ] **188.** Mini-player layout jump
 - [ ] **189.** Clips safe-area notches
 - [ ] **190.** Pics no delete-on-error
-- [ ] **191.** Hide broken media safely
+- [x] **191.** Hide broken media safely
 - [ ] **192.** Block muted creators everywhere
 - [ ] **193.** Report from every surface
 - [ ] **194.** Save to playlist
@@ -254,7 +258,7 @@ Grounded in `docs/BUGS.md`, `PRODUCT_BACKLOG.md`, creator studio catalog, and cu
 
 ## 8. Upload, media, catalog & storage
 
-- [ ] **196.** Clearer 60s/24h limit errors (BUG-020)
+- [x] **196.** Clearer 60s/24h limit errors (BUG-020)
 - [ ] **197.** ffmpeg.wasm client transcoder
 - [ ] **198.** Unified Video Manager table
 - [ ] **199.** Per-file progress + cancel + resume
@@ -266,14 +270,14 @@ Grounded in `docs/BUGS.md`, `PRODUCT_BACKLOG.md`, creator studio catalog, and cu
 - [ ] **205.** Unhide after URL heal
 - [ ] **206.** Private stays off public feeds
 - [ ] **207.** first_published_at never drifts
-- [ ] **208.** Sitemap public-only + lastmod
+- [x] **208.** Sitemap public-only + lastmod
 - [ ] **209.** CDN headers + signed private URLs
 - [ ] **210.** Resolution caps with downscale offer
-- [ ] **211.** Reject audio-only clearly
+- [x] **211.** Reject audio-only clearly
 - [ ] **212.** .vtt captions upload
 - [ ] **213.** Thumbnail crop tool
 - [ ] **214.** Multi-file queue + drag-drop Studio
-- [ ] **215.** Default visibility setting
+- [x] **215.** Default visibility setting
 - [ ] **216.** Unlisted + password + embargo posts
 - [ ] **217.** Revoke share-link family
 - [ ] **218.** Hashtag reliability
@@ -295,18 +299,18 @@ Grounded in `docs/BUGS.md`, `PRODUCT_BACKLOG.md`, creator studio catalog, and cu
 - [ ] **231.** Login alerts when email ships
 - [ ] **232.** CAPTCHA after failures + signup IP limit
 - [ ] **233.** Owner login stays cloud-only
-- [ ] **234.** Legal brand = calabi
+- [x] **234.** Legal brand = calabi
 - [ ] **235.** Scrub PII from analytics events
 - [ ] **236.** DMCA → Admin copyright queue
 - [ ] **237.** Copyright strike counter
 - [ ] **238.** Reserved handles
-- [ ] **239.** Tighten CSP + noindex private shells
+- [x] **239.** Tighten CSP + noindex private shells
 - [ ] **240.** Embed frame-ancestors
 - [ ] **241.** Age gate if required
 - [ ] **242.** Cookie disclosure accuracy
 - [ ] **243.** Blocked words in display names
 - [ ] **244.** Profile tabs label consistency
-- [ ] **245.** Clear local ≠ delete cloud account
+- [x] **245.** Clear local ≠ delete cloud account
 
 ## 10. DMs & notifications
 
@@ -320,8 +324,8 @@ Grounded in `docs/BUGS.md`, `PRODUCT_BACKLOG.md`, creator studio catalog, and cu
 - [ ] **253.** Pushes: live following + DM
 - [ ] **254.** Mark all read + correct deep links
 - [ ] **255.** Mute per creator + quiet hours
-- [ ] **256.** No demo mail codes in prod
-- [ ] **257.** Bell → full notifications page
+- [x] **256.** No demo mail codes in prod
+- [x] **257.** Bell → full notifications page
 - [ ] **258.** Notifications RLS
 - [ ] **259.** Delivery retry/backoff
 - [ ] **260.** Audited admin broadcast
@@ -356,44 +360,44 @@ Grounded in `docs/BUGS.md`, `PRODUCT_BACKLOG.md`, creator studio catalog, and cu
 - [ ] **286.** Seller KYC before payouts
 - [ ] **287.** Ban evasion by device
 - [ ] **288.** Admin mobile layouts
-- [ ] **289.** Advertise portal can’t run campaigns
-- [ ] **290.** Chargeback playbook link
+- [x] **289.** Advertise portal can’t run campaigns
+- [x] **290.** Chargeback playbook link
 - [ ] **291.** Compliance export
 - [ ] **292.** Kill switches: ingest + checkouts
 - [ ] **293.** Admin search tickets+people+content
 - [ ] **294.** Geo block list if legal requires
-- [ ] **295.** Support macros for Coins/Orders
+- [x] **295.** Support macros for Coins/Orders
 
 ## 12. Ads shells & monetization honesty
 
-- [ ] **296.** Rewrite AdvertisePage for no-ads reality
-- [ ] **297.** Sunset or rewrite AdvertiserPortal
-- [ ] **298.** Stubs or delete ad modules + smoke
-- [ ] **299.** Remove unused AdSense head script
-- [ ] **300.** Never revive ExoClick/VAST (wontfix)
-- [ ] **301.** Help: tips/premium/coins only
-- [ ] **302.** No promised ad RPM on apply
-- [ ] **303.** Keep no-ad-share ledger asserts
-- [ ] **304.** Footer Advertise CTA hide/retarget
-- [ ] **305.** No Admin Ads tab regression
-- [ ] **306.** Smoke asserts deleted AdUnits
-- [ ] **307.** Marketing ‘run ads’ copy audit
-- [ ] **308.** FEATURE_ADS default false
-- [ ] **309.** Future ads = new BUG cluster only
-- [ ] **310.** Revenue-mix one-pager accurate
+- [x] **296.** Rewrite AdvertisePage for no-ads reality
+- [x] **297.** Sunset or rewrite AdvertiserPortal
+- [x] **298.** Stubs or delete ad modules + smoke
+- [x] **299.** Remove unused AdSense head script
+- [x] **300.** Never revive ExoClick/VAST (wontfix)
+- [x] **301.** Help: tips/premium/coins only
+- [x] **302.** No promised ad RPM on apply
+- [x] **303.** Keep no-ad-share ledger asserts
+- [x] **304.** Footer Advertise CTA hide/retarget
+- [x] **305.** No Admin Ads tab regression
+- [x] **306.** Smoke asserts deleted AdUnits
+- [x] **307.** Marketing ‘run ads’ copy audit
+- [x] **308.** FEATURE_ADS default false
+- [x] **309.** Future ads = new BUG cluster only
+- [x] **310.** Revenue-mix one-pager accurate
 
 ## 13. SEO, Next.js, performance & architecture
 
 - [ ] **311.** ISR/revalidate popular watch (BUG-085)
 - [ ] **312.** Code-split SpaShell routes (BUG-049)
 - [ ] **313.** Remove Vite when SpaShell gone (BUG-043)
-- [ ] **314.** Knip unused cleanup (BUG-044)
+- [x] **314.** Knip unused cleanup (BUG-044)
 - [ ] **315.** Middleware auth for private shells
-- [ ] **316.** robots + canonical bare /{id}
+- [x] **316.** robots + canonical bare /{id}
 - [ ] **317.** JSON-LD VideoObject + profiles
 - [ ] **318.** HTTPS OG + Twitter cards
 - [ ] **319.** Cut First Load JS; lazy Studio/Admin/bubbles
-- [ ] **320.** Image CLS + font display swap
+- [x] **320.** Image CLS + font display swap
 - [ ] **321.** Prefetch primary nav
 - [ ] **322.** ShortsFeed memory leak audit
 - [ ] **323.** Home long-task profiling
@@ -402,7 +406,7 @@ Grounded in `docs/BUGS.md`, `PRODUCT_BACKLOG.md`, creator studio catalog, and cu
 - [ ] **326.** TS for economy libs; a11y eslint
 - [ ] **327.** Bundle analyzer monthly
 - [ ] **328.** Maintenance mode page
-- [ ] **329.** Sitemap lastmod
+- [x] **329.** Sitemap lastmod
 - [ ] **330.** API rate limits + versioning
 - [ ] **331.** Webhook retry + DLQ
 - [ ] **332.** Avoid needless memo (compiler)
@@ -412,22 +416,22 @@ Grounded in `docs/BUGS.md`, `PRODUCT_BACKLOG.md`, creator studio catalog, and cu
 
 ## 14. Testing, CI, docs & ops
 
-- [ ] **336.** Fix/quarantine flaky named-activity (BUG-040)
+- [x] **336.** Fix/quarantine flaky named-activity (BUG-040)
 - [ ] **337.** Playwright upload→play (BUG-041)
 - [ ] **338.** Playwright coin checkout mock
 - [ ] **339.** Playwright two-browser chat
-- [ ] **340.** Align smoke ads-removed+Next (BUG-058)
-- [ ] **341.** Fewer brittle includes() smokes
+- [x] **340.** Align smoke ads-removed+Next (BUG-058)
+- [x] **341.** Fewer brittle includes() smokes
 - [ ] **342.** CI: smoke+build gate; SQL lint
 - [ ] **343.** Load test chat + contentSync
-- [ ] **344.** Docs: PRODUCT_MAP Node deploy
-- [ ] **345.** Help no-hamburger update (BUG-045)
-- [ ] **346.** AdminSetup latest migrations
-- [ ] **347.** OWN_CHECKOUT = live Stripe
-- [ ] **348.** Quarterly DEPENDENCY_AUDIT
-- [ ] **349.** Weekly BUGS triage
-- [ ] **350.** Fix PRODUCT_BACKLOG G–L stub
-- [ ] **351.** Runbooks: Stripe webhook; Supabase outage
+- [x] **344.** Docs: PRODUCT_MAP Node deploy
+- [x] **345.** Help no-hamburger update (BUG-045)
+- [x] **346.** AdminSetup latest migrations
+- [x] **347.** OWN_CHECKOUT = live Stripe
+- [x] **348.** Quarterly DEPENDENCY_AUDIT
+- [x] **349.** Weekly BUGS triage
+- [x] **350.** Fix PRODUCT_BACKLOG G–L stub
+- [x] **351.** Runbooks: Stripe webhook; Supabase outage
 - [ ] **352.** Feature flags + staging parity
 - [ ] **353.** Uptime synthetics / + /clips
 - [ ] **354.** Sentry + source maps + log redaction
@@ -440,14 +444,14 @@ Grounded in `docs/BUGS.md`, `PRODUCT_BACKLOG.md`, creator studio catalog, and cu
 
 ## 15. Mobile web, a11y, i18n & native
 
-- [ ] **361.** Mobile icon rail OK (BUG-026)
+- [x] **361.** Mobile icon rail OK (BUG-026)
 - [ ] **362.** Touch targets ≥44px
 - [ ] **363.** Safe-area clips/live
 - [ ] **364.** Landscape watch controls
 - [ ] **365.** iOS inline playback flags
-- [ ] **366.** prefers-reduced-motion
-- [ ] **367.** Focus rings + skip link
-- [ ] **368.** Contrast audit zinc/amber
+- [x] **366.** prefers-reduced-motion
+- [x] **367.** Focus rings + skip link
+- [x] **368.** Contrast audit zinc/amber
 - [ ] **369.** Labels not placeholders
 - [ ] **370.** CoinIcon button names
 - [ ] **371.** i18n framework (BUG-086)
@@ -468,21 +472,21 @@ Grounded in `docs/BUGS.md`, `PRODUCT_BACKLOG.md`, creator studio catalog, and cu
 
 ## 16. UX polish & design consistency
 
-- [ ] **386.** No leftover rounded-full vs square system
-- [ ] **387.** About/Help brand-first viewport
-- [ ] **388.** Empty states one job/one CTA
+- [x] **386.** No leftover rounded-full vs square system
+- [x] **387.** About/Help brand-first viewport
+- [x] **388.** Empty states one job/one CTA
 - [ ] **389.** Unify toasts/spinners/confirms
 - [ ] **390.** Modal focus traps
 - [ ] **391.** Studio earnings skeletons
-- [ ] **392.** Sticky settings tabs
-- [ ] **393.** Coins/Orders mobile + empty CTA
-- [ ] **394.** Profile Coins/Orders hierarchy
-- [ ] **395.** Badge 9+ overflow
-- [ ] **396.** No Studio subtitle regressions
-- [ ] **397.** Views naming everywhere
+- [x] **392.** Sticky settings tabs
+- [x] **393.** Coins/Orders mobile + empty CTA
+- [x] **394.** Profile Coins/Orders hierarchy
+- [x] **395.** Badge 9+ overflow
+- [x] **396.** No Studio subtitle regressions
+- [x] **397.** Views naming everywhere
 - [ ] **398.** Min tip clarity; Follow rollback
-- [ ] **399.** Subscribe vs Follow wording
-- [ ] **400.** Footer dead routes; useful 404
+- [x] **399.** Subscribe vs Follow wording
+- [x] **400.** Footer dead routes; useful 404
 - [ ] **401.** Relative time + duration badges
 - [ ] **402.** Home hover previews
 - [ ] **403.** Playlist reorder; tag wrap
@@ -552,26 +556,26 @@ Grounded in `docs/BUGS.md`, `PRODUCT_BACKLOG.md`, creator studio catalog, and cu
 
 ## 19. Dead code, cleanup & honesty
 
-- [ ] **461.** Rewrite/delete Advertise inventory claims
-- [ ] **462.** Remove deprecated ownerLogin paths
-- [ ] **463.** Remove unused preloadMedia ad helpers
-- [ ] **464.** Knip unused exports
-- [ ] **465.** Dedupe smoke ad-removal blocks
+- [x] **461.** Rewrite/delete Advertise inventory claims
+- [x] **462.** Remove deprecated ownerLogin paths
+- [x] **463.** Remove unused preloadMedia ad helpers
+- [x] **464.** Knip unused exports
+- [x] **465.** Dedupe smoke ad-removal blocks
 - [ ] **466.** Fewer hardcoded owner emails in smoke
-- [ ] **467.** CommunityPage warn until cloud migrated
-- [ ] **468.** StatsPage migrate or disclaimer
-- [ ] **469.** StudioToolsPage beta until scheduler
-- [ ] **470.** Strip mail demo-codes in prod
-- [ ] **471.** Catalog status badges accurate
-- [ ] **472.** PRODUCT_BACKLOG: recordInteraction wire status truth
-- [ ] **473.** PAGE_LIST vs App drift check
-- [ ] **474.** Brand CSS variables pass
+- [x] **467.** CommunityPage warn until cloud migrated
+- [x] **468.** StatsPage migrate or disclaimer
+- [x] **469.** StudioToolsPage beta until scheduler
+- [x] **470.** Strip mail demo-codes in prod
+- [x] **471.** Catalog status badges accurate
+- [x] **472.** PRODUCT_BACKLOG: recordInteraction wire status truth
+- [x] **473.** PAGE_LIST vs App drift check
+- [x] **474.** Brand CSS variables pass
 - [ ] **475.** Prod console.log audit
 - [ ] **476.** StrictMode sync double-effect audit
 - [ ] **477.** Unused lucide import cleanup
 - [ ] **478.** Consolidate CoinIcon
-- [ ] **479.** iOS folder maintain-or-archive note
-- [ ] **480.** Drop superseded AdSense smoke asserts
+- [x] **479.** iOS folder maintain-or-archive note
+- [x] **480.** Drop superseded AdSense smoke asserts
 
 ## 20. Legal, trust, support & business
 
@@ -581,7 +585,7 @@ Grounded in `docs/BUGS.md`, `PRODUCT_BACKLOG.md`, creator studio catalog, and cu
 - [ ] **484.** Age-restricted content policy
 - [ ] **485.** Creator monetization agreement
 - [ ] **486.** Strike/appeal policy page
-- [ ] **487.** Help FAQ: Coins/Orders + lobby vs RTMP
+- [x] **487.** Help FAQ: Coins/Orders + lobby vs RTMP
 - [ ] **488.** In-app contact → ticket
 - [ ] **489.** Published payout SLA
 - [ ] **490.** Fraud/chargeback policy
@@ -594,7 +598,7 @@ Grounded in `docs/BUGS.md`, `PRODUCT_BACKLOG.md`, creator studio catalog, and cu
 - [ ] **497.** Bug bounty soft launch
 - [ ] **498.** Transparency report template
 - [ ] **499.** Student creator program (optional)
-- [ ] **500.** Support macros library published
+- [x] **500.** Support macros library published
 
 ---
 

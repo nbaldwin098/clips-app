@@ -12,7 +12,7 @@ export const CREATOR_STUDIO_GROUPS = [
       { id: 'upload', label: 'Upload', route: { view: 'dashboard', action: 'upload' }, status: 'live' },
       { id: 'calabi-studio', label: 'Calabi Studio', route: { view: 'dashboard', section: 'lab' }, status: 'live' },
       { id: 'make-post', label: 'Make a post', route: { view: 'dashboard', section: 'lab' }, status: 'live' },
-      { id: 'studio-tools', label: 'Drafts & schedule', route: { view: 'studio-tools' }, status: 'partial' },
+      { id: 'studio-tools', label: 'Drafts & schedule (Beta)', route: { view: 'studio-tools' }, status: 'partial' },
       { id: 'vods', label: 'VOD channel', route: { view: 'dashboard', section: 'content' }, status: 'live' },
       { id: 'socials', label: 'Post to socials', route: { view: 'dashboard', section: 'socials' }, status: 'partial' },
       { id: 'controls', label: 'Controls', route: { view: 'dashboard', section: 'lab' }, status: 'live' },
@@ -57,8 +57,8 @@ export const CREATOR_STUDIO_GROUPS = [
     items: [
       { id: 'earnings', label: 'Earnings portal', route: { view: 'dashboard', section: 'earnings' }, status: 'live' },
       { id: 'revenue', label: 'Revenue dashboard', route: { view: 'settings', section: 'revenue' }, status: 'live' },
-      { id: 'wallet', label: 'Wallet & Cash', route: { view: 'settings', section: 'wallet' }, status: 'live' },
-      { id: 'calabi-cash', label: 'Calabi Cash', route: { view: 'settings', section: 'wallet' }, status: 'live' },
+      { id: 'wallet', label: 'Coins', route: { view: 'settings', section: 'wallet' }, status: 'live' },
+      { id: 'calabi-cash', label: 'Coins', route: { view: 'settings', section: 'wallet' }, status: 'live' },
       { id: 'monetization', label: 'Membership & 80/20 split', route: { view: 'settings', section: 'monetization' }, status: 'live' },
       { id: 'stripe-connect', label: 'Stripe Connect', route: null, status: 'planned' },
     ],
@@ -97,8 +97,8 @@ export const KICK_TWITCH_PARITY = [
   { feature: 'Two-factor authentication', kick: 'partial', twitch: 'live', clips: 'live' },
   { feature: 'DMCA / copyright tools', kick: 'live', twitch: 'live', clips: 'live' },
   { feature: 'ID verification badge', kick: 'live', twitch: 'live', clips: 'live' },
-  { feature: 'Ad revenue share to creators', kick: 'partial', twitch: 'live', clips: 'planned', note: 'Not pursuing site ads for now; tips/premium/Cash instead.' },
-  { feature: 'Live mid-roll ads', kick: 'partial', twitch: 'live', clips: 'planned', note: 'Paused — no AdSense/VAST path active.' },
+  { feature: 'Ad revenue share to creators', kick: 'partial', twitch: 'live', clips: 'planned', note: 'No site ads; tips / premium / Coins only.' },
+  { feature: 'Live mid-roll ads', kick: 'partial', twitch: 'live', clips: 'planned', note: 'Not offered — FEATURE_ADS is false.' },
 ]
 
 export function statusLabel(status) {

@@ -1,7 +1,8 @@
 /**
- * Creator revenue split for subscriptions and Calabi Cash tips.
+ * Creator revenue split for subscriptions and tip checkout.
  * 80/20 is the product default — more creator-friendly than Twitch 50/50,
  * more sustainable than Kick-style 95/5 loss leaders.
+ * No ad revenue share — ads are not offered.
  */
 
 export const CREATOR_REV_SHARE = 0.8
@@ -25,5 +26,5 @@ export function splitRevenue(amount, creatorRate = CREATOR_REV_SHARE) {
 
 export const REV_SPLIT_COPY = {
   title: '80 / 20 creator split',
-  body: 'Creators keep 80% of memberships and Calabi Cash tips. calabi keeps 20% to run the platform — more competitive than Twitch’s 50/50, and more sustainable than a 95/5 loss-leader model.',
+  body: 'Creators keep 80% of memberships and tips. calabi keeps 20% to run the platform — more competitive than Twitch’s 50/50, and more sustainable than a 95/5 loss-leader model. There is no ad revenue share.',
 }

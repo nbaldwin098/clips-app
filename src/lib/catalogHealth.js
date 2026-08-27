@@ -83,6 +83,10 @@ export function isRetiredCatalogItem(item) {
 
 export function isFeedable(item) {
   if (!item || isReferenceItem(item) || isRetiredCatalogItem(item)) return false
+  if (item.visibility === 'private' || item.visibility === 'unlisted') return false
+  try {
+    if (item.id && hiddenBrokenIds().has(item.id)) return false
+  } catch {}
   if (item.type === 'pic') {
     if (isUserUploadRecord(item)) {
       return isHttpUrl(item?.mediaUrl) || isHttpUrl(item?.thumbUrl) || isHttpUrl(item?.sourceUrl) || isDataImageUrl(item?.mediaUrl)

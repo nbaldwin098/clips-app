@@ -18,6 +18,8 @@ import globalLiveChat from '../../supabase/migrations/0017_global_live_chat.sql?
 import supportMarketplace from '../../supabase/migrations/0018_support_marketplace.sql?raw'
 import siteNews from '../../supabase/migrations/0019_site_news.sql?raw'
 import uniqueViews from '../../supabase/migrations/0020_unique_content_views.sql?raw'
+import visibilityPayoutSecrets from '../../supabase/migrations/0021_visibility_payout_secrets.sql?raw'
+import directMessages from '../../supabase/migrations/0022_direct_messages.sql?raw'
 
 /** Run in order. 0001–0004 are required before anything that references profiles. */
 export const SETUP_SCRIPTS = [
@@ -140,5 +142,17 @@ export const SETUP_SCRIPTS = [
     title: 'Unique content views (by viewer / IP — stops rewatch inflation)',
     file: '0020_unique_content_views.sql',
     sql: String(uniqueViews || ''),
+  },
+  {
+    id: '0021',
+    title: 'Visibility + payout secrets (RLS)',
+    file: '0021_visibility_payout_secrets.sql',
+    sql: String(visibilityPayoutSecrets || ''),
+  },
+  {
+    id: '0022',
+    title: 'Direct messages (participants-only RLS)',
+    file: '0022_direct_messages.sql',
+    sql: String(directMessages || ''),
   },
 ]

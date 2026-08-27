@@ -10,15 +10,14 @@ have a Supabase project and Render env vars set up (e.g. from following
 outside guidance), go through this checklist — having *a* Supabase project
 isn't enough on its own, the exact pieces below all have to be in place:
 
-1. **Env var names must match exactly** (Vite only exposes vars prefixed
-   `VITE_` to client code — see `.env.example`):
-   - `VITE_SUPABASE_URL` — your project's URL, e.g. `https://xxxx.supabase.co`
-   - `VITE_SUPABASE_ANON_KEY` — the project's public **anon** key (Settings
-     → API in the Supabase dashboard). Never use the `service_role` key
-     here — it's a secret server key, not meant for client-side code.
-   - In Render: Dashboard → your service → **Environment** tab → add both
-     as Environment Variables, then trigger a redeploy (env var changes
-     don't apply to an already-running/built instance).
+1. **Env var names must match** (Next exposes `NEXT_PUBLIC_*`; legacy
+   `VITE_*` aliases still work — see `.env.example` and
+   [`docs/RENDER_ENV.md`](RENDER_ENV.md)):
+   - `NEXT_PUBLIC_SUPABASE_URL` (or `VITE_SUPABASE_URL`) — e.g. `https://xxxx.supabase.co`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` (or `VITE_SUPABASE_ANON_KEY`) — public
+     **anon** key (Settings → API). Never use `service_role` in client env.
+   - In Render: **Node web service** → Environment → add vars → redeploy
+     (env changes do not apply until rebuild).
 2. **Run the SQL migrations** in the Supabase SQL editor (Dashboard →
    SQL Editor → New query → paste → Run), in order:
    - `supabase/migrations/0001_videos_table.sql` — the shared video/clip
@@ -81,15 +80,22 @@ Only when they want a copy on Clips. Client compresses toward 720p first.
 | Piece | Free option |
 |-------|-------------|
 | Auth + DB | Supabase free |
-| Stripe secret | Edge Function env STRIPE_SECRET_KEY |
-| Publishable | Render `VITE_STRIPE_PUBLISHABLE_KEY` (name must be exact, then redeploy) |
-| Payment Link | Optional Render `VITE_STRIPE_PAYMENT_LINK` (`https://buy.stripe.com/...`) |
+| Stripe secret | Edge Function env `STRIPE_SECRET_KEY` |
+| Publishable | Render `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` or `VITE_STRIPE_PUBLISHABLE_KEY` |
+| Payment Link | **Do not use** — own Checkout Sessions only |
 | Owned media | R2 / B2 later |
 | Live | MediaMTX later |
 
 ## Order
 
-1. Static + pk (now)
-2. Supabase Auth
-3. Checkout with sk_
-4. Live when demanded
+1. Node Render + Supabase URL/anon
+2. Supabase Auth + migrations (`docs/DEPLOY_CHECKLIST.md`)
+3. Checkout with Edge Function `sk_`
+4. Live ingest when a real RTMP/HLS path exists
+
+## Related ops docs
+
+- [`RENDER_ENV.md`](RENDER_ENV.md) — full env list (BUG-046)
+- [`DEPLOY_CHECKLIST.md`](DEPLOY_CHECKLIST.md)
+- [`RUNBOOK_STRIPE_WEBHOOK.md`](RUNBOOK_STRIPE_WEBHOOK.md)
+- [`RUNBOOK_SUPABASE_OUTAGE.md`](RUNBOOK_SUPABASE_OUTAGE.md)

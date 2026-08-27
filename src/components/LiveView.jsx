@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { Radio, MonitorUp } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { lsGet } from '../lib/storage'
+import { listLiveBoard, liveBadgeLabel, isOnAir } from '../lib/liveStatus'
 import { getSubscriberCount } from '../lib/engagement'
 import FollowButton from './FollowButton'
 import { cn } from '../lib/utils'
@@ -27,7 +28,7 @@ function formatElapsed(startedAt) {
  */
 export default function LiveView({ focusedStream, onFocusStream, onOpenAuth, onNavigate }) {
   const { user, isAuthenticated } = useAuth()
-  const [liveNow, setLiveNow] = useState(() => (lsGet('live_board', []) || []).filter((b) => b.isLive))
+  const [liveNow, setLiveNow] = useState(() => listLiveBoard(lsGet('live_board', []) || []))
   const [, setTick] = useState(0)
   const [sharing, setSharing] = useState(false)
   const [screenError, setScreenError] = useState('')
@@ -35,7 +36,7 @@ export default function LiveView({ focusedStream, onFocusStream, onOpenAuth, onN
   const screenRef = useRef(null)
 
   const refreshLiveBoard = useCallback(() => {
-    setLiveNow((lsGet('live_board', []) || []).filter((b) => b.isLive))
+    setLiveNow(listLiveBoard(lsGet('live_board', []) || []))
   }, [])
 
   useEffect(() => {
@@ -131,7 +132,7 @@ export default function LiveView({ focusedStream, onFocusStream, onOpenAuth, onN
                   <div className="absolute top-3 left-3 flex items-center gap-2">
                     <span className="flex items-center gap-1.5 px-2.5 py-1 bg-[#eb0400] text-white font-extrabold text-xs uppercase tracking-wider">
                       <Radio className="h-3.5 w-3.5" />
-                      Live
+                      {liveBadgeLabel(focusedStream)}
                     </span>
                     <span className="px-2 py-1 bg-black/50 text-zinc-300 text-xs">{formatElapsed(focusedStream.startedAt)}</span>
                   </div>
@@ -224,9 +225,12 @@ export default function LiveView({ focusedStream, onFocusStream, onOpenAuth, onN
                         {(s.displayName || s.handle || '?')[0]?.toUpperCase()}
                       </span>
                     </div>
-                    <span className="absolute top-2 left-2 inline-flex items-center gap-1 px-1.5 py-0.5 bg-[#eb0400] text-white text-[11px] font-bold uppercase">
+                    <span className={cn(
+                      'absolute top-2 left-2 inline-flex items-center gap-1 px-1.5 py-0.5 text-white text-[11px] font-bold uppercase',
+                      isOnAir(s) ? 'bg-[#eb0400]' : 'bg-amber-600'
+                    )}>
                       <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-                      Live
+                      {liveBadgeLabel(s)}
                     </span>
                     <span className="absolute bottom-2 left-2 px-1.5 py-0.5 bg-black/80 text-[11px] text-white">
                       {watchingLabel(s.watchers || s.watcherIds?.length || 0)}

@@ -76,17 +76,17 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 
 | ID | Area | Issue | Notes | Status |
 |----|------|-------|-------|--------|
-| BUG-040 | Tests | Flaky `test-named-activity.mjs` (“browser fallback likes…”) | Pre-existing; quarantine or fix | `open` |
+| BUG-040 | Tests | Flaky `test-named-activity.mjs` (“browser fallback likes…”) | Softened / quarantined in npm test chain on batch branch | `doing` |
 | BUG-041 | Tests | Add Playwright/browser smoke for upload → play | String smoke isn’t enough | `open` |
 | BUG-042 | Dead code | Remove no-op ad modules or finish AdSense replacement | Deleted AdUnits/ExoClick/VAST hooks; thin `adEngine`/`vastAds`/`liveAds` stubs remain for advertise portal + smoke | `done` |
 | BUG-043 | Dead code | Remove Vite path when Next peel is complete | Keep `build:vite` until SpaShell gone | `open` |
 | BUG-044 | Knip | Run `npm run knip` and clear new unused after Next | | `open` |
-| BUG-045 | Docs | Update AdminSetup / Help for Node deploy + no hamburger | Help already partly updated | `open` |
-| BUG-046 | Env | Document required Render env vars for Node service | Checklist in this file or AdminSetup | `open` |
+| BUG-045 | Docs | Update AdminSetup / Help for Node deploy + no hamburger | Help + AdminSetup updated on `cursor/do-500-batch-09e7` | `doing` |
+| BUG-046 | Env | Document required Render env vars for Node service | `docs/RENDER_ENV.md` + deploy checklist | `doing` |
 | BUG-047 | Dual write | Any remaining local-only media paths | Cloud is source of truth | `open` |
 | BUG-048 | Security | Review RLS on `videos` + storage policies after bucket recreate | | `open` |
 | BUG-049 | Perf | First Load JS ~255kB SpaShell — code-split peeled routes | | `open` |
-| BUG-050 | A11y | Live chat `aria-live` — spot-check after Next | | `open` |
+| BUG-050 | A11y | Live chat `aria-live` — spot-check after Next | LiveChatPanel has aria-live; toast region + skip-link on batch branch | `doing` |
 | BUG-051 | Legal | Terms still say “Clips” in places — brand to calabi | Done in #106 | `done` |
 | BUG-052 | Product | Notifications: no push/email yet | In-app only | `open` |
 | BUG-053 | Product | 2FA / MFA gate — verify import + flow on Next | Past missing-import bug | `open` |
@@ -147,8 +147,12 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 | ID | Issue | Reason |
 |----|-------|--------|
 | — | Keep ExoClick VAST as primary | Product moved off ExoClick |
-| BUG-012 | AdSense monetization path | Decided: no ads; tips/premium/Cash only |
+| BUG-012 | AdSense monetization path | Decided: no ads; tips/premium/Cash→Coins only. Still accurate — do not re-enable inventory sales without a product flip of `FEATURE_ADS`. |
 | BUG-013 | Wire AdSense clip/pic units | Cancelled with BUG-012 |
+
+### Triage note (2026-08-26)
+
+Ads-related wontfix (**BUG-012/013**) remain correct: no in-stream/VAST inventory is sold. **AdvertisePage** is being rewritten on `cursor/do-500-batch-09e7` to an interest / partnership form (no VAST or “inventory for sale” claims). Prefer Coins, tips, and premium until ads are explicitly re-enabled.
 
 ---
 

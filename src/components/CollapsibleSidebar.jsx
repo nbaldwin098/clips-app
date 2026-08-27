@@ -28,6 +28,8 @@ import {
   Code2,
 } from 'lucide-react'
 import { lsGet } from '../lib/storage'
+import { listLiveBoard, liveBadgeLabel, isOnAir } from '../lib/liveStatus'
+import { FEATURE_ADS } from '../lib/featureFlags'
 import { listSidebarCreators } from '../lib/contentService'
 import ChannelAvatar from './ChannelAvatar'
 import VerifiedBadge from './VerifiedBadge'
@@ -77,18 +79,18 @@ export default function CollapsibleSidebar({
   const collapsed = true // Icons-only forever — never expand the left rail
   // width formula kept for layout contract: collapsed ? 'w-14' : 'w-60'
   const [moreOpen, setMoreOpen] = useState(false)
-  const [liveNow, setLiveNow] = useState(() => (lsGet('live_board', []) || []).filter((b) => b.isLive))
+  const [liveNow, setLiveNow] = useState(() => listLiveBoard(lsGet('live_board', []) || []))
   const [recommendedCreators, setRecommendedCreators] = useState(() => listSidebarCreators(8))
 
   const refreshLiveBoard = useCallback(() => {
     import('../lib/graphSync').then(({ syncPublicEngagementFromCloud }) => {
       syncPublicEngagementFromCloud?.().then(() => {
-        setLiveNow((lsGet('live_board', []) || []).filter((b) => b.isLive))
+        setLiveNow(listLiveBoard(lsGet('live_board', []) || []))
       }).catch(() => {
-        setLiveNow((lsGet('live_board', []) || []).filter((b) => b.isLive))
+        setLiveNow(listLiveBoard(lsGet('live_board', []) || []))
       })
     }).catch(() => {
-      setLiveNow((lsGet('live_board', []) || []).filter((b) => b.isLive))
+      setLiveNow(listLiveBoard(lsGet('live_board', []) || []))
     })
   }, [])
 
@@ -149,7 +151,7 @@ export default function CollapsibleSidebar({
             {!collapsed && (
               <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-1 flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#eb0400]" />
-                Lobby ({liveNow.length})
+                {liveNow.some(isOnAir) ? 'Live' : 'Lobby'} ({liveNow.length})
               </p>
             )}
             {liveNow.map((s) => (
@@ -162,18 +164,26 @@ export default function CollapsibleSidebar({
                   collapsed && 'justify-center px-0',
                   focusedStreamUserId === s.userId ? 'bg-[#1f1f28]' : 'hover:bg-[#181820]'
                 )}
-                title={collapsed ? `${s.displayName} · Lobby` : undefined}
+                title={collapsed ? `${s.displayName} · ${liveBadgeLabel(s)}` : undefined}
               >
                 <span className="relative shrink-0">
-                  <span className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold border-2 border-[#eb0400] bg-white/10 text-white">
+                  <span className={cn(
+                    'h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold border-2 bg-white/10 text-white',
+                    isOnAir(s) ? 'border-[#eb0400]' : 'border-amber-500/80'
+                  )}>
                     {(s.displayName || s.handle || '?')[0]?.toUpperCase()}
                   </span>
-                  <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-[#eb0400] ring-1 ring-[#000000] animate-pulse" />
+                  <span className={cn(
+                    'absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full ring-1 ring-[#000000]',
+                    isOnAir(s) ? 'bg-[#eb0400] animate-pulse' : 'bg-amber-500'
+                  )} />
                 </span>
                 {!collapsed && (
                   <span className="min-w-0 flex-1">
                     <span className="block text-xs text-zinc-200 truncate">{s.displayName}</span>
-                    <span className="block text-[10px] text-zinc-500 truncate">{s.title}</span>
+                    <span className="block text-[10px] text-zinc-500 truncate">
+                      {liveBadgeLabel(s)} · {s.title}
+                    </span>
                   </span>
                 )}
                 {!collapsed && <span className="text-[10px] text-zinc-500 shrink-0">{formatElapsed(s.startedAt)}</span>}
@@ -244,7 +254,11 @@ export default function CollapsibleSidebar({
               <NavBtn collapsed={collapsed} active={currentView === 'stats'} onClick={() => go('stats')} icon={Activity} label="Stats" />
               <NavBtn collapsed={collapsed} active={currentView === 'api'} onClick={() => go('api')} icon={Code2} label="API" />
               <NavBtn collapsed={collapsed} active={currentView === 'support'} onClick={() => go('support')} icon={LifeBuoy} label="Support" />
-              <NavBtn collapsed={collapsed} active={currentView === 'advertise' || currentView === 'advertiser-portal'} onClick={() => go('advertise')} icon={Megaphone} label="Advertise with us" />
+              {FEATURE_ADS ? (
+                <NavBtn collapsed={collapsed} active={currentView === 'advertise' || currentView === 'advertiser-portal'} onClick={() => go('advertise')} icon={Megaphone} label="Advertise with us" />
+              ) : (
+                <NavBtn collapsed={collapsed} active={currentView === 'creator-apply' || currentView === 'help'} onClick={() => go('help')} icon={Megaphone} label="How creators earn" />
+              )}
               <NavBtn collapsed={collapsed} active={currentView === 'about'} onClick={() => go('about')} icon={BookOpen} label="About" />
               <NavBtn collapsed={collapsed} active={currentView === 'help'} onClick={() => go('help')} icon={HelpCircle} label="Help" />
               <NavBtn collapsed={collapsed} active={currentView === 'legal-tos'} onClick={() => go('legal-tos')} icon={FileText} label="Terms of Service" />

@@ -220,12 +220,43 @@ function applyTip(pending) {
 /**
  * Apply a Stripe return. Never marks premium or a tip unless paid=1 / session_id came back.
  * Tips never grant channel premium.
+ * Idempotent across tab refreshes via sessionStorage + localStorage claim key.
  */
 export function claimStripeReturn(user, params = {}, search = '') {
   if (!user?.id) return { ok: false, kind: '' }
   if (!membershipReturnPaid(params, search)) return { ok: false, kind: '' }
   const pending = readPendingStripe()
+  const claimKey = (() => {
+    try {
+      const q = typeof search === 'string' ? new URLSearchParams(search) : new URLSearchParams()
+      const sid = String(params.session_id || params.sessionId || q.get('session_id') || '').slice(0, 120)
+      const kind = String(pending?.kind || 'unknown').slice(0, 40)
+      const amt = String(pending?.amount || pending?.tierId || pending?.contentId || pending?.at || '').slice(0, 80)
+      return `calabi_stripe_claimed_${user.id}_${kind}_${sid || amt}`
+    } catch {
+      return ''
+    }
+  })()
+  const already = () => {
+    if (!claimKey || typeof window === 'undefined') return false
+    try {
+      if (sessionStorage.getItem(claimKey) === '1') return true
+      if (localStorage.getItem(claimKey) === '1') return true
+    } catch {}
+    return false
+  }
+  if (already()) {
+    clearPendingStripe()
+    return { ok: false, kind: '', alreadyClaimed: true }
+  }
   clearPendingStripe()
+  // Mark before granting so a mid-flight refresh cannot double-credit.
+  const markClaimed = () => {
+    if (!claimKey || typeof window === 'undefined') return
+    try { sessionStorage.setItem(claimKey, '1') } catch {}
+    try { localStorage.setItem(claimKey, '1') } catch {}
+  }
+  markClaimed()
   if (pending?.kind === 'live_tip' || pending?.kind === 'post_tip') {
     if (pending.donorId !== user.id) return { ok: false, kind: '' }
     applyTip(pending)

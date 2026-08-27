@@ -1,16 +1,30 @@
 import { runtimeEnv } from './runtimeEnv'
 
+let _missingLogged = false
+
 export function getSupabaseConfig() {
   try {
     const url = runtimeEnv('VITE_SUPABASE_URL') || runtimeEnv('NEXT_PUBLIC_SUPABASE_URL')
     const anon = runtimeEnv('VITE_SUPABASE_ANON_KEY') || runtimeEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY')
-    return { url, anon, configured: !!(url && anon) }
+    const configured = !!(url && anon)
+    if (!configured && !_missingLogged) {
+      _missingLogged = true
+      console.error(
+        '[calabi] NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY (or VITE_*) missing — cloud sync, auth, and uploads will not work. See docs/RENDER_ENV.md',
+      )
+    }
+    return { url, anon, configured }
   } catch {
     return { url: '', anon: '', configured: false }
   }
 }
 export function isSupabaseConfigured() {
   return getSupabaseConfig().configured
+}
+
+/** Explicit fail-loud entry for boot (console.error once via getSupabaseConfig). */
+export function warnIfSupabaseMissing() {
+  return !isSupabaseConfigured()
 }
 let _client = null
 let _clientPromise = null
@@ -32,7 +46,7 @@ export async function getSupabase() {
       })
       return _client
     } catch {
-      console.warn('[Clips] Install @supabase/supabase-js and set VITE_SUPABASE_*')
+      console.error('[calabi] Failed to init @supabase/supabase-js — install the package and set NEXT_PUBLIC_SUPABASE_*')
       _clientPromise = null
       return null
     }

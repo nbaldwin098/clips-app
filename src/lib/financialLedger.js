@@ -1,8 +1,8 @@
 /**
  * Creator financial engine.
- * - Memberships & Calabi Cash tips: 80% creator / 20% platform (see revenueSplit.js).
+ * - Memberships & Coins tips: 80% creator / 20% platform (see revenueSplit.js).
  * - Legacy USD tip checkout still uses buyer fee on top (Stripe-ready).
- * Site ads are platform revenue. There is no creator ad share.
+ * Ads are not offered — no creator ad share.
  */
 
 import { CREATOR_REV_SHARE, PLATFORM_REV_SHARE, splitRevenue } from './revenueSplit'

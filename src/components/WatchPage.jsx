@@ -553,9 +553,30 @@ export default function WatchPage({
 
   if (!item) {
     return (
-      <div className="p-8 text-center">
-        <p className="text-sm text-zinc-400">This video is not on this device.</p>
-        <button type="button" onClick={onBack} className="mt-4 text-xs text-white">← Back</button>
+      <div className="flex flex-1 items-center justify-center p-8 min-h-[50vh]">
+        <div className="max-w-md text-center space-y-3">
+          <AlertCircle className="h-8 w-8 text-zinc-600 mx-auto" />
+          <p className="text-base font-semibold text-zinc-200">This video is unavailable</p>
+          <p className="text-sm text-zinc-500">
+            It may have been deleted, set to private, or the link is out of date.
+          </p>
+          <div className="flex flex-wrap justify-center gap-2 pt-2">
+            <button
+              type="button"
+              onClick={onBack}
+              className="h-9 px-4 rounded-lg bg-white text-black text-xs font-semibold"
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={() => onPlayItem ? onBack?.() : (window.location.href = '/')}
+              className="h-9 px-4 rounded-lg border border-zinc-700 text-xs text-zinc-300"
+            >
+              Home
+            </button>
+          </div>
+        </div>
       </div>
     )
   }

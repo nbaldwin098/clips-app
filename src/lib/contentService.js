@@ -14,6 +14,7 @@ import {
   MAX_VIDEO_DURATION_SEC,
   clipLimitsMessage,
   videoLimitsMessage,
+  audioOnlyMessage,
 } from './mediaUpload'
 import { pushContentRecord, deleteContentRecord, notifyContentChanged, syncContentFromCloud } from './contentSync'
 import { newContentId } from './newContentId'
@@ -606,12 +607,18 @@ export async function publishLocalMedia(file, actor = null, {
     const prepare = prepareVideoForUpload || transcodeVideoForUpload
     const processed = await prepare(file)
     const dur = Number(processed.durationSec) || 0
+    const w = Number(processed.width) || 0
+    const h = Number(processed.height) || 0
+    const mime = String(file.type || processed.file?.type || '').toLowerCase()
+    if (mime.startsWith('audio/') || (dur > 0.5 && w < 2 && h < 2)) {
+      return { ok: false, item: null, error: audioOnlyMessage() }
+    }
     if (asClip) {
       if (dur > MAX_CLIP_DURATION_SEC + 0.5) {
-        return { ok: false, item: null, error: clipLimitsMessage() }
+        return { ok: false, item: null, error: clipLimitsMessage(dur) }
       }
     } else if (dur > MAX_VIDEO_DURATION_SEC + 0.5) {
-      return { ok: false, item: null, error: videoLimitsMessage() }
+      return { ok: false, item: null, error: videoLimitsMessage(dur) }
     }
     const outFile = processed.file || file
     const id = newContentId()
