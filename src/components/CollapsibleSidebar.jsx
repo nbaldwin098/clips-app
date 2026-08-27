@@ -28,6 +28,7 @@ import {
   Code2,
 } from 'lucide-react'
 import { lsGet } from '../lib/storage'
+import { FEATURE_ADS } from '../lib/featureFlags'
 import { listSidebarCreators } from '../lib/contentService'
 import ChannelAvatar from './ChannelAvatar'
 import VerifiedBadge from './VerifiedBadge'
@@ -244,7 +245,11 @@ export default function CollapsibleSidebar({
               <NavBtn collapsed={collapsed} active={currentView === 'stats'} onClick={() => go('stats')} icon={Activity} label="Stats" />
               <NavBtn collapsed={collapsed} active={currentView === 'api'} onClick={() => go('api')} icon={Code2} label="API" />
               <NavBtn collapsed={collapsed} active={currentView === 'support'} onClick={() => go('support')} icon={LifeBuoy} label="Support" />
-              <NavBtn collapsed={collapsed} active={currentView === 'advertise' || currentView === 'advertiser-portal'} onClick={() => go('advertise')} icon={Megaphone} label="Advertise with us" />
+              {FEATURE_ADS ? (
+                <NavBtn collapsed={collapsed} active={currentView === 'advertise' || currentView === 'advertiser-portal'} onClick={() => go('advertise')} icon={Megaphone} label="Advertise with us" />
+              ) : (
+                <NavBtn collapsed={collapsed} active={currentView === 'creator-apply' || currentView === 'help'} onClick={() => go('help')} icon={Megaphone} label="How creators earn" />
+              )}
               <NavBtn collapsed={collapsed} active={currentView === 'about'} onClick={() => go('about')} icon={BookOpen} label="About" />
               <NavBtn collapsed={collapsed} active={currentView === 'help'} onClick={() => go('help')} icon={HelpCircle} label="Help" />
               <NavBtn collapsed={collapsed} active={currentView === 'legal-tos'} onClick={() => go('legal-tos')} icon={FileText} label="Terms of Service" />

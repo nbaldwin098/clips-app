@@ -8,7 +8,7 @@ export default function HelpPage() {
     },
     {
       q: 'How do I upload or go live?',
-      a: 'Open Create in the left menu (under Live). Upload a video, clip, or pic, or go live from there. Live opens a lobby until ingest is connected — it does not start a video stream by itself.',
+      a: 'Open Create in the left sidebar (under Live). On mobile, open the sidebar from the header controls — there is no hamburger menu. Upload a video, clip, or pic, or go live from Create. Live opens a lobby until ingest is connected — it does not start a video stream by itself.',
     },
     {
       q: 'Can I donate on live or on a video?',
@@ -20,7 +20,11 @@ export default function HelpPage() {
     },
     {
       q: 'Where is Studio, Wallet, and analytics?',
-      a: 'Open your profile picture → Creator dashboard (Analytics, Earnings, VODs, Stream, Verify). Under Site settings: Account and Wallet & Coins. Create (upload / go live) is in the left menu.',
+      a: 'Open your profile picture → Creator dashboard (Analytics, Earnings, VODs, Stream, Verify). Under Site settings: Account and Coins (Orders tab for purchase history). Create (upload / go live) is in the left sidebar — not a header hamburger.',
+    },
+    {
+      q: 'Coins packs say Cash — what am I buying?',
+      a: 'The shop sells Coin packs only (Cash→Coins catalog). Profile → Coins shows packs; Orders lists purchases and spends. Stripe Checkout must return to the site for credit to apply.',
     },
     {
       q: 'Can I watch without an account?',
@@ -43,6 +47,14 @@ export default function HelpPage() {
       a: 'Anyone signed in can upload or go live from Create. To earn, apply from Creator dashboard → Earnings or the apply page. Admin sends payouts after approval. Withdrawals are requested from Earnings. Views are not worth $1 per 1,000.',
     },
     {
+      q: 'How long is escrow held?',
+      a: 'Live request tips stay held until the creator fulfills and Admin releases. Target: refund donors if still held after 14 days. Marketplace: funds release ~7 days after delivery with a 7-day buyer dispute window. Details: docs/ESCROW_TIMEOUT_POLICY.md for operators.',
+    },
+    {
+      q: 'What happens on a chargeback?',
+      a: 'If your bank disputes a Coins or shop payment, we may reverse Coins and hold related creator payouts until Stripe closes the case. Contact support with the receipt id — see chargeback macros for CS in docs/SUPPORT_MACROS.md.',
+    },
+    {
       q: 'How do I report copyright infringement?',
       a: `Email a complete DMCA notice to ${ORG.copyrightEmail}.`,
     },
@@ -52,7 +64,7 @@ export default function HelpPage() {
     },
     {
       q: 'How do I contact support?',
-      a: `Email ${ORG.supportEmail}.`,
+      a: `Email ${ORG.supportEmail}. For Coins/Orders issues, include your account email, approximate time, and Stripe receipt if you have one.`,
     },
   ]
 

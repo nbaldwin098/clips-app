@@ -1,5 +1,5 @@
 /**
- * Interactive viewer controls — spend Calabi Cash on live actions
+ * Interactive viewer controls — spend Coins on live actions
  * (SFX, lighting cue, media queue). Host sees a queue; delivery is local until ingest.
  */
 

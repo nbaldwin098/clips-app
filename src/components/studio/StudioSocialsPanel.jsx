@@ -172,12 +172,13 @@ export default function StudioSocialsPanel({ onNavigate }) {
     <div className="h-full min-h-0 overflow-y-auto space-y-4 pb-8">
       <SettingsPageHeader
         title="Socials"
-        subtitle="Connect accounts, then push videos, clips, pics, or VODs out in one tap."
+        subtitle="Connect profile links anytime. Publish to networks stays disabled until OAuth is configured."
       />
 
       <SettingsNotice>
         <p>
-          Save handles and toggle Show on profile anytime. Posting out only works when OAuth client IDs are configured for that network — we do not fake a publish queue.
+          Save handles and toggle Show on profile anytime. Publish is disabled without OAuth client IDs
+          (VITE_OAUTH_*_CLIENT_ID). Profile icons still work; we do not fake a successful post.
         </p>
       </SettingsNotice>
 

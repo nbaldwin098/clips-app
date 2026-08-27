@@ -99,7 +99,7 @@ export const STRIPE_PRODUCT_NOTES = {
   cashLinks: 'Optional per-pack links: VITE_STRIPE_CASH_LINK_T1/T3/T5/T10/T50/FIRST',
 }
 
-/** Per-tier Calabi Cash Payment Links (fallback: generic VITE_STRIPE_PAYMENT_LINK). */
+/** Per-tier Coins Payment Links (fallback: generic VITE_STRIPE_PAYMENT_LINK). */
 export function getCalabiCashPaymentLink(tierId) {
   const map = {
     first: 'VITE_STRIPE_CASH_LINK_FIRST',

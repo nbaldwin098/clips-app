@@ -29,7 +29,7 @@ function orderLabel(row, packsById) {
   return row.kind || 'Order'
 }
 
-function CoinOrdersPanel() {
+function CoinOrdersPanel({ onBuyCoins }) {
   const { user } = useAuth()
   const [, bump] = useState(0)
   const packsById = new Map(listCoinPacks().map((p) => [p.id, p]))
@@ -45,7 +45,18 @@ function CoinOrdersPanel() {
   }
 
   if (!rows.length) {
-    return <p className="text-sm text-zinc-500">No coin orders yet. Buy a pack on the Coins tab.</p>
+    return (
+      <div className="rounded-xl border border-zinc-800 bg-[#0c0c10] px-4 py-6 text-center space-y-3">
+        <p className="text-sm text-zinc-500">No coin orders yet.</p>
+        <button
+          type="button"
+          onClick={() => onBuyCoins?.()}
+          className="h-9 px-4 bg-white text-black text-xs font-semibold"
+        >
+          Buy Coins
+        </button>
+      </div>
+    )
   }
 
   return (
@@ -104,7 +115,11 @@ export default function WalletSettings({ onNavigate, initialTab = null }) {
         active={tab}
         onChange={onTab}
       />
-      {tab === 'orders' ? <CoinOrdersPanel /> : <CalabiCashShop />}
+      {tab === 'orders' ? (
+        <CoinOrdersPanel onBuyCoins={() => onTab('coins')} />
+      ) : (
+        <CalabiCashShop />
+      )}
     </div>
   )
 }

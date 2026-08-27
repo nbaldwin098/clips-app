@@ -27,11 +27,12 @@ export default function Footer({ onNavigate }) {
             {link('Create', 'create')}
             {link('Advertise', 'advertise')}
             {link('Help', 'help')}
+            {link('Support', 'support')}
             {link('Terms of Service', 'legal-tos')}
             {link('Privacy Policy', 'legal-privacy')}
             {link('Creator Agreement', 'legal-creator')}
             {link('Community Guidelines', 'legal-community')}
-            {link('Copyright & DMCA', 'help')}
+            {link('Copyright & DMCA', 'content-rules')}
           </div>
         </div>
         <p className="mt-8 text-[11px] text-zinc-600">

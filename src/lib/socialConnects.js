@@ -189,14 +189,7 @@ export function listSocialJobs(userId, limit = 30) {
   return listClipJobs(userId, limit)
 }
 
-/** AI highlight stub — marks a range for auto vertical clip. */
-export function queueAiHighlight({ userId, streamId, label = 'Highlight' }) {
-  return queueClipPost({
-    userId,
-    contentId: streamId || `live_${userId}`,
-    title: `AI · ${label}`,
-    providers: Object.keys(getSocialConnects(userId)).filter((p) => getSocialConnects(userId)[p]?.connected),
-    startSec: 0,
-    endSec: 45,
-  })
+/** AI highlight is not shipped — keep export for callers, always refuse. */
+export function queueAiHighlight() {
+  return { ok: false, error: 'AI highlight clips are not available yet.' }
 }

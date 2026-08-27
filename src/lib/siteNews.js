@@ -14,12 +14,12 @@ const EVENT = 'clips-news-changed'
 export const SEED_NEWS = [
   {
     id: 'seed_cash_coins',
-    title: 'Calabi Cash + Gold Coins',
-    body: 'Cash is for donations, TTS, premium, and paid features. Coins are for chat — bigger messages, creator emojis & GIFs, and more later. Buy packs in Wallet under Site settings.',
+    title: 'Coins for chat',
+    body: 'Buy Coins under Site settings → Coins for chat cosmetics (bigger messages, creator emojis & GIFs). Tips and premium memberships use card checkout. Check Orders for purchase history.',
     tag: 'Money',
     destView: 'settings',
     destId: 'wallet',
-    ctaLabel: 'Open Wallet',
+    ctaLabel: 'Open Coins',
     publishedAt: '2026-08-20T12:00:00.000Z',
   },
   {

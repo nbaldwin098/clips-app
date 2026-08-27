@@ -20,6 +20,9 @@ export default function CommunityPage({ onNavigate, onOpenAuth }) {
   return (
     <div className="p-4 md:p-6 max-w-lg mx-auto">
       <PageHeader title="Community" onBack={() => onNavigate?.('home')} />
+      <p className="text-xs text-amber-400/90 mb-3 leading-relaxed">
+        Community posts are saved on this device only until cloud migration ships. Clearing site data or switching browsers will lose them.
+      </p>
       <form
         className="space-y-2 mb-4"
         onSubmit={(e) => {

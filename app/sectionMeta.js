@@ -28,8 +28,8 @@ export const SECTION_META = {
     description: 'Upload a video, clip, or pic on calabi.',
   },
   advertise: {
-    title: 'Advertise',
-    description: 'Advertise with calabi.',
+    title: 'Monetization',
+    description: 'calabi does not sell ads — tips, premium, and Coins only.',
   },
   support: {
     title: 'Support',
@@ -115,8 +115,8 @@ export const SECTION_META = {
     noindex: true,
   },
   'calabi-cash': {
-    title: 'Calabi Cash',
-    description: 'Buy Calabi Cash to tip creators on lives, videos, clips, and pics.',
+    title: 'Coins',
+    description: 'Buy Coins to tip creators on lives, videos, clips, and pics.',
     noindex: true,
   },
   'stream-settings': {
@@ -180,7 +180,7 @@ export const SECTION_META = {
   },
   'advertiser-portal': {
     title: 'Advertiser portal',
-    description: 'Advertiser portal on calabi.',
+    description: 'Ads are not offered — use tips, premium, and Coins.',
     noindex: true,
   },
   admin: {
