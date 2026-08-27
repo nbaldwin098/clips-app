@@ -1,10 +1,7 @@
 /**
  * Stripe Connect Express — DISABLED (returns 501).
  * Use Studio → Earnings + Admin → Payouts instead (docs/OWN_PAYOUTS.md).
- * Kept for rollback only; client no longer calls this.
  */
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1'
-
 const cors = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
