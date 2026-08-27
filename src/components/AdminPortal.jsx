@@ -25,6 +25,7 @@ import AdminSetup from './AdminSetup'
 import AdminPeople from './admin/AdminPeople'
 import AdminContent from './admin/AdminContent'
 import AdminSafety from './admin/AdminSafety'
+import AdminWithdrawPanel from './admin/AdminWithdrawPanel'
 import { listEscrow, adminReleaseEscrow, adminRefundEscrow } from '../lib/donationEscrow'
 import { getCreatorAnalytics } from '../lib/engagement'
 import { syncPublicEngagementFromCloud } from '../lib/graphSync'
@@ -401,12 +402,13 @@ export default function AdminPortal() {
           {tab === 'payouts' && (
             <div className="p-5 space-y-4">
               <p className="text-[11px] text-zinc-500">
-                Storage cost is admin-only. When you record a payout, due storage is deducted first;
-                creators only see the net amount paid.
+                Creators request payouts from Studio → Earnings. Pay them outside Stripe, then mark paid here.
+                Manual record below is for hand ledgers / storage notes.
               </p>
+              <AdminWithdrawPanel />
               <AdminEscrowPanel onChange={refresh} />
               <div className="rounded-xl border border-white/10 bg-[#111113] p-4 space-y-2">
-                <p className="text-sm font-medium">Manual payout</p>
+                <p className="text-sm font-medium">Manual payout record</p>
                 <input value={payUser} onChange={(e) => setPayUser(e.target.value)} placeholder="User id" className="w-full h-9 rounded bg-black border border-white/10 px-2 text-sm" />
                 <input value={payAmt} onChange={(e) => setPayAmt(e.target.value)} placeholder="Gross amount (before storage)" className="w-full h-9 rounded bg-black border border-white/10 px-2 text-sm" />
                 <input value={payNote} onChange={(e) => setPayNote(e.target.value)} placeholder="Note" className="w-full h-9 rounded bg-black border border-white/10 px-2 text-sm" />

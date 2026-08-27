@@ -54,7 +54,7 @@ export const KICK_TWITCH_PARITY = [
   { feature: 'Custom emotes', kick: 'live', twitch: 'live', clips: 'partial' },
   { feature: 'Premium memberships (livestream)', kick: 'live', twitch: 'live', clips: 'partial', note: 'Price and premium list; Stripe Payment Link amount is separate. Free follow is separate.' },
   { feature: 'Earnings', kick: 'live', twitch: 'live', clips: 'live', note: 'Creator Studio → Earnings (not a separate Revenue page).' },
-  { feature: 'Stripe / bank payouts', kick: 'live', twitch: 'live', clips: 'partial', note: 'Express Connect + webhook Transfers (80%); needs Stripe Connect enabled.' },
+  { feature: 'Stripe / bank payouts', kick: 'live', twitch: 'live', clips: 'partial', note: 'calabi Earnings withdraw + Admin payout queue (no Stripe Express).' },
   { feature: 'Live analytics', kick: 'live', twitch: 'live', clips: 'partial', note: 'Post views, likes, subs; no concurrent viewer graph yet.' },
   { feature: 'Content analytics by post', kick: 'live', twitch: 'live', clips: 'live' },
   { feature: 'Stream schedule', kick: 'live', twitch: 'live', clips: 'partial' },

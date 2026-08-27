@@ -7,6 +7,7 @@ import PageHeader from './PageHeader'
 import PlatformFeeLine from './PlatformFeeLine'
 import { withPlatformFee, formatUsdFromCents } from '../lib/platformFee'
 
+/** calabi-owned checkout shell — Stripe hosts the card form only. */
 export default function CheckoutPage({ onNavigate, creatorId, returnParams = {} }) {
   const { user, isAuthenticated } = useAuth()
   const checkout = usePremiumCheckout({ user, isAuthenticated, creatorId })
@@ -24,22 +25,23 @@ export default function CheckoutPage({ onNavigate, creatorId, returnParams = {} 
 
   return (
     <div className="p-4 md:p-6 max-w-md mx-auto">
-      <PageHeader title="Checkout" subtitle={`Premium · $${checkout.price}/month`} onBack={() => onNavigate?.('home')} />
+      <PageHeader title="calabi Checkout" subtitle={`Premium · $${checkout.price}/month`} onBack={() => onNavigate?.('home')} />
       <div className="rounded-2xl border border-zinc-800 bg-[#121218] p-5 space-y-4">
+        <p className="text-[10px] uppercase tracking-wider text-zinc-500">Order summary</p>
         <p className="text-3xl font-semibold text-white">${checkout.price}<span className="text-sm text-zinc-500 font-normal">/mo</span></p>
         <ul className="text-xs text-zinc-400 space-y-1 list-disc list-inside">
           <li>Premium badge in chat</li>
           <li>Creator emotes the channel has added</li>
-          <li>Charged through calabi’s own Stripe Checkout</li>
+          <li>calabi Checkout · card form hosted by Stripe</li>
         </ul>
         <div className="rounded-lg border border-zinc-800 bg-black/40 p-3 space-y-1 text-xs text-zinc-400">
+          <p className="text-zinc-300">Subtotal {formatUsdFromCents(priceCents)}</p>
           <PlatformFeeLine listCents={priceCents} showTotal />
-          <p className="text-white pt-1">Stripe hosts the card form; money is confirmed on return to calabi.</p>
         </div>
         <p className="text-[11px] text-zinc-500">
           {canPay
-            ? `Own checkout ready${isStripeConfigured() ? ` (${mode})` : ''}. Sign in, then Pay.`
-            : 'Set VITE_SUPABASE_URL + ANON_KEY and deploy the create-checkout-session Edge Function.'}
+            ? `Ready${isStripeConfigured() ? ` (${mode})` : ''}. Sign in, then Pay — you return here after Stripe.`
+            : 'Set cloud env + deploy create-checkout-session.'}
         </p>
         {checkout.already ? (
           <p className="text-sm text-white">You already have premium on this channel.</p>

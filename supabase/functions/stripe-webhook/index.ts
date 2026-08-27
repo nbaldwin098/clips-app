@@ -243,7 +243,7 @@ async function settlePayment(
     platform_share_cents: platformShareCents,
     currency: opts.currency,
     status: 'settled',
-    transfer_status: paysCreator ? 'pending' : 'none',
+    transfer_status: paysCreator ? 'manual' : 'none',
     meta: opts.extraMeta,
   })
   if (insErr) {
@@ -255,22 +255,8 @@ async function settlePayment(
 
   await creditCreatorEarnings(sb, opts.creatorId, creatorShareCents / 100, opts.kind)
 
-  const { data: profile } = await sb
-    .from('profiles')
-    .select('stripe_connect_account_id, stripe_connect_payouts_enabled')
-    .eq('id', opts.creatorId)
-    .maybeSingle()
-
-  const connectId = profile?.stripe_connect_account_id as string | undefined
-  if (connectId && profile?.stripe_connect_payouts_enabled) {
-    await createTransfer(stripe, sb, {
-      sessionId: opts.settlementId,
-      creatorId: opts.creatorId,
-      connectId,
-      amountCents: creatorShareCents,
-      currency: opts.currency,
-    })
-  }
+  // Stripe Express Transfers are OFF — creators withdraw via Studio → Earnings;
+  // ops pays from Admin → Payouts. Leave available_usd for calabi-owned payouts.
 }
 
 async function creditCreatorEarnings(
@@ -396,30 +382,10 @@ async function createTransfer(
 }
 
 async function flushPendingTransfers(
-  sb: ReturnType<typeof createClient>,
-  creatorId: string,
-  connectId: string,
+  _sb: ReturnType<typeof createClient>,
+  _creatorId: string,
+  _connectId: string,
 ) {
-  const stripeKey = Deno.env.get('STRIPE_SECRET_KEY') || ''
-  if (!stripeKey.startsWith('sk_')) return
-  const stripe = new Stripe(stripeKey, {
-    apiVersion: '2023-10-16',
-    httpClient: Stripe.createFetchHttpClient(),
-  })
-  const { data: pending } = await sb
-    .from('stripe_settlements')
-    .select('*')
-    .eq('creator_id', creatorId)
-    .eq('transfer_status', 'pending')
-    .limit(50)
-  for (const row of pending || []) {
-    if (!row.creator_share_cents) continue
-    await createTransfer(stripe, sb, {
-      sessionId: row.session_id,
-      creatorId,
-      connectId,
-      amountCents: row.creator_share_cents,
-      currency: row.currency || 'usd',
-    })
-  }
+  // Express auto-transfers disabled — calabi-owned withdraw queue.
+  return
 }
