@@ -17,7 +17,6 @@ import {
   Radio,
   FolderOpen,
   Newspaper,
-  User,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import CreatorOnboarding from '../CreatorOnboarding'
@@ -787,15 +786,6 @@ export default function CreatorStudio({
             </div>
           ))}
         </nav>
-        <div className="px-2 pt-2 border-t border-zinc-800 space-y-0.5">
-          <button
-            type="button"
-            onClick={() => onNavigate?.('settings', 'account')}
-            className="w-full flex items-center gap-2.5 px-2.5 py-2 text-sm text-zinc-400 hover:bg-[#18181f] hover:text-white"
-          >
-            <User className="h-4 w-4" /> Site account
-          </button>
-        </div>
       </aside>
 
       {/* Mobile section picker */}

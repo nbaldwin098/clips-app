@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
   LayoutDashboard, Users, Film, ShieldAlert, Wallet, Flag,
-  Radio, LifeBuoy, Settings, ClipboardList, ShoppingBag, BarChart3, Newspaper,
+  Radio, LifeBuoy, ClipboardList, ShoppingBag, BarChart3, Newspaper,
   Landmark,
 } from 'lucide-react'
 import {
@@ -18,11 +18,9 @@ import {
   recordManualPayout, listPayoutLedger, getPayoutContact,
 } from '../lib/payouts'
 import { useAuth } from '../context/AuthContext'
-import { ORG } from '../lib/orgConfig'
 import { adminOverview, payoutsHeld } from '../lib/trustSafety'
 import AdminPromos from './AdminPromos'
 import AdminNews from './AdminNews'
-import AdminSetup from './AdminSetup'
 import AdminPeople from './admin/AdminPeople'
 import AdminContent from './admin/AdminContent'
 import AdminSafety from './admin/AdminSafety'
@@ -66,20 +64,19 @@ function AdminEscrowPanel({ onChange }) {
 }
 
 const NAV = [
-  { id: 'overview', label: 'Overview', icon: LayoutDashboard, roles: ['owner', 'admin', 'cs', 'mod'] },
-  { id: 'analytics', label: 'Analytics', icon: BarChart3, roles: ['owner', 'admin', 'cs'] },
-  { id: 'tickets', label: 'Support desk', icon: LifeBuoy, roles: ['owner', 'admin', 'cs', 'mod'] },
-  { id: 'people', label: 'People', icon: Users, roles: ['owner', 'admin', 'cs'] },
-  { id: 'content', label: 'Content', icon: Film, roles: ['owner', 'admin', 'mod'] },
-  { id: 'safety', label: 'Safety', icon: ShieldAlert, roles: ['owner', 'admin', 'mod'] },
-  { id: 'shop', label: 'Marketplace', icon: ShoppingBag, roles: ['owner', 'admin', 'cs'] },
-  { id: 'finance', label: 'Finance', icon: Landmark, roles: ['owner', 'admin'] },
-  { id: 'payouts', label: 'Payouts', icon: Wallet, roles: ['owner', 'admin'] },
-  { id: 'promos', label: 'Promos', icon: Flag, roles: ['owner', 'admin'] },
-  { id: 'news', label: 'News', icon: Newspaper, roles: ['owner', 'admin'] },
-  { id: 'live', label: 'Live', icon: Radio, roles: ['owner', 'admin', 'mod'] },
-  { id: 'applications', label: 'Creator apps', icon: ClipboardList, roles: ['owner', 'admin', 'cs'] },
-  { id: 'setup', label: 'Setup', icon: Settings, roles: ['owner', 'admin'] },
+  { id: 'overview', label: 'Overview', icon: LayoutDashboard, group: 'Home' },
+  { id: 'tickets', label: 'Support', icon: LifeBuoy, group: 'Ops' },
+  { id: 'people', label: 'People', icon: Users, group: 'Ops' },
+  { id: 'safety', label: 'Safety', icon: ShieldAlert, group: 'Ops' },
+  { id: 'applications', label: 'Creator apps', icon: ClipboardList, group: 'Ops' },
+  { id: 'finance', label: 'Stripe ledger', icon: Landmark, group: 'Money' },
+  { id: 'payouts', label: 'Pay creators', icon: Wallet, group: 'Money' },
+  { id: 'shop', label: 'Marketplace', icon: ShoppingBag, group: 'Money' },
+  { id: 'content', label: 'Content', icon: Film, group: 'Content' },
+  { id: 'live', label: 'Live', icon: Radio, group: 'Content' },
+  { id: 'news', label: 'News', icon: Newspaper, group: 'Content' },
+  { id: 'promos', label: 'Promos', icon: Flag, group: 'Content' },
+  { id: 'analytics', label: 'Analytics', icon: BarChart3, group: 'Insights' },
 ]
 
 const ADMIN_UNLOCK_KEY = 'clips_admin_ui_unlocked'
@@ -242,38 +239,47 @@ export default function AdminPortal({ initialTab = '' }) {
   return (
     <div className="min-h-[calc(100vh-3.5rem)] bg-[#09090b] text-white flex">
       <aside className="w-52 shrink-0 border-r border-white/10 bg-[#0b0b0d] py-4">
-        <p className="px-4 text-[10px] uppercase tracking-wider text-zinc-500 mb-2">{ORG.productName} admin</p>
-        <nav className="space-y-0.5 px-2">
-          {NAV.map((item) => {
-            const Icon = item.icon
-            const active = tab === item.id
+        <p className="px-4 text-[10px] uppercase tracking-wider text-zinc-500 mb-2">Admin</p>
+        <nav className="space-y-3 px-2">
+          {['Home', 'Ops', 'Money', 'Content', 'Insights'].map((group) => {
+            const items = NAV.filter((n) => n.group === group)
+            if (!items.length) return null
             return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setTab(item.id)}
-                className={`w-full flex items-center gap-2 h-9 px-3 rounded-lg text-sm ${
-                  active ? 'bg-white/10 text-white' : 'text-zinc-400 hover:bg-white/5'
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {item.label}
-              </button>
+              <div key={group}>
+                {group !== 'Home' ? (
+                  <p className="px-3 mb-1 text-[10px] uppercase tracking-wider text-zinc-600">{group}</p>
+                ) : null}
+                <div className="space-y-0.5">
+                  {items.map((item) => {
+                    const Icon = item.icon
+                    const active = tab === item.id
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setTab(item.id)}
+                        className={`w-full flex items-center gap-2 h-9 px-3 text-sm ${
+                          active ? 'bg-white/10 text-white' : 'text-zinc-400 hover:bg-white/5'
+                        }`}
+                      >
+                        <Icon className="h-4 w-4" />
+                        {item.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
             )
           })}
         </nav>
       </aside>
       <div className="flex-1 min-w-0 flex flex-col">
         <header className="h-14 shrink-0 border-b border-white/10 flex items-center px-5 bg-[#0b0b0d]">
-          <div>
-            <p className="text-sm font-medium">{NAV.find((n) => n.id === tab)?.label || 'Admin'}</p>
-            <p className="text-[10px] text-zinc-500">CS / mod desk · cloud data · {ORG.productName}</p>
-          </div>
+          <p className="text-sm font-medium">{NAV.find((n) => n.id === tab)?.label || 'Admin'}</p>
         </header>
         <div className="flex-1 min-h-0 overflow-y-auto">
           {tab === 'overview' && (
             <div className="p-5 space-y-4">
-              <p className="text-xs text-zinc-500">Queue snapshot for CS: open tickets, seller apps, creator applications.</p>
               <div className="grid sm:grid-cols-4 gap-3">
                 <div className="rounded-xl border border-white/10 bg-[#111113] p-4">
                   <p className="text-[10px] uppercase text-zinc-500">Open tickets</p>
@@ -360,7 +366,6 @@ export default function AdminPortal({ initialTab = '' }) {
           {tab === 'safety' && <div className="p-5"><AdminSafety onChange={refresh} /></div>}
           {tab === 'promos' && <div className="p-5"><AdminPromos /></div>}
           {tab === 'news' && <div className="p-5"><AdminNews /></div>}
-          {tab === 'setup' && <div className="p-5"><AdminSetup /></div>}
           {tab === 'applications' && (
             <div className="p-5 space-y-2">
               {apps.map((a) => (

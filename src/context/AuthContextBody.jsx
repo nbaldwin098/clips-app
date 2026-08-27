@@ -163,13 +163,13 @@ async function hydratePrivileges(mapped) {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
-    if (isSupabaseConfigured()) return null
     const u = sanitizeUser(lsGet('user', null))
     if (u && accessBlockMessage(u)) return null
+    // Optimistic paint from last session so navigations never wait on "Checking sign-in…"
     return u
   })
   const [mode, setMode] = useState(() => lsGet('mode', 'viewer'))
-  const [authReady, setAuthReady] = useState(!isSupabaseConfigured())
+  const [authReady, setAuthReady] = useState(true)
   const [mfaPending, setMfaPending] = useState(false)
   const [mfaFactors, setMfaFactors] = useState([])
   const [passwordRecovery, setPasswordRecovery] = useState(false)
@@ -203,6 +203,7 @@ export function AuthProvider({ children }) {
         const stale = lsGet('user', null)
         if (stale && (stale.id === OWNER_LOGIN.id || stale.id === 'owner-cs1' || (stale.provider === 'local' && findOwnerLogin(stale.email || stale.handle)))) {
           lsRemove('user')
+          setUser(null)
         }
       } catch {}
       try {
@@ -216,10 +217,13 @@ export function AuthProvider({ children }) {
           const mapped = await hydratePrivileges(mapSbUser(session.user))
           setUser(mapped)
           try { indexUser(mapped) } catch {}
+          // Background sync — do not block UI
           if (!mfa.pending) {
-            try { await pullWatchProgressFromCloud(mapped.id) } catch {}
-            setGraphActor(mapped)
-            try { await syncGraphFromCloud() } catch {}
+            Promise.resolve().then(async () => {
+              try { await pullWatchProgressFromCloud(mapped.id) } catch {}
+              setGraphActor(mapped)
+              try { await syncGraphFromCloud() } catch {}
+            })
           }
         } else {
           setMfaPending(false)
@@ -237,9 +241,11 @@ export function AuthProvider({ children }) {
             setUser(mapped)
             try { indexUser(mapped) } catch {}
             if (!mfa.pending) {
-              try { await pullWatchProgressFromCloud(mapped.id) } catch {}
-              setGraphActor(mapped)
-              try { await syncGraphFromCloud() } catch {}
+              Promise.resolve().then(async () => {
+                try { await pullWatchProgressFromCloud(mapped.id) } catch {}
+                setGraphActor(mapped)
+                try { await syncGraphFromCloud() } catch {}
+              })
             }
           } else {
             setMfaPending(false)
@@ -249,8 +255,8 @@ export function AuthProvider({ children }) {
           }
         })
         unsub = () => data.subscription.unsubscribe()
-      } catch (e) {
-        console.warn('[Clips] Supabase session restore failed', e)
+      } catch {
+        /* session restore failed — keep optimistic cache or signed-out */
       } finally {
         setAuthReady(true)
       }

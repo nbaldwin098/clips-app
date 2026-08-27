@@ -84,6 +84,28 @@ body::before {
   z-index: 1;
 }
 
+/* Optional light theme (profile menu toggle) */
+html[data-theme="light"] {
+  --color-bg: #f4f4f5;
+  --color-bg-alt: #fafafa;
+  --color-surface: #ffffff;
+  --color-surface-2: #f4f4f5;
+  --color-surface-hover: #e4e4e7;
+  --color-border: #e4e4e7;
+  --color-border-strong: #d4d4d8;
+  --color-text: #18181b;
+  --color-text-secondary: #52525b;
+  --color-muted: #71717a;
+  --color-accent-primary: #18181b;
+  --color-accent-hover: #27272a;
+}
+html[data-theme="light"] body,
+html[data-theme="light"] #__next,
+html[data-theme="light"] #root {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #2f2f3a; border-radius: 9999px; }
