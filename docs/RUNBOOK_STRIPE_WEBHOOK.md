@@ -7,9 +7,10 @@
 
 ## Immediate checks
 1. Confirm Edge secrets: `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` (+ `APP_PUBLIC_URL`).
-2. Stripe Dashboard → Developers → Webhooks: endpoint  
-   `https://YOUR_PROJECT.supabase.co/functions/v1/stripe-webhook`  
-   Events: `checkout.session.completed`, `account.updated`. Recent deliveries 2xx.
+2. Stripe Dashboard → Developers → Webhooks / Event destinations:
+   URL `https://YOUR_PROJECT.supabase.co/functions/v1/stripe-webhook`
+   Events: `payment_intent.succeeded` + `v2.core.account.updated`. Recent deliveries 2xx.
+   Secrets: `STRIPE_WEBHOOK_SECRET` (snapshot) + `STRIPE_WEBHOOK_SECRET_THIN` (Accounts v2).
 3. Client return URL must include `paid=1` or `session_id` (see `membershipReturnPaid` in `src/lib/tips.js`).
 4. `claimStripeReturn` is idempotent via claim keys — refresh should return `alreadyClaimed`.
 5. Server settle is idempotent via `stripe_settlements.session_id`.

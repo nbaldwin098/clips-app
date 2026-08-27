@@ -32,7 +32,8 @@ supabase functions deploy stripe-webhook --no-verify-jwt
 | Secret | Value |
 |--------|--------|
 | `STRIPE_SECRET_KEY` | `sk_test_…` or `sk_live_…` (same as Checkout) |
-| `STRIPE_WEBHOOK_SECRET` | `whsec_…` from the webhook endpoint below |
+| `STRIPE_WEBHOOK_SECRET` | `whsec_…` from the **snapshot** destination (`payment_intent.succeeded`) |
+| `STRIPE_WEBHOOK_SECRET_THIN` | `whsec_…` from the **thin** destination (`v2.core.account.updated`) |
 | `APP_PUBLIC_URL` or `SITE_URL` | `https://calabi.us` |
 
 ### 4. Webhook endpoint

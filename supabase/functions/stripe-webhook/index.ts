@@ -27,11 +27,15 @@ Deno.serve(async (req) => {
   }
 
   const stripeKey = Deno.env.get('STRIPE_SECRET_KEY') || ''
-  const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET') || ''
+  const webhookSecrets = [
+    Deno.env.get('STRIPE_WEBHOOK_SECRET') || '',
+    Deno.env.get('STRIPE_WEBHOOK_SECRET_THIN') || '',
+    Deno.env.get('STRIPE_WEBHOOK_SECRET_2') || '',
+  ].flatMap((s) => String(s).split(',').map((x) => x.trim()).filter(Boolean))
   const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 
-  if (!stripeKey.startsWith('sk_') || !webhookSecret || !supabaseUrl || !serviceKey) {
+  if (!stripeKey.startsWith('sk_') || !webhookSecrets.length || !supabaseUrl || !serviceKey) {
     console.error('stripe-webhook missing secrets')
     return new Response(JSON.stringify({ error: 'not_configured' }), { status: 500 })
   }
@@ -47,23 +51,35 @@ Deno.serve(async (req) => {
 
   let eventType = ''
   let eventData: Record<string, unknown> = {}
-  try {
-    // Snapshot events (payment_intent.*, checkout.*, account.updated)
-    const event = stripe.webhooks.constructEvent(raw, sig, webhookSecret)
-    eventType = event.type
-    eventData = event.data?.object as unknown as Record<string, unknown>
-  } catch {
-    // Thin / v2 events (v2.core.account.*) — verify signature, parse JSON
+  let verified = false
+  let lastErr: unknown = null
+
+  // Snapshot destinations (payment_intent.succeeded) and thin destinations
+  // (v2.core.account.updated) each have their own signing secret — try all.
+  for (const secret of webhookSecrets) {
     try {
-      // Stripe-Signature header verification for raw body
-      stripe.webhooks.signature.verifyHeader(raw, sig, webhookSecret)
-      const thin = JSON.parse(raw) as Record<string, unknown>
-      eventType = String(thin.type || '')
-      eventData = thin
+      const event = stripe.webhooks.constructEvent(raw, sig, secret)
+      eventType = event.type
+      eventData = event.data?.object as unknown as Record<string, unknown>
+      verified = true
+      break
     } catch (err) {
-      console.error('signature', err)
-      return new Response(JSON.stringify({ error: 'invalid_signature' }), { status: 400 })
+      lastErr = err
+      try {
+        stripe.webhooks.signature.verifyHeader(raw, sig, secret)
+        const thin = JSON.parse(raw) as Record<string, unknown>
+        eventType = String(thin.type || '')
+        eventData = thin
+        verified = true
+        break
+      } catch (err2) {
+        lastErr = err2
+      }
     }
+  }
+  if (!verified) {
+    console.error('signature', lastErr)
+    return new Response(JSON.stringify({ error: 'invalid_signature' }), { status: 400 })
   }
 
   try {
