@@ -97,31 +97,36 @@ html[data-theme="light"] header input[type="search"] {
   }
 }
 
-/* Studio + admin dashboards stay site black */
 [data-studio="tiktok-white"],
 [data-dash="light"],
 [data-dash="admin"] {
   background-color: #0f0f0f !important;
   color: #f4f4f5 !important;
 }
-[data-studio="tiktok-white"] > aside,
-[data-dash="light"] > aside,
-[data-dash="admin"] > aside {
+[data-studio="tiktok-white"] aside,
+[data-studio="tiktok-white"] main,
+[data-studio="tiktok-white"] header,
+[data-studio="tiktok-white"] section,
+[data-dash="light"] aside,
+[data-dash="admin"] aside {
   background-color: #0f0f0f !important;
   border-color: #272727 !important;
   color: #e4e4e7 !important;
 }
-[data-studio="tiktok-white"] > main,
-[data-studio="tiktok-white"] > main > header,
-[data-dash="light"] header,
-[data-dash="admin"] header {
-  background-color: #0f0f0f !important;
-  border-color: #272727 !important;
+[data-studio="tiktok-white"] .bg-white:not(button),
+[data-studio="tiktok-white"] .bg-neutral-50,
+[data-studio="tiktok-white"] .bg-neutral-100,
+[data-studio="tiktok-white"] .bg-\[\#f8f8f8\] {
+  background-color: #18181f !important;
 }
-[data-studio="tiktok-white"] > main > header p,
-[data-dash="light"] header p,
-[data-dash="admin"] header p {
-  color: #fff !important;
+[data-studio="tiktok-white"] .text-neutral-900,
+[data-studio="tiktok-white"] .text-neutral-800,
+[data-studio="tiktok-white"] .text-neutral-700 {
+  color: #f4f4f5 !important;
+}
+[data-studio="tiktok-white"] .border-neutral-200,
+[data-studio="tiktok-white"] .border-neutral-100 {
+  border-color: #272727 !important;
 }
 [data-studio="tiktok-white"] > aside button,
 [data-dash="light"] > aside button {
