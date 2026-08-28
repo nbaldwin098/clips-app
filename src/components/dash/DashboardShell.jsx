@@ -1,11 +1,6 @@
 /**
-<<<<<<< HEAD
- * TailAdmin chrome: dark navy rail + white content cards.
- * Used by Admin portal. Profile-menu pages use StudioShell (TikTok-white).
-=======
- * TailAdmin-style chrome: dark navy rail + white content cards.
- * Used by Creator Studio, Admin, Wallet, Appeals, Messages, Settings.
->>>>>>> origin/main
+ * Admin chrome: black rail + black header, light content cards.
+ * Profile-menu pages use StudioShell.
  */
 import { cn } from '../../lib/utils'
 
@@ -101,19 +96,6 @@ export function DashBarChart({ values = [], labels = [] }) {
   )
 }
 
-/**
- * @param {{
- *   title?: string,
- *   nav?: { id: string, label: string, icon?: any, group?: string }[],
- *   activeId?: string,
- *   onNav?: (id: string) => void,
- *   onBack?: () => void,
- *   backLabel?: string,
- *   headerRight?: any,
- *   children: any,
- *   className?: string,
- * }} props
- */
 export default function DashboardShell({
   title = 'Dashboard',
   nav = [],
@@ -138,8 +120,8 @@ export default function DashboardShell({
 
   return (
     <div className={cn('h-[calc(100dvh-3.5rem)] min-h-[480px] flex bg-slate-100 text-slate-900 overflow-hidden', className)}>
-      <aside className="hidden md:flex w-56 shrink-0 flex-col bg-[#1c2434] text-slate-200">
-        <div className="px-4 py-4 border-b border-white/10">
+      <aside className="hidden md:flex w-56 shrink-0 flex-col bg-[#0f0f0f] text-zinc-200 border-r border-[#272727]">
+        <div className="px-4 py-4 border-b border-[#272727]">
           <p className="text-sm font-semibold text-white tracking-tight">{title}</p>
         </div>
         {onBack ? (
@@ -181,9 +163,9 @@ export default function DashboardShell({
       </aside>
 
       <div className="flex-1 min-w-0 flex flex-col">
-        <header className="h-14 shrink-0 border-b border-slate-200 bg-white flex items-center justify-between gap-3 px-4 md:px-6">
+        <header className="h-14 shrink-0 border-b border-[#272727] bg-[#0f0f0f] flex items-center justify-between gap-3 px-4 md:px-6">
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-slate-900 truncate">
+            <p className="text-sm font-semibold text-white truncate">
               {nav.find((n) => n.id === activeId)?.label || title}
             </p>
           </div>
@@ -191,11 +173,11 @@ export default function DashboardShell({
         </header>
 
         {nav.length ? (
-          <div className="md:hidden border-b border-slate-200 bg-white px-3 py-2">
+          <div className="md:hidden border-b border-[#272727] bg-[#0f0f0f] px-3 py-2">
             <select
               value={activeId}
               onChange={(e) => onNav?.(e.target.value)}
-              className="w-full h-9 border border-slate-200 bg-white px-2 text-sm text-slate-900 rounded-lg"
+              className="w-full h-9 border border-[#272727] bg-[#0f0f0f] px-2 text-sm text-white rounded-lg"
             >
               {nav.map((n) => (
                 <option key={n.id} value={n.id}>{n.label}</option>

@@ -1,7 +1,6 @@
 /**
- * TikTok Studio–style white chrome for profile-menu pages
- * (Creator Studio, Settings, Wallet, Messages, Subscriptions, Appeals).
- * Admin uses DashboardShell (TailAdmin) instead.
+ * Profile-menu pages: black header + left menu (#0f0f0f, same as site).
+ * Content cards stay light. Admin uses DashboardShell.
  */
 import { cn } from '../../lib/utils'
 
@@ -94,19 +93,6 @@ export function StudioBarChart({ values = [], labels = [] }) {
   )
 }
 
-/**
- * @param {{
- *   title?: string,
- *   nav?: { id: string, label: string, icon?: any, group?: string }[],
- *   activeId?: string,
- *   onNav?: (id: string) => void,
- *   onBack?: () => void,
- *   backLabel?: string,
- *   headerRight?: any,
- *   children: any,
- *   className?: string,
- * }} props
- */
 export default function StudioShell({
   title = 'Studio',
   nav = [],
@@ -134,15 +120,15 @@ export default function StudioShell({
       className={cn('h-[calc(100dvh-3.5rem)] min-h-[480px] flex bg-[#f8f8f8] text-neutral-900 overflow-hidden', className)}
       data-studio="tiktok-white"
     >
-      <aside className="hidden md:flex w-56 shrink-0 flex-col border-r border-neutral-200 bg-white">
-        <div className="px-4 py-4 border-b border-neutral-100">
-          <p className="text-sm font-semibold text-neutral-900 tracking-tight">{title}</p>
+      <aside className="hidden md:flex w-56 shrink-0 flex-col border-r border-[#272727] bg-[#0f0f0f]">
+        <div className="px-4 py-4 border-b border-[#272727]">
+          <p className="text-sm font-semibold text-white tracking-tight">{title}</p>
         </div>
         {onBack ? (
           <button
             type="button"
             onClick={onBack}
-            className="mx-3 mt-3 h-9 px-2 text-left text-xs text-neutral-500 hover:text-neutral-900"
+            className="mx-3 mt-3 h-9 px-2 text-left text-xs text-zinc-400 hover:text-white"
           >
             ← {backLabel}
           </button>
@@ -150,7 +136,7 @@ export default function StudioShell({
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
           {groups.map((g) => (
             <div key={g.name}>
-              <p className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-400">{g.name}</p>
+              <p className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">{g.name}</p>
               <div className="space-y-0.5">
                 {g.items.map((item) => {
                   const Icon = item.icon
@@ -163,8 +149,8 @@ export default function StudioShell({
                       className={cn(
                         'w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-left rounded-lg',
                         active
-                          ? 'bg-neutral-100 text-neutral-900'
-                          : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900'
+                          ? 'bg-white/10 text-white'
+                          : 'text-zinc-400 hover:bg-white/5 hover:text-white'
                       )}
                     >
                       {Icon ? <Icon className="h-4 w-4 shrink-0" /> : null}
@@ -179,19 +165,19 @@ export default function StudioShell({
       </aside>
 
       <div className="flex-1 min-w-0 flex flex-col">
-        <header className="h-14 shrink-0 border-b border-neutral-200 bg-white flex items-center justify-between gap-3 px-4 md:px-6">
-          <p className="text-sm font-semibold text-neutral-900 truncate">
+        <header className="h-14 shrink-0 border-b border-[#272727] bg-[#0f0f0f] flex items-center justify-between gap-3 px-4 md:px-6">
+          <p className="text-sm font-semibold text-white truncate">
             {nav.find((n) => n.id === activeId)?.label || title}
           </p>
           <div className="flex items-center gap-2 shrink-0">{headerRight}</div>
         </header>
 
         {nav.length ? (
-          <div className="md:hidden border-b border-neutral-200 bg-white px-3 py-2">
+          <div className="md:hidden border-b border-[#272727] bg-[#0f0f0f] px-3 py-2">
             <select
               value={activeId}
               onChange={(e) => onNav?.(e.target.value)}
-              className="w-full h-9 border border-neutral-200 bg-white px-2 text-sm text-neutral-900 rounded-lg"
+              className="w-full h-9 border border-[#272727] bg-[#0f0f0f] px-2 text-sm text-white rounded-lg"
             >
               {nav.map((n) => (
                 <option key={n.id} value={n.id}>{n.label}</option>
