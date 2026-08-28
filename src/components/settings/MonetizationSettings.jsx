@@ -1,38 +1,21 @@
-import { useState, useEffect } from 'react'
-import { useAuth } from '../../context/AuthContext'
-import { getMembershipPrice, setMembershipPrice } from '../../lib/engagement'
-import {
-  SettingsPageHeader,
-  SettingsSection,
-  SettingsInput,
-  SettingsSaveHint,
-} from './SettingsTemplates'
+import { useEffect } from 'react'
+import { SettingsPageHeader, SettingsNotice, SettingsButton } from './SettingsTemplates'
 
-export default function MonetizationSettings() {
-  const { user } = useAuth()
-  const [price, setPrice] = useState(() => getMembershipPrice(user?.id))
-
+/** Membership lives in Studio → Earnings (single source of truth). */
+export default function MonetizationSettings({ onNavigate }) {
   useEffect(() => {
-    if (!user?.id) return
-    setMembershipPrice(user.id, price)
-  }, [user?.id, price])
+    onNavigate?.('dashboard', 'earnings')
+  }, [onNavigate])
 
   return (
-    <div className="space-y-8 pb-8">
+    <div className="space-y-6 pb-8">
       <SettingsPageHeader title="Membership" />
-      <SettingsSection title="Monthly price">
-        <SettingsInput
-          label="USD per month"
-          type="number"
-          min="1"
-          max="999"
-          step="0.01"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-          className="max-w-xs"
-        />
-        <SettingsSaveHint />
-      </SettingsSection>
+      <SettingsNotice>
+        <p>Membership price is set in <strong>Earnings</strong>.</p>
+        <SettingsButton onClick={() => onNavigate?.('dashboard', 'earnings')}>
+          Open Earnings
+        </SettingsButton>
+      </SettingsNotice>
     </div>
   )
 }

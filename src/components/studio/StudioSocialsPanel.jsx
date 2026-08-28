@@ -96,25 +96,25 @@ export default function StudioSocialsPanel() {
             return (
               <li
                 key={p.id}
-                className="flex flex-wrap items-center gap-3 border border-zinc-800 px-3 py-2"
+                className="flex flex-wrap items-center gap-3 border border-neutral-200 px-3 py-2"
               >
                 <span className={cn(
                   'h-9 w-9 inline-flex items-center justify-center border',
-                  on ? 'border-white bg-white text-black' : 'border-zinc-700 text-zinc-300'
+                  on ? 'border-white bg-white text-black' : 'border-neutral-200 text-neutral-700'
                 )}
                 >
                   <ProviderGlyph id={p.id} className="h-4 w-4" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm text-white">{p.label}</p>
+                  <p className="text-sm text-neutral-900">{p.label}</p>
                   {on ? (
-                    <p className="text-[11px] text-zinc-500 truncate">{row.handle || 'Connected'}</p>
+                    <p className="text-[11px] text-neutral-500 truncate">{row.handle || 'Connected'}</p>
                   ) : (
                     <input
                       value={handleDraft[p.id] || ''}
                       onChange={(e) => setHandleDraft((d) => ({ ...d, [p.id]: e.target.value }))}
                       placeholder="@handle"
-                      className="mt-1 h-8 w-full max-w-[12rem] border border-zinc-800 bg-black px-2 text-xs text-white"
+                      className="mt-1 h-8 w-full max-w-[12rem] border border-neutral-200 bg-white px-2 text-xs text-neutral-900"
                       aria-label={`${p.label} handle`}
                     />
                   )}
@@ -130,7 +130,7 @@ export default function StudioSocialsPanel() {
                       onConnect(p.id)
                     }
                   }}
-                  className="h-8 px-3 text-xs font-semibold border border-zinc-700 text-zinc-200 hover:border-white"
+                  className="h-8 px-3 text-xs font-semibold border border-neutral-200 text-zinc-200 hover:border-white"
                 >
                   {on ? 'Disconnect' : 'Connect'}
                 </button>

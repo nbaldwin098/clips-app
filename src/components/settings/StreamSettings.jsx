@@ -10,10 +10,10 @@ function CopyField({ label, value, mono = true }) {
   if (!value) return null
   return (
     <div className="space-y-1.5">
-      <p className="text-[11px] text-zinc-500">{label}</p>
+      <p className="text-[11px] text-neutral-500">{label}</p>
       <div className="flex flex-wrap gap-2 items-stretch">
         <code
-          className={`flex-1 min-w-0 text-xs break-all text-zinc-200 bg-black border border-zinc-800 rounded-lg px-3 py-2 ${mono ? '' : ''}`}
+          className={`flex-1 min-w-0 text-xs break-all text-zinc-200 bg-white border border-neutral-200 rounded-lg px-3 py-2 ${mono ? '' : ''}`}
         >
           {value}
         </code>
@@ -77,21 +77,21 @@ export default function StreamSettings() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-xl font-semibold text-white">Stream & OBS</h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <h1 className="text-xl font-semibold text-neutral-900">Stream & OBS</h1>
+        <p className="mt-1 text-sm text-neutral-500">
           OBS Studio is free. Window share works now; Custom RTMP shows when an ingest server URL is configured.
-          Ingest is only marked connected when ops set <code className="text-zinc-400">VITE_LIVE_INGEST_CONNECTED</code>.
+          Ingest is only marked connected when ops set <code className="text-neutral-500">VITE_LIVE_INGEST_CONNECTED</code>.
         </p>
       </div>
 
       <section className="rounded-xl border border-emerald-900/40 bg-emerald-950/10 p-4 space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
-            <p className="text-sm font-semibold text-white">Connect OBS (free)</p>
-            <p className="text-[11px] text-zinc-400 mt-0.5">
+            <p className="text-sm font-semibold text-neutral-900">Connect OBS (free)</p>
+            <p className="text-[11px] text-neutral-500 mt-0.5">
               OBS Studio is free open-source software — no paid plan required.
             </p>
-            <p className="text-[11px] text-zinc-500 mt-1.5 leading-relaxed">{obs.statusNote}</p>
+            <p className="text-[11px] text-neutral-500 mt-1.5 leading-relaxed">{obs.statusNote}</p>
           </div>
           <a
             href={obs.obsDownloadUrl}
@@ -104,13 +104,13 @@ export default function StreamSettings() {
         </div>
 
         <div className="flex flex-wrap gap-2 text-[11px]">
-          <span className={`px-2 py-1 rounded border ${obs.ingestConnected ? 'border-emerald-700 text-emerald-300' : 'border-zinc-700 text-zinc-500'}`}>
+          <span className={`px-2 py-1 rounded border ${obs.ingestConnected ? 'border-emerald-700 text-emerald-300' : 'border-neutral-200 text-neutral-500'}`}>
             Ingest {obs.ingestConnected ? 'connected' : 'not connected'}
           </span>
-          <span className={`px-2 py-1 rounded border ${obs.rtmpReady ? 'border-zinc-500 text-zinc-300' : 'border-zinc-800 text-zinc-600'}`}>
+          <span className={`px-2 py-1 rounded border ${obs.rtmpReady ? 'border-zinc-500 text-neutral-700' : 'border-neutral-200 text-zinc-600'}`}>
             RTMP {obs.rtmpReady ? 'URL set' : 'URL missing'}
           </span>
-          <span className={`px-2 py-1 rounded border ${obs.hlsReady ? 'border-zinc-500 text-zinc-300' : 'border-zinc-800 text-zinc-600'}`}>
+          <span className={`px-2 py-1 rounded border ${obs.hlsReady ? 'border-zinc-500 text-neutral-700' : 'border-neutral-200 text-zinc-600'}`}>
             HLS {obs.hlsReady ? 'base set' : 'base missing'}
           </span>
         </div>
@@ -122,16 +122,16 @@ export default function StreamSettings() {
                 {i + 1}
               </span>
               <div className="min-w-0">
-                <p className="text-sm font-medium text-white">{s.title}</p>
-                <p className="text-xs text-zinc-400 mt-0.5 leading-relaxed">{s.body}</p>
+                <p className="text-sm font-medium text-neutral-900">{s.title}</p>
+                <p className="text-xs text-neutral-500 mt-0.5 leading-relaxed">{s.body}</p>
               </div>
             </li>
           ))}
         </ol>
 
         {obs.rtmpReady ? (
-          <div className="rounded-lg border border-zinc-800 bg-black/40 p-3 space-y-3">
-            <p className="text-xs font-semibold text-zinc-300">OBS → Settings → Stream → Service: Custom</p>
+          <div className="rounded-lg border border-neutral-200 bg-white/40 p-3 space-y-3">
+            <p className="text-xs font-semibold text-neutral-700">OBS → Settings → Stream → Service: Custom</p>
             <CopyField label="Server" value={obs.serverUrl} />
             <CopyField label="Stream key" value={key || obs.streamKey} />
             {!obs.ingestConnected ? (
@@ -142,37 +142,37 @@ export default function StreamSettings() {
             ) : null}
             <button
               type="button"
-              className="h-9 px-3 rounded-lg border border-zinc-700 text-white text-xs"
+              className="h-9 px-3 rounded-lg border border-neutral-200 text-neutral-900 text-xs"
               onClick={() => user?.id && setKey(rotateStreamKey(user.id))}
             >
               Rotate stream key
             </button>
           </div>
         ) : (
-          <div className="rounded-lg border border-zinc-800 bg-black/40 p-3 space-y-3">
-            <p className="text-xs font-semibold text-zinc-300">Your stream key (ready for Custom RTMP later)</p>
+          <div className="rounded-lg border border-neutral-200 bg-white/40 p-3 space-y-3">
+            <p className="text-xs font-semibold text-neutral-700">Your stream key (ready for Custom RTMP later)</p>
             <CopyField label="Stream key" value={key || obs.streamKey} />
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                className="h-9 px-3 rounded-lg border border-zinc-700 text-white text-xs"
+                className="h-9 px-3 rounded-lg border border-neutral-200 text-neutral-900 text-xs"
                 onClick={() => user?.id && setKey(rotateStreamKey(user.id))}
               >
                 Rotate key
               </button>
             </div>
-            <p className="text-[11px] text-zinc-500 leading-relaxed">
-              Server URL appears here when <code className="text-zinc-400">VITE_LIVE_RTMP_URL</code> is set on the deploy
-              (for example <code className="text-zinc-400">rtmp://your-ingest/live</code>). Until then, use the free window-share path above on Live.
-              See <code className="text-zinc-400">docs/mediamtx.md</code>.
+            <p className="text-[11px] text-neutral-500 leading-relaxed">
+              Server URL appears here when <code className="text-neutral-500">VITE_LIVE_RTMP_URL</code> is set on the deploy
+              (for example <code className="text-neutral-500">rtmp://your-ingest/live</code>). Until then, use the free window-share path above on Live.
+              See <code className="text-neutral-500">docs/mediamtx.md</code>.
             </p>
           </div>
         )}
       </section>
 
-      <section className="rounded-xl border border-zinc-800 bg-[#121218] p-4 space-y-3">
-        <p className="text-sm font-semibold text-white">Xbox, PS5, and PC</p>
-        <ul className="text-xs text-zinc-400 space-y-2 list-disc pl-5">
+      <section className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 space-y-3">
+        <p className="text-sm font-semibold text-neutral-900">Xbox, PS5, and PC</p>
+        <ul className="text-xs text-neutral-500 space-y-2 list-disc pl-5">
           <li>
             <strong className="text-zinc-200">PC + OBS (free):</strong> Build the scene in OBS, then on Live use{' '}
             <strong className="text-zinc-200">Screen / OBS window</strong> and pick OBS (or OBS Virtual Camera).
@@ -183,49 +183,49 @@ export default function StreamSettings() {
         </ul>
       </section>
 
-      <section className="rounded-xl border border-zinc-800 bg-[#121218] p-4 space-y-3">
-        <p className="text-sm font-semibold text-white">Second channel for VODs</p>
-        <p className="text-xs text-zinc-500">Every ended lobby is copied to Studio → VODs. Turn on a second channel if you want public VOD posts under another handle.</p>
+      <section className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 space-y-3">
+        <p className="text-sm font-semibold text-neutral-900">Second channel for VODs</p>
+        <p className="text-xs text-neutral-500">Every ended lobby is copied to Studio → VODs. Turn on a second channel if you want public VOD posts under another handle.</p>
         <label className="flex items-center gap-2 text-sm text-zinc-200">
           <input type="checkbox" checked={vodOn} onChange={(e) => setVodOn(e.target.checked)} />
           Enable VOD channel
         </label>
-        <label className="block max-w-xs text-xs text-zinc-400">
+        <label className="block max-w-xs text-xs text-neutral-500">
           VOD handle
-          <input value={vodHandle} onChange={(e) => setVodHandle(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-black px-3 text-sm text-white" />
+          <input value={vodHandle} onChange={(e) => setVodHandle(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-900" />
         </label>
         <label className="flex items-center gap-2 text-sm text-zinc-200">
           <input type="checkbox" checked={autoPub} onChange={(e) => setAutoPub(e.target.checked)} />
           Auto-post VODs to that channel
         </label>
-        <select value={vis} onChange={(e) => setVis(e.target.value)} className="max-w-xs h-10 rounded-lg border border-zinc-800 bg-black px-3 text-sm text-white">
+        <select value={vis} onChange={(e) => setVis(e.target.value)} className="max-w-xs h-10 rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-900">
           <option value="private">Keep private</option>
           <option value="public">Public on VOD channel</option>
         </select>
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-sm font-semibold text-white">Preferences on this device</h2>
+        <h2 className="text-sm font-semibold text-neutral-900">Preferences on this device</h2>
         <label className="block max-w-xs">
-          <span className="text-xs font-medium text-zinc-400">Preferred quality</span>
-          <select value={quality} onChange={(e) => setQuality(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#000000] px-3 text-sm text-zinc-100">
+          <span className="text-xs font-medium text-neutral-500">Preferred quality</span>
+          <select value={quality} onChange={(e) => setQuality(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-neutral-200 bg-[#000000] px-3 text-sm text-zinc-100">
             <option value="1080p30">1080p30</option>
             <option value="720p30">720p30</option>
             <option value="480p30">480p30</option>
           </select>
         </label>
         <label className="block max-w-xs">
-          <span className="text-xs font-medium text-zinc-400">Latency preference</span>
-          <select value={latency} onChange={(e) => setLatency(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#000000] px-3 text-sm text-zinc-100">
+          <span className="text-xs font-medium text-neutral-500">Latency preference</span>
+          <select value={latency} onChange={(e) => setLatency(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-neutral-200 bg-[#000000] px-3 text-sm text-zinc-100">
             <option value="low">Low</option>
             <option value="normal">Normal</option>
           </select>
         </label>
         <label className="block max-w-md">
-          <span className="text-xs font-medium text-zinc-400">Title template</span>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-zinc-800 bg-[#000000] px-3 text-sm text-zinc-100" placeholder="Optional" />
+          <span className="text-xs font-medium text-neutral-500">Title template</span>
+          <input value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1 w-full h-10 rounded-lg border border-neutral-200 bg-[#000000] px-3 text-sm text-zinc-100" placeholder="Optional" />
         </label>
-        <p className="text-[11px] text-zinc-500">{saved ? 'Saved' : 'Saved as you change these.'}</p>
+        <p className="text-[11px] text-neutral-500">{saved ? 'Saved' : 'Saved as you change these.'}</p>
       </section>
     </div>
   )

@@ -155,9 +155,10 @@ export default function LiveView({ focusedStream, onFocusStream, onOpenAuth, onN
 
       <div className="relative px-4 md:px-6 py-4 max-w-[1600px] mx-auto w-full space-y-8">
         {!ingestOk ? (
-          <p className="text-[11px] text-zinc-500 border border-zinc-800/80 bg-[#0a0a0c] px-3 py-2">
-            {liveListingBlockedReason()}
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-3 border border-zinc-800/80 bg-[#0a0a0c] px-3 py-2">
+            <p className="text-[11px] text-zinc-500">{liveListingBlockedReason()}</p>
+            <EnableNotificationsButton compact variant="ghost" />
+          </div>
         ) : null}
 
         {focusedStream ? (
