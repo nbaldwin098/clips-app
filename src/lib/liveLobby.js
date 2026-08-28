@@ -1,6 +1,6 @@
 /**
  * Start / end live lobby presence. Cloud live_lobby is SOT when configured.
- * Ending clears presence; VOD archive only when a recording / ingest existed.
+ * HLS URL is published only when Cloudflare Stream (or legacy flag) actually returned one.
  */
 import { lsGet, lsSet } from './storage'
 import { pushLiveLobby, endLiveLobby } from './graphSync'
@@ -10,6 +10,7 @@ import {
   liveListingBlockedReason,
   liveHlsPlayUrl,
 } from './liveIngest'
+import { provisionCloudflareLive } from './cloudflareLive'
 
 export function getMyLiveState(userId) {
   if (!userId) return null
@@ -18,7 +19,6 @@ export function getMyLiveState(userId) {
   return (lsGet('live_board', []) || []).find((b) => b.userId === userId && b.isLive) || null
 }
 
-/** Drop local lobby presence for a user (board + live_state). */
 export function clearLivePresence(userId) {
   if (!userId) return
   try {
@@ -33,9 +33,27 @@ export function clearLivePresence(userId) {
 export async function startLiveLobby(user, { title = '', category = '' } = {}) {
   if (!user?.id) return { ok: false, error: 'Sign in required.' }
   const startedAt = new Date().toISOString()
-  const connected = liveIngestConnected()
-  const streamKey = connected ? ensureStreamKey(user.id) : ''
-  const hlsUrl = connected && streamKey ? liveHlsPlayUrl(streamKey) : ''
+
+  let provider = ''
+  let streamKey = ''
+  let hlsUrl = ''
+  let rtmpsUrl = ''
+  let connected = false
+
+  const cf = await provisionCloudflareLive()
+  if (cf.ok && cf.hlsUrl && cf.streamKey) {
+    provider = 'cloudflare-stream'
+    streamKey = cf.streamKey
+    hlsUrl = cf.hlsUrl
+    rtmpsUrl = cf.rtmpsUrl || ''
+    connected = true
+  } else if (liveIngestConnected()) {
+    streamKey = ensureStreamKey(user.id)
+    hlsUrl = streamKey ? liveHlsPlayUrl(streamKey) : ''
+    connected = !!hlsUrl
+    provider = connected ? 'legacy-env' : ''
+  }
+
   const payload = {
     userId: user.id,
     handle: user.handle || '',
@@ -48,12 +66,13 @@ export async function startLiveLobby(user, { title = '', category = '' } = {}) {
     watchers: 0,
     watcherIds: [],
     ingestConnected: connected,
-    // Only publish HLS when ingest is marked connected — never invent a play URL.
+    provider,
+    rtmpsUrl: rtmpsUrl || '',
     hlsUrl: hlsUrl || '',
     streamKey: streamKey || '',
     note: connected
-      ? (hlsUrl ? 'HLS playback URL published for viewers.' : 'Ingest marked connected; set VITE_LIVE_HLS_BASE for viewer HLS.')
-      : liveListingBlockedReason() || 'Lobby listing only until RTMP ingest or browser share is connected.',
+      ? 'Cloudflare Stream HLS published for viewers.'
+      : (cf.message || liveListingBlockedReason() || 'Lobby listing only. Window share still works.'),
   }
   lsSet(`live_state_${user.id}`, payload)
   const board = (lsGet('live_board', []) || []).filter((b) => b.userId !== user.id)
