@@ -26,7 +26,6 @@
   --font-ui: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-/* Square buttons site-wide — keep circular avatar controls round */
 button,
 input[type="button"],
 input[type="submit"],
@@ -38,7 +37,6 @@ button[data-avatar-btn] {
   border-radius: 9999px !important;
 }
 
-/* Square search bar in the header shell */
 header input[type="search"] {
   border-radius: var(--radius-control) !important;
 }
@@ -84,7 +82,6 @@ body::before {
   z-index: 1;
 }
 
-/* Optional light theme (profile menu toggle) */
 html[data-theme="light"] {
   --color-bg: #f1f5f9;
   --color-bg-alt: #f8fafc;
@@ -106,7 +103,6 @@ html[data-theme="light"] #root {
   color: var(--color-text);
 }
 
-/* Light preference only affects dashboard content shells — site chrome stays Twitch-black. */
 html[data-theme="light"] header.sticky {
   background-color: #0f0f0f !important;
   border-color: #272727 !important;
@@ -117,11 +113,10 @@ html[data-theme="light"] header input[type="search"] {
   border-color: #303030 !important;
   color: #f4f4f5 !important;
 }
-/* Dashboard navy rail only — never recolor the site left rail */
 html[data-theme="light"] [data-dash="light"] > aside,
 html[data-theme="light"] [data-dash="light"] aside {
-  background-color: #1c2434 !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
+  background-color: #0f0f0f !important;
+  border-color: #272727 !important;
   color: #e2e8f0 !important;
 }
 html[data-theme="light"] .dash-light,
@@ -175,7 +170,6 @@ html[data-theme="light"] body::before {
   overflow-wrap: anywhere;
 }
 
-/* ExoClick zones have fixed IAB sizes. Never stretch them into clip/video frames. */
 .exo-slot {
   pointer-events: auto;
   touch-action: manipulation;
@@ -196,7 +190,6 @@ html[data-theme="light"] body::before {
   touch-action: manipulation;
 }
 
-/* A11y */
 .skip-to-content:focus {
   clip: auto;
   width: auto;
@@ -217,4 +210,32 @@ html[data-theme="light"] body::before {
   .animate-pulse-live {
     animation: none !important;
   }
+}
+
+/* Creator Studio custom chrome — header + left menu match site black */
+[data-studio="tiktok-white"] > aside {
+  background-color: #0f0f0f !important;
+  border-right-color: #272727 !important;
+  color: #e4e4e7 !important;
+}
+[data-studio="tiktok-white"] > aside button {
+  color: #a1a1aa;
+}
+[data-studio="tiktok-white"] > aside button:hover {
+  color: #fff !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+[data-studio="tiktok-white"] > aside button.bg-neutral-100 {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #fff !important;
+}
+[data-studio="tiktok-white"] > aside p {
+  color: #71717a !important;
+}
+[data-studio="tiktok-white"] > main > header {
+  background-color: #0f0f0f !important;
+  border-bottom-color: #272727 !important;
+}
+[data-studio="tiktok-white"] > main > header p {
+  color: #fff !important;
 }

@@ -179,3 +179,36 @@ body::before {
     animation: none !important;
   }
 }
+
+/* Creator Studio custom chrome — header + left menu match site black */
+[data-studio="tiktok-white"] > aside {
+  background-color: #0f0f0f !important;
+  border-right-color: #272727 !important;
+  color: #e4e4e7 !important;
+}
+[data-studio="tiktok-white"] > aside button {
+  color: #a1a1aa;
+}
+[data-studio="tiktok-white"] > aside button:hover {
+  color: #fff !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+[data-studio="tiktok-white"] > aside button.bg-neutral-100,
+[data-studio="tiktok-white"] > aside button.bg-white\/10 {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #fff !important;
+}
+[data-studio="tiktok-white"] > aside p {
+  color: #71717a !important;
+}
+[data-studio="tiktok-white"] > main > header {
+  background-color: #0f0f0f !important;
+  border-bottom-color: #272727 !important;
+}
+[data-studio="tiktok-white"] > main > header p {
+  color: #fff !important;
+}
+[data-studio="tiktok-white"] > .sm\:hidden {
+  background-color: #0f0f0f !important;
+  border-bottom-color: #272727 !important;
+}
