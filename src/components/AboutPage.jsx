@@ -55,7 +55,7 @@ export default function AboutPage() {
         <h2 className="text-sm font-semibold text-white">If you are recruiting creators</h2>
         <p>
           Send them to Create to post. Send them to Apply to earn if they want payouts. The apply page lists what is live and what is not: no ad RPM, no bank payouts,
-          live is a lobby, captions are pasted by hand. That is intentional so a creator is not sold a
+          live is a lobby plus OBS when ingest is configured, captions are pasted by hand. That is intentional so a creator is not sold a
           fake studio.
         </p>
       </section>
@@ -67,7 +67,7 @@ export default function AboutPage() {
           <li>Import by link so you’re not re-uploading everything</li>
           <li>DMCA notice-and-takedown (no proactive Content ID)</li>
           <li>Watch without an account; sign in to post, comment, upload, or list a live lobby</li>
-          <li>Live video is not on yet — the Live page is a lobby, not a fake stream</li>
+          <li>Live lobby is on. Live video is not on yet as a global CDN — OBS works when your stream server is set. We do not invent a picture.</li>
         </ul>
       </section>
 
