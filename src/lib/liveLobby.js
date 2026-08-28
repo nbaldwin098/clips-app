@@ -1,9 +1,9 @@
 /**
  * Start / end live lobby presence. Cloud live_lobby is SOT when configured.
- * HLS URL is published only when Cloudflare Stream (or legacy flag) actually returned one.
  */
 import { lsGet, lsSet } from './storage'
-import { pushLiveLobby, endLiveLobby } from './graphSync'
+import { endLiveLobby } from './graphSync'
+import { pushLiveBoardRow } from './liveBoardSync'
 import { ensureStreamKey } from './streamKeys'
 import {
   liveIngestConnected,
@@ -51,7 +51,7 @@ export async function startLiveLobby(user, { title = '', category = '' } = {}) {
     streamKey = ensureStreamKey(user.id)
     hlsUrl = streamKey ? liveHlsPlayUrl(streamKey) : ''
     connected = !!hlsUrl
-    provider = connected ? 'legacy-env' : ''
+    provider = connected ? 'mediamtx' : ''
   }
 
   const payload = {
@@ -71,7 +71,7 @@ export async function startLiveLobby(user, { title = '', category = '' } = {}) {
     hlsUrl: hlsUrl || '',
     streamKey: streamKey || '',
     note: connected
-      ? 'Cloudflare Stream HLS published for viewers.'
+      ? 'HLS published for viewers.'
       : (cf.message || liveListingBlockedReason() || 'Lobby listing only. Window share still works.'),
   }
   lsSet(`live_state_${user.id}`, payload)
@@ -79,7 +79,7 @@ export async function startLiveLobby(user, { title = '', category = '' } = {}) {
   board.unshift(payload)
   lsSet('live_board', board.slice(0, 200))
   try {
-    await pushLiveLobby(payload)
+    await pushLiveBoardRow(payload)
   } catch {}
   return { ok: true, live: payload }
 }
