@@ -1,26 +1,25 @@
 /**
- * Profile-menu pages: black header + left menu (#0f0f0f, same as site).
- * Content cards stay light. Admin uses DashboardShell.
+ * Simple black studio dashboard. Same tokens as the site and Admin.
  */
 import { cn } from '../../lib/utils'
 
 export function StudioKpi({ label, value, hint, delta = null, icon: Icon = null }) {
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white p-4">
+    <div className="border border-[#272727] bg-[#18181f] p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs font-medium text-neutral-500">{label}</p>
-          <p className="mt-2 text-2xl font-bold tracking-tight text-neutral-900 tabular-nums">{value}</p>
-          {hint ? <p className="mt-1 text-[11px] text-neutral-400">{hint}</p> : null}
+          <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">{label}</p>
+          <p className="mt-2 text-2xl font-semibold tracking-tight text-white tabular-nums">{value}</p>
+          {hint ? <p className="mt-1 text-[11px] text-zinc-500">{hint}</p> : null}
           {delta != null ? (
-            <p className={cn('mt-1 text-[11px] font-semibold', Number(delta) >= 0 ? 'text-emerald-600' : 'text-rose-600')}>
+            <p className={cn('mt-1 text-[11px] font-semibold', Number(delta) >= 0 ? 'text-emerald-400' : 'text-rose-400')}>
               {Number(delta) >= 0 ? '↑' : '↓'} {Math.abs(Number(delta)).toFixed(1)}%
             </p>
           ) : null}
         </div>
         {Icon ? (
-          <span className="h-10 w-10 shrink-0 rounded-full bg-neutral-100 text-neutral-700 flex items-center justify-center">
-            <Icon className="h-5 w-5" />
+          <span className="h-9 w-9 shrink-0 border border-[#272727] text-zinc-300 flex items-center justify-center">
+            <Icon className="h-4 w-4" />
           </span>
         ) : null}
       </div>
@@ -30,19 +29,18 @@ export function StudioKpi({ label, value, hint, delta = null, icon: Icon = null 
 
 export function StudioCard({ title, action = null, children, className = '' }) {
   return (
-    <div className={cn('rounded-xl border border-neutral-200 bg-white', className)}>
+    <div className={cn('border border-[#272727] bg-[#18181f]', className)}>
       {(title || action) ? (
-        <div className="flex items-center justify-between gap-3 border-b border-neutral-100 px-4 py-3">
-          {title ? <h2 className="text-sm font-semibold text-neutral-900">{title}</h2> : <span />}
+        <div className="flex items-center justify-between gap-3 border-b border-[#272727] px-4 py-3">
+          {title ? <h2 className="text-sm font-semibold text-white">{title}</h2> : <span />}
           {action}
         </div>
       ) : null}
-      <div className="p-4">{children}</div>
+      <div className="p-4 text-zinc-300">{children}</div>
     </div>
   )
 }
 
-/** Simple area chart for TikTok-white studio pages. */
 export function StudioAreaChart({ seriesA = [], seriesB = [], labels = [], height = 180 }) {
   const w = 560
   const h = height
@@ -65,12 +63,12 @@ export function StudioAreaChart({ seriesA = [], seriesB = [], labels = [], heigh
   }
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-auto" role="img" aria-label="Chart">
-      {area(seriesA, '#161823')}
-      {area(seriesB, '#fe2c55')}
-      <polyline fill="none" stroke="#161823" strokeWidth="2.5" points={toPts(seriesA)} />
-      {seriesB.length ? <polyline fill="none" stroke="#fe2c55" strokeWidth="2.5" points={toPts(seriesB)} /> : null}
+      {area(seriesA, '#ffffff')}
+      {area(seriesB, '#a1a1aa')}
+      <polyline fill="none" stroke="#ffffff" strokeWidth="2" points={toPts(seriesA)} />
+      {seriesB.length ? <polyline fill="none" stroke="#a1a1aa" strokeWidth="2" points={toPts(seriesB)} /> : null}
       {labels.length ? (
-        <text x={pad} y={h - 2} className="fill-neutral-400" fontSize="10">{labels[0]}</text>
+        <text x={pad} y={h - 2} className="fill-zinc-500" fontSize="10">{labels[0]}</text>
       ) : null}
     </svg>
   )
@@ -82,11 +80,8 @@ export function StudioBarChart({ values = [], labels = [] }) {
     <div className="flex items-end gap-2 h-40">
       {values.map((v, i) => (
         <div key={`${labels[i] || i}`} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
-          <div
-            className="w-full rounded-t bg-[#161823]"
-            style={{ height: `${Math.max(4, (v / max) * 100)}%` }}
-          />
-          <span className="text-[10px] text-neutral-400">{labels[i] || ''}</span>
+          <div className="w-full bg-white/80" style={{ height: `${Math.max(4, (v / max) * 100)}%` }} />
+          <span className="text-[10px] text-zinc-500">{labels[i] || ''}</span>
         </div>
       ))}
     </div>
@@ -114,45 +109,27 @@ export default function StudioShell({
     }
     bucket.items.push(item)
   }
-
   return (
-    <div
-      className={cn('h-[calc(100dvh-3.5rem)] min-h-[480px] flex bg-[#f8f8f8] text-neutral-900 overflow-hidden', className)}
-      data-studio="tiktok-white"
-    >
-      <aside className="hidden md:flex w-56 shrink-0 flex-col border-r border-[#272727] bg-[#0f0f0f]">
+    <div className={cn('h-[calc(100dvh-3.5rem)] min-h-[480px] flex bg-[#0f0f0f] text-zinc-100 overflow-hidden', className)} data-studio="tiktok-white">
+      <aside className="hidden md:flex w-52 shrink-0 flex-col border-r border-[#272727] bg-[#0f0f0f]">
         <div className="px-4 py-4 border-b border-[#272727]">
           <p className="text-sm font-semibold text-white tracking-tight">{title}</p>
         </div>
         {onBack ? (
-          <button
-            type="button"
-            onClick={onBack}
-            className="mx-3 mt-3 h-9 px-2 text-left text-xs text-zinc-400 hover:text-white"
-          >
+          <button type="button" onClick={onBack} className="mx-3 mt-3 h-9 px-2 text-left text-xs text-zinc-500 hover:text-white">
             ← {backLabel}
           </button>
         ) : null}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+        <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-4">
           {groups.map((g) => (
             <div key={g.name}>
-              <p className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">{g.name}</p>
+              <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">{g.name}</p>
               <div className="space-y-0.5">
                 {g.items.map((item) => {
                   const Icon = item.icon
                   const active = activeId === item.id
                   return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => onNav?.(item.id)}
-                      className={cn(
-                        'w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-left rounded-lg',
-                        active
-                          ? 'bg-white/10 text-white'
-                          : 'text-zinc-400 hover:bg-white/5 hover:text-white'
-                      )}
-                    >
+                    <button key={item.id} type="button" onClick={() => onNav?.(item.id)} className={cn('w-full flex items-center gap-2.5 h-9 px-3 text-sm text-left', active ? 'bg-white/10 text-white' : 'text-zinc-400 hover:bg-white/5 hover:text-white')}>
                       {Icon ? <Icon className="h-4 w-4 shrink-0" /> : null}
                       {item.label}
                     </button>
@@ -163,32 +140,19 @@ export default function StudioShell({
           ))}
         </nav>
       </aside>
-
-      <div className="flex-1 min-w-0 flex flex-col">
+      <div className="flex-1 min-w-0 flex flex-col bg-[#0f0f0f]">
         <header className="h-14 shrink-0 border-b border-[#272727] bg-[#0f0f0f] flex items-center justify-between gap-3 px-4 md:px-6">
-          <p className="text-sm font-semibold text-white truncate">
-            {nav.find((n) => n.id === activeId)?.label || title}
-          </p>
+          <p className="text-sm font-semibold text-white truncate">{nav.find((n) => n.id === activeId)?.label || title}</p>
           <div className="flex items-center gap-2 shrink-0">{headerRight}</div>
         </header>
-
         {nav.length ? (
           <div className="md:hidden border-b border-[#272727] bg-[#0f0f0f] px-3 py-2">
-            <select
-              value={activeId}
-              onChange={(e) => onNav?.(e.target.value)}
-              className="w-full h-9 border border-[#272727] bg-[#0f0f0f] px-2 text-sm text-white rounded-lg"
-            >
-              {nav.map((n) => (
-                <option key={n.id} value={n.id}>{n.label}</option>
-              ))}
+            <select value={activeId} onChange={(e) => onNav?.(e.target.value)} className="w-full h-9 border border-[#272727] bg-[#0f0f0f] px-2 text-sm text-white">
+              {nav.map((n) => (<option key={n.id} value={n.id}>{n.label}</option>))}
             </select>
           </div>
         ) : null}
-
-        <div className="flex-1 min-h-0 overflow-y-auto p-4 md:p-6">
-          {children}
-        </div>
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 md:p-6">{children}</div>
       </div>
     </div>
   )
