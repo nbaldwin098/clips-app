@@ -4,7 +4,7 @@ What this branch actually changed, and what still requires your dashboard.
 
 ## Code that was broken on main
 
-`src/App.jsx` and `src/components/dash/DashboardShell.jsx` contained unresolved `<<<<<<< HEAD` merge markers from Cursor batches. That prevents a clean production build. Those markers are removed on this branch.
+`src/App.jsx` and `src/components/dash/DashboardShell.jsx` contained unresolved git merge markers from Cursor batches. That prevents a clean production build. Those markers are removed on this branch.
 
 ## Product name
 
