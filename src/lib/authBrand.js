@@ -14,7 +14,7 @@ export function sanitizeAuthError(raw) {
     return 'That email already has an account. Sign in instead.'
   }
   if (lower.includes('email not confirmed')) {
-    return 'Check your email from Clips, then sign in.'
+    return 'Check your email from calabi, then sign in.'
   }
   if (lower.includes('token has expired') || lower.includes('otp') || lower.includes('invalid token')) {
     return 'That code is wrong or expired. Send a new one.'
@@ -28,7 +28,7 @@ export function sanitizeAuthError(raw) {
   if (lower.includes('supabase') || lower.includes('gotrue')) {
     return 'Could not finish sign-in. Try again.'
   }
-  return t.replace(/supabase/gi, 'Clips').replace(/gotrue/gi, 'Clips').slice(0, 180)
+  return t.replace(/supabase/gi, 'calabi').replace(/gotrue/gi, 'calabi').slice(0, 180)
 }
 
 export function normalizePhone(raw) {
@@ -43,19 +43,19 @@ export function normalizePhone(raw) {
   return `+${digits}`
 }
 
-export const CLIPS_RESET_EMAIL_SUBJECT = 'Reset your Clips password'
-export const CLIPS_RESET_EMAIL_BODY = `Reset your Clips password:
+export const CLIPS_RESET_EMAIL_SUBJECT = 'Reset your calabi password'
+export const CLIPS_RESET_EMAIL_BODY = `Reset your calabi password:
 
 {{ .ConfirmationURL }}
 
 If you did not ask for this, ignore this email.
-— Clips`
+— calabi`
 
-export const CLIPS_CONFIRM_EMAIL_SUBJECT = 'Confirm your Clips account'
-export const CLIPS_CONFIRM_EMAIL_BODY = `Confirm your Clips account:
+export const CLIPS_CONFIRM_EMAIL_SUBJECT = 'Confirm your calabi account'
+export const CLIPS_CONFIRM_EMAIL_BODY = `Confirm your calabi account:
 
 {{ .ConfirmationURL }}
 
-— Clips`
+— calabi`
 
-export const CLIPS_SMS_TEMPLATE = 'Your Clips code is {{ .Code }}'
+export const CLIPS_SMS_TEMPLATE = 'Your calabi code is {{ .Code }}'
