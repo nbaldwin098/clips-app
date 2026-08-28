@@ -1,6 +1,6 @@
 /**
- * Lightweight deploy health — env presence only (no outbound network required).
- * GET /api/health → 200 when Supabase URL+anon present; 503 if critical env missing.
+ * Lightweight deploy health — env presence only (no outbound network, no secret values).
+ * GET /api/health → 200 when Supabase URL+anon present; 503 if those are missing.
  */
 function present(...keys) {
   for (const k of keys) {
@@ -17,6 +17,10 @@ export async function GET() {
     'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY',
     'VITE_STRIPE_PUBLISHABLE_KEY',
   )
+  const vapidPublic = present('NEXT_PUBLIC_VAPID_PUBLIC_KEY', 'VITE_VAPID_PUBLIC_KEY')
+  const pushSubscribe = present('VITE_PUSH_SUBSCRIBE_URL', 'NEXT_PUBLIC_PUSH_SUBSCRIBE_URL')
+  const ownerId = present('VITE_PLATFORM_OWNER_ID', 'NEXT_PUBLIC_PLATFORM_OWNER_ID')
+  const liveIngestFlag = present('VITE_LIVE_INGEST_CONNECTED', 'NEXT_PUBLIC_LIVE_INGEST_CONNECTED')
 
   const supabaseConfigured = !!(supabaseUrl && supabaseAnon)
   const stripeConfigured = !!stripePublishable
@@ -27,10 +31,16 @@ export async function GET() {
     checks: {
       supabaseConfigured,
       stripePublishableConfigured: stripeConfigured,
-      // Secret key lives in Edge Functions — not readable here by design.
+      vapidPublicConfigured: !!vapidPublic,
+      pushSubscribeConfigured: !!pushSubscribe,
+      platformOwnerConfigured: !!ownerId,
+      liveIngestFlagOn: /^(1|true|yes|on)$/i.test(liveIngestFlag),
       stripeSecretOnEdge: 'not_checked',
+      stripeWebhookSecretOnEdge: 'not_checked',
+      vapidPrivateOnEdge: 'not_checked',
     },
     service: 'calabi',
+    publicUrl: 'https://calabi.us',
     ts: new Date().toISOString(),
   }
 

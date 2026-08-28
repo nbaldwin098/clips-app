@@ -1,7 +1,7 @@
 import Foundation
 
 enum Site {
-  static let name = "Clips"
+  static let name = "calabi"
   static let host = "calabi.us"
   static let url = URL(string: "https://calabi.us")!
 

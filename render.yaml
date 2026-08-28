@@ -1,5 +1,6 @@
 # Render Blueprint — Next.js (Node) for SEO SSR
 # Static hosting cannot SSR watch/share pages. This service runs `next start`.
+# Keep service name stable so an existing Render service is not duplicated.
 services:
   - type: web
     name: clips-app
@@ -10,17 +11,25 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22"
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+      - key: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: NEXT_PUBLIC_VAPID_PUBLIC_KEY
+        sync: false
+      - key: VITE_PUSH_SUBSCRIBE_URL
+        sync: false
+      - key: VITE_PLATFORM_OWNER_ID
+        sync: false
+      - key: VITE_ADMIN_CODE
+        sync: false
       - key: VITE_SUPABASE_URL
         sync: false
       - key: VITE_SUPABASE_ANON_KEY
         sync: false
       - key: VITE_STRIPE_PUBLISHABLE_KEY
-        sync: false
-      - key: VITE_STRIPE_PAYMENT_LINK
-        sync: false
-      - key: VITE_PLATFORM_OWNER_ID
-        sync: false
-      - key: VITE_ADMIN_CODE
         sync: false
       - key: VITE_LIVE_INGEST_CONNECTED
         sync: false

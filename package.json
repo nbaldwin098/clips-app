@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "dev:vite": "vite",
-    "build": "next build",
+    "build": "node scripts/strip-conflict-markers.mjs && next build",
     "build:vite": "vite build",
     "start": "next start",
     "lint": "oxlint",

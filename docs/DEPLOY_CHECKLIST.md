@@ -11,12 +11,15 @@
 
 ## Ship checklist
 
-1. [ ] Domain points only at the Node Render service (Static Site deleted).
-2. [ ] Env vars from `docs/RENDER_ENV.md` set on the service; redeploy after changes.
-3. [ ] `npm run build` succeeds locally / in CI.
-4. [ ] Apply any new files under `supabase/migrations/` in Supabase SQL editor (see Admin → Setup).
-5. [ ] `GET https://calabi.us/api/health` returns `{ ok: true }`.
-6. [ ] Spot-check: sign-in, upload a clip, open Coins, open Creator Studio Analytics.
-7. [ ] Stripe test purchase return credits Coins once (refresh should not double-credit).
+1. [ ] Domain `calabi.us` points only at the **Node** Render service (Static Site deleted).
+2. [ ] Render env from `docs/RENDER_ENV.md` is set; redeploy after any `NEXT_PUBLIC_*` change.
+3. [ ] Supabase Edge secrets set: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `APP_PUBLIC_URL=https://calabi.us`.
+4. [ ] Edge Functions deployed: `create-checkout-session`, `stripe-webhook`, `admin-withdraw`, `admin-finance`, `push-subscribe`.
+5. [ ] `npm run build` succeeds.
+6. [ ] Apply any new files under `supabase/migrations/` in the SQL editor.
+7. [ ] `GET https://calabi.us/api/health` returns `{ ok: true }` with `supabaseConfigured: true`.
+8. [ ] Spot-check: sign-in, upload a clip, refresh, play; open Coins; open Creator Studio.
+9. [ ] Stripe **test** purchase credits Coins once (refresh must not double-credit).
+10. [ ] Live lobby does **not** claim RTMP connected (`liveIngestFlagOn` false unless you have a real server).
 
 Rollback: redeploy previous Node deploy; do not re-enable Static Site hosting.
