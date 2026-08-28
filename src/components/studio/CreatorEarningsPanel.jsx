@@ -211,12 +211,12 @@ export default function CreatorEarningsPanel() {
       >
         <div className="space-y-4">
           {methods.length === 0 ? (
-            <p className="text-xs text-zinc-500">No payout methods yet — add one below.</p>
+            <p className="text-xs text-neutral-500">No payout methods yet — add one below.</p>
           ) : methods.map((m) => (
-            <div key={m.id} className="flex items-center justify-between gap-2 border border-zinc-800 px-3 py-2 text-sm">
+            <div key={m.id} className="flex items-center justify-between gap-2 border border-neutral-200 px-3 py-2 text-sm rounded-lg">
               <div>
-                <p className="text-white">{m.label}{m.primary ? ' · Primary' : ''}</p>
-                <p className="text-[11px] text-zinc-500">{m.type} · {m.details}</p>
+                <p className="text-neutral-900">{m.label}{m.primary ? ' · Primary' : ''}</p>
+                <p className="text-[11px] text-neutral-500">{m.type} · {m.details}</p>
               </div>
               <SettingsButton
                 variant="ghost"
@@ -232,8 +232,8 @@ export default function CreatorEarningsPanel() {
             </div>
           ))}
 
-          <div className="border-t border-zinc-800 pt-4 space-y-3">
-            <p className="text-xs font-semibold text-zinc-300">Add payment method</p>
+          <div className="border-t border-neutral-200 pt-4 space-y-3">
+            <p className="text-xs font-semibold text-neutral-700">Add payment method</p>
             <div className="flex flex-wrap gap-2">
               {[
                 { id: 'paypal', label: 'PayPal' },
@@ -246,7 +246,7 @@ export default function CreatorEarningsPanel() {
                   key={t.id}
                   type="button"
                   onClick={() => setType(t.id)}
-                  className={`h-9 px-3 text-xs font-semibold border ${type === t.id ? 'border-white text-white' : 'border-zinc-700 text-zinc-400'}`}
+                  className={`h-9 px-3 text-xs font-semibold border ${type === t.id ? 'border-neutral-900 text-neutral-900' : 'border-neutral-200 text-neutral-600'}`}
                 >
                   {t.label}
                 </button>
@@ -259,20 +259,20 @@ export default function CreatorEarningsPanel() {
                   value={accountName}
                   onChange={(e) => setAccountName(e.target.value)}
                   placeholder="Account name"
-                  className="h-9 border border-zinc-800 bg-black px-2 text-xs text-white sm:col-span-2"
+                  className="h-9 border border-neutral-200 bg-white px-2 text-xs text-neutral-900 sm:col-span-2"
                 />
                 <input
                   value={routingNumber}
                   onChange={(e) => setRoutingNumber(e.target.value.replace(/\D/g, '').slice(0, 9))}
                   placeholder="Routing number"
-                  className="h-9 border border-zinc-800 bg-black px-2 text-xs text-white"
+                  className="h-9 border border-neutral-200 bg-white px-2 text-xs text-neutral-900"
                   inputMode="numeric"
                 />
                 <input
                   value={accountNumber}
                   onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, '').slice(0, 17))}
                   placeholder="Account number"
-                  className="h-9 border border-zinc-800 bg-black px-2 text-xs text-white"
+                  className="h-9 border border-neutral-200 bg-white px-2 text-xs text-neutral-900"
                   inputMode="numeric"
                 />
               </div>
@@ -284,14 +284,14 @@ export default function CreatorEarningsPanel() {
                   <button
                     type="button"
                     onClick={() => setChain('sol')}
-                    className={`h-9 px-3 text-xs font-semibold border ${chain === 'sol' ? 'border-white text-white' : 'border-zinc-700 text-zinc-400'}`}
+                    className={`h-9 px-3 text-xs font-semibold border ${chain === 'sol' ? 'border-white text-white' : 'border-neutral-200 text-neutral-600'}`}
                   >
                     SOL
                   </button>
                   <button
                     type="button"
                     onClick={() => setChain('btc')}
-                    className={`h-9 px-3 text-xs font-semibold border ${chain === 'btc' ? 'border-white text-white' : 'border-zinc-700 text-zinc-400'}`}
+                    className={`h-9 px-3 text-xs font-semibold border ${chain === 'btc' ? 'border-white text-white' : 'border-neutral-200 text-neutral-600'}`}
                   >
                     BTC
                   </button>
@@ -300,7 +300,7 @@ export default function CreatorEarningsPanel() {
                   value={cryptoAddress}
                   onChange={(e) => setCryptoAddress(e.target.value.trim())}
                   placeholder={chain === 'btc' ? 'Bitcoin address' : 'Solana address'}
-                  className="h-9 w-full border border-zinc-800 bg-black px-2 text-xs text-white"
+                  className="h-9 w-full border border-neutral-200 bg-white px-2 text-xs text-neutral-900"
                 />
               </div>
             ) : null}
@@ -310,7 +310,7 @@ export default function CreatorEarningsPanel() {
                 value={paypalEmail}
                 onChange={(e) => setPaypalEmail(e.target.value)}
                 placeholder="PayPal email"
-                className="h-9 w-full border border-zinc-800 bg-black px-2 text-xs text-white"
+                className="h-9 w-full border border-neutral-200 bg-white px-2 text-xs text-neutral-900"
               />
             ) : null}
 
@@ -319,7 +319,7 @@ export default function CreatorEarningsPanel() {
                 value={venmoHandle}
                 onChange={(e) => setVenmoHandle(e.target.value)}
                 placeholder="@venmo-username"
-                className="h-9 w-full border border-zinc-800 bg-black px-2 text-xs text-white"
+                className="h-9 w-full border border-neutral-200 bg-white px-2 text-xs text-neutral-900"
               />
             ) : null}
 
@@ -328,23 +328,23 @@ export default function CreatorEarningsPanel() {
                 value={cashTag}
                 onChange={(e) => setCashTag(e.target.value)}
                 placeholder="$cashtag"
-                className="h-9 w-full border border-zinc-800 bg-black px-2 text-xs text-white"
+                className="h-9 w-full border border-neutral-200 bg-white px-2 text-xs text-neutral-900"
               />
             ) : null}
 
             <SettingsButton disabled={busy} onClick={onAddMethod}>Save payment method</SettingsButton>
           </div>
 
-          <div className="border-t border-zinc-800 pt-4 space-y-3">
-            <p className="text-xs font-semibold text-zinc-300">Request withdrawal</p>
+          <div className="border-t border-neutral-200 pt-4 space-y-3">
+            <p className="text-xs font-semibold text-neutral-700">Request withdrawal</p>
             <div className="flex flex-wrap gap-2 items-end">
               <label className="text-xs text-zinc-400">
                 Amount (USD)
-                <input value={amount} onChange={(e) => setAmount(e.target.value)} className="mt-1 block h-9 w-28 border border-zinc-800 bg-black px-2 text-sm text-white" />
+                <input value={amount} onChange={(e) => setAmount(e.target.value)} className="mt-1 block h-9 w-28 border border-neutral-200 bg-white px-2 text-sm text-white" />
               </label>
               <label className="text-xs text-zinc-400">
                 Method
-                <select value={methodId} onChange={(e) => setMethodId(e.target.value)} className="mt-1 block h-9 min-w-[12rem] border border-zinc-800 bg-black px-2 text-sm text-white">
+                <select value={methodId} onChange={(e) => setMethodId(e.target.value)} className="mt-1 block h-9 min-w-[12rem] border border-neutral-200 bg-white px-2 text-sm text-white">
                   <option value="">Select…</option>
                   {methods.map((m) => (
                     <option key={m.id} value={m.id}>{m.label}</option>
@@ -356,10 +356,10 @@ export default function CreatorEarningsPanel() {
               </SettingsButton>
             </div>
             {user?.creatorStatus !== 'approved' ? (
-              <p className="text-[11px] text-zinc-500">Apply to earn before requesting a withdrawal.</p>
+              <p className="text-[11px] text-neutral-500">Apply to earn before requesting a withdrawal.</p>
             ) : null}
             {requests.length ? (
-              <ul className="mt-2 space-y-1 text-xs text-zinc-500">
+              <ul className="mt-2 space-y-1 text-xs text-neutral-500">
                 {requests.map((r) => (
                   <li key={r.id}>
                     {usd(r.amountUsd)} · {r.status || 'pending'} · {r.methodLabel || '—'} · {String(r.createdAt || '').slice(0, 16)}

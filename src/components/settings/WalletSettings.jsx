@@ -72,14 +72,14 @@ export default function WalletSettings({ onNavigate, onOpenAuth, initialTab = nu
     return (
       <div className="mx-auto max-w-3xl px-4 py-8 space-y-6">
         <div>
-          <h1 className="text-xl font-semibold text-white">Wallet</h1>
-          <p className="mt-1 text-sm text-zinc-400">Sign in to buy coins and manage payment methods.</p>
+          <h1 className="text-xl font-semibold text-neutral-900">Wallet</h1>
+          <p className="mt-1 text-sm text-neutral-500">Sign in to buy coins and manage payment methods.</p>
         </div>
         <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
           {packs.map((p) => (
-            <div key={p.id} className="border border-zinc-700/80 bg-zinc-900/90 p-4 text-center">
-              <p className="text-sm font-bold text-white">{p.label}</p>
-              <p className="mt-2 text-base font-bold text-amber-300">${Number(p.usd).toFixed(2)}</p>
+            <div key={p.id} className="border border-neutral-200 bg-white p-4 text-center rounded-xl">
+              <p className="text-sm font-bold text-neutral-900">{p.label}</p>
+              <p className="mt-2 text-base font-bold text-neutral-900">${Number(p.usd).toFixed(2)}</p>
             </div>
           ))}
         </div>

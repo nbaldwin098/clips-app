@@ -153,7 +153,7 @@ export default function MessagesPage({
   if (user?.provider !== 'supabase') {
     return (
       <StudioShell title="Messages" onBack={() => onNavigate?.('home')}>
-        <button type="button" onClick={onOpenAuth} className="h-10 px-4 bg-neutral-900 text-neutral-900 text-sm font-semibold rounded-lg">
+        <button type="button" onClick={onOpenAuth} className="h-10 px-4 bg-neutral-900 text-white text-sm font-semibold rounded-lg">
           Sign in with cloud
         </button>
       </StudioShell>
@@ -168,7 +168,7 @@ export default function MessagesPage({
         <button
           type="button"
           onClick={() => { setComposeOpen(true); setMobileShowThread(false) }}
-          className="shrink-0 h-9 px-3 inline-flex items-center gap-1.5 bg-neutral-900 text-neutral-900 text-xs font-semibold rounded-lg"
+          className="shrink-0 h-9 px-3 inline-flex items-center gap-1.5 bg-neutral-900 text-white text-xs font-semibold rounded-lg"
         >
           <Plus className="h-4 w-4" /> New message
         </button>

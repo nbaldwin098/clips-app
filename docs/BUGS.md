@@ -51,11 +51,11 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 | BUG-115 | Home | Square boxes over circular profile avatars | Global square-button CSS vs rounded-full | `doing` |
 | BUG-116 | Crash | Client-side exception / failed resource after deploys | global-error + chunk reload; fix `/` vs `[[...slug]]` conflict | `doing` |
 | BUG-117 | Admin | Close session button; Stripe money hard to find | Removed close; Accounts menu → Stripe ledger / Pay creators | `doing` |
-| BUG-118 | Coins | Starter pack was $0.99/100 and client rejected &lt;$1 | Now **$1.99 / 200 coins** (`c200`); Edge min 199¢; legacy `c100` aliases | `doing` |
-| BUG-119 | Nav | `/rewards` 404 — not in `KNOWN_VIEWS` despite redirect case | Added to KNOWN_VIEWS → Wallet | `doing` |
-| BUG-120 | i18n | Guests had no language menu; Library/More hard-coded EN | Guest account menu + sidebar `t()` | `doing` |
+| BUG-118 | Coins | Starter pack was $0.99/100 and client rejected &lt;$1 | Now **$1.99 / 200 coins** (`c200`); Edge min 199¢; legacy `c100` aliases | `done` |
+| BUG-119 | Nav | `/rewards` 404 — not in `KNOWN_VIEWS` despite redirect case | Added to KNOWN_VIEWS → Wallet | `done` |
+| BUG-120 | i18n | Guests had no language menu; Library/More hard-coded EN | Guest account menu + sidebar `t()` | `done` |
 | BUG-121 | UX | Site sidebar vanished on Wallet/Settings (hard to leave) | Keep site rail for wallet/settings; studio immersive only | `doing` |
-| BUG-122 | SEO | Sparse `document.title` map → odd tab titles | Expanded titles for major views | `doing` |
+| BUG-122 | SEO | Sparse `document.title` map → odd tab titles | Expanded titles for major views | `done` |
 
 ### P1 — important
 
@@ -64,7 +64,7 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 | BUG-010 | Live | Live ingest not connected — lobby only | Gate is `VITE_LIVE_INGEST_CONNECTED` only (URLs alone do not invent connected). OBS/RTMP/HLS still need VPS | `open` |
 | BUG-123 | Push | VAPID key missing in local/guest env → “need VAPID” on Live | Needs `NEXT_PUBLIC_VAPID_PUBLIC_KEY` on deploy | `open` |
 | BUG-124 | i18n | Page bodies still mostly English after locale switch | Chrome/nav wired; deeper strings backlog (was BUG-086) | `open` |
-| BUG-125 | Dead | Orphan `RewardsPage.jsx` + `rewards.js` (5%) still on disk | Menu removed; delete in cleanup PR | `open` |
+| BUG-125 | Dead | Orphan `RewardsPage.jsx` + `rewards.js` (5%) still on disk | Deleted in phase2 finish | `done` |
 | BUG-011 | Live | Host ad controls / liveAds stubs after ads removal | LiveView + Stream settings controls removed; thin stubs kept for advertise portal | `done` |
 | BUG-012 | Ads | Decide monetization path: AdSense vs none vs later video ads | Product decision: no ads for now; tips/premium/Cash | `wontfix` |
 | BUG-013 | Ads | Wire AdSense units for clip-feed + pic-feed if keeping AdSense | Cancelled with BUG-012 | `wontfix` |
