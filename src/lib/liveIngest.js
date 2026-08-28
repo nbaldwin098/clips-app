@@ -1,8 +1,5 @@
 /**
  * Live video ingest + OBS connect helpers.
- * Production path: set VITE_LIVE_RTMP_URL + VITE_LIVE_HLS_BASE on Render.
- * Both URLs = ingest is on. No second “connected” flag.
- * Cloudflare Stream per-creator keys still come from live-ingest when that function is deployed.
  */
 import { runtimeEnv } from './runtimeEnv'
 import { ensureStreamKey } from './streamKeys'
@@ -29,7 +26,6 @@ export function liveHlsBaseUrl() {
   return url.replace(/\/$/, '')
 }
 
-/** True when both ingest + playback URLs are set, or ops forced the old flag. */
 export function liveIngestConnected() {
   if (liveRtmpServerUrl() && liveHlsBaseUrl()) return true
   return envFlag('VITE_LIVE_INGEST_CONNECTED', false)
@@ -59,36 +55,41 @@ export function getObsConnectInfo(userId) {
   const streamKey = userId ? ensureStreamKey(userId) : ''
   const serverUrl = liveRtmpServerUrl()
   const hlsBase = liveHlsBaseUrl()
-  const rtmpReady = !!serverUrl
-  const hlsReady = !!hlsBase
   const ingestConnected = liveIngestConnected()
-  let statusNote = 'Set VITE_LIVE_RTMP_URL and VITE_LIVE_HLS_BASE on Render to the GCP VM. Window share works until then.'
-  if (ingestConnected) {
-    statusNote = 'OBS Custom RTMP is live. Viewers get HLS from the play base.'
-  } else if (rtmpReady || hlsReady) {
-    statusNote = 'Need both RTMP and HLS URLs on Render for live ingest.'
-  }
-
+  let statusNote = 'Set VITE_LIVE_RTMP_URL and VITE_LIVE_HLS_BASE on Render.'
+  if (ingestConnected) statusNote = 'OBS Custom RTMP and in-site Go live from here use the same server.'
   return {
     streamKey,
     serverUrl,
     hlsBase,
-    rtmpReady,
-    hlsReady,
+    rtmpReady: !!serverUrl,
+    hlsReady: !!hlsBase,
     ingestConnected,
     browserShareReady: true,
     obsDownloadUrl: 'https://obsproject.com/download',
     statusNote,
-    steps: rtmpReady
-      ? [
-          { title: 'Install OBS Studio', body: 'Free from obsproject.com.' },
-          { title: 'Settings → Stream → Custom', body: 'Paste Server and Stream Key from this page.' },
-          { title: 'Start Streaming', body: 'Then Go Live on Calabi so the lobby lists you.' },
-        ]
-      : [
-          { title: 'Install OBS Studio', body: 'Free from obsproject.com.' },
-          { title: 'GCP VM', body: 'Run docker/mediamtx on the Google VM. Put rtmp://IP:1935/live and http://IP:8888/live on Render.' },
-          { title: 'Share a window until then', body: 'Live → window share still works with no VM.' },
-        ],
+    steps: [],
   }
+}
+
+export function getLiveWhipBase() {
+  const raw = String(runtimeEnv('VITE_LIVE_WHIP_URL') || runtimeEnv('NEXT_PUBLIC_LIVE_WHIP_URL') || '').trim()
+  if (raw) return raw.replace(/\/$/, '')
+  const hls = liveHlsBaseUrl()
+  try {
+    if (!hls) return ''
+    const u = new URL(hls)
+    u.port = '8889'
+    u.pathname = '/live'
+    return u.toString().replace(/\/$/, '')
+  } catch {
+    return ''
+  }
+}
+
+export function liveWhipUrl(streamKey) {
+  const base = getLiveWhipBase()
+  const key = String(streamKey || '').trim()
+  if (!base || !key) return ''
+  return `${base}/${encodeURIComponent(key)}/whip`
 }

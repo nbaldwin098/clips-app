@@ -28,6 +28,8 @@ const nextConfig = {
     NEXT_PUBLIC_LIVE_RTMP_URL: process.env.NEXT_PUBLIC_LIVE_RTMP_URL || process.env.VITE_LIVE_RTMP_URL || '',
     VITE_LIVE_HLS_BASE: process.env.VITE_LIVE_HLS_BASE || process.env.NEXT_PUBLIC_LIVE_HLS_BASE || '',
     NEXT_PUBLIC_LIVE_HLS_BASE: process.env.NEXT_PUBLIC_LIVE_HLS_BASE || process.env.VITE_LIVE_HLS_BASE || '',
+    VITE_LIVE_WHIP_URL: process.env.VITE_LIVE_WHIP_URL || process.env.NEXT_PUBLIC_LIVE_WHIP_URL || '',
+    NEXT_PUBLIC_LIVE_WHIP_URL: process.env.NEXT_PUBLIC_LIVE_WHIP_URL || process.env.VITE_LIVE_WHIP_URL || '',
   },
   webpack: (config) => {
     config.resolve.alias = {
