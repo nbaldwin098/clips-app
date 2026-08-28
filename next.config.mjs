@@ -1,6 +1,5 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { readFileSync } from 'node:fs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -24,14 +23,17 @@ const nextConfig = {
     VITE_STRIPE_PAYMENT_LINK: process.env.VITE_STRIPE_PAYMENT_LINK || '',
     VITE_PLATFORM_OWNER_ID: process.env.VITE_PLATFORM_OWNER_ID || '',
     VITE_ADMIN_CODE: process.env.VITE_ADMIN_CODE || '',
-    VITE_LIVE_INGEST_CONNECTED: process.env.VITE_LIVE_INGEST_CONNECTED || '',
+    VITE_LIVE_INGEST_CONNECTED: process.env.VITE_LIVE_INGEST_CONNECTED || process.env.NEXT_PUBLIC_LIVE_INGEST_CONNECTED || '',
+    VITE_LIVE_RTMP_URL: process.env.VITE_LIVE_RTMP_URL || process.env.NEXT_PUBLIC_LIVE_RTMP_URL || '',
+    NEXT_PUBLIC_LIVE_RTMP_URL: process.env.NEXT_PUBLIC_LIVE_RTMP_URL || process.env.VITE_LIVE_RTMP_URL || '',
+    VITE_LIVE_HLS_BASE: process.env.VITE_LIVE_HLS_BASE || process.env.NEXT_PUBLIC_LIVE_HLS_BASE || '',
+    NEXT_PUBLIC_LIVE_HLS_BASE: process.env.NEXT_PUBLIC_LIVE_HLS_BASE || process.env.VITE_LIVE_HLS_BASE || '',
   },
   webpack: (config) => {
     config.resolve.alias = {
       ...(config.resolve.alias || {}),
       '@': path.resolve(__dirname, 'src'),
     }
-    // Support Vite-style `?raw` imports used by admin SQL / seed data.
     config.module.rules.push({
       resourceQuery: /raw/,
       type: 'asset/source',
