@@ -131,7 +131,6 @@ function AppShell() {
     setGraphActor(user?.provider === 'supabase' ? user : null)
     if (user?.provider === 'supabase') {
       syncGraphFromCloud().catch(() => {})
-      // Legacy device-only blobs → cloud links, then drop the device copy.
       promoteDeviceUploadsToCloud(user).catch(() => {})
     }
   }, [isAuthenticated, user?.id, user?.provider])
@@ -206,12 +205,10 @@ function AppShell() {
   useEffect(() => {
     const pull = async () => {
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
-      // #1: videos / clips / pics catalog before live features, graph, promotions.
       try {
         await syncContentFromCloud(user)
       } catch {}
       flushScheduledPublishes()
-      // Secondary (non-blocking): live state, shop-adjacent graph, promos.
       pullLiveFeatureState().catch(() => {})
       syncPromotionsFromCloud()
       syncGraphFromCloud().catch(() => {})
@@ -237,7 +234,6 @@ function AppShell() {
 
   const applyRoute = () => {
     const parsed = parseRoute()
-    // Friendly legal URLs: /terms /privacy (and short aliases).
     const LEGAL_ALIASES = {
       terms: 'legal-tos',
       tos: 'legal-tos',
@@ -248,12 +244,10 @@ function AppShell() {
     const kind = LEGAL_ALIASES[parsed.kind] || parsed.kind
     const rawRouteId = parsed.id
     const params = parsed.params
-    // Never stash objects in routeId — coerce to string id only.
     const id = rawRouteId && typeof rawRouteId === 'object'
       ? String(rawRouteId.id || '')
       : String(rawRouteId || '')
     setRouteParams(params && typeof params === 'object' ? params : {})
-    // Bare calabi.us/<id> (and /content/<id>) → open the right player by type.
     if ((kind === 'content' || kind === 'v') && id) {
       setMiniItem(null)
       setRouteId(id)
@@ -332,7 +326,6 @@ function AppShell() {
     }
   }, [])
 
-  // Keep SpaShell view in sync when Next App Router changes the path.
   useEffect(() => {
     applyRoute()
   }, [pathname])
@@ -360,7 +353,6 @@ function AppShell() {
       setSidebarOpen(false)
       dockWatchIfNeeded(view === 'watch' && dest !== 'watch')
       setView(dest)
-      // Never stash objects in routeId — that broke clips focus and sideways layout jumps.
       const rawId = dest === 'profile' ? (id || profileTarget.handle) : id
       const nextId = rawId && typeof rawId === 'object' ? String(rawId.id || '') : String(rawId || '')
       setRouteId(nextId || '')
@@ -369,7 +361,6 @@ function AppShell() {
         const uid = (params && params.u) || profileTarget.userId
         goPath('profile', nextId, uid ? { u: uid, ...(params || {}) } : params)
       } else if ((dest === 'clips' || dest === 'watch' || dest === 'pics') && nextId) {
-        // Posts use bare /{id} share URLs; clip/pic/watch lists stay /clips etc.
         goPath('content', nextId)
       } else {
         goPath(dest, nextId, params)
@@ -537,7 +528,6 @@ function AppShell() {
       return <AuthRequired title={titles[view] || 'Sign in'} description="Sign in." onOpenAuth={openAuth} />
     }
     if (view === 'admin') {
-      // Signed-in non-owners never see Admin UI (navbar already hides the link).
       if (user && !isPlatformOwner(user) && !isAdminSession(user)) {
         return <NotFoundPage onNavigate={navigate} />
       }
@@ -702,7 +692,6 @@ function AppShell() {
       case 'appeals':
         return <AppealsPage onNavigate={navigate} onOpenAuth={openAuth} />
       case 'rewards':
-        // Rewards removed — send old links to Wallet
         return <WalletSettings onNavigate={navigate} onOpenAuth={openAuth} />
       case 'create': return <CreatePage onCreate={openCreate} onOpenAuth={openAuth} onNavigate={navigate} />
       case 'legal-tos': return <TermsOfService />
@@ -714,30 +703,16 @@ function AppShell() {
   }
 
   const isLiveView = view === 'live'
-<<<<<<< HEAD
-  // Immersive TailAdmin shells — hide Twitch site rail (dashboard pages have their own navy rail).
+  // Studio/admin have their own black rail. Keep the site rail on wallet/settings.
   const studioChrome = (
     view === 'dashboard'
     || view === 'analytics'
     || view === 'vods'
     || view === 'verify'
-    || view === 'wallet'
-    || view === 'calabi-cash'
-    || view === 'rewards'
-    || view === 'settings'
-    || view === 'appeals'
-    || view === 'messages'
-    || view === 'subscriptions'
     || view === 'admin'
   )
-=======
-  // Immersive creator shells keep their own TailAdmin nav; keep site rail for wallet/settings.
-  const studioChrome = view === 'dashboard' || view === 'analytics' || view === 'vods' || view === 'verify'
->>>>>>> origin/main
   const lockStage = view === 'clips' || view === 'shorts' || view === 'pics' || studioChrome
 
-  // Always bound to the viewport. Inside Next's fixed SpaShell overlay, min-h-screen
-  // grows with content and main never overflows — home/explore cannot scroll.
   return (
     <div className="h-dvh overflow-hidden bg-[#000000] text-zinc-100 flex flex-col selection:bg-white selection:text-black">
       <ToastLiveRegion />
