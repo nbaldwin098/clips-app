@@ -3,7 +3,6 @@ import { Radio, MonitorUp } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { lsGet } from '../lib/storage'
 import { listLiveBoard, liveBadgeLabel, isOnAir } from '../lib/liveStatus'
-import { mergeDemoLiveBoard } from '../data/demoLiveStreams'
 import { getSubscriberCount } from '../lib/engagement'
 import FollowButton from './FollowButton'
 import { cn } from '../lib/utils'
@@ -26,12 +25,9 @@ function formatElapsed(startedAt) {
   return `${hrs}h ${mins % 60}m ago`
 }
 
-/**
- * Live tab — homepage-style livestream shelves. Go live only from Create (+).
- */
 export default function LiveView({ focusedStream, onFocusStream, onOpenAuth, onNavigate }) {
   const { user, isAuthenticated } = useAuth()
-  const [liveNow, setLiveNow] = useState(() => mergeDemoLiveBoard(listLiveBoard(lsGet('live_board', []) || [])))
+  const [liveNow, setLiveNow] = useState(() => listLiveBoard(lsGet('live_board', []) || []))
   const [, setTick] = useState(0)
   const [sharing, setSharing] = useState(false)
   const [screenError, setScreenError] = useState('')
@@ -42,7 +38,7 @@ export default function LiveView({ focusedStream, onFocusStream, onOpenAuth, onN
   const hlsRef = useRef(null)
 
   const refreshLiveBoard = useCallback(() => {
-    setLiveNow(mergeDemoLiveBoard(listLiveBoard(lsGet('live_board', []) || [])))
+    setLiveNow(listLiveBoard(lsGet('live_board', []) || []))
   }, [])
 
   useEffect(() => {
@@ -64,13 +60,12 @@ export default function LiveView({ focusedStream, onFocusStream, onOpenAuth, onN
 
   useEffect(() => () => onFocusStream?.(null), [onFocusStream])
 
-  // HLS playback only when the lobby entry published a real hlsUrl (ingest connected).
   useEffect(() => {
     const el = hlsRef.current
     const url = String(focusedStream?.hlsUrl || '').trim()
     setHlsError('')
     if (!el) return undefined
-    if (sharing || !url || !focusedStream?.ingestConnected) {
+    if (sharing || !url) {
       el.removeAttribute('src')
       el.load?.()
       return undefined
@@ -84,7 +79,7 @@ export default function LiveView({ focusedStream, onFocusStream, onOpenAuth, onN
       el.removeAttribute('src')
       el.load?.()
     }
-  }, [focusedStream?.hlsUrl, focusedStream?.ingestConnected, focusedStream?.userId, sharing])
+  }, [focusedStream?.hlsUrl, focusedStream?.userId, sharing])
 
   const shareCamera = async () => {
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
@@ -133,26 +128,19 @@ export default function LiveView({ focusedStream, onFocusStream, onOpenAuth, onN
   }
 
   const selectStream = (entry) => {
-    if (entry?.demo || entry?.previewOnly) {
-      setPreviewNote('Preview only — this lobby card has no playable stream.')
-      onFocusStream?.(null)
-      return
-    }
     setPreviewNote('')
+    if (!entry) return
     onFocusStream?.(entry)
   }
   const subCount = focusedStream?.userId ? getSubscriberCount(focusedStream.userId) : 0
   const filterStyle = user?.id ? filterCss(getStreamFilter(user.id).filterId) : ''
   const ingestOk = liveIngestConnected()
-  const showHls = !!(focusedStream?.ingestConnected && focusedStream?.hlsUrl && !sharing)
-
+  const showHls = !!(focusedStream?.hlsUrl && !sharing)
   const followingLive = liveNow
 
   return (
     <div className="w-full min-h-full bg-black">
-      {/* Ambient cool wash — not a title bar */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-red-950/25 via-transparent to-transparent" />
-
       <div className="relative px-4 md:px-6 py-4 max-w-[1600px] mx-auto w-full space-y-8">
         {!ingestOk ? (
           <div className="flex flex-wrap items-center justify-between gap-3 border border-zinc-800/80 bg-[#0a0a0c] px-3 py-2">
@@ -164,21 +152,8 @@ export default function LiveView({ focusedStream, onFocusStream, onOpenAuth, onN
         {focusedStream ? (
           <div className="overflow-hidden border border-zinc-800/80 bg-[#0a0a0c]">
             <div className="relative aspect-video w-full bg-gradient-to-br from-[#1a1010] to-[#0c0c10] flex flex-col items-center justify-center text-center p-6">
-              <video
-                ref={screenRef}
-                className={cn('absolute inset-0 h-full w-full object-contain bg-black', sharing ? '' : 'hidden')}
-                style={filterStyle ? { filter: filterStyle } : undefined}
-                muted
-                playsInline
-                autoPlay
-              />
-              <video
-                ref={hlsRef}
-                className={cn('absolute inset-0 h-full w-full object-contain bg-black', showHls ? '' : 'hidden')}
-                playsInline
-                autoPlay
-                controls
-              />
+              <video ref={screenRef} className={cn('absolute inset-0 h-full w-full object-contain bg-black', sharing ? '' : 'hidden')} style={filterStyle ? { filter: filterStyle } : undefined} muted playsInline autoPlay />
+              <video ref={hlsRef} className={cn('absolute inset-0 h-full w-full object-contain bg-black', showHls ? '' : 'hidden')} playsInline autoPlay controls />
               {!sharing && !showHls ? (
                 <>
                   <div className="absolute top-3 left-3 flex items-center gap-2">
@@ -193,25 +168,11 @@ export default function LiveView({ focusedStream, onFocusStream, onOpenAuth, onN
                   </div>
                   <h2 className="text-white text-lg font-bold">{focusedStream.displayName}</h2>
                   <p className="text-zinc-400 text-sm mt-1 max-w-md">{focusedStream.title}</p>
-                  <p className="text-zinc-500 text-xs mt-3">
-                    {focusedStream.watchers || focusedStream.watcherIds?.length || 0} watching
-                  </p>
-                  <p className="text-zinc-600 text-[11px] mt-4 max-w-sm">
-                    {focusedStream.ingestConnected
-                      ? (focusedStream.note || 'Ingest connected — waiting for HLS URL on this listing.')
-                      : (focusedStream.note || 'Lobby only — host can share camera/screen until RTMP/HLS ingest is connected.')}
-                  </p>
+                  <p className="text-zinc-500 text-xs mt-3">{focusedStream.watchers || focusedStream.watcherIds?.length || 0} watching</p>
                 </>
               ) : null}
-              {sharing ? (
-                <p className="absolute bottom-3 left-3 right-3 text-[11px] text-white/80 bg-black/50 px-2 py-1">
-                  Preview on this device only until ingest is connected.
-                </p>
-              ) : null}
               {showHls && hlsError ? (
-                <p className="absolute bottom-3 left-3 right-3 text-[11px] text-amber-200/90 bg-black/60 px-2 py-1">
-                  {hlsError}
-                </p>
+                <p className="absolute bottom-3 left-3 right-3 text-[11px] text-amber-200/90 bg-black/60 px-2 py-1">{hlsError}</p>
               ) : null}
             </div>
             <div className="p-4 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-800">
@@ -222,18 +183,14 @@ export default function LiveView({ focusedStream, onFocusStream, onOpenAuth, onN
               <div className="flex items-center gap-2 flex-wrap justify-end">
                 {isAuthenticated && user?.id === focusedStream.userId ? (
                   <>
-                    <button type="button" onClick={shareCamera} className="h-9 px-3 bg-white/10 text-xs font-semibold text-white">
-                      Camera
-                    </button>
+                    <button type="button" onClick={shareCamera} className="h-9 px-3 bg-white/10 text-xs font-semibold text-white">Camera</button>
                     <button type="button" onClick={shareScreen} className="h-9 px-3 bg-white/10 text-xs font-semibold text-white inline-flex items-center gap-1.5">
                       <MonitorUp className="h-4 w-4" /> Screen
                     </button>
                     {screenError ? <p className="w-full text-[11px] text-red-400">{screenError}</p> : null}
                   </>
                 ) : null}
-                <button type="button" onClick={() => onFocusStream?.(null)} className="h-9 px-3 border border-zinc-700 text-xs text-zinc-300">
-                  Back
-                </button>
+                <button type="button" onClick={() => onFocusStream?.(null)} className="h-9 px-3 border border-zinc-700 text-xs text-zinc-300">Back</button>
                 <FollowButton creatorId={focusedStream.userId} handle={focusedStream.handle} onOpenAuth={onOpenAuth} />
               </div>
             </div>
@@ -254,106 +211,40 @@ export default function LiveView({ focusedStream, onFocusStream, onOpenAuth, onN
           </div>
         ) : null}
 
-        {/* Homepage-style shelves of livestreams */}
         <section>
           <div className="flex items-baseline justify-between gap-3 mb-4">
             <h2 className="text-lg font-semibold text-white tracking-tight">On now</h2>
-            <div className="flex items-center gap-3">
-              <EnableNotificationsButton compact variant="ghost" />
-              <p className="text-[11px] text-zinc-500">Go live from Create (+)</p>
-            </div>
+            <EnableNotificationsButton compact variant="ghost" />
           </div>
-
           {previewNote ? (
             <p className="mb-3 text-xs text-amber-300/90 border border-amber-900/40 bg-amber-950/30 px-3 py-2">{previewNote}</p>
           ) : null}
-
           {followingLive.length === 0 ? (
             <div className="border border-zinc-800/80 bg-[#0a0a0c] px-6 py-20 text-center">
-              <div className="mx-auto h-12 w-12 rounded-full bg-red-950/40 border border-red-900/50 flex items-center justify-center">
-                <Radio className="h-5 w-5 text-red-400" />
-              </div>
-              <p className="mt-4 text-sm font-medium text-zinc-200">Quiet right now</p>
-              <p className="mt-1 text-xs text-zinc-500 max-w-sm mx-auto">
-                Livestreams show up here like Recommended — start from Create when you’re ready.
-              </p>
+              <p className="text-sm font-medium text-zinc-200">Quiet right now</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-8">
               {followingLive.map((s) => (
                 <button key={s.userId} type="button" onClick={() => selectStream(s)} className="text-left group">
-                  <div
-                    className={cn(
-                      'relative aspect-video overflow-hidden bg-[#121018]',
-                      focusedStream?.userId === s.userId ? 'ring-2 ring-white' : ''
-                    )}
-                  >
-                    {s.thumbUrl ? (
-                      <img src={s.thumbUrl} alt="" className="absolute inset-0 h-full w-full object-cover" draggable={false} />
-                    ) : (
-                      <>
-                        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_20%,#3f1515_0%,#0c0c10_55%,#101018_100%)]" />
-                        <div className="absolute inset-0 opacity-40 bg-[linear-gradient(120deg,transparent_40%,rgba(255,255,255,0.06)_50%,transparent_60%)] group-hover:opacity-70 transition-opacity" />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="h-14 w-14 rounded-full bg-black/50 border border-white/25 flex items-center justify-center text-xl font-bold text-white">
-                            {(s.displayName || s.handle || '?')[0]?.toUpperCase()}
-                          </span>
-                        </div>
-                      </>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                    <span className={cn(
-                      'absolute top-2 left-2 inline-flex items-center gap-1 px-1.5 py-0.5 text-white text-[11px] font-bold uppercase',
-                      s.demo || s.previewOnly ? 'bg-zinc-700' : isOnAir(s) ? 'bg-[#eb0400]' : 'bg-amber-600'
-                    )}>
-                      <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-                      {s.demo || s.previewOnly ? 'Preview' : liveBadgeLabel(s)}
-                    </span>
-                    <span className="absolute bottom-2 left-2 px-1.5 py-0.5 bg-black/80 text-[11px] text-white">
-                      {watchingLabel(s.watchers || s.watcherIds?.length || 0)}
+                  <div className={cn('relative aspect-video overflow-hidden bg-[#121018]', focusedStream?.userId === s.userId ? 'ring-2 ring-white' : '')}>
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_20%,#3f1515_0%,#0c0c10_55%,#101018_100%)]" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="h-14 w-14 rounded-full bg-black/50 border border-white/25 flex items-center justify-center text-xl font-bold text-white">
+                        {(s.displayName || s.handle || '?')[0]?.toUpperCase()}
+                      </span>
+                    </div>
+                    <span className={cn('absolute top-2 left-2 inline-flex items-center gap-1 px-1.5 py-0.5 text-white text-[11px] font-bold uppercase', isOnAir(s) ? 'bg-[#eb0400]' : 'bg-amber-600')}>
+                      {liveBadgeLabel(s)}
                     </span>
                   </div>
-                  <p className="mt-2.5 text-sm font-semibold text-white line-clamp-2 group-hover:text-zinc-200">{s.title || 'Live'}</p>
-                  <p className="text-xs text-zinc-400 mt-0.5">
-                    {s.displayName || s.handle}
-                    {s.category ? ` · ${s.category}` : ''}
-                  </p>
-                  <p className="text-[11px] text-zinc-600 mt-0.5">{formatElapsed(s.startedAt)}</p>
+                  <p className="mt-2.5 text-sm font-semibold text-white line-clamp-2">{s.title || 'Live'}</p>
+                  <p className="text-xs text-zinc-400 mt-0.5">{s.displayName || s.handle}</p>
                 </button>
               ))}
             </div>
           )}
         </section>
-
-        {liveNow.length > 4 ? (
-          <section>
-            <h2 className="text-lg font-semibold text-white mb-4">More streams</h2>
-            <div className="flex gap-4 overflow-x-auto pb-2 chip-scroll">
-              {liveNow.slice(4).map((s) => (
-                <button
-                  key={`more_${s.userId}`}
-                  type="button"
-                  onClick={() => selectStream(s)}
-                  className="w-[260px] sm:w-[280px] shrink-0 text-left"
-                >
-                  <div className="relative aspect-video overflow-hidden bg-[#121018]">
-                    {s.thumbUrl ? (
-                      <img src={s.thumbUrl} alt="" className="absolute inset-0 h-full w-full object-cover" draggable={false} />
-                    ) : (
-                      <div className="absolute inset-0 bg-gradient-to-br from-[#2a1518] to-[#0c0c14]" />
-                    )}
-                    <span className="absolute top-2 left-2 px-1.5 py-0.5 bg-zinc-700 text-white text-[10px] font-bold uppercase">
-                      {s.demo ? 'Preview' : 'Live'}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-sm font-medium text-white line-clamp-1">{s.title}</p>
-                  <p className="text-xs text-zinc-500">{s.displayName || s.handle}</p>
-                </button>
-              ))}
-            </div>
-          </section>
-        ) : null}
-
         <Footer onNavigate={onNavigate} />
       </div>
     </div>
