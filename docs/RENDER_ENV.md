@@ -1,38 +1,55 @@
-# Render / Node env checklist (calabi.us)
+# Render / Node + Supabase env (calabi.us)
 
-Critical browser-public vars (must be present at **build** and runtime for Next):
+Do not put Stripe secrets, webhook secrets, or VAPID private keys on Render. Those belong in **Supabase Edge Function secrets**.
+
+## Render (browser / Next build)
 
 | Variable | Required | Purpose |
 |----------|----------|---------|
-| `NEXT_PUBLIC_SUPABASE_URL` | yes | Cloud catalog, auth, wallets |
+| `NEXT_PUBLIC_SUPABASE_URL` | yes | Cloud catalog, auth, storage |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | yes | Supabase anon key |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` or `VITE_STRIPE_PUBLISHABLE_KEY` | for checkout | Stripe.js |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | checkout | Stripe.js (`pk_…`) |
 | `VITE_ADMIN_CODE` | admin unlock | No default in app |
-| `VITE_PLATFORM_OWNER_ID` | owner tie-in | Supabase Auth UUID |
-| `STRIPE_SECRET_KEY` | Edge Function secret | Checkout sessions (not a Render `NEXT_PUBLIC_*`) |
-| `STRIPE_WEBHOOK_SECRET` | Edge / server | Verify webhooks if enabled |
+| `VITE_PLATFORM_OWNER_ID` | owner admin | Your Supabase Auth user UUID |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | push | Public VAPID only |
+| `VITE_PUSH_SUBSCRIBE_URL` | push | `https://<project>.supabase.co/functions/v1/push-subscribe` |
 
-Optional / legacy aliases still read by client helpers:
+Legacy aliases still work if the `NEXT_PUBLIC_*` pair is unset: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_STRIPE_PUBLISHABLE_KEY`.
 
-- `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
-- `VITE_LIVE_INGEST_CONNECTED` — only set `true` when RTMP/HLS is really live
-- `VITE_LIVE_RTMP_URL` / `NEXT_PUBLIC_LIVE_RTMP_URL` — real ingest only
-- `VITE_LIVE_HLS_BASE` — HLS play base (MediaMTX / CDN)
-- `VITE_OAUTH_*_CLIENT_ID` — social publish (see `docs/INFRA.md`)
-- `VITE_OAUTH_START_URL` — Edge `oauth-start` URL
-- `VITE_MAIL_FUNCTION_URL` — real email codes (else demo code)
-- `NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `VITE_PUSH_SUBSCRIBE_URL` — Web Push
-- `VITE_CLIENT_TRANSCODE=1` — optional browser ffmpeg.wasm (off by default)
-- Do **not** set `VITE_STRIPE_PAYMENT_LINK` (own Checkout only)
+After changing any `NEXT_PUBLIC_*` or `VITE_*` value, **redeploy** the Node service so the client bundle picks it up.
 
-Free scaffolds + blocked infra (Connect secrets, RTMP host, OAuth apps, push keys, native, full translations): **`docs/INFRA.md`**. MediaMTX: **`docs/mediamtx.md`**.
+## Supabase Edge Function secrets (server only)
 
-Health check: `GET /api/health` → 200 when Supabase env present, 503 otherwise.
+| Variable | Purpose |
+|----------|---------|
+| `STRIPE_SECRET_KEY` | Checkout sessions (`sk_…`) |
+| `STRIPE_WEBHOOK_SECRET` | Verify Stripe webhooks (`whsec_…`) |
+| `VAPID_PRIVATE_KEY` | Web Push |
+| `VAPID_SUBJECT` | e.g. `mailto:info@calabigroup.com` |
+| `APP_PUBLIC_URL` | `https://calabi.us` |
 
-Deploy notes:
+Deploy functions (from a machine with the Supabase CLI logged in):
 
-1. Use the **Node** web service on Render — not a Static Site (`render.yaml`).
-2. After migrate, confirm Admin → Setup lists SQL through the latest `supabase/migrations/*.sql` (through `0024`).
-3. Old Static Render service for this domain must stay deleted (BUG-007).
-4. Stripe Connect: deploy `create-connect-account` + `stripe-webhook` — **`docs/OWN_CONNECT.md`**.
-5. Full checklist: `docs/DEPLOY_CHECKLIST.md`. Migrations vs Admin Setup explained there.
+```bash
+npx supabase functions deploy create-checkout-session
+npx supabase functions deploy stripe-webhook --no-verify-jwt
+npx supabase functions deploy admin-withdraw
+npx supabase functions deploy admin-finance
+npx supabase functions deploy push-subscribe
+```
+
+## Must not set unless true
+
+- `VITE_LIVE_INGEST_CONNECTED` — only after RTMP/HLS plays on a second device
+- `VITE_STRIPE_PAYMENT_LINK` — unused; own Checkout Session only
+- Any `sk_`, `whsec_`, or VAPID private key on Render
+
+## Health
+
+`GET https://calabi.us/api/health`
+
+- `200` when Supabase URL + anon are present
+- Body reports presence flags only (no secret values)
+- `liveIngestFlagOn` must stay `false` until real ingest exists
+
+Related: `docs/DEPLOY_CHECKLIST.md`, `docs/INFRA.md`, `docs/OWN_PAYOUTS.md`, `docs/OWN_CHECKOUT.md`.
