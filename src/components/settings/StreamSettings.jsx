@@ -1,18 +1,19 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { getStreamSettings, setStreamSettings } from '../../lib/streamSettings'
+import { ensureStreamKey } from '../../lib/streamKeys'
 import { getVodChannel, setVodChannel } from '../../lib/vods'
 import { getObsConnectInfo } from '../../lib/liveIngest'
 import { provisionCloudflareLive } from '../../lib/cloudflareLive'
 
-function CopyField({ label, value, mono = true }) {
+function CopyField({ label, value }) {
   const [copied, setCopied] = useState(false)
   if (!value) return null
   return (
     <div className="space-y-1.5">
       <p className="text-[11px] text-zinc-500">{label}</p>
       <div className="flex flex-wrap gap-2 items-stretch">
-        <code className={`flex-1 min-w-0 text-xs break-all text-zinc-200 bg-[#18181f] border border-[#272727] rounded-lg px-3 py-2 ${mono ? '' : ''}`}>
+        <code className="flex-1 min-w-0 text-xs break-all text-zinc-200 bg-[#0f0f0f] border border-[#272727] rounded-lg px-3 py-2">
           {value}
         </code>
         <button
@@ -44,22 +45,22 @@ export default function StreamSettings() {
   const [vis, setVis] = useState(vod.visibility || 'private')
   const [saved, setSaved] = useState(false)
   const [cf, setCf] = useState(null)
-  const [cfNote, setCfNote] = useState('Checking Cloudflare Stream…')
+  const [key, setKey] = useState(() => (user?.id ? ensureStreamKey(user.id) : ''))
 
   const obs = getObsConnectInfo(user?.id)
-  const ready = !!(cf?.ok && cf.rtmpsUrl && cf.streamKey)
+  const server = (cf?.ok && cf.rtmpsUrl) || obs.serverUrl || ''
+  const streamKey = (cf?.ok && cf.streamKey) || key || obs.streamKey || ''
+  const hls = (cf?.ok && cf.hlsUrl) || (obs.hlsBase && streamKey ? `${obs.hlsBase.replace(/\/$/, '')}/${encodeURIComponent(streamKey)}/index.m3u8` : '')
+
+  useEffect(() => {
+    if (user?.id) setKey(ensureStreamKey(user.id))
+  }, [user?.id])
 
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       const res = await provisionCloudflareLive()
-      if (cancelled) return
-      setCf(res)
-      if (res.ok) setCfNote('Cloudflare Stream is provisioned for this account.')
-      else if (res.error === 'cloudflare_not_configured') setCfNote('Add CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN on Supabase Edge, then deploy live-ingest.')
-      else if (res.error === 'not_deployed') setCfNote('Deploy the live-ingest Edge Function.')
-      else if (res.error === 'sign_in') setCfNote('Sign in to get an OBS key.')
-      else setCfNote(res.message || 'Cloudflare Stream is not ready. Window share still works.')
+      if (!cancelled) setCf(res)
     })()
     return () => { cancelled = true }
   }, [user?.id])
@@ -90,7 +91,7 @@ export default function StreamSettings() {
       <div>
         <h1 className="text-xl font-semibold text-white">Stream & OBS</h1>
         <p className="mt-1 text-sm text-zinc-500">
-          OBS pushes to Cloudflare Stream. Viewers play HLS from their CDN. Window share still works if Stream is not set up.
+          Paste Server + Stream key into OBS (Custom). Sign in or the key will be empty.
         </p>
       </div>
 
@@ -98,7 +99,7 @@ export default function StreamSettings() {
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
             <p className="text-sm font-semibold text-white">Connect OBS</p>
-            <p className="text-[11px] text-zinc-500 mt-1.5 leading-relaxed">{cfNote}</p>
+            <p className="text-[11px] text-zinc-500 mt-1.5 leading-relaxed">{obs.statusNote}</p>
           </div>
           <a
             href={obs.obsDownloadUrl}
@@ -110,24 +111,12 @@ export default function StreamSettings() {
           </a>
         </div>
 
-        <div className="flex flex-wrap gap-2 text-[11px]">
-          <span className={`px-2 py-1 rounded border ${ready ? 'border-emerald-700 text-emerald-300' : 'border-[#272727] text-zinc-500'}`}>
-            Stream {ready ? 'ready' : 'not ready'}
-          </span>
+        <div className="rounded-lg border border-[#272727] bg-[#0f0f0f] p-3 space-y-3">
+          <p className="text-xs font-semibold text-zinc-300">OBS → Settings → Stream → Service: Custom</p>
+          <CopyField label="Server" value={server || 'Add VITE_LIVE_RTMP_URL on Render (rtmp://VM_IP:1935/live)'} />
+          <CopyField label="Stream key" value={user?.id ? streamKey : 'Sign in to get a key'} />
+          {hls ? <CopyField label="Viewer HLS" value={hls} /> : null}
         </div>
-
-        {ready ? (
-          <div className="rounded-lg border border-[#272727] bg-[#0f0f0f] p-3 space-y-3">
-            <p className="text-xs font-semibold text-zinc-300">OBS → Settings → Stream → Service: Custom</p>
-            <CopyField label="Server" value={cf.rtmpsUrl} />
-            <CopyField label="Stream key" value={cf.streamKey} />
-            <CopyField label="Viewer HLS (test on your phone)" value={cf.hlsUrl} />
-          </div>
-        ) : (
-          <p className="text-xs text-zinc-500 leading-relaxed">
-            Until Stream is configured, use Live → window share. Setup: docs/CLOUDFLARE_STREAM.md
-          </p>
-        )}
       </section>
 
       <section className="rounded-xl border border-[#272727] bg-[#18181f] p-4 space-y-3">
