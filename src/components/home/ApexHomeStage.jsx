@@ -13,12 +13,6 @@ import { subscribeLiveChat, resolveLiveChatChannelId, GLOBAL_LIVE_CHANNEL_ID } f
 import { cn } from '../../lib/utils'
 
 const LIVE = '#eb0400'
-const DEMO_CHAT = [
-  { id: 'd1', handle: 'mira', text: 'clip that' },
-  { id: 'd2', handle: 'kade', text: 'how long you on' },
-  { id: 'd3', handle: 'sol', text: 'gg' },
-]
-
 function lookupUser(id) {
   if (!id) return null
   return (listIndexedUsers() || []).find((u) => u.id === id) || null
@@ -54,7 +48,7 @@ export default function ApexHomeStage({
   const badge = featured ? liveBadgeLabel(featured) : ''
   const name = featured?.displayName || featured?.handle || ''
   const title = featured?.title || ''
-  const shownChat = chat.length ? chat : (featured?.demo ? DEMO_CHAT : [])
+  const shownChat = chat
 
   useEffect(() => {
     return subscribeLiveChat(resolveLiveChatChannelId(channelId), (list) => {
@@ -195,7 +189,7 @@ export default function ApexHomeStage({
 
       <section className="px-5 md:px-8 pt-8 pb-2">
         <div className="flex items-end justify-between gap-3 mb-3">
-          <h2 className="text-[17px] font-semibold text-white">Live channels</h2>
+          <h2 className="text-[17px] font-semibold text-white">Live</h2>
           <button type="button" onClick={() => onNavigate?.('live')} className="text-[13px] text-[#8a8a8a] hover:text-white">
             View all
           </button>
