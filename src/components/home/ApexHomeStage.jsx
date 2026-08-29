@@ -101,7 +101,7 @@ export default function ApexHomeStage({
   return (
     <div className="w-full bg-black" data-home="apex">
       <section className="px-5 md:px-8 pt-4">
-        <div className="w-[85%] mx-auto grid lg:grid-cols-[minmax(0,1fr)_280px] border border-white/10 bg-[#0a0a0a]">
+        <div className="grid lg:grid-cols-[minmax(0,1fr)_280px] border border-white/10 bg-[#0a0a0a]">
           <div className="min-w-0">
             <button
               type="button"
@@ -132,8 +132,8 @@ export default function ApexHomeStage({
                   <ChannelAvatar src={featured.avatarUrl || lookupUser(featured.userId)?.avatarUrl} name={name} size={40} />
                 </button>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[15px] font-semibold text-white truncate">{title || 'Live'}</p>
-                  <p className="text-[13px] text-[#b3b3b3] truncate inline-flex items-center gap-1">
+                  <p className="text-lg font-semibold text-white truncate">{title || 'Live'}</p>
+                  <p className="text-sm text-[#b3b3b3] truncate inline-flex items-center gap-1">
                     {name}
                     {official ? <VerifiedBadge className="h-3.5 w-3.5 bg-white text-black" /> : null}
                   </p>
@@ -195,7 +195,7 @@ export default function ApexHomeStage({
 
       <section className="px-5 md:px-8 pt-8 pb-2">
         <div className="flex items-end justify-between gap-3 mb-3">
-          <h2 className="text-[17px] font-semibold text-white">Live channels</h2>
+          <h2 className="text-xl font-semibold text-white">Live channels</h2>
           <button type="button" onClick={() => onNavigate?.('live')} className="text-[13px] text-[#8a8a8a] hover:text-white">
             View all
           </button>
