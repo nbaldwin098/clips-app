@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import {
   LayoutDashboard, Users, Film, ShieldAlert, Wallet, Flag,
   Radio, LifeBuoy, ClipboardList, ShoppingBag, BarChart3, Newspaper,
-  Landmark,
+  Landmark, Briefcase,
 } from 'lucide-react'
 import {
   isAdminSession, adminLogin, listApplications, setApplicationStatus,
@@ -30,6 +30,7 @@ import { listEscrow, adminReleaseEscrow, adminRefundEscrow } from '../lib/donati
 import { getCreatorAnalytics } from '../lib/engagement'
 import { syncPublicEngagementFromCloud } from '../lib/graphSync'
 import AdminDeck from './admin/AdminDeck'
+import CeoOps from './admin/CeoOps'
 
 function AdminEscrowPanel({ onChange }) {
   const rows = listEscrow({ limit: 40 })
@@ -66,6 +67,7 @@ function AdminEscrowPanel({ onChange }) {
 
 const NAV = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard, group: 'Home' },
+  { id: 'ceo', label: 'CEO', icon: Briefcase, group: 'Home' },
   { id: 'tickets', label: 'Support', icon: LifeBuoy, group: 'Ops' },
   { id: 'people', label: 'People', icon: Users, group: 'Ops' },
   { id: 'safety', label: 'Safety', icon: ShieldAlert, group: 'Ops' },
@@ -290,6 +292,7 @@ export default function AdminPortal({ initialTab = '' }) {
               />
             </div>
           )}
+          {tab === 'ceo' && <CeoOps />}
 
           {tab === 'analytics' && (
             <div className="p-5 space-y-4">
