@@ -24,7 +24,7 @@ export function StudioKpi({ label, value, hint, delta = null, icon: Icon = null 
           <p className={cn('mt-2 text-[28px] font-bold tracking-tight tabular-nums leading-none', light ? 'text-neutral-900' : 'text-white')}>{value}</p>
           {hint ? <p className={cn('mt-2 text-[12px]', light ? 'text-neutral-400' : 'text-zinc-500')}>{hint}</p> : null}
           {delta != null ? (
-            <p className={cn('mt-1.5 text-[12px] font-semibold', Number(delta) >= 0 ? (light ? 'text-emerald-600' : 'text-[#22c55e]') : (light ? 'text-rose-600' : 'text-rose-400'))}>
+            <p className={cn('mt-1.5 text-[12px] font-semibold', Number(delta) >= 0 ? (light ? 'text-neutral-900' : 'text-white') : (light ? 'text-rose-600' : 'text-rose-400'))}>
               {Number(delta) >= 0 ? '↑' : '↓'} {Math.abs(Number(delta)).toFixed(1)}% vs last 7 days
             </p>
           ) : null}
@@ -62,7 +62,7 @@ export function StudioCard({ title, action = null, children, className = '' }) {
 
 export function StudioAreaChart({ seriesA = [], seriesB = [], labels = [], height = 180 }) {
   const light = useDashTone() === 'light'
-  const a = light ? '#161823' : '#22c55e'
+  const a = light ? '#161823' : '#ffffff'
   const b = light ? '#fe2c55' : '#a1a1aa'
   const w = 560
   const h = height
@@ -104,7 +104,7 @@ export function StudioBarChart({ values = [], labels = [] }) {
       {values.map((v, i) => (
         <div key={`${labels[i] || i}`} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
           <div
-            className={light ? 'w-full rounded-t bg-[#161823]' : 'w-full rounded-t bg-[#22c55e]'}
+            className={light ? 'w-full rounded-t bg-[#161823]' : 'w-full rounded-t bg-white'}
             style={{ height: `${Math.max(4, (v / max) * 100)}%` }}
           />
           <span className={cn('text-[10px]', light ? 'text-neutral-400' : 'text-zinc-500')}>{labels[i] || ''}</span>
@@ -122,7 +122,7 @@ export function StudioPrimaryButton({ children, className = '', ...props }) {
       {...props}
       className={cn(
         'h-10 px-5 rounded-lg text-[13px] font-semibold',
-        light ? 'bg-neutral-900 text-white hover:bg-black' : 'bg-[#22c55e] text-black hover:bg-[#4ade80]',
+        light ? 'bg-neutral-900 text-white hover:bg-black' : 'bg-white text-black hover:bg-zinc-200',
         className
       )}
     >
@@ -192,7 +192,7 @@ export default function StudioShell({
                           'w-full flex items-center gap-3 px-3 py-2.5 text-[14px] font-medium text-left rounded-xl',
                           light
                             ? (active ? 'bg-neutral-100 text-neutral-900' : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900')
-                            : (active ? 'text-[#22c55e] bg-white/5' : 'text-zinc-400 hover:bg-white/5 hover:text-white')
+                            : (active ? 'text-white bg-white/10' : 'text-zinc-400 hover:bg-white/5 hover:text-white')
                         )}
                       >
                         {Icon ? <Icon className="h-[18px] w-[18px] shrink-0" /> : null}
