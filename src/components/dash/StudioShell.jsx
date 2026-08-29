@@ -211,24 +211,14 @@ export default function StudioShell({
             ))}
           </nav>
           <div className={cn('px-3 py-3 border-t space-y-2', light ? 'border-neutral-200' : 'border-white/10')}>
-            {onBack ? (
-              <button
-                type="button"
-                onClick={onBack}
-                className={cn(
-                  'w-full h-9 px-3 rounded-lg text-[13px] font-semibold text-left',
-                  light ? 'border border-neutral-200 text-neutral-800 hover:bg-neutral-50' : 'border border-white/15 text-white hover:bg-white/5'
-                )}
-              >
-                ← {backLabel === 'Back' ? 'Back to calabi' : backLabel}
-              </button>
+            {user ? (
+              <div className="flex items-center gap-2.5 px-1">
+                <ChannelAvatar src={user?.avatarUrl} name={user?.displayName || user?.handle} size={32} />
+                <p className={cn('text-[13px] font-medium truncate', light ? 'text-neutral-900' : 'text-white')}>
+                  {user?.displayName || user?.handle}
+                </p>
+              </div>
             ) : null}
-            <div className="flex items-center gap-2.5 px-1">
-              <ChannelAvatar src={user?.avatarUrl} name={user?.displayName || user?.handle} size={32} />
-              <p className={cn('text-[13px] font-medium truncate', light ? 'text-neutral-900' : 'text-white')}>
-                {user?.displayName || user?.handle || 'You'}
-              </p>
-            </div>
           </div>
         </aside>
 
