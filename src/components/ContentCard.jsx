@@ -167,7 +167,7 @@ export default function ContentCard({ item, onOpen, onOpenProfile, variant }) {
     return (
       <div className="group w-full">
         <button type="button" onClick={open} className="w-full text-left block">
-          <div className="relative aspect-video w-full bg-[#141414] overflow-hidden">
+          <div className="relative aspect-video w-full bg-[#272727] overflow-hidden rounded-xl">
             {thumb ? (
               <img
                 src={thumb}
@@ -209,15 +209,15 @@ export default function ContentCard({ item, onOpen, onOpenProfile, variant }) {
           </button>
           <div className="min-w-0 flex-1">
             <button type="button" onClick={open} className="w-full text-left">
-              <p className="text-base font-semibold text-white line-clamp-2 leading-snug hover:text-white">{item.title || 'Untitled'}</p>
+              <p className="text-sm font-medium text-zinc-100 line-clamp-2 leading-snug hover:text-white">{item.title || 'Untitled'}</p>
             </button>
-            <p className="text-sm text-[#aaa] mt-1 inline-flex items-center gap-1 min-w-0">
+            <p className="text-xs text-[#aaa] mt-1 inline-flex items-center gap-1 min-w-0">
               <button type="button" onClick={openProfile} className="hover:text-white truncate">
                 {name}
               </button>
               {official ? <VerifiedBadge /> : null}
             </p>
-            <p className="text-sm text-[#aaa] pointer-events-none">
+            <p className="text-xs text-[#aaa] pointer-events-none">
               {viewsLabel(views)}
               {item.createdAt || item.publishedAt ? <> · <PostedStamp item={item} /></> : ''}
               {followLine ? ` · ${followLine}` : ''}
