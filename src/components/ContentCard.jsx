@@ -209,7 +209,7 @@ export default function ContentCard({ item, onOpen, onOpenProfile, variant }) {
           </button>
           <div className="min-w-0 flex-1">
             <button type="button" onClick={open} className="w-full text-left">
-              <p className="text-sm font-medium text-zinc-100 line-clamp-2 leading-snug hover:text-white">{item.title || 'Untitled'}</p>
+              <p className="text-sm font-medium text-zinc-100 line-clamp-2 break-all leading-snug hover:text-white">{item.title || 'Untitled'}</p>
             </button>
             <p className="text-xs text-[#aaa] mt-1 inline-flex items-center gap-1 min-w-0">
               <button type="button" onClick={openProfile} className="hover:text-white truncate">
@@ -252,7 +252,7 @@ export default function ContentCard({ item, onOpen, onOpenProfile, variant }) {
             <div className="absolute inset-0 flex items-center justify-center text-zinc-600 text-xs">No thumb</div>
           )}
           <div className="absolute inset-x-0 bottom-0 pt-10 pb-2 px-2 bg-gradient-to-t from-black/80 to-transparent pointer-events-none">
-            <p className="text-[13px] font-medium text-white leading-snug line-clamp-2">{item.title || 'Untitled'}</p>
+            <p className="text-[13px] font-medium text-white leading-snug line-clamp-2 break-all">{item.title || 'Untitled'}</p>
           </div>
           {item.durationSec > 0 && (
             <span className="absolute top-2 right-2 rounded px-1 py-0.5 text-[10px] text-white font-medium bg-black/80">
