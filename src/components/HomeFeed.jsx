@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useEffect } from 'react'
 import { Radio } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getStableHomeFeed, getStableFollowingFeed, getWatchItem } from '../lib/contentService'
@@ -9,7 +9,6 @@ import MediaShelves from './MediaShelves'
 import ContentCard from './ContentCard'
 import Footer from './Footer'
 import HourlyHitsCarousel from './HourlyHitsCarousel'
-import FilterChips from './FilterChips'
 import { preloadPostedItem, preloadPostedItems } from '../lib/preloadMedia'
 import { useContentSyncTick } from '../lib/useContentSync'
 import { isCatalogHydrated } from '../lib/catalogStore'
@@ -17,21 +16,12 @@ import { syncContentFromCloud } from '../lib/contentSync'
 import { lsGet } from '../lib/storage'
 import { listOnAirBoard, liveBadgeLabel } from '../lib/liveStatus'
 
-const HOME_CHIPS = [
-  { id: 'all', label: 'All' },
-  { id: 'live', label: 'Live' },
-  { id: 'video', label: 'Videos' },
-  { id: 'clip', label: 'Clips' },
-  { id: 'pic', label: 'Pics' },
-]
-
 const CATS = ['Just chatting', 'Gaming', 'IRL', 'Music', 'Creative', 'Sports']
 
 export default function HomeFeed({ onPlayItem, onOpenPic, onOpenProfile, onNavigate }) {
   const { user } = useAuth()
   const syncTick = useContentSyncTick()
   const hydrated = isCatalogHydrated()
-  const [chip, setChip] = useState('all')
   const items = useMemo(() => {
     const feed = getStableHomeFeed(user?.id || null)
     const pics = (getPicsFeed() || []).map((p) => ({ ...p, type: 'pic' }))
@@ -54,14 +44,6 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onOpenProfile, onNavig
     return listContinueWatching(user.id).map((row) => getWatchItem(row.contentId)).filter((i) => i && i.type === 'video')
   }, [user?.id, syncTick])
 
-  const chipEmptyHint = {
-    all: 'When creators publish, they show up here. Try Create (+) or Following.',
-    live: 'Lobby idle. Lives appear from ingest, not placeholders.',
-    video: 'No public videos yet. Upload from Create (+).',
-    clip: 'No public clips yet. Clips are 60 seconds or shorter.',
-    pic: 'No public pics yet. Post from Create (+).',
-  }
-
   useEffect(() => {
     syncContentFromCloud(user).catch(() => {})
   }, [user?.id])
@@ -72,13 +54,7 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onOpenProfile, onNavig
     preloadPostedItems(items, 6)
   }, [featured, continueItems, items])
 
-  const shelfCount = useMemo(() => {
-    if (chip === 'video') return items.filter((i) => i.type === 'video').length
-    if (chip === 'clip') return items.filter((i) => i.type === 'short').length
-    if (chip === 'pic') return items.filter((i) => i.type === 'pic').length
-    if (chip === 'live') return onAir.length
-    return items.length + onAir.length
-  }, [items, chip, onAir.length])
+  const shelfCount = items.length + onAir.length
 
   const liveShelf = (
     <section>
@@ -150,11 +126,9 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onOpenProfile, onNavig
         </button>
       )}
 
-      <FilterChips value={chip} onChange={setChip} options={HOME_CHIPS} />
+      {liveShelf}
 
-      {chip === 'all' || chip === 'live' ? liveShelf : null}
-
-      {featured && chip !== 'live' && (
+      {featured && (
         <section>
           <h2 className="text-lg font-semibold text-white mb-4">Featured</h2>
           <div className="max-w-md">
@@ -163,7 +137,7 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onOpenProfile, onNavig
         </section>
       )}
 
-      {continueItems.length > 0 && chip !== 'live' && (
+      {continueItems.length > 0 && (
         <section>
           <h2 className="text-lg font-semibold text-white mb-4">Continue watching</h2>
           <div className="flex gap-4 overflow-x-auto pb-2 chip-scroll">
@@ -176,7 +150,7 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onOpenProfile, onNavig
         </section>
       )}
 
-      {following.length > 0 && chip !== 'live' && (
+      {following.length > 0 && (
         <section>
           <h2 className="text-lg font-semibold text-white mb-4">Following</h2>
           <MediaShelves items={following.slice(0, 12)} onPlayItem={onPlayItem} onOpenPic={onOpenPic} onOpenProfile={onOpenProfile} />
@@ -187,12 +161,10 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onOpenProfile, onNavig
         <div className="rounded-2xl border border-[#272727] bg-[#0f0f0f] px-6 py-16 text-center">
           <p className="text-sm font-medium text-zinc-400">Loading posts…</p>
         </div>
-      ) : chip === 'live' ? null : shelfCount === 0 ? (
+      ) : shelfCount === 0 ? (
         <div className="rounded-2xl border border-[#272727] bg-[#0f0f0f] px-6 py-16 text-center">
-          <p className="mt-0 text-sm font-medium text-zinc-200">
-            {chip === 'all' ? 'No posts yet' : `No ${HOME_CHIPS.find((c) => c.id === chip)?.label || 'posts'} here`}
-          </p>
-          <p className="mt-2 text-xs text-zinc-500">{chipEmptyHint[chip] || chipEmptyHint.all}</p>
+          <p className="mt-0 text-sm font-medium text-zinc-200">No posts yet</p>
+          <p className="mt-2 text-xs text-zinc-500">When creators publish, they show up here. Try Create (+) or Following.</p>
           {onNavigate ? (
             <button
               type="button"
@@ -209,7 +181,6 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onOpenProfile, onNavig
           onPlayItem={onPlayItem}
           onOpenPic={onOpenPic}
           onOpenProfile={onOpenProfile}
-          filter={chip}
         />
       )}
 
