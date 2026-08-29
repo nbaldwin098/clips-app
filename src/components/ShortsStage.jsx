@@ -6,11 +6,11 @@ import { ChevronDown, ChevronUp } from 'lucide-react'
  * Header + sidebar stay in the app chrome. This is a padded 9:16 column
  * in the main area — not a fixed fullscreen takeover.
  */
-function fitPortrait(availW, availH, maxW = 420) {
-  const wBound = Math.max(0, Math.min(availW, maxW))
+function fitPortrait(availW, availH) {
+  const wBound = Math.max(0, availW)
   const hBound = Math.max(0, availH)
   if (wBound < 8 || hBound < 8) return { w: 0, h: 0 }
-  let h = Math.min(hBound, Math.round(wBound * 16 / 9))
+  let h = hBound
   let w = Math.round(h * 9 / 16)
   if (w > wBound) {
     w = wBound
@@ -155,8 +155,12 @@ export default function ShortsStage({
 
   const step = useCallback((dir) => {
     if (!n) return
-    goTo((activeIndex + dir + n) % n)
-  }, [activeIndex, n, goTo])
+    if (loop) {
+      goTo((activeIndex + dir + n) % n)
+      return
+    }
+    goTo(Math.max(0, Math.min(n - 1, activeIndex + dir)))
+  }, [activeIndex, n, goTo, loop])
 
   // Desktop: wheel over <video> often never reaches the scroller.
   // Force snap steps so the reel always moves.
@@ -204,8 +208,8 @@ export default function ShortsStage({
   }
 
   const slideShell = bleedMobile
-    ? 'w-full snap-start snap-always shrink-0 overflow-hidden flex items-center justify-center px-0 py-0 md:px-10 md:py-8'
-    : 'w-full snap-start snap-always shrink-0 overflow-hidden flex items-center justify-center px-3 py-4 sm:px-10 sm:py-8'
+    ? 'w-full snap-start snap-always shrink-0 overflow-hidden flex items-stretch justify-start px-0 py-0'
+    : 'w-full snap-start snap-always shrink-0 overflow-hidden flex items-stretch justify-start px-0 py-0'
 
   return (
     <div className="h-full min-h-0 w-full bg-[#000000] flex flex-col relative">
@@ -284,7 +288,7 @@ export function ShortsCard({ children, actions, fillMobile = false }) {
   }, [])
 
   const rail = box.desktop && actions ? 64 : 0
-  const dim = fitPortrait(box.w - rail, box.h, 420)
+  const dim = fitPortrait(box.w - rail, box.h)
   const mobileFill = fillMobile && !box.desktop
 
   if (mobileFill) {
@@ -296,13 +300,13 @@ export function ShortsCard({ children, actions, fillMobile = false }) {
   }
 
   return (
-    <div ref={hostRef} className="h-full w-full min-h-0 flex items-start justify-center gap-3 pt-6">
+    <div ref={hostRef} className="h-full w-full min-h-0 flex items-center justify-start gap-3">
       <div
-        className="relative bg-black overflow-hidden rounded-xl sm:rounded-2xl shrink-0 shadow-[0_8px_40px_rgba(0,0,0,0.45)]"
+        className="relative bg-black overflow-hidden shrink-0 h-full"
         style={
           dim.w
             ? { width: dim.w, height: dim.h }
-            : { height: '100%', aspectRatio: '9 / 16', maxWidth: 'min(420px, 100%)' }
+            : { height: '100%', aspectRatio: '9 / 16' }
         }
       >
         {children}
