@@ -440,7 +440,7 @@ function AppShell() {
       case 'liked': return <LikedPage onNavigate={navigate} onPlayItem={openWatch} />
       case 'watch-later': return <WatchLaterPage onNavigate={navigate} onPlayItem={openWatch} />
       case 'stats': return <StatsPage onNavigate={navigate} />
-      case 'api': return <BubbleApiPage onNavigate={navigate} />
+      case 'api': return <HelpPage onNavigate={navigate} />
       case 'library': return <LibraryPage />
       case 'help': return <HelpPage />
       case 'about': return <AboutPage />
