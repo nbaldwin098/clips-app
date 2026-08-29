@@ -6,7 +6,6 @@ import {
   Video,
   BadgeCheck,
   Settings,
-  ChevronLeft,
   Play,
   Trash2,
   Clapperboard,
@@ -72,6 +71,7 @@ import {
   SettingsNotice,
 } from '../settings/SettingsTemplates'
 import { StudioKpi, StudioCard, StudioAreaChart, StudioBarChart } from '../dash/StudioShell'
+import StudioControlDeck from './StudioControlDeck'
 
 const STUDIO_NAV = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard, group: 'Studio' },
@@ -84,22 +84,6 @@ const STUDIO_NAV = [
   { id: 'settings', label: 'Settings', icon: Settings, group: 'Account' },
   { id: 'verify', label: 'Get verified', icon: BadgeCheck, group: 'Account' },
 ]
-
-const SECTION_META = {
-  overview: { title: 'Creator Studio' },
-  lab: { title: 'Calabi Studio' },
-  post: { title: 'Calabi Studio' },
-  content: { title: 'Content' },
-  analytics: { title: 'Analytics' },
-  controls: { title: 'Calabi Studio' },
-  socials: { title: 'Socials' },
-  earnings: { title: 'Earnings' },
-  shop: { title: 'Shop' },
-  settings: { title: 'Settings' },
-  vods: { title: 'Content' },
-  stream: { title: 'Calabi Studio' },
-  verify: { title: 'Get verified' },
-}
 
 function typeLabel(type) {
   if (type === 'video') return 'Video'
@@ -812,7 +796,6 @@ export default function CreatorStudio({
   const verified = isOfficialCreator(user?.id, user?.handle) || isVerifiedChannel(user?.id, user?.handle)
   const verifyStatus = getIdVerificationForUser(user?.id)?.status
   const navGroups = groupNav(STUDIO_NAV)
-  const meta = SECTION_META[section] || SECTION_META.overview
   const showPostsColumn = section === 'analytics'
 
   const filteredPosts = useMemo(() => {
@@ -872,20 +855,12 @@ export default function CreatorStudio({
   }
 
   return (
-    <div className="h-[calc(100dvh-3.5rem)] min-h-[480px] flex bg-[#f8f8f8] text-neutral-900 overflow-hidden" data-studio="tiktok-white">
-      {/* TikTok-white studio rail (profile-menu pages — not TailAdmin) */}
-      <aside className="hidden sm:flex w-56 shrink-0 border-r border-neutral-200 bg-white flex-col py-4 text-neutral-800">
-        <button
-          type="button"
-          onClick={() => onNavigate?.('home')}
-          className="mx-3 mb-4 h-9 px-2 inline-flex items-center gap-2 text-xs text-neutral-500 hover:text-neutral-900"
-        >
-          <ChevronLeft className="h-4 w-4" /> Site
-        </button>
+    <div className="h-[calc(100dvh-3.5rem)] min-h-[480px] flex bg-[#0b0b0b] text-zinc-200 overflow-hidden" data-studio="calabi">
+      <aside className="hidden sm:flex w-56 shrink-0 border-r border-white/10 bg-[#0e0e12] flex-col py-4 text-zinc-300">
         <nav className="flex-1 px-3 space-y-5 overflow-y-auto">
           {navGroups.map((g) => (
             <div key={g.name}>
-              <p className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-400">{g.name}</p>
+              <p className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">{g.name}</p>
               <div className="space-y-1">
                 {g.items.map((item) => {
                   const Icon = item.icon
@@ -897,7 +872,7 @@ export default function CreatorStudio({
                       onClick={() => setSection(item.id)}
                       className={cn(
                         'w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-left rounded-lg',
-                        active ? 'bg-neutral-100 text-neutral-900' : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900'
+                        active ? 'bg-white/10 text-white' : 'text-zinc-400 hover:bg-white/5 hover:text-white'
                       )}
                     >
                       <Icon className="h-4 w-4 shrink-0" />
@@ -912,11 +887,11 @@ export default function CreatorStudio({
       </aside>
 
       {/* Mobile section picker */}
-      <div className="sm:hidden absolute top-14 left-0 right-0 z-10 border-b border-neutral-200 bg-white px-3 py-2">
+      <div className="sm:hidden absolute top-0 left-0 right-0 z-10 border-b border-white/10 bg-[#0b0b0b] px-3 py-2">
         <select
           value={section}
           onChange={(e) => setSection(e.target.value)}
-          className="w-full h-9 border border-neutral-200 bg-white px-2 text-sm text-neutral-900 rounded-lg"
+          className="w-full h-9 border border-white/10 bg-black px-2 text-sm text-zinc-100 rounded-lg"
         >
           {STUDIO_NAV.map((s) => (
             <option key={s.id} value={s.id}>{s.label}</option>
@@ -926,11 +901,11 @@ export default function CreatorStudio({
 
       {/* Posts column — only where it helps */}
       {showPostsColumn ? (
-        <section className="w-[280px] max-w-[40vw] shrink-0 border-r border-neutral-200 flex flex-col min-h-0 bg-white max-sm:hidden">
-          <div className="shrink-0 px-3 py-3 border-b border-neutral-200 space-y-2">
+        <section className="w-[280px] max-w-[40vw] shrink-0 border-r border-white/10 flex flex-col min-h-0 bg-[#0e0e12] max-sm:hidden">
+          <div className="shrink-0 px-3 py-3 border-b border-white/10 space-y-2">
             <div>
-              <p className="text-sm font-semibold text-neutral-900">Your posts</p>
-              <p className="text-[11px] text-neutral-500">Select one to filter the map</p>
+              <p className="text-sm font-semibold text-zinc-100">Your posts</p>
+              <p className="text-[11px] text-zinc-500">Select one to filter the map</p>
             </div>
             <div className="flex gap-1">
               {[
@@ -975,14 +950,10 @@ export default function CreatorStudio({
       ) : null}
 
       {/* Main workspace */}
-      <main className="flex-1 min-w-0 min-h-0 flex flex-col max-sm:pt-12 bg-[#f8f8f8]">
-        <header className="shrink-0 px-6 md:px-8 py-5 border-b border-neutral-200 bg-white">
-          <p className="text-lg font-semibold text-neutral-900 tracking-tight">{meta.title}</p>
-        </header>
-
-        <div className="flex-1 min-h-0 overflow-hidden px-6 md:px-8 py-6 md:py-8">
+      <main className="flex-1 min-w-0 min-h-0 flex flex-col max-sm:pt-12 bg-[#0b0b0b]">
+        <div className="flex-1 min-h-0 overflow-hidden px-5 md:px-6 py-5">
           {section === 'overview' ? (
-            <div className="h-full min-h-0 overflow-y-auto space-y-6 max-w-6xl">
+            <div className="h-full min-h-0 overflow-y-auto">
               {showOnboarding ? (
                 <CreatorOnboarding
                   onOpenUpload={onOpenUpload}
@@ -990,58 +961,23 @@ export default function CreatorStudio({
                   onNavigate={onNavigate}
                 />
               ) : null}
-
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <StudioKpi label="Total views" value={formatCount(views)} icon={Eye} />
-                <StudioKpi label="Followers" value={formatCount(followers)} hint={`${formatCount(premiumSubs)} premium`} icon={Users} />
-                <StudioKpi label="Posts" value={String(posts.length)} icon={Film} />
-                <StudioKpi label="Available $" value={`$${Number(balance?.paid || 0).toFixed(2)}`} icon={DollarSign} />
-              </div>
-
-              <div className="grid gap-4 lg:grid-cols-3">
-                <StudioCard
-                  title="Views vs followers"
-                  className="lg:col-span-2"
-                  action={<span className="text-[11px] text-neutral-400">Last 14 days</span>}
-                >
-                  <StudioAreaChart
-                    seriesA={overviewSeries.views.map((r) => Number(r.value) || 0)}
-                    seriesB={overviewSeries.followers.map((r) => Number(r.value) || 0)}
-                    labels={[overviewSeries.views[0]?.day || '', overviewSeries.views.at(-1)?.day || '']}
-                    height={200}
-                  />
-                  <div className="mt-2 flex gap-4 text-[11px] text-neutral-500">
-                    <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#161823]" /> Views</span>
-                    <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#fe2c55]" /> Followers</span>
-                  </div>
-                </StudioCard>
-                <StudioCard title="Posts this week" action={<span className="text-[11px] text-neutral-400">7d</span>}>
-                  <StudioBarChart
-                    values={overviewSeries.posts.slice(-7).map((r) => Number(r.value) || 0)}
-                    labels={overviewSeries.posts.slice(-7).map((r) => r.day)}
-                  />
-                </StudioCard>
-              </div>
-
-              <div className="grid gap-4 lg:grid-cols-2">
-                <OverviewTasks
-                  postsLen={posts.length}
-                  hasPayout={Number(balance?.paid || 0) > 0}
-                  membershipSet={Number(getMembershipPrice(user?.id)) > 0}
-                  verified={verified}
-                  onNavigate={onNavigate}
-                  onOpenUpload={onOpenUpload}
-                />
-                <StudioCard title="Channel status">
-                  <ul className="space-y-3 text-sm text-neutral-700">
-                    <li className="flex justify-between gap-3"><span className="text-neutral-500">Creator</span><span className="font-medium">{approved ? 'Approved' : 'Viewer / apply'}</span></li>
-                    <li className="flex justify-between gap-3"><span className="text-neutral-500">Live</span><span className="font-medium">{liveBadgeLabel(live)}</span></li>
-                    <li className="flex justify-between gap-3"><span className="text-neutral-500">Likes</span><span className="font-medium tabular-nums">{formatCount(likes)}</span></li>
-                    <li className="flex justify-between gap-3"><span className="text-neutral-500">VODs</span><span className="font-medium tabular-nums">{vods.length}</span></li>
-                    <li className="flex justify-between gap-3"><span className="text-neutral-500">Verification</span><span className="font-medium">{verified ? 'Verified' : (verifyStatus || 'Not started')}</span></li>
-                  </ul>
-                </StudioCard>
-              </div>
+              <StudioControlDeck
+                user={user}
+                views={views}
+                followers={followers}
+                premiumSubs={premiumSubs}
+                posts={posts}
+                likes={likes}
+                vods={vods}
+                earningsUsd={Number(balance?.paid || 0)}
+                live={live}
+                lastPost={posts[0] || null}
+                onGoLive={() => setSection('lab')}
+                onOpenUpload={onOpenUpload}
+                onOpenAnalytics={() => setSection('analytics')}
+                onOpenContent={() => setSection('content')}
+                onOpenEarnings={() => setSection('earnings')}
+              />
             </div>
           ) : null}
 
