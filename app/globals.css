@@ -97,43 +97,36 @@ html[data-theme="light"] header input[type="search"] {
   }
 }
 
-[data-studio="tiktok-white"],
-[data-dash="light"],
-[data-dash="admin"] {
+[data-studio],
+[data-dash] {
   background-color: #0f0f0f !important;
   color: #f4f4f5 !important;
 }
-[data-studio="tiktok-white"] aside,
-[data-studio="tiktok-white"] main,
-[data-studio="tiktok-white"] header,
-[data-studio="tiktok-white"] section,
-[data-dash="light"] aside,
-[data-dash="admin"] aside {
+[data-studio] aside,
+[data-studio] main,
+[data-studio] header,
+[data-studio] section,
+[data-dash] aside,
+[data-dash] header,
+[data-dash] main {
   background-color: #0f0f0f !important;
   border-color: #272727 !important;
   color: #e4e4e7 !important;
 }
-[data-studio="tiktok-white"] .bg-white:not(button),
-[data-studio="tiktok-white"] .bg-neutral-50,
-[data-studio="tiktok-white"] .bg-neutral-100,
-[data-studio="tiktok-white"] .bg-\[\#f8f8f8\] {
-  background-color: #18181f !important;
-}
-[data-studio="tiktok-white"] .text-neutral-900,
-[data-studio="tiktok-white"] .text-neutral-800,
-[data-studio="tiktok-white"] .text-neutral-700 {
+[data-studio] input, [data-studio] select, [data-studio] textarea,
+[data-dash] input, [data-dash] select, [data-dash] textarea {
+  background: #0f0f0f !important;
   color: #f4f4f5 !important;
-}
-[data-studio="tiktok-white"] .border-neutral-200,
-[data-studio="tiktok-white"] .border-neutral-100 {
   border-color: #272727 !important;
 }
-[data-studio="tiktok-white"] > aside button,
-[data-dash="light"] > aside button {
-  color: #a1a1aa;
+[data-studio] .bg-white, [data-studio] .bg-neutral-50, [data-studio] .bg-neutral-100,
+[data-dash] .bg-white, [data-dash] .bg-slate-100, [data-dash] .bg-slate-50 {
+  background-color: #18181f !important;
 }
-[data-studio="tiktok-white"] > aside button:hover,
-[data-dash="light"] > aside button:hover {
-  color: #fff !important;
-  background-color: rgba(255,255,255,0.05) !important;
+[data-studio] .text-neutral-900, [data-studio] .text-neutral-800, [data-studio] .text-slate-900,
+[data-dash] .text-slate-900, [data-dash] .text-neutral-900 {
+  color: #f4f4f5 !important;
+}
+[data-studio] .border-neutral-200, [data-dash] .border-slate-200 {
+  border-color: #272727 !important;
 }
