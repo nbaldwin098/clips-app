@@ -158,7 +158,7 @@ export default function HomeFeed({
       {following.length > 0 && (
         <section>
           <h2 className="text-[17px] font-semibold text-white mb-3">Following</h2>
-          <MediaShelves items={following.slice(0, 12)} onPlayItem={onPlayItem} onOpenPic={onOpenPic} onOpenProfile={onOpenProfile} />
+          <MediaShelves items={following.slice(0, 12)} filter="video" onPlayItem={onPlayItem} onOpenPic={onOpenPic} onOpenProfile={onOpenProfile} />
         </section>
       )}
 
