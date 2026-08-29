@@ -65,38 +65,38 @@ export default function AppealsPage({ onNavigate, onOpenAuth }) {
           <div className="flex flex-wrap items-center gap-2 text-xs mb-3">
             <span className={`px-2 py-1 font-semibold rounded ${
               status === 'banned' || status === 'suspended'
-                ? 'bg-rose-100 text-rose-700'
+                ? 'bg-rose-950 text-rose-300'
                 : status === 'limited'
-                  ? 'bg-amber-100 text-amber-800'
-                  : 'bg-neutral-100 text-neutral-700'
+                  ? 'bg-amber-950 text-amber-300'
+                  : 'bg-[#18181f] text-zinc-300'
             }`}
             >
               {STATUS_LABEL[status] || status}
             </span>
             {enforcement?.until ? (
-              <span className="text-neutral-500">Until {new Date(enforcement.until).toLocaleString()}</span>
+              <span className="text-zinc-500">Until {new Date(enforcement.until).toLocaleString()}</span>
             ) : null}
           </div>
-          {enforcement?.reason ? <p className="text-xs text-neutral-600 mb-2">{enforcement.reason}</p> : null}
+          {enforcement?.reason ? <p className="text-xs text-zinc-400 mb-2">{enforcement.reason}</p> : null}
           {!hasRestriction && !enfStrikes.length && !parityStrikes.length ? (
-            <p className="text-xs text-neutral-500">No active bans, suspensions, or strikes.</p>
+            <p className="text-xs text-zinc-500">No active bans, suspensions, or strikes.</p>
           ) : null}
           {[...enfStrikes, ...parityStrikes].map((s, i) => (
-            <div key={s.id || `s-${i}`} className="text-xs text-neutral-600 border border-neutral-200 px-2.5 py-2 mb-1 rounded-lg">
-              <span className="text-neutral-900 font-medium">{s.reason || s.type || 'Strike'}</span>
-              {s.at ? <span className="block text-[10px] text-neutral-400 mt-0.5">{String(s.at).slice(0, 16)}</span> : null}
+            <div key={s.id || `s-${i}`} className="text-xs text-zinc-400 border border-[#272727] px-2.5 py-2 mb-1 rounded-lg">
+              <span className="text-white font-medium">{s.reason || s.type || 'Strike'}</span>
+              {s.at ? <span className="block text-[10px] text-zinc-500 mt-0.5">{String(s.at).slice(0, 16)}</span> : null}
             </div>
           ))}
         </StudioCard>
 
         <StudioCard title="File an appeal">
           <form onSubmit={onSubmit} className="space-y-3">
-            <label className="block text-xs text-neutral-600">
+            <label className="block text-xs text-zinc-400">
               Reason
               <select
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                className="mt-1 w-full h-10 border border-neutral-200 bg-white px-3 text-sm text-neutral-900 rounded-lg"
+                className="mt-1 w-full h-10 border border-[#272727] bg-[#0f0f0f] px-3 text-sm text-white rounded-lg"
               >
                 <option value="">Select…</option>
                 <option value="strike">Strike / warning</option>
@@ -106,33 +106,33 @@ export default function AppealsPage({ onNavigate, onOpenAuth }) {
                 <option value="other">Other</option>
               </select>
             </label>
-            <label className="block text-xs text-neutral-600">
+            <label className="block text-xs text-zinc-400">
               Details
               <textarea
                 value={detail}
                 onChange={(e) => setDetail(e.target.value)}
                 rows={4}
-                className="mt-1 w-full border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 rounded-lg"
+                className="mt-1 w-full border border-[#272727] bg-[#0f0f0f] px-3 py-2 text-sm text-white rounded-lg"
                 placeholder="What happened?"
               />
             </label>
-            <button type="submit" className="h-10 px-4 bg-neutral-900 text-white text-sm font-semibold rounded-lg">
+            <button type="submit" className="h-10 px-4 bg-white text-black text-sm font-semibold rounded-lg">
               Submit appeal
             </button>
-            {note ? <p className="text-xs text-neutral-500">{note}</p> : null}
+            {note ? <p className="text-xs text-zinc-500">{note}</p> : null}
           </form>
         </StudioCard>
 
         <StudioCard title="Your appeals">
           {!mine.length ? (
-            <p className="text-sm text-neutral-500">None yet.</p>
+            <p className="text-sm text-zinc-500">None yet.</p>
           ) : (
             <ul className="space-y-2">
               {mine.map((a) => (
-                <li key={a.id} className="border border-neutral-200 rounded-lg px-3 py-2 text-sm">
-                  <p className="font-medium text-neutral-900">{a.reason}</p>
-                  <p className="text-xs text-neutral-500 mt-0.5">{a.status} · {String(a.at || '').slice(0, 16)}</p>
-                  {a.detail ? <p className="text-xs text-neutral-600 mt-1">{a.detail}</p> : null}
+                <li key={a.id} className="border border-[#272727] rounded-lg px-3 py-2 text-sm">
+                  <p className="font-medium text-white">{a.reason}</p>
+                  <p className="text-xs text-zinc-500 mt-0.5">{a.status} · {String(a.at || '').slice(0, 16)}</p>
+                  {a.detail ? <p className="text-xs text-zinc-400 mt-1">{a.detail}</p> : null}
                 </li>
               ))}
             </ul>
