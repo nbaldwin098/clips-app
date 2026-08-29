@@ -94,7 +94,7 @@ export default function ApexHomeStage({
 
   return (
     <div className="w-full bg-black" data-home="apex">
-      <section className="px-5 md:px-8 pt-4">
+      <section className="px-0 md:px-8 pt-0 md:pt-4">
         <div className="grid lg:grid-cols-[minmax(0,1fr)_280px] border border-white/10 bg-[#0a0a0a]">
           <div className="min-w-0">
             <button
@@ -187,7 +187,7 @@ export default function ApexHomeStage({
         </div>
       </section>
 
-      <section className="px-5 md:px-8 pt-8 pb-2">
+      <section className="px-4 md:px-8 pt-6 md:pt-8 pb-2">
         <div className="flex items-end justify-between gap-3 mb-3">
           <h2 className="text-[17px] font-semibold text-white">Live</h2>
           <button type="button" onClick={() => onNavigate?.('live')} className="text-[13px] text-[#8a8a8a] hover:text-white">
@@ -195,7 +195,7 @@ export default function ApexHomeStage({
           </button>
         </div>
         {onAir.length ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-6">
             {onAir.slice(1, 10).map((s) => {
               const nm = s.displayName || s.handle || 'Creator'
               const ok = isOfficialCreator(s.userId, s.handle) || isVerifiedChannel(s.userId, s.handle)
