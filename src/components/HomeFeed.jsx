@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { getStableHomeFeed, getStableFollowingFeed, getWatchItem } from '../lib/contentService'
 import { getPicsFeed } from '../lib/picsService'
@@ -7,7 +7,6 @@ import { getActivePromotion, recordPromoClick } from '../lib/promotions'
 import MediaShelves from './MediaShelves'
 import ContentCard from './ContentCard'
 import Footer from './Footer'
-import FilterChips from './FilterChips'
 import ApexHomeStage from './home/ApexHomeStage'
 import { preloadPostedItem, preloadPostedItems } from '../lib/preloadMedia'
 import { useContentSyncTick } from '../lib/useContentSync'
@@ -16,16 +15,6 @@ import { syncContentFromCloud } from '../lib/contentSync'
 import { lsGet } from '../lib/storage'
 import { listOnAirBoard } from '../lib/liveStatus'
 import { mergeDemoLiveBoard } from '../data/demoLiveStreams'
-
-const HOME_CHIPS = [
-  { id: 'all', label: 'All' },
-  { id: 'live', label: 'Live' },
-  { id: 'video', label: 'Videos' },
-  { id: 'clip', label: 'Clips' },
-  { id: 'pic', label: 'Pics' },
-]
-
-const CATS = ['Just chatting', 'Gaming', 'IRL', 'Music', 'Creative', 'Sports']
 
 export default function HomeFeed({
   onPlayItem,
@@ -39,7 +28,6 @@ export default function HomeFeed({
   const { user } = useAuth()
   const syncTick = useContentSyncTick()
   const hydrated = isCatalogHydrated()
-  const [chip, setChip] = useState('all')
   const items = useMemo(() => {
     const feed = getStableHomeFeed(user?.id || null)
     const pics = (getPicsFeed() || []).map((p) => ({ ...p, type: 'pic' }))
@@ -72,14 +60,6 @@ export default function HomeFeed({
     preloadPostedItems(items, 6)
   }, [featured, continueItems, items])
 
-  const shelfCount = useMemo(() => {
-    if (chip === 'video') return items.filter((i) => i.type === 'video').length
-    if (chip === 'clip') return items.filter((i) => i.type === 'short').length
-    if (chip === 'pic') return items.filter((i) => i.type === 'pic').length
-    if (chip === 'live') return onAir.length
-    return items.length + onAir.length
-  }, [items, chip, onAir.length])
-
   return (
     <div className="w-full bg-black" data-home="apex">
       <ApexHomeStage
@@ -91,7 +71,7 @@ export default function HomeFeed({
         onSelectLive={onSelectLive}
       />
 
-      <div className="px-5 md:px-8 py-6 max-w-[1600px] mx-auto w-full space-y-6">
+      <div className="px-5 md:px-8 py-8 max-w-[1600px] mx-auto w-full space-y-8">
       {promo && promo.placement === 'home' && (
         <button
           type="button"
@@ -100,35 +80,23 @@ export default function HomeFeed({
             if (featured) onPlayItem?.(featured)
             else onNavigate?.(promo.destView || 'home', promo.destId || '')
           }}
-          className="apex-card relative w-full text-left overflow-hidden rounded-2xl min-h-[120px] border border-white/10"
+          className="relative w-full text-left overflow-hidden min-h-[96px] border border-white/10"
         >
           {featured?.thumbUrl ? (
-            <img src={featured.thumbUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-40" />
+            <img src={featured.thumbUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-30" />
           ) : (
-            <div className="absolute inset-0 bg-[#1a1a1a]" />
+            <div className="absolute inset-0 bg-[#111]" />
           )}
-          <div className="relative p-5">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-[#a0a0a0]">Featured</p>
-            <p className="text-lg font-semibold text-white mt-1">{promo.headline}</p>
-            {promo.body ? <p className="text-sm text-zinc-300 mt-1 max-w-xl">{promo.body}</p> : null}
+          <div className="relative p-4">
+            <p className="text-sm font-semibold text-white">{promo.headline}</p>
+            {promo.body ? <p className="text-sm text-[#a0a0a0] mt-1 max-w-xl">{promo.body}</p> : null}
           </div>
         </button>
       )}
 
-      <FilterChips value={chip} onChange={setChip} options={HOME_CHIPS} />
-
-      {featured && chip !== 'live' && (
+      {continueItems.length > 0 && (
         <section>
-          <h2 className="text-lg font-semibold text-white mb-4">Featured</h2>
-          <div className="max-w-md">
-            <ContentCard item={featured} onOpen={onPlayItem} onOpenProfile={onOpenProfile} variant={featured.type === 'short' ? 'short' : 'video'} />
-          </div>
-        </section>
-      )}
-
-      {continueItems.length > 0 && chip !== 'live' && (
-        <section>
-          <h2 className="text-lg font-semibold text-white mb-4">Continue watching</h2>
+          <h2 className="text-[17px] font-semibold text-white mb-3">Continue watching</h2>
           <div className="flex gap-4 overflow-x-auto pb-2 chip-scroll">
             {continueItems.slice(0, 8).map((item) => (
               <div key={item.id} className="w-[260px] sm:w-[280px] shrink-0">
@@ -139,60 +107,27 @@ export default function HomeFeed({
         </section>
       )}
 
-      {following.length > 0 && chip !== 'live' && (
+      {following.length > 0 && (
         <section>
-          <h2 className="text-lg font-semibold text-white mb-4">Following</h2>
+          <h2 className="text-[17px] font-semibold text-white mb-3">Following</h2>
           <MediaShelves items={following.slice(0, 12)} onPlayItem={onPlayItem} onOpenPic={onOpenPic} onOpenProfile={onOpenProfile} />
         </section>
       )}
 
-      {chip === 'live' ? null : !hydrated ? (
-        <div className="rounded-2xl border border-white/10 bg-[#0a0a0a] px-6 py-16 text-center">
-          <p className="text-sm font-medium text-zinc-400">Loading posts…</p>
-        </div>
-      ) : shelfCount === 0 ? (
-        <div className="rounded-2xl border border-white/10 bg-[#0a0a0a] px-6 py-16 text-center">
-          <p className="mt-0 text-sm font-medium text-zinc-200">No posts yet</p>
-          <p className="mt-2 text-xs text-zinc-500">When creators publish, they land here. Start with Create.</p>
-          {onNavigate ? (
-            <button
-              type="button"
-              onClick={() => onNavigate('create')}
-              className="apex-pill mt-4 h-9 px-4 bg-white text-black text-xs font-semibold"
-            >
-              Create
-            </button>
-          ) : null}
-        </div>
-      ) : (
-        <MediaShelves
-          items={items}
-          onPlayItem={onPlayItem}
-          onOpenPic={onOpenPic}
-          onOpenProfile={onOpenProfile}
-          filter={chip}
-        />
-      )}
-
       <section>
-        <h2 className="text-lg font-semibold text-white mb-4">Browse</h2>
-        <div className="flex gap-3 overflow-x-auto pb-1 chip-scroll">
-          {CATS.map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => onNavigate?.('live')}
-              className="apex-card w-36 sm:w-40 shrink-0 text-left"
-            >
-              <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-[#121018] border border-white/10">
-                <div className="absolute inset-x-0 bottom-0 p-2.5">
-                  <p className="text-sm font-semibold text-white">{c}</p>
-                  <p className="text-xs text-[#8a8a8a]">Browse</p>
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
+        <h2 className="text-[17px] font-semibold text-white mb-3">Recommended</h2>
+        {!hydrated ? (
+          <p className="text-sm text-[#8a8a8a] py-8">Loading posts…</p>
+        ) : items.length === 0 ? (
+          <p className="text-sm text-[#8a8a8a] py-8">No videos yet.</p>
+        ) : (
+          <MediaShelves
+            items={items}
+            onPlayItem={onPlayItem}
+            onOpenPic={onOpenPic}
+            onOpenProfile={onOpenProfile}
+          />
+        )}
       </section>
 
       <Footer onNavigate={onNavigate} />
