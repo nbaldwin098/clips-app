@@ -377,7 +377,7 @@ function AppShell() {
       return <AdminPortal onNavigate={navigate} initialTab={routeId || ''} />
     }
     switch (view) {
-      case 'home': return <HomeFeed onPlayItem={openWatch} onOpenPic={openPic} onOpenProfile={openProfile} onNavigate={navigate} />
+      case 'home': return <HomeFeed onPlayItem={openWatch} onOpenPic={openPic} onOpenProfile={openProfile} onNavigate={navigate} onOpenAuth={openAuth} onOpenCheckout={openCheckout} onSelectLive={selectLiveStreamFromSidebar} />
       case 'creators': return <CreatorsPage />
       case 'clips':
       case 'shorts': return <ShortsFeed onOpenAuth={openAuth} onOpenProfile={openProfile} onOpenSound={openSound} onStitch={openStitch} onNavigate={navigate} focusId={routeId} />
@@ -455,7 +455,7 @@ function AppShell() {
           <span className="text-sm font-medium text-zinc-400">{view === 'admin' ? 'Admin' : (view === 'advertiser-portal' || view === 'advertise' ? 'Advertise' : 'Studio')}</span>
         </header>
       ) : (
-        <StreamingNavbar onNavigate={navigate} onOpenAuth={openAuth} onOpenWatch={openWatch} searchQuery={searchQuery} onSearchChange={(q) => { setSearchQuery(q); setView('explore'); goPath('explore', '', q?.trim() ? { q: q.trim() } : null) }} />
+        <StreamingNavbar currentView={view} onNavigate={navigate} onOpenAuth={openAuth} onOpenWatch={openWatch} searchQuery={searchQuery} onSearchChange={(q) => { setSearchQuery(q); setView('explore'); goPath('explore', '', q?.trim() ? { q: q.trim() } : null) }} />
       )}
       <EnvConfigBanner />
       <PromoBanner onNavigate={navigate} onOpenWatch={openWatch} />
