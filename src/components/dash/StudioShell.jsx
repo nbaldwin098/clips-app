@@ -1,6 +1,7 @@
 /**
  * Simple black studio dashboard. Same tokens as the site and Admin.
  */
+import { ArrowLeft } from 'lucide-react'
 import { cn } from '../../lib/utils'
 
 export function StudioKpi({ label, value, hint, delta = null, icon: Icon = null }) {
@@ -94,7 +95,7 @@ export default function StudioShell({
   activeId = '',
   onNav,
   onBack,
-  backLabel = 'Back to site',
+  backLabel = 'Back',
   headerRight = null,
   children,
   className = '',
@@ -110,16 +111,11 @@ export default function StudioShell({
     bucket.items.push(item)
   }
   return (
-    <div className={cn('h-[calc(100dvh-3.5rem)] min-h-[480px] flex bg-[#0f0f0f] text-zinc-100 overflow-hidden', className)} data-studio="tiktok-white">
+    <div className={cn('h-[calc(100dvh-3.5rem)] min-h-[480px] flex bg-[#0f0f0f] text-zinc-100 overflow-hidden', className)} data-studio="calabi">
       <aside className="hidden md:flex w-52 shrink-0 flex-col border-r border-[#272727] bg-[#0f0f0f]">
         <div className="px-4 py-4 border-b border-[#272727]">
           <p className="text-sm font-semibold text-white tracking-tight">{title}</p>
         </div>
-        {onBack ? (
-          <button type="button" onClick={onBack} className="mx-3 mt-3 h-9 px-2 text-left text-xs text-zinc-500 hover:text-white">
-            ← {backLabel}
-          </button>
-        ) : null}
         <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-4">
           {groups.map((g) => (
             <div key={g.name}>
@@ -141,9 +137,20 @@ export default function StudioShell({
         </nav>
       </aside>
       <div className="flex-1 min-w-0 flex flex-col bg-[#0f0f0f]">
-        <header className="h-14 shrink-0 border-b border-[#272727] bg-[#0f0f0f] flex items-center justify-between gap-3 px-4 md:px-6">
-          <p className="text-sm font-semibold text-white truncate">{nav.find((n) => n.id === activeId)?.label || title}</p>
-          <div className="flex items-center gap-2 shrink-0">{headerRight}</div>
+        <header className="h-14 shrink-0 border-b border-[#272727] bg-[#0f0f0f] flex items-center gap-3 px-3 md:px-5">
+          {onBack ? (
+            <button
+              type="button"
+              onClick={onBack}
+              aria-label={backLabel}
+              className="inline-flex h-10 items-center gap-2 rounded-lg border border-[#272727] bg-[#18181f] pl-2.5 pr-3.5 text-sm font-semibold text-white hover:bg-white/10"
+            >
+              <ArrowLeft className="h-5 w-5" />
+              Back
+            </button>
+          ) : null}
+          <p className="text-sm font-medium text-zinc-400 truncate">{nav.find((n) => n.id === activeId)?.label || title}</p>
+          <div className="ml-auto flex items-center gap-2 shrink-0">{headerRight}</div>
         </header>
         {nav.length ? (
           <div className="md:hidden border-b border-[#272727] bg-[#0f0f0f] px-3 py-2">
