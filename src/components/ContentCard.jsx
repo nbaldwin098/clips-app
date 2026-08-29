@@ -167,7 +167,7 @@ export default function ContentCard({ item, onOpen, onOpenProfile, variant }) {
     return (
       <div className="group w-full">
         <button type="button" onClick={open} className="w-full text-left block">
-          <div className="relative aspect-video w-full bg-[#272727] overflow-hidden rounded-xl">
+          <div className="relative aspect-video w-full bg-[#141414] overflow-hidden">
             {thumb ? (
               <img
                 src={thumb}
