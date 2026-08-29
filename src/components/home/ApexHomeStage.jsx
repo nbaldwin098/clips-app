@@ -1,13 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Heart,
   Gift,
-  Home,
-  Compass,
-  Users,
   Trophy,
-  Radio,
-  ChevronRight,
   Smile,
   User,
 } from 'lucide-react'
@@ -26,6 +21,11 @@ import { cn } from '../../lib/utils'
 
 const ORANGE = '#FF4B11'
 const CHAT_COLORS = ['#c4b5fd', '#7dd3fc', '#fb923c', '#86efac', '#f9a8d4', '#fde047']
+const DEMO_CHAT = [
+  { id: 'd1', handle: 'mira', text: 'first' },
+  { id: 'd2', handle: 'kade', text: 'lets go' },
+  { id: 'd3', handle: 'sol', text: 'hi' },
+]
 
 function colorFor(handle) {
   const s = String(handle || '')
@@ -78,7 +78,6 @@ export default function ApexHomeStage({
 }) {
   const { user, isAuthenticated } = useAuth()
   const featured = onAir[0] || null
-  const rail = useRef(null)
   const [draft, setDraft] = useState('')
   const [chat, setChat] = useState([])
   const [note, setNote] = useState('')
@@ -96,6 +95,7 @@ export default function ApexHomeStage({
   const badge = featured ? liveBadgeLabel(featured) : ''
   const name = featured?.displayName || featured?.handle || ''
   const title = featured?.title || ''
+  const shownChat = chat.length ? chat : (featured?.demo ? DEMO_CHAT : [])
 
   useEffect(() => {
     return subscribeLiveChat(resolveLiveChatChannelId(channelId), (list) => {
@@ -139,14 +139,6 @@ export default function ApexHomeStage({
     else onNavigate?.('live')
   }
 
-  const dock = [
-    { id: 'home', label: 'Home', Icon: Home, go: () => onNavigate?.('home'), active: true },
-    { id: 'discover', label: 'Discover', Icon: Compass, go: () => onNavigate?.('explore') },
-    { id: 'following', label: 'Following', Icon: Users, go: () => onNavigate?.('following') },
-    { id: 'esports', label: 'Esports', Icon: Trophy, go: () => onNavigate?.('live') },
-    { id: 'community', label: 'Community', Icon: Users, go: () => onNavigate?.('community') },
-  ]
-
   return (
     <div className="w-full bg-black" data-home="apex">
       <section className="relative min-h-[520px] md:min-h-[580px] overflow-hidden">
@@ -161,7 +153,7 @@ export default function ApexHomeStage({
         </div>
 
         <div className="relative z-10 flex min-h-[520px] md:min-h-[580px]">
-          <div className="flex-1 min-w-0 flex flex-col px-5 md:px-8 pt-6 pb-28">
+          <div className="flex-1 min-w-0 flex flex-col px-5 md:px-8 pt-6 pb-10">
             {featured ? (
               <>
                 <div className="flex items-center gap-2">
@@ -171,10 +163,12 @@ export default function ApexHomeStage({
                   >
                     {badge}
                   </span>
-                  <span className="inline-flex items-center gap-1 text-white text-[13px] font-semibold tabular-nums">
-                    <User className="h-3.5 w-3.5" />
-                    {formatCount(watchers)}
-                  </span>
+                  {watchers ? (
+                    <span className="inline-flex items-center gap-1 text-white text-[13px] font-semibold tabular-nums">
+                      <User className="h-3.5 w-3.5" />
+                      {formatCount(watchers)}
+                    </span>
+                  ) : null}
                 </div>
 
                 <div className="mt-8 flex items-center gap-3">
@@ -242,18 +236,6 @@ export default function ApexHomeStage({
                 <h1 className="mt-3 text-[36px] md:text-[44px] font-extrabold tracking-tight text-white leading-none">
                   Nobody is live
                 </h1>
-                <p className="mt-4 text-[15px] text-[#a0a0a0] leading-relaxed">
-                  When a creator goes on-air they land in this hero. Nothing here is invented.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => onNavigate?.('create')}
-                  className="apex-pill mt-6 h-11 px-6 inline-flex items-center gap-2 text-[14px] font-semibold text-white"
-                  style={{ background: ORANGE }}
-                >
-                  <Radio className="h-4 w-4" />
-                  Go Live
-                </button>
               </div>
             )}
           </div>
@@ -263,7 +245,7 @@ export default function ApexHomeStage({
               <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-white">Live chat</p>
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto px-4 space-y-2.5">
-              {chat.length ? chat.map((m) => (
+              {shownChat.length ? shownChat.map((m) => (
                 <p key={m.id || `${m.at}-${m.userId}`} className="text-[13px] leading-snug">
                   <span className="font-semibold" style={{ color: colorFor(m.handle) }}>
                     {m.handle || 'User'}
@@ -290,37 +272,6 @@ export default function ApexHomeStage({
             </form>
           </aside>
         </div>
-
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 w-[min(720px,calc(100%-2rem))]">
-          <div className="apex-pill flex items-center gap-1 px-2 py-1.5 bg-[#1a1a1a]/90 border border-white/10 backdrop-blur-md">
-            {dock.map((item) => {
-              const Icon = item.Icon
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={item.go}
-                  className={cn(
-                    'apex-pill flex-1 h-10 px-2 inline-flex flex-col items-center justify-center gap-0.5',
-                    item.active ? 'text-[#FF4B11]' : 'text-[#cfcfcf] hover:text-white'
-                  )}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span className="text-[10px] font-semibold hidden sm:block">{item.label}</span>
-                </button>
-              )
-            })}
-            <button
-              type="button"
-              onClick={() => onNavigate?.('create')}
-              className="apex-pill h-10 px-4 shrink-0 inline-flex items-center gap-1.5 text-[13px] font-bold text-white"
-              style={{ background: ORANGE }}
-            >
-              <Radio className="h-4 w-4" />
-              Go Live
-            </button>
-          </div>
-        </div>
       </section>
 
       <section className="px-5 md:px-8 pt-6 pb-2">
@@ -331,61 +282,44 @@ export default function ApexHomeStage({
           </button>
         </div>
         {onAir.length ? (
-          <div className="relative">
-            <div ref={rail} className="flex gap-4 overflow-x-auto pb-3 chip-scroll">
-              {onAir.map((s) => {
-                const nm = s.displayName || s.handle || 'Creator'
-                const ok = isOfficialCreator(s.userId, s.handle) || isVerifiedChannel(s.userId, s.handle)
-                return (
-                  <button
-                    key={s.userId}
-                    type="button"
-                    onClick={() => openLive(s)}
-                    className="apex-card w-[220px] shrink-0 text-left"
-                  >
-                    <div className="relative aspect-video overflow-hidden rounded-xl bg-[#141414]">
-                      <LiveThumb stream={s} className="absolute inset-0 h-full w-full" />
-                      <span
-                        className="absolute top-2 left-2 px-1.5 py-0.5 text-[10px] font-extrabold uppercase text-white rounded"
-                        style={{ background: isOnAir(s) ? ORANGE : '#3f3f46' }}
-                      >
-                        {liveBadgeLabel(s)}
-                      </span>
-                      <span className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-black/70 text-white text-[10px] font-semibold inline-flex items-center gap-1 tabular-nums">
-                        <User className="h-3 w-3" />
-                        {formatCount(watchersOf(s))}
-                      </span>
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+            {onAir.map((s) => {
+              const nm = s.displayName || s.handle || 'Creator'
+              const ok = isOfficialCreator(s.userId, s.handle) || isVerifiedChannel(s.userId, s.handle)
+              return (
+                <button
+                  key={s.userId}
+                  type="button"
+                  onClick={() => openLive(s)}
+                  className="apex-card w-full text-left"
+                >
+                  <div className="relative aspect-video overflow-hidden rounded-xl bg-[#141414]">
+                    <LiveThumb stream={s} className="absolute inset-0 h-full w-full" />
+                    <span
+                      className="absolute top-2 left-2 px-1.5 py-0.5 text-[10px] font-extrabold uppercase text-white rounded"
+                      style={{ background: isOnAir(s) ? ORANGE : '#3f3f46' }}
+                    >
+                      {liveBadgeLabel(s)}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex items-start gap-2">
+                    <ChannelAvatar src={s.avatarUrl || lookupUser(s.userId)?.avatarUrl} name={nm} size={28} />
+                    <div className="min-w-0">
+                      <p className="text-[13px] font-bold text-white truncate inline-flex items-center gap-1">
+                        {nm}
+                        {ok ? <VerifiedBadge className="h-3 w-3 bg-[#FF4B11] text-white" /> : null}
+                      </p>
+                      <p className="text-[12px] text-white/90 truncate">{s.title || 'Live'}</p>
+                      {s.category ? <p className="text-[11px] text-[#8a8a8a] uppercase tracking-wide truncate">{s.category}</p> : null}
                     </div>
-                    <div className="mt-2 flex items-start gap-2">
-                      <ChannelAvatar src={s.avatarUrl || lookupUser(s.userId)?.avatarUrl} name={nm} size={28} />
-                      <div className="min-w-0">
-                        <p className="text-[13px] font-bold text-white truncate inline-flex items-center gap-1">
-                          {nm}
-                          {ok ? <VerifiedBadge className="h-3 w-3 bg-[#FF4B11] text-white" /> : null}
-                        </p>
-                        <p className="text-[12px] text-white/90 truncate">{s.title || 'Live'}</p>
-                        {s.category ? <p className="text-[11px] text-[#8a8a8a] uppercase tracking-wide truncate">{s.category}</p> : null}
-                      </div>
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-            {onAir.length > 3 ? (
-              <button
-                type="button"
-                aria-label="More live channels"
-                onClick={() => rail.current?.scrollBy({ left: 260, behavior: 'smooth' })}
-                className="apex-pill absolute right-0 top-[38%] -translate-y-1/2 h-10 w-10 hidden md:inline-flex items-center justify-center bg-[#1a1a1a] border border-white/15 text-white"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
-            ) : null}
+                  </div>
+                </button>
+              )
+            })}
           </div>
         ) : (
           <div className="rounded-xl border border-white/10 bg-[#0a0a0a] px-5 py-10 text-center">
             <p className="text-sm font-semibold text-white">No live channels</p>
-            <p className="mt-1 text-sm text-[#8a8a8a]">They appear from ingest. Nothing is invented here.</p>
           </div>
         )}
       </section>

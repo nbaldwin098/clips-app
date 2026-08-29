@@ -1238,7 +1238,7 @@ assert(mixed.filter((i) => i.type === 'video').length === 5, 'interleave keeps 5
 assert(mixed.filter((i) => i.type === 'short').length === 10, 'interleave keeps 10 clips')
 assert(mixed.filter((i) => i.type === 'pic').length === 3, 'interleave keeps 3 pics')
 const homeSrc2 = readFileSync(new URL('../src/components/HomeFeed.jsx', import.meta.url), 'utf8')
-assert(homeSrc2.includes('HourlyHitsCarousel'), 'home puts the hourly stage under the search bar')
+assert(!homeSrc2.includes('HourlyHitsCarousel'), 'home does not put hourly hits under live channels')
 const carouselSrc = readFileSync(new URL('../src/components/HourlyHitsCarousel.jsx', import.meta.url), 'utf8')
 assert(carouselSrc.includes('useContentSyncTick'), 'hourly stage refreshes after catalog sync')
 assert(carouselSrc.includes('onOpenProfile'), 'hourly stage separates profile from play')

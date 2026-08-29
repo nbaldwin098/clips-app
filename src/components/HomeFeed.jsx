@@ -7,7 +7,6 @@ import { getActivePromotion, recordPromoClick } from '../lib/promotions'
 import MediaShelves from './MediaShelves'
 import ContentCard from './ContentCard'
 import Footer from './Footer'
-import HourlyHitsCarousel from './HourlyHitsCarousel'
 import FilterChips from './FilterChips'
 import ApexHomeStage from './home/ApexHomeStage'
 import { preloadPostedItem, preloadPostedItems } from '../lib/preloadMedia'
@@ -16,6 +15,7 @@ import { isCatalogHydrated } from '../lib/catalogStore'
 import { syncContentFromCloud } from '../lib/contentSync'
 import { lsGet } from '../lib/storage'
 import { listOnAirBoard } from '../lib/liveStatus'
+import { mergeDemoLiveBoard } from '../data/demoLiveStreams'
 
 const HOME_CHIPS = [
   { id: 'all', label: 'All' },
@@ -54,7 +54,7 @@ export default function HomeFeed({
     return id ? getWatchItem(id) : null
   }, [promo, syncTick])
   const onAir = useMemo(
-    () => listOnAirBoard(lsGet('live_board', []) || []),
+    () => mergeDemoLiveBoard(listOnAirBoard(lsGet('live_board', []) || [])),
     [syncTick]
   )
   const continueItems = useMemo(() => {
@@ -90,8 +90,6 @@ export default function HomeFeed({
         onOpenCheckout={onOpenCheckout}
         onSelectLive={onSelectLive}
       />
-
-      <HourlyHitsCarousel onPlayItem={onPlayItem} onOpenPic={onOpenPic} onOpenProfile={onOpenProfile} />
 
       <div className="px-5 md:px-8 py-6 max-w-[1600px] mx-auto w-full space-y-6">
       {promo && promo.placement === 'home' && (
