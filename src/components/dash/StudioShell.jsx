@@ -2,10 +2,9 @@
  * TikTok Studio–style white chrome (option B) for profile-menu pages.
  * Dark tone kept for any black shell that still uses this component.
  */
-import { Bell, CircleHelp, ChevronDown } from 'lucide-react'
+import { Bell, CircleHelp, ArrowLeft } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { DashToneProvider, useDashTone } from './dashTone'
-import BrandMark from '../BrandMark'
 import ChannelAvatar from '../ChannelAvatar'
 import { useAuth } from '../../context/AuthContext'
 
@@ -173,8 +172,15 @@ export default function StudioShell({
           'hidden md:flex w-[240px] shrink-0 flex-col border-r',
           light ? 'border-neutral-200 bg-white' : 'border-white/10 bg-[#0b0b0b]'
         )}>
-          <div className={cn('px-5 py-5', light ? '' : 'border-b border-white/10')}>
-            <BrandMark size={28} withWord wordClassName={light ? 'text-neutral-900' : 'text-white'} />
+          <div className={cn('px-3 py-4', light ? '' : 'border-b border-white/10')}>
+            <button
+              type="button"
+              onClick={onBack}
+              aria-label="Back"
+              className="h-10 w-10 inline-flex items-center justify-center bg-black text-white"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
           </div>
           <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-5">
             {groups.map((g) => (
@@ -244,10 +250,6 @@ export default function StudioShell({
                   <button type="button" onClick={onHelp} aria-label="Help" className="h-9 w-9 inline-flex items-center justify-center rounded-full text-neutral-600 hover:bg-neutral-100">
                     <CircleHelp className="h-5 w-5" />
                   </button>
-                  <span className="inline-flex items-center gap-1">
-                    <ChannelAvatar src={user?.avatarUrl} name={user?.displayName || user?.handle} size={36} />
-                    <ChevronDown className="h-4 w-4 text-neutral-500" />
-                  </span>
                 </>
               ) : null}
             </div>
