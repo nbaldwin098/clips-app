@@ -8,7 +8,6 @@ import { useContentSyncTick } from '../lib/useContentSync'
 import PageHeader from './PageHeader'
 import MediaShelves from './MediaShelves'
 
-/** Free follow feed — sidebar “Following”. Premium memberships live under Subscriptions. */
 export default function FollowingPage({ onNavigate, onOpenAuth, onPlayItem, onOpenPic, onOpenProfile }) {
   const { user, isAuthenticated } = useAuth()
   const syncTick = useContentSyncTick()
@@ -23,30 +22,23 @@ export default function FollowingPage({ onNavigate, onOpenAuth, onPlayItem, onOp
   if (!isAuthenticated) {
     return (
       <div className="p-6 max-w-md mx-auto text-sm text-zinc-400">
-        <button type="button" onClick={onOpenAuth} className="text-white font-medium">Sign in</button> to see uploads from people you follow.
+        <button type="button" onClick={onOpenAuth} className="text-white font-medium">Sign in</button> to see live creators you follow.
       </div>
     )
   }
 
   return (
     <div className="p-4 md:p-6 max-w-[1200px] mx-auto space-y-8">
-      <PageHeader title="Following" subtitle="Uploads from people you follow" onBack={() => onNavigate?.('home')} />
-
+      <PageHeader title="Live Creators" subtitle="People you follow" onBack={() => onNavigate?.('home')} />
       {channels.length === 0 ? (
         <div className="border border-zinc-800 bg-[#121218] px-6 py-12 text-center">
           <Users className="h-8 w-8 text-white mx-auto" />
           <p className="mt-4 text-sm text-zinc-200">Not following anyone yet</p>
-          <p className="mt-1 text-xs text-zinc-500">Follow on a channel or watch page. It is free. Premium membership is only for livestream.</p>
         </div>
       ) : (
         <div className="flex gap-3 overflow-x-auto pb-1">
           {channels.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => onOpenProfile?.(c.handle, c.id)}
-              className="shrink-0 w-28 text-center"
-            >
+            <button key={c.id} type="button" onClick={() => onOpenProfile?.(c.handle, c.id)} className="shrink-0 w-28 text-center">
               <div className="h-12 w-12 mx-auto rounded-full bg-white/20 text-white flex items-center justify-center text-sm font-semibold overflow-hidden">
                 {c.avatarUrl ? <img src={c.avatarUrl} alt="" className="h-full w-full object-cover" /> : (c.displayName || '?')[0].toUpperCase()}
               </div>
@@ -56,12 +48,10 @@ export default function FollowingPage({ onNavigate, onOpenAuth, onPlayItem, onOp
           ))}
         </div>
       )}
-
       {uploads.length === 0 ? (
         channels.length > 0 ? (
           <div className="border border-zinc-800 bg-[#121218] px-6 py-12 text-center">
             <p className="text-sm text-zinc-200">No public posts from people you follow yet</p>
-            <p className="mt-1 text-xs text-zinc-500">When they publish videos, clips, or pics, they show up here.</p>
           </div>
         ) : null
       ) : (
