@@ -133,10 +133,8 @@ export default function StreamingNavbar({
         : 'sticky top-0 z-50 h-12 md:h-14 w-full border-b border-[#272727] bg-[#0f0f0f] pt-[env(safe-area-inset-top)]'}
       data-apex={apex ? 'home' : undefined}
     >
-      <div className={apex
-        ? 'flex h-full w-full min-w-0 items-center gap-3 px-3 sm:px-5'
-        : 'flex h-full w-full min-w-0 items-center gap-1 pr-1.5 sm:pr-3'}
-      >
+      <div className="flex h-full w-full min-w-0 items-center gap-3 pl-4 sm:pl-5 pr-3 sm:pr-5">
+
         <div className="flex items-center shrink-0">
           <button
             type="button"
