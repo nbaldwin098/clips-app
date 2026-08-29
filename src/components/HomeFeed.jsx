@@ -28,7 +28,7 @@ function ThreeCarousel({ title, children }) {
   return (
     <section>
       <div className="flex items-center justify-between gap-3 mb-3">
-        <h2 className="text-lg font-semibold text-white">{title}</h2>
+        <h2 className="text-xl font-semibold text-white">{title}</h2>
         <div className="flex gap-1">
           <button type="button" aria-label="Previous" onClick={() => move(-1)} className="h-8 w-8 inline-flex items-center justify-center border border-white/20 text-white hover:bg-white/10">
             <ChevronLeft className="h-4 w-4" />
@@ -157,13 +157,13 @@ export default function HomeFeed({
 
       {following.length > 0 && (
         <section>
-          <h2 className="text-[17px] font-semibold text-white mb-3">Following</h2>
+          <h2 className="text-xl font-semibold text-white mb-3">Following</h2>
           <MediaShelves items={following.slice(0, 12)} filter="video" onPlayItem={onPlayItem} onOpenPic={onOpenPic} onOpenProfile={onOpenProfile} />
         </section>
       )}
 
       <section>
-        <h2 className="text-[17px] font-semibold text-white mb-3">Recommended</h2>
+        <h2 className="text-xl font-semibold text-white mb-3">Recommended</h2>
         {!hydrated ? (
           <p className="text-sm text-[#8a8a8a] py-8">Loading posts…</p>
         ) : items.length === 0 ? (
