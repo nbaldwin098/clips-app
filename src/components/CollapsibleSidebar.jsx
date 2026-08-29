@@ -73,8 +73,8 @@ export default function CollapsibleSidebar({
   onSelectLiveStream,
   focusedStreamUserId,
 }) {
-  const collapsed = true // Icons-only forever — never expand the left rail
-  // width formula kept for layout contract: collapsed ? 'w-14' : 'w-60'
+  const [hovered, setHovered] = useState(false)
+  const collapsed = !hovered
   const [moreOpen, setMoreOpen] = useState(false)
   const [liveNow, setLiveNow] = useState(() => listLiveBoard(lsGet('live_board', []) || []))
   const [recommendedCreators, setRecommendedCreators] = useState(() => listSidebarCreators(8))
@@ -264,14 +264,20 @@ export default function CollapsibleSidebar({
   )
 
   return (
-    <>
+    <div className="hidden md:block w-14 shrink-0 relative">
       <aside
         className={cn(
-          'hidden md:flex flex-col shrink-0 h-[calc(100dvh-3.5rem)] sticky top-14 bg-[#0f0f0f] border-r border-[#272727] z-30 overflow-hidden w-14'
+          'flex flex-col h-[calc(100dvh-3.5rem)] sticky top-14 bg-[#0f0f0f] border-r border-[#272727] z-40 overflow-hidden transition-[width] duration-150',
+          hovered ? 'w-60 shadow-[8px_0_24px_rgba(0,0,0,0.45)]' : 'w-14'
         )}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => {
+          setHovered(false)
+          setMoreOpen(false)
+        }}
       >
         {body}
       </aside>
-    </>
+    </div>
   )
 }
