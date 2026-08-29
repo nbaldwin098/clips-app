@@ -445,12 +445,12 @@ function AppShell() {
     <div className="h-dvh overflow-hidden bg-[#000000] text-zinc-100 flex flex-col selection:bg-white selection:text-black">
       <ToastLiveRegion />
       {studioChrome ? (
-        <header className="shrink-0 h-12 px-3 flex items-center gap-3 border-b border-white/10 bg-black">
-          <button type="button" onClick={() => navigate('home')} className="inline-flex h-9 items-center gap-2 rounded-lg px-2 text-sm font-medium text-zinc-200 hover:bg-white/5">
-            <ArrowLeft className="h-4 w-4" />
+        <header className="shrink-0 h-14 px-3 flex items-center gap-3 border-b border-white/10 bg-black">
+          <button type="button" onClick={() => navigate('home')} className="inline-flex h-10 items-center gap-2 rounded-lg border border-white/15 bg-[#141414] pl-2.5 pr-3.5 text-sm font-semibold text-white hover:bg-white/10">
+            <ArrowLeft className="h-5 w-5" />
             Back
           </button>
-          <span className="text-xs text-zinc-500">{view === 'admin' ? 'Admin' : (view === 'advertiser-portal' || view === 'advertise' ? 'Advertise' : 'Studio')}</span>
+          <span className="text-sm font-medium text-zinc-400">{view === 'admin' ? 'Admin' : (view === 'advertiser-portal' || view === 'advertise' ? 'Advertise' : 'Studio')}</span>
         </header>
       ) : (
         <StreamingNavbar onNavigate={navigate} onOpenAuth={openAuth} onOpenWatch={openWatch} searchQuery={searchQuery} onSearchChange={(q) => { setSearchQuery(q); setView('explore'); goPath('explore', '', q?.trim() ? { q: q.trim() } : null) }} />
