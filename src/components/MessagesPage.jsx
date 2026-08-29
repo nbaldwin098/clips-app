@@ -143,16 +143,18 @@ export default function MessagesPage({
 
   if (!isAuthenticated) {
     return (
-      <div className="p-6 max-w-md mx-auto text-sm text-neutral-500">
-        <button type="button" onClick={onOpenAuth} className="text-neutral-900 font-medium">Sign in</button>
-        {' '}to use messages.
-      </div>
+      <StudioShell tone="light" title="Messages" onBack={() => onNavigate?.('home')}>
+        <p className="text-sm text-neutral-500">
+          <button type="button" onClick={onOpenAuth} className="text-neutral-900 font-medium">Sign in</button>
+          {' '}to use messages.
+        </p>
+      </StudioShell>
     )
   }
 
   if (user?.provider !== 'supabase') {
     return (
-      <StudioShell title="Messages" onBack={() => onNavigate?.('home')}>
+      <StudioShell tone="light" title="Messages" onBack={() => onNavigate?.('home')}>
         <button type="button" onClick={onOpenAuth} className="h-10 px-4 bg-neutral-900 text-white text-sm font-semibold rounded-lg">
           Sign in with cloud
         </button>
@@ -162,6 +164,7 @@ export default function MessagesPage({
 
   return (
     <StudioShell
+      tone="light"
       title="Messages"
       onBack={() => onNavigate?.('home')}
       headerRight={(

@@ -70,10 +70,10 @@ export default function NotificationsSettings() {
   }
 
   const Row = ({ id, label, hint }) => (
-    <label className="flex items-start justify-between gap-4 py-3 border-b border-zinc-800 last:border-0">
+    <label className="flex items-start justify-between gap-4 py-3 border-b border-neutral-200 last:border-0">
       <div>
-        <p className="text-sm font-medium text-zinc-200">{label}</p>
-        {hint ? <p className="text-xs text-zinc-500 mt-0.5">{hint}</p> : null}
+        <p className="text-sm font-medium text-neutral-900">{label}</p>
+        {hint ? <p className="text-xs text-neutral-500 mt-0.5">{hint}</p> : null}
       </div>
       <input type="checkbox" checked={!!prefs[id]} onChange={() => toggle(id)} className="mt-1" />
     </label>
@@ -82,22 +82,22 @@ export default function NotificationsSettings() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-xl font-semibold text-white">Notifications</h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <h1 className="text-xl font-semibold text-neutral-900">Notifications</h1>
+        <p className="mt-1 text-sm text-neutral-500">
           Preference toggles save on this device. Browser push needs a VAPID public key
           (see docs/INFRA.md). Email delivery needs the mail Edge Function.
         </p>
       </div>
-      <section className="rounded-xl border border-zinc-800 bg-[#121218] px-4">
-        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 pt-3 pb-1">Email</p>
+      <section className="rounded-xl border border-neutral-200 bg-white px-4">
+        <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500 pt-3 pb-1">Email</p>
         <Row id="emailLive" label="Live stream starts" hint="When channels you follow go live — after live is real" />
         <Row id="emailSubs" label="New followers" />
         <Row id="emailStrikes" label="Copyright strikes" hint="Keep on for policy mail" />
       </section>
-      <section className="rounded-xl border border-zinc-800 bg-[#121218] px-4 pb-3">
-        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 pt-3 pb-1">Browser push</p>
+      <section className="rounded-xl border border-neutral-200 bg-white px-4 pb-3">
+        <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500 pt-3 pb-1">Browser push</p>
         {!pushSupported() ? (
-          <p className="text-sm text-zinc-500 py-3">{t('push.unsupported')}</p>
+          <p className="text-sm text-neutral-500 py-3">{t('push.unsupported')}</p>
         ) : (
           <div className="py-3 space-y-2">
             <div className="flex flex-wrap gap-2">
@@ -116,18 +116,18 @@ export default function NotificationsSettings() {
               )}
             </div>
             {!pushConfigured() ? (
-              <p className="text-xs text-zinc-500">
-                {t('push.needKey')} Enable stays off until <code className="text-zinc-400">NEXT_PUBLIC_VAPID_PUBLIC_KEY</code> is set.
+              <p className="text-xs text-neutral-500">
+                {t('push.needKey')} Enable stays off until <code className="text-neutral-600">NEXT_PUBLIC_VAPID_PUBLIC_KEY</code> is set.
               </p>
             ) : null}
-            {pushNote ? <p className="text-xs text-zinc-400">{pushNote}</p> : null}
+            {pushNote ? <p className="text-xs text-neutral-600">{pushNote}</p> : null}
           </div>
         )}
         <Row id="pushLive" label="Live alerts" />
         <Row id="pushChat" label="Chat mentions" />
         <Row id="pushMarketing" label="Product updates" />
       </section>
-      <p className="text-[11px] text-zinc-500">{saved ? 'Saved' : 'Saved as you change these.'}</p>
+      <p className="text-[11px] text-neutral-500">{saved ? 'Saved' : 'Saved as you change these.'}</p>
     </div>
   )
 }

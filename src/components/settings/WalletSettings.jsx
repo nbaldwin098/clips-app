@@ -44,7 +44,7 @@ const NAV = [
   { id: 'payments', label: 'Payment methods', icon: CreditCard, group: 'Wallet' },
 ]
 
-/** Coins + Orders + payment methods — calabi studio shell (profile menu). */
+/** Coins + Orders + payment methods — TikTok-white profile shell (B). */
 export default function WalletSettings({ onNavigate, onOpenAuth, initialTab = null }) {
   const { user, isAuthenticated } = useAuth()
   const start = initialTab === 'orders' || initialTab === 'payments' ? initialTab : 'coins'
@@ -70,25 +70,28 @@ export default function WalletSettings({ onNavigate, onOpenAuth, initialTab = nu
   if (!isAuthenticated) {
     const packs = listCoinPacks()
     return (
-      <div className="mx-auto max-w-3xl px-4 py-8 space-y-6">
-        <div>
-          <h1 className="text-xl font-semibold text-white">Wallet</h1>
-          <p className="mt-1 text-sm text-zinc-500">Sign in to buy coins and manage payment methods.</p>
+      <StudioShell tone="light" title="Wallet" nav={NAV} activeId="coins" onNav={() => {}} onBack={() => onNavigate?.('home')}>
+        <div className="space-y-6 max-w-3xl">
+          <div>
+            <h1 className="text-xl font-semibold text-neutral-900">Wallet</h1>
+            <p className="mt-1 text-sm text-neutral-500">Sign in to buy coins and manage payment methods.</p>
+          </div>
+          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
+            {packs.map((p) => (
+              <div key={p.id} className="border border-neutral-200 bg-white p-4 text-center rounded-xl">
+                <p className="text-sm font-bold text-neutral-900">{p.label}</p>
+                <p className="mt-2 text-base font-bold text-neutral-900">${Number(p.usd).toFixed(2)}</p>
+              </div>
+            ))}
+          </div>
+          <AuthRequired
+            light
+            title="Sign in to buy"
+            description="Cloud account required to purchase Coins."
+            onOpenAuth={onOpenAuth}
+          />
         </div>
-        <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
-          {packs.map((p) => (
-            <div key={p.id} className="border border-[#272727] bg-[#18181f] p-4 text-center rounded-xl">
-              <p className="text-sm font-bold text-white">{p.label}</p>
-              <p className="mt-2 text-base font-bold text-white">${Number(p.usd).toFixed(2)}</p>
-            </div>
-          ))}
-        </div>
-        <AuthRequired
-          title="Sign in to buy"
-          description="Cloud account required to purchase Coins."
-          onOpenAuth={onOpenAuth}
-        />
-      </div>
+      </StudioShell>
     )
   }
 
@@ -107,6 +110,7 @@ export default function WalletSettings({ onNavigate, onOpenAuth, initialTab = nu
 
   return (
     <StudioShell
+      tone="light"
       title="Wallet"
       nav={NAV}
       activeId={tab}
@@ -122,10 +126,10 @@ export default function WalletSettings({ onNavigate, onOpenAuth, initialTab = nu
 
         {savePrompt ? (
           <StudioCard title="Save payment method?">
-            <p className="text-sm text-zinc-400 mb-3">Use this card again in Shop and Wallet.</p>
+            <p className="text-sm text-neutral-600 mb-3">Use this card again in Shop and Wallet.</p>
             <div className="flex gap-2">
-              <button type="button" onClick={acceptSave} className="h-9 px-3 bg-white text-black text-xs font-semibold rounded-lg">Save</button>
-              <button type="button" onClick={() => { clearPaymentSavePrompt(user.id); setSavePrompt(false) }} className="h-9 px-3 border border-[#272727] text-xs rounded-lg">Not now</button>
+              <button type="button" onClick={acceptSave} className="h-9 px-3 bg-neutral-900 text-white text-xs font-semibold rounded-lg">Save</button>
+              <button type="button" onClick={() => { clearPaymentSavePrompt(user.id); setSavePrompt(false) }} className="h-9 px-3 border border-neutral-200 text-xs rounded-lg">Not now</button>
             </div>
           </StudioCard>
         ) : null}
@@ -140,27 +144,27 @@ export default function WalletSettings({ onNavigate, onOpenAuth, initialTab = nu
           <StudioCard title="Coin orders">
             {!rows.length ? (
               <div className="text-center space-y-3 py-4">
-                <p className="text-sm text-zinc-500">No coin orders yet.</p>
-                <button type="button" onClick={() => onTab('coins')} className="h-9 px-4 bg-white text-black text-xs font-semibold rounded-lg">Buy Coins</button>
+                <p className="text-sm text-neutral-500">No coin orders yet.</p>
+                <button type="button" onClick={() => onTab('coins')} className="h-9 px-4 bg-neutral-900 text-white text-xs font-semibold rounded-lg">Buy Coins</button>
               </div>
             ) : (
-              <ul className="divide-y divide-[#272727] border border-[#272727] rounded-xl overflow-hidden">
+              <ul className="divide-y divide-neutral-100 border border-neutral-200 rounded-xl overflow-hidden">
                 {rows.map((row, i) => {
                   const delta = Number(row.delta) || 0
                   const usd = Number(row.usd) || 0
                   const credit = delta > 0
                   return (
-                    <li key={`${row.at || i}_${row.kind}_${delta}`} className="flex items-center gap-3 px-4 py-3 bg-[#18181f]">
+                    <li key={`${row.at || i}_${row.kind}_${delta}`} className="flex items-center gap-3 px-4 py-3 bg-white">
                       <CoinIcon className="h-5 w-5 shrink-0" />
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm text-white truncate">{orderLabel(row, packsById)}</p>
-                        <p className="text-[11px] text-zinc-500">{formatWhen(row.at)}</p>
+                        <p className="text-sm text-neutral-900 truncate">{orderLabel(row, packsById)}</p>
+                        <p className="text-[11px] text-neutral-500">{formatWhen(row.at)}</p>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className={`text-sm font-semibold tabular-nums ${credit ? 'text-zinc-200' : 'text-zinc-400'}`}>
+                        <p className={`text-sm font-semibold tabular-nums ${credit ? 'text-amber-600' : 'text-neutral-700'}`}>
                           {credit ? '+' : ''}{delta.toLocaleString()} coins
                         </p>
-                        {usd > 0 ? <p className="text-[11px] text-zinc-500 tabular-nums">${usd.toFixed(2)}</p> : null}
+                        {usd > 0 ? <p className="text-[11px] text-neutral-500 tabular-nums">${usd.toFixed(2)}</p> : null}
                       </div>
                     </li>
                   )
@@ -172,22 +176,22 @@ export default function WalletSettings({ onNavigate, onOpenAuth, initialTab = nu
 
         {tab === 'payments' ? (
           <StudioCard title="Payment methods">
-            <p className="text-xs text-zinc-500 mb-3">Shared with Shop. Brand + last four only.</p>
+            <p className="text-xs text-neutral-500 mb-3">Shared with Shop. Brand + last four only.</p>
             {!methods.length ? (
-              <p className="text-sm text-zinc-500">No saved methods yet.</p>
+              <p className="text-sm text-neutral-500">No saved methods yet.</p>
             ) : (
-              <ul className="divide-y divide-[#272727] border border-[#272727] rounded-xl overflow-hidden">
+              <ul className="divide-y divide-neutral-100 border border-neutral-200 rounded-xl overflow-hidden">
                 {methods.map((m) => (
                   <li key={m.id} className="flex items-center gap-3 px-4 py-3">
-                    <CreditCard className="h-4 w-4 text-zinc-400" />
+                    <CreditCard className="h-4 w-4 text-neutral-400" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm text-white">{m.label}</p>
-                      <p className="text-[11px] text-zinc-500">Exp {m.expMonth}/{m.expYear}</p>
+                      <p className="text-sm text-neutral-900">{m.label}</p>
+                      <p className="text-[11px] text-neutral-500">Exp {m.expMonth}/{m.expYear}</p>
                     </div>
                     <button
                       type="button"
                       onClick={() => { removePaymentMethod(user.id, m.id); bump((n) => n + 1) }}
-                      className="text-[11px] text-zinc-500 hover:text-white"
+                      className="text-[11px] text-neutral-500 hover:text-neutral-900"
                     >
                       Remove
                     </button>
@@ -195,7 +199,7 @@ export default function WalletSettings({ onNavigate, onOpenAuth, initialTab = nu
                 ))}
               </ul>
             )}
-            <button type="button" onClick={() => onNavigate?.('shop')} className="mt-3 text-xs text-zinc-300 hover:text-white">
+            <button type="button" onClick={() => onNavigate?.('shop')} className="mt-3 text-xs text-neutral-700 hover:text-neutral-900">
               Open Shop →
             </button>
           </StudioCard>

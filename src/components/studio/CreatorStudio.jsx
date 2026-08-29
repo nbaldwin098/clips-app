@@ -70,7 +70,7 @@ import {
   SettingsButton,
   SettingsNotice,
 } from '../settings/SettingsTemplates'
-import { StudioKpi, StudioCard, StudioAreaChart, StudioBarChart } from '../dash/StudioShell'
+import { DashToneProvider, StudioKpi, StudioCard, StudioAreaChart, StudioBarChart } from '../dash/StudioShell'
 import StudioControlDeck from './StudioControlDeck'
 
 const STUDIO_NAV = [
@@ -186,7 +186,7 @@ function OverviewTasks({ postsLen, hasPayout, membershipSet, verified, onNavigat
             <button
               type="button"
               onClick={t.action}
-              className="w-full flex items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-neutral-50"
+              className="w-full flex items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-white/5"
             >
               {t.done ? (
                 <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
@@ -855,6 +855,7 @@ export default function CreatorStudio({
   }
 
   return (
+    <DashToneProvider tone="dark">
     <div className="h-[calc(100dvh-3.5rem)] min-h-[480px] flex bg-[#0b0b0b] text-zinc-200 overflow-hidden" data-studio="calabi">
       <aside className="hidden sm:flex w-56 shrink-0 border-r border-white/10 bg-[#0e0e12] flex-col py-4 text-zinc-300">
         <nav className="flex-1 px-3 space-y-5 overflow-y-auto">
@@ -920,7 +921,7 @@ export default function CreatorStudio({
                   onClick={() => setPostFilter(t.id)}
                   className={cn(
                     'h-7 px-2 text-[11px] font-semibold rounded',
-                    postFilter === t.id ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-zinc-400'
+                    postFilter === t.id ? 'bg-white text-black' : 'bg-white/10 text-zinc-400'
                   )}
                 >
                   {t.label}
@@ -1113,5 +1114,6 @@ export default function CreatorStudio({
         </div>
       </main>
     </div>
+    </DashToneProvider>
   )
 }

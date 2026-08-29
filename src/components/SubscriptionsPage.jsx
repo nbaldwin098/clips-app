@@ -43,16 +43,20 @@ export default function SubscriptionsPage({ onNavigate, onOpenAuth, onOpenProfil
 
   if (!isAuthenticated) {
     return (
-      <AuthRequired
-        title="Subscriptions"
-        description="Sign in to see your premium live memberships."
-        onOpenAuth={onOpenAuth}
-      />
+      <StudioShell tone="light" title="Subscriptions" onBack={() => onNavigate?.('home')}>
+        <AuthRequired
+          light
+          title="Subscriptions"
+          description="Sign in to see your premium live memberships."
+          onOpenAuth={onOpenAuth}
+        />
+      </StudioShell>
     )
   }
 
   return (
     <StudioShell
+      tone="light"
       title="Subscriptions"
       nav={[{ id: 'subs', label: 'Memberships', icon: Crown, group: 'Account' }]}
       activeId="subs"

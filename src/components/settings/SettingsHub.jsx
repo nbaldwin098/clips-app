@@ -24,7 +24,7 @@ export default function SettingsHub({ section, onNavigate, initialTab = null }) 
   }, [redirectCreator, section, onNavigate])
 
   if (redirectCreator) {
-    return <p className="p-6 text-sm text-zinc-500">Opening Creator Studio…</p>
+    return <p className="p-6 text-sm text-neutral-500">Opening Creator Studio…</p>
   }
 
   const id = SITE_PAGES[section] ? section : 'account'
