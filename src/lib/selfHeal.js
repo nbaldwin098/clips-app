@@ -175,10 +175,10 @@ export function healLocalState() {
 export function installRuntimeGuards() {
   if (typeof window === 'undefined') return
   const onError = (event) => {
-    console.warn('[Clips] recovered from runtime error:', event?.message || event)
+    console.warn('[calabi] recovered from runtime error:', event?.message || event)
   }
   const onRejection = (event) => {
-    console.warn('[Clips] recovered from unhandled promise:', event?.reason?.message || event?.reason)
+    console.warn('[calabi] recovered from unhandled promise:', event?.reason?.message || event?.reason)
     event?.preventDefault?.()
   }
   window.addEventListener('error', onError)
