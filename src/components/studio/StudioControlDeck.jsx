@@ -7,7 +7,7 @@ import { readLocalLiveChat, resolveLiveChatChannelId } from '../../lib/liveChatS
 import { getMembershipPrice, getViews } from '../../lib/engagement'
 import { cn } from '../../lib/utils'
 
-const GREEN = '#22c55e'
+const WHITE = '#ffffff'
 const DAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
 
 function money(n) {
@@ -53,7 +53,7 @@ function SparkBars({ values = [], labels = [] }) {
           <span
             key={i}
             className="flex-1 rounded-sm"
-            style={{ height: `${Math.max(10, (v / max) * 100)}%`, background: GREEN }}
+            style={{ height: `${Math.max(10, (v / max) * 100)}%`, background: WHITE }}
           />
         ))}
       </div>
@@ -82,7 +82,7 @@ function MetricCard({ label, value, series = [], labels = [], onClick }) {
       <p className="mt-1 text-[11px] text-zinc-500">Last 7 Days</p>
       <p className="mt-2 text-[28px] font-semibold tabular-nums leading-none text-white">{value}</p>
       {d != null ? (
-        <p className="mt-2 text-[12px] font-semibold" style={{ color: GREEN }}>
+        <p className="mt-2 text-[12px] font-semibold" style={{ color: WHITE }}>
           +{Math.abs(d).toFixed(1)}%
         </p>
       ) : (
@@ -232,7 +232,7 @@ export default function StudioControlDeck({
           <Panel
             title="Stream summary"
             action={
-              <button type="button" onClick={onOpenAnalytics} className="text-[12px] font-medium" style={{ color: GREEN }}>
+              <button type="button" onClick={onOpenAnalytics} className="text-[12px] font-medium" style={{ color: WHITE }}>
                 View Full Analytics
               </button>
             }
@@ -250,7 +250,7 @@ export default function StudioControlDeck({
               type="button"
               onClick={onGoLive}
               className="mt-4 h-9 w-full rounded-lg text-[13px] font-semibold text-black"
-              style={{ background: GREEN }}
+              style={{ background: WHITE }}
             >
               Go live
             </button>
@@ -259,7 +259,7 @@ export default function StudioControlDeck({
           <Panel
             title="Recent activity"
             action={
-              <button type="button" onClick={onOpenAnalytics} className="text-[12px] font-medium" style={{ color: GREEN }}>
+              <button type="button" onClick={onOpenAnalytics} className="text-[12px] font-medium" style={{ color: WHITE }}>
                 View All Activity
               </button>
             }
@@ -291,7 +291,7 @@ export default function StudioControlDeck({
                 <ul className="space-y-2 flex-1 overflow-y-auto max-h-40">
                   {chat.map((m) => (
                     <li key={m.id || m.at} className="text-[13px]">
-                      <span className="font-medium" style={{ color: GREEN }}>{m.handle || m.displayName || 'User'}</span>
+                      <span className="font-medium" style={{ color: WHITE }}>{m.handle || m.displayName || 'User'}</span>
                       <span className="text-zinc-300"> {m.body || m.text || ''}</span>
                     </li>
                   ))}
@@ -309,7 +309,7 @@ export default function StudioControlDeck({
                   placeholder={liveOn ? 'Chat from the live page' : 'Chat when you\'re live'}
                   className="flex-1 h-9 rounded-lg border border-white/10 bg-black px-3 text-[13px] text-zinc-400"
                 />
-                <button type="button" disabled className="h-9 px-3 rounded-lg text-[12px] font-semibold text-black disabled:opacity-40" style={{ background: GREEN }}>
+                <button type="button" disabled className="h-9 px-3 rounded-lg text-[12px] font-semibold text-black disabled:opacity-40" style={{ background: WHITE }}>
                   Chat
                 </button>
               </div>
@@ -338,7 +338,7 @@ export default function StudioControlDeck({
                   'h-9 text-[13px] font-medium border-b-2 -mb-px rounded-none',
                   tab === t.id ? 'text-white' : 'text-zinc-500 border-transparent hover:text-white'
                 )}
-                style={tab === t.id ? { borderColor: GREEN } : undefined}
+                style={tab === t.id ? { borderColor: WHITE } : undefined}
               >
                 {t.label}
               </button>
@@ -383,7 +383,7 @@ export default function StudioControlDeck({
         <Panel
           title="Memberships"
           action={
-            <button type="button" onClick={onOpenEarnings} className="text-[12px] font-medium" style={{ color: GREEN }}>Edit</button>
+            <button type="button" onClick={onOpenEarnings} className="text-[12px] font-medium" style={{ color: WHITE }}>Edit</button>
           }
         >
           <p className="text-[11px] text-zinc-500">Monthly price</p>
@@ -393,7 +393,7 @@ export default function StudioControlDeck({
             type="button"
             onClick={onOpenEarnings}
             className="mt-4 h-9 w-full rounded-lg text-[13px] font-semibold text-black"
-            style={{ background: GREEN }}
+            style={{ background: WHITE }}
           >
             Open Earnings
           </button>
@@ -410,7 +410,7 @@ export default function StudioControlDeck({
                 >
                   <span
                     className="h-5 w-5 rounded-full shrink-0 inline-flex items-center justify-center"
-                    style={{ background: s.done ? GREEN : 'transparent', border: s.done ? 'none' : '1px solid #3f3f46' }}
+                    style={{ background: s.done ? WHITE : 'transparent', border: s.done ? 'none' : '1px solid #3f3f46' }}
                   >
                     {s.done ? <Check className="h-3 w-3 text-black" /> : null}
                   </span>
