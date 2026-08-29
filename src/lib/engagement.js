@@ -5,6 +5,7 @@ import { notifyNewLike, notifyNewSubscriber, notifyPremium, notifyMentions } fro
 import { notifyContentChanged } from './contentSync'
 import { pushFollow, pushVote } from './graphSync'
 import { recordHourView } from './hourViewEvents'
+import { markUniqueViewer, uniqueViewerCount, resolveViewerKey } from './uniqueViews'
 
 const LIKES = 'engagement_likes'
 const USER_VOTES = 'engagement_votes'
@@ -129,38 +130,43 @@ export function getUserUpvotedIds(userId) {
 
 export function recordView(contentId, meta = {}) {
   if (!contentId) return 0
-  const all = lsGet(VIEWS, {}) || {}
-  const map = all && typeof all === 'object' && !Array.isArray(all) ? all : {}
+
+  const actorId = meta.actorId || null
+  const viewerKey = resolveViewerKey(actorId)
+  markUniqueViewer(contentId, viewerKey)
+  recordHourView(contentId)
+  const uniqueCount = uniqueViewerCount(contentId)
+
+  const map = lsGet(VIEWS, {}) || {}
+  map[contentId] = Math.max(Number(map[contentId]) || 0, uniqueCount)
+  lsSet(VIEWS, map)
+
+  const cat = lsGet('clips_content_views', {}) || {}
+  cat[contentId] = Math.max(Number(cat[contentId]) || 0, uniqueCount)
+  lsSet('clips_content_views', cat)
 
   queueMicrotask(() => {
     Promise.all([
       import('./creatorInteractions'),
       import('./graphSync').catch(() => ({ getGraphActor: () => null })),
-      import('./uniqueViews'),
-    ]).then(async ([{ logCreatorInteraction, creatorIdForContent }, graph, unique]) => {
+    ]).then(async ([{ logCreatorInteraction, creatorIdForContent }, graph]) => {
       const creatorId = meta.creatorId || creatorIdForContent(contentId)
-      if (!creatorId) return
-      const actorId = meta.actorId || graph?.getGraphActor?.()?.id || null
-      const viewerKey = unique.resolveViewerKey(actorId)
-      unique.markUniqueViewer(contentId, viewerKey)
-      const uniqueCount = unique.uniqueViewerCount(contentId)
-      map[contentId] = uniqueCount
-      lsSet(VIEWS, map)
-      recordHourView(contentId)
-
-      logCreatorInteraction({
-        creatorId,
-        contentId,
-        type: 'view',
-        actorId,
-        title: meta.title || '',
-        surface: meta.surface || 'unknown',
-        contentType: meta.contentType || null,
-      })
+      const resolvedActor = meta.actorId || graph?.getGraphActor?.()?.id || actorId
+      if (creatorId) {
+        logCreatorInteraction({
+          creatorId,
+          contentId,
+          type: 'view',
+          actorId: resolvedActor,
+          title: meta.title || '',
+          surface: meta.surface || 'unknown',
+          contentType: meta.contentType || null,
+        })
+      }
 
       try {
         const { getSupabase, isSupabaseConfigured } = await import('./supabaseClient')
-        if (isSupabaseConfigured()) {
+        if (creatorId && isSupabaseConfigured()) {
           const sb = await getSupabase()
           if (sb) {
             const { data, error } = await sb.functions.invoke('record-content-view', {
@@ -173,44 +179,69 @@ export function recordView(contentId, meta = {}) {
               },
             })
             if (!error && data?.views != null) {
-              map[contentId] = Math.max(uniqueCount, Number(data.views) || 0)
-              lsSet(VIEWS, map)
-              return
+              const n = Math.max(uniqueCount, Number(data.views) || 0)
+              const next = lsGet(VIEWS, {}) || {}
+              next[contentId] = n
+              lsSet(VIEWS, next)
             }
           }
         }
       } catch {}
 
-      import('./economySync').then(({ pushContentView }) => {
-        pushContentView({
-          contentId,
-          creatorId,
-          actorId,
-          viewerKey,
-          surface: meta.surface || 'unknown',
-          contentType: meta.contentType || null,
+      if (creatorId) {
+        import('./economySync').then(({ pushContentView }) => {
+          pushContentView({
+            contentId,
+            creatorId,
+            actorId: resolvedActor,
+            viewerKey,
+            surface: meta.surface || 'unknown',
+            contentType: meta.contentType || null,
+          }).catch(() => {})
         }).catch(() => {})
-      }).catch(() => {})
-    }).catch(() => {})
+      }
+
+      notifyContentChanged()
+    }).catch(() => {
+      notifyContentChanged()
+    })
   })
 
-  return getViews(contentId)
+  return uniqueCount
 }
 
 export function getViews(contentId) {
   if (!contentId) return 0
+  let unique = 0
   try {
-    const UNIQUE_KEY = 'clips_unique_viewers_v1'
-    const uniq = lsGet(UNIQUE_KEY, {}) || {}
-    // Once unique tracking exists for this post, never fall back to legacy rewatch counters.
-    if (Object.prototype.hasOwnProperty.call(uniq, contentId)) {
-      const bucket = uniq[contentId]
-      return bucket && typeof bucket === 'object' ? Object.keys(bucket).length : 0
-    }
+    unique = uniqueViewerCount(contentId)
   } catch {}
-  const all = lsGet(VIEWS, {}) || {}
-  const map = all && typeof all === 'object' && !Array.isArray(all) ? all : {}
-  return Number(map[contentId]) || 0
+  const eng = Number((lsGet(VIEWS, {}) || {})[contentId]) || 0
+  const cat = Number((lsGet('clips_content_views', {}) || {})[contentId]) || 0
+  let hours = 0
+  try {
+    const ev = (lsGet('clips_hour_view_events', {}) || {})[contentId]
+    hours = Array.isArray(ev) ? ev.length : 0
+  } catch {}
+  return Math.max(unique, eng, cat, hours)
+}
+
+export function listViewedContent() {
+  const ids = new Set()
+  for (const key of ['clips_unique_viewers_v1', VIEWS, 'clips_content_views', 'clips_hour_view_events']) {
+    const bag = lsGet(key, {}) || {}
+    if (bag && typeof bag === 'object' && !Array.isArray(bag)) {
+      Object.keys(bag).forEach((id) => ids.add(id))
+    }
+  }
+  return [...ids]
+    .map((id) => ({ id, views: getViews(id) }))
+    .filter((r) => r.views > 0)
+    .sort((a, b) => b.views - a.views)
+}
+
+export function totalViewCount() {
+  return listViewedContent().reduce((sum, r) => sum + r.views, 0)
 }
 
 export function getSubscriptionsForUser(userId) {
