@@ -201,7 +201,7 @@ export default function ApexHomeStage({
           </button>
         </div>
         {onAir.length ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-6">
             {onAir.map((s) => {
               const nm = s.displayName || s.handle || 'Creator'
               const ok = isOfficialCreator(s.userId, s.handle) || isVerifiedChannel(s.userId, s.handle)
