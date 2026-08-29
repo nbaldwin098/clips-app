@@ -6,7 +6,7 @@ import {
   MoreHorizontal, Flag, Download, RotateCcw,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { getById, getWatchItem, getRelated, getMoreFromCreator, getWatchQueue } from '../lib/contentService'
+import { getById, getWatchItem, getRelated, getMoreFromCreator, getWatchQueue, listImportsNormalized } from '../lib/contentService'
 import { recordView, getViews, toggleVote, getVotes, getUserVote, canAccessPaidPost } from '../lib/engagement'
 import { getWatchProgress, recordWatchProgress } from '../lib/watchProgress'
 import { recordInteraction } from '../lib/algorithmEngine'
@@ -27,6 +27,7 @@ import ReportModal from './ReportModal'
 import { downloadPostedMedia } from '../lib/mediaDownload'
 import PostedStamp from './PostedStamp'
 import ChannelAvatar from './ChannelAvatar'
+import ContentCard from './ContentCard'
 import VerifiedBadge from './VerifiedBadge'
 import FollowButton from './FollowButton'
 import EnableNotificationsButton from './EnableNotificationsButton'
@@ -115,7 +116,11 @@ export default function WatchPage({
 }) {
   const { user, isAuthenticated } = useAuth()
   const syncTick = useContentSyncTick()
-  const item = useMemo(() => getWatchItem(itemId), [itemId, syncTick])
+  const item = useMemo(() => (itemId ? getWatchItem(itemId) : null), [itemId, syncTick])
+  const browseVideos = useMemo(
+    () => (itemId ? [] : (listImportsNormalized() || []).filter((i) => i.type === 'video' || i.type === 'short')),
+    [itemId, syncTick]
+  )
   const related = useMemo(() => getRelated(item, 8), [item, syncTick])
   const moreFrom = useMemo(() => getMoreFromCreator(item, 6), [item, syncTick])
   const queue = useMemo(() => getWatchQueue(item), [item, syncTick])
@@ -553,6 +558,23 @@ export default function WatchPage({
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   })
+
+  if (!itemId) {
+    return (
+      <div className="p-4 md:p-6 space-y-4">
+        <h1 className="text-lg font-semibold text-white">Videos</h1>
+        {browseVideos.length ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+            {browseVideos.map((v) => (
+              <ContentCard key={v.id} item={v} onOpen={onPlayItem} onOpenProfile={onOpenProfile} />
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-zinc-500">No videos yet.</p>
+        )}
+      </div>
+    )
+  }
 
   if (!item) {
     return (
