@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react'
-import { Sparkles, Radio } from 'lucide-react'
+import { Radio } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getStableHomeFeed, getStableFollowingFeed, getWatchItem } from '../lib/contentService'
 import { getPicsFeed } from '../lib/picsService'
@@ -19,10 +19,13 @@ import { listOnAirBoard, liveBadgeLabel } from '../lib/liveStatus'
 
 const HOME_CHIPS = [
   { id: 'all', label: 'All' },
+  { id: 'live', label: 'Live' },
   { id: 'video', label: 'Videos' },
   { id: 'clip', label: 'Clips' },
   { id: 'pic', label: 'Pics' },
 ]
+
+const CATS = ['Just chatting', 'Gaming', 'IRL', 'Music', 'Creative', 'Sports']
 
 export default function HomeFeed({ onPlayItem, onOpenPic, onOpenProfile, onNavigate }) {
   const { user } = useAuth()
@@ -31,7 +34,6 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onOpenProfile, onNavig
   const [chip, setChip] = useState('all')
   const items = useMemo(() => {
     const feed = getStableHomeFeed(user?.id || null)
-    // Home shelf is video/clip-first; merge public pics so the Pics chip is honest.
     const pics = (getPicsFeed() || []).map((p) => ({ ...p, type: 'pic' }))
     const seen = new Set(feed.map((i) => i.id))
     const extra = pics.filter((p) => p?.id && !seen.has(p.id))
@@ -54,12 +56,12 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onOpenProfile, onNavig
 
   const chipEmptyHint = {
     all: 'When creators publish, they show up here. Try Create (+) or Following.',
+    live: 'Lobby idle. Lives appear from ingest, not placeholders.',
     video: 'No public videos yet. Upload from Create (+).',
     clip: 'No public clips yet. Clips are 60 seconds or shorter.',
     pic: 'No public pics yet. Post from Create (+).',
   }
 
-  // Ensure a catalog pull starts even if App's interval hasn't fired yet.
   useEffect(() => {
     syncContentFromCloud(user).catch(() => {})
   }, [user?.id])
@@ -74,8 +76,52 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onOpenProfile, onNavig
     if (chip === 'video') return items.filter((i) => i.type === 'video').length
     if (chip === 'clip') return items.filter((i) => i.type === 'short').length
     if (chip === 'pic') return items.filter((i) => i.type === 'pic').length
-    return items.length
-  }, [items, chip])
+    if (chip === 'live') return onAir.length
+    return items.length + onAir.length
+  }, [items, chip, onAir.length])
+
+  const liveShelf = (
+    <section>
+      <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+        <Radio className="h-4 w-4 text-[#eb0400]" />
+        Live now
+      </h2>
+      {onAir.length > 0 ? (
+        <div className="flex gap-4 overflow-x-auto pb-2 chip-scroll">
+          {onAir.slice(0, 8).map((s) => (
+            <button
+              key={s.userId}
+              type="button"
+              onClick={() => onNavigate?.('live')}
+              className="w-[220px] shrink-0 text-left"
+            >
+              <div className="relative aspect-video overflow-hidden bg-[#121018] rounded-xl">
+                <div className="absolute inset-0 bg-[#0c0c14]" />
+                <span className="absolute top-2 left-2 px-1.5 py-0.5 bg-[#eb0400] text-white text-[10px] font-bold uppercase">
+                  {liveBadgeLabel(s)}
+                </span>
+                <span className="absolute bottom-2 left-2 px-1.5 py-0.5 bg-black/80 text-white text-[10px] font-medium">
+                  {Number(s.watchers) || 0} watching
+                </span>
+              </div>
+              <p className="mt-2 text-sm font-medium text-white line-clamp-1">{s.title || 'Live'}</p>
+              <p className="text-xs text-zinc-500">{s.displayName || s.handle}</p>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-xl border border-[#272727] bg-[#0f0f0f] px-5 py-10 text-center">
+          <p className="text-sm font-semibold text-white">Lobby idle</p>
+          <p className="mt-1 text-sm text-zinc-500">Live channels appear from ingest. Nothing is invented here.</p>
+          {onNavigate ? (
+            <button type="button" onClick={() => onNavigate('create')} className="mt-4 h-9 px-4 rounded-lg bg-white text-black text-xs font-semibold">
+              Go live
+            </button>
+          ) : null}
+        </div>
+      )}
+    </section>
+  )
 
   return (
     <div className="w-full">
@@ -94,7 +140,7 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onOpenProfile, onNavig
           {featured?.thumbUrl ? (
             <img src={featured.thumbUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-40" />
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-r from-[#1a1a1a] to-[#2a2a2a]" />
+            <div className="absolute inset-0 bg-[#1a1a1a]" />
           )}
           <div className="relative p-5">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Featured</p>
@@ -104,35 +150,11 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onOpenProfile, onNavig
         </button>
       )}
 
-      {onAir.length > 0 ? (
-        <section>
-          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <Radio className="h-4 w-4 text-[#eb0400]" />
-            Live now
-          </h2>
-          <div className="flex gap-4 overflow-x-auto pb-2 chip-scroll">
-            {onAir.slice(0, 8).map((s) => (
-              <button
-                key={s.userId}
-                type="button"
-                onClick={() => onNavigate?.('live')}
-                className="w-[220px] shrink-0 text-left"
-              >
-                <div className="relative aspect-video overflow-hidden bg-[#121018] rounded-xl">
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#2a1518] to-[#0c0c14]" />
-                  <span className="absolute top-2 left-2 px-1.5 py-0.5 bg-[#eb0400] text-white text-[10px] font-bold uppercase">
-                    {liveBadgeLabel(s)}
-                  </span>
-                </div>
-                <p className="mt-2 text-sm font-medium text-white line-clamp-1">{s.title || 'Live'}</p>
-                <p className="text-xs text-zinc-500">{s.displayName || s.handle}</p>
-              </button>
-            ))}
-          </div>
-        </section>
-      ) : null}
+      <FilterChips value={chip} onChange={setChip} options={HOME_CHIPS} />
 
-      {featured && (
+      {chip === 'all' || chip === 'live' ? liveShelf : null}
+
+      {featured && chip !== 'live' && (
         <section>
           <h2 className="text-lg font-semibold text-white mb-4">Featured</h2>
           <div className="max-w-md">
@@ -141,7 +163,7 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onOpenProfile, onNavig
         </section>
       )}
 
-      {continueItems.length > 0 && (
+      {continueItems.length > 0 && chip !== 'live' && (
         <section>
           <h2 className="text-lg font-semibold text-white mb-4">Continue watching</h2>
           <div className="flex gap-4 overflow-x-auto pb-2 chip-scroll">
@@ -154,25 +176,20 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onOpenProfile, onNavig
         </section>
       )}
 
-      {following.length > 0 && (
+      {following.length > 0 && chip !== 'live' && (
         <section>
           <h2 className="text-lg font-semibold text-white mb-4">Following</h2>
           <MediaShelves items={following.slice(0, 12)} onPlayItem={onPlayItem} onOpenPic={onOpenPic} onOpenProfile={onOpenProfile} />
         </section>
       )}
 
-      <FilterChips value={chip} onChange={setChip} options={HOME_CHIPS} />
-
       {!hydrated ? (
         <div className="rounded-2xl border border-[#272727] bg-[#0f0f0f] px-6 py-16 text-center">
           <p className="text-sm font-medium text-zinc-400">Loading posts…</p>
         </div>
-      ) : shelfCount === 0 ? (
+      ) : chip === 'live' ? null : shelfCount === 0 ? (
         <div className="rounded-2xl border border-[#272727] bg-[#0f0f0f] px-6 py-16 text-center">
-          <div className="mx-auto h-12 w-12 rounded-full bg-white/10 flex items-center justify-center">
-            <Sparkles className="h-6 w-6 text-white" />
-          </div>
-          <p className="mt-4 text-sm font-medium text-zinc-200">
+          <p className="mt-0 text-sm font-medium text-zinc-200">
             {chip === 'all' ? 'No posts yet' : `No ${HOME_CHIPS.find((c) => c.id === chip)?.label || 'posts'} here`}
           </p>
           <p className="mt-2 text-xs text-zinc-500">{chipEmptyHint[chip] || chipEmptyHint.all}</p>
@@ -195,6 +212,28 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onOpenProfile, onNavig
           filter={chip}
         />
       )}
+
+      <section>
+        <h2 className="text-lg font-semibold text-white mb-4">Browse</h2>
+        <div className="flex gap-3 overflow-x-auto pb-1 chip-scroll">
+          {CATS.map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => onNavigate?.('live')}
+              className="w-36 sm:w-40 shrink-0 text-left"
+            >
+              <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-[#121018] border border-[#272727]">
+                <div className="absolute inset-x-0 bottom-0 p-2.5">
+                  <p className="text-sm font-semibold text-white">{c}</p>
+                  <p className="text-xs text-zinc-500">Browse</p>
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </section>
+
       <Footer onNavigate={onNavigate} />
       </div>
     </div>
