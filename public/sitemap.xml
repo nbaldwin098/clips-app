@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://calabi.us/</loc><changefreq>hourly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://calabi.us/live</loc><changefreq>hourly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://calabi.us/clips</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://calabi.us/pics</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://calabi.us/news</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
+  <url><loc>https://calabi.us/shop</loc><changefreq>weekly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://calabi.us/creators</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://calabi.us/about</loc><changefreq>monthly</changefreq><priority>0.4</priority></url>
+  <url><loc>https://calabi.us/help</loc><changefreq>monthly</changefreq><priority>0.4</priority></url>
+</urlset>
