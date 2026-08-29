@@ -146,11 +146,11 @@ export default function UploadModal({ open, onClose, onDone, initialKind = 'vide
           <div className="grid sm:grid-cols-2 gap-0">
             {/* Preview + look filters */}
             <div className="border-b sm:border-b-0 sm:border-r border-zinc-800 bg-black p-4 space-y-3">
-              <div className="aspect-[9/16] sm:aspect-video max-h-[42vh] mx-auto w-full bg-[#111] overflow-hidden flex items-center justify-center">
+              <div className={`${kind === 'short' ? 'aspect-[9/16] max-h-[42vh] max-w-xs' : 'aspect-video'} mx-auto w-full bg-[#111] overflow-hidden flex items-center justify-center`}>
                 {previewUrl ? (
                   <video
                     src={previewUrl}
-                    className="h-full w-full object-contain"
+                    className={`h-full w-full ${kind === 'short' ? 'object-contain' : 'object-cover'}`}
                    
                     controls
                     muted
