@@ -6,19 +6,6 @@ import { ChevronDown, ChevronUp } from 'lucide-react'
  * Header + sidebar stay in the app chrome. This is a padded 9:16 column
  * in the main area — not a fixed fullscreen takeover.
  */
-function fitPortrait(availW, availH) {
-  const wBound = Math.max(0, availW)
-  const hBound = Math.max(0, availH)
-  if (wBound < 8 || hBound < 8) return { w: 0, h: 0 }
-  let h = hBound
-  let w = Math.round(h * 9 / 16)
-  if (w > wBound) {
-    w = wBound
-    h = Math.round(w * 16 / 9)
-  }
-  return { w, h }
-}
-
 export const PRELOAD_NEAR = 4
 
 export default function ShortsStage({
@@ -259,54 +246,13 @@ export default function ShortsStage({
 }
 
 export function ShortsCard({ children, actions, fillMobile = false }) {
-  const hostRef = useRef(null)
-  const [box, setBox] = useState(() => ({
-    w: 0,
-    h: 0,
-    desktop: typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches,
-  }))
-
-  useEffect(() => {
-    const el = hostRef.current
-    if (!el) return
-    const measure = () => {
-      const r = el.getBoundingClientRect()
-      setBox({
-        w: r.width,
-        h: r.height,
-        desktop: typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches,
-      })
-    }
-    measure()
-    const ro = new ResizeObserver(measure)
-    ro.observe(el)
-    window.addEventListener('resize', measure)
-    return () => {
-      ro.disconnect()
-      window.removeEventListener('resize', measure)
-    }
-  }, [])
-
-  const rail = box.desktop && actions ? 64 : 0
-  const dim = fitPortrait(box.w - rail, box.h)
-  const mobileFill = fillMobile && !box.desktop
-
-  if (mobileFill) {
-    return (
-      <div ref={hostRef} className="h-full w-full min-h-0">
-        <div className="relative h-full w-full min-h-0 bg-black overflow-hidden">{children}</div>
-      </div>
-    )
-  }
-
   return (
-    <div ref={hostRef} className="h-full w-full min-h-0 flex items-center justify-start gap-3">
+    <div className="h-full w-full min-h-0 flex items-stretch md:items-center justify-start gap-3">
       <div
-        className="relative bg-black overflow-hidden shrink-0 h-full"
-        style={
-          dim.w
-            ? { width: dim.w, height: dim.h }
-            : { height: '100%', aspectRatio: '9 / 16' }
+        className={
+          fillMobile
+            ? 'relative bg-black overflow-hidden h-full w-full min-h-0 md:w-auto md:aspect-[9/16] md:shrink-0'
+            : 'relative bg-black overflow-hidden h-full aspect-[9/16] shrink-0'
         }
       >
         {children}
