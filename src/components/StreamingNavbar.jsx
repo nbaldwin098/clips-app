@@ -129,8 +129,8 @@ export default function StreamingNavbar({
   return (
     <header
       className={apex
-        ? 'sticky top-0 z-50 h-16 w-full bg-black'
-        : 'sticky top-0 z-50 h-14 w-full border-b border-[#272727] bg-[#0f0f0f]'}
+        ? 'sticky top-0 z-50 h-12 md:h-16 w-full bg-black pt-[env(safe-area-inset-top)]'
+        : 'sticky top-0 z-50 h-12 md:h-14 w-full border-b border-[#272727] bg-[#0f0f0f] pt-[env(safe-area-inset-top)]'}
       data-apex={apex ? 'home' : undefined}
     >
       <div className={apex
@@ -142,8 +142,8 @@ export default function StreamingNavbar({
             type="button"
             onClick={() => handleNav('home')}
             className={apex
-              ? 'flex h-16 items-center gap-2 shrink-0 pr-2'
-              : 'flex h-14 w-11 sm:w-14 items-center justify-center shrink-0'}
+              ? 'flex h-12 md:h-16 items-center gap-2 shrink-0 pr-2'
+              : 'flex h-12 md:h-14 w-11 sm:w-14 items-center justify-center shrink-0'}
             aria-label={t('nav.home')}
             title={t('nav.home')}
           >
@@ -151,8 +151,16 @@ export default function StreamingNavbar({
           </button>
         </div>
 
+        <button
+          type="button"
+          className="md:hidden ml-auto h-11 w-11 inline-flex items-center justify-center text-white"
+          aria-label={t('nav.search')}
+          onClick={() => handleNav('explore')}
+        >
+          <Search className="h-6 w-6" />
+        </button>
         <form
-          className="flex-1 flex justify-center min-w-0 px-1 sm:px-4"
+          className="hidden md:flex flex-1 justify-center min-w-0 px-1 sm:px-4"
           onSubmit={(e) => { e.preventDefault(); handleNav('explore') }}
         >
           {apex ? (
