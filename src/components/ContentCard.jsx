@@ -209,7 +209,7 @@ export default function ContentCard({ item, onOpen, onOpenProfile, variant }) {
           </button>
           <div className="min-w-0 flex-1">
             <button type="button" onClick={open} className="w-full text-left">
-              <p className="text-sm font-medium text-zinc-100 line-clamp-2 leading-snug hover:text-white">{item.title || 'Untitled'}</p>
+              <p className="text-base font-semibold text-white line-clamp-2 leading-snug hover:text-white">{item.title || 'Untitled'}</p>
             </button>
             <p className="text-xs text-[#aaa] mt-1 inline-flex items-center gap-1 min-w-0">
               <button type="button" onClick={openProfile} className="hover:text-white truncate">
