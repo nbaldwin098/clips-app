@@ -40,7 +40,7 @@ import { t, subscribeLocale } from '../lib/i18n'
 
 const itemCls = (active, collapsed) =>
   cn(
-    'w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-sm font-semibold transition-colors',
+    'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-semibold transition-colors',
     collapsed && 'justify-center px-0',
     active ? 'text-white bg-[#1f1f28]' : 'text-zinc-400 hover:text-white hover:bg-[#181820]'
   )
@@ -53,7 +53,7 @@ function NavBtn({ active, onClick, icon: Icon, label, collapsed }) {
       className={itemCls(active, collapsed)}
       title={collapsed ? label : undefined}
     >
-      {Icon && <Icon className={cn('h-6 w-6 shrink-0', active && 'text-white')} />}
+      {Icon && <Icon className={cn('h-4 w-4 shrink-0', active && 'text-white')} />}
       {!collapsed && <span className="truncate">{label}</span>}
     </button>
   )
@@ -244,11 +244,11 @@ export default function CollapsibleSidebar({
         <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
           {collapsed ? (
             <button type="button" onClick={() => setMoreOpen((v) => !v)} className={itemCls(false, true)} title={t('nav.more')}>
-              {moreOpen ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+              {moreOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
             </button>
           ) : (
             <button type="button" onClick={() => setMoreOpen((v) => !v)} className={itemCls(false, false)}>
-              {moreOpen ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+              {moreOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
               <span>{t('nav.more')}</span>
             </button>
           )}
@@ -280,7 +280,7 @@ export default function CollapsibleSidebar({
     <>
       <aside
         className={cn(
-          'hidden md:flex flex-col shrink-0 h-[calc(100dvh-4rem)] sticky top-16 bg-[#0f0f0f] border-r border-[#272727] z-30 overflow-hidden w-14'
+          'hidden md:flex flex-col shrink-0 h-[calc(100dvh-3.5rem)] sticky top-14 bg-[#0f0f0f] border-r border-[#272727] z-30 overflow-hidden w-14'
         )}
       >
         {body}
