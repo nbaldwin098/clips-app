@@ -165,7 +165,7 @@ export default function ShopPage({ onNavigate, onOpenAuth }) {
             />
           </div>
           {filtered.length === 0 ? (
-            <p className="text-sm text-zinc-500">No products match.</p>
+            <p className="text-sm text-zinc-500">Nothing in the shop yet. Sellers add products from Seller.</p>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {filtered.map((p) => {
