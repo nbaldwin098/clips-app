@@ -141,13 +141,11 @@ export default function StreamingNavbar({
           <button
             type="button"
             onClick={() => handleNav('home')}
-            className={apex
-              ? 'flex h-12 md:h-16 items-center gap-2 shrink-0 pr-2'
-              : 'flex h-12 md:h-14 w-11 sm:w-14 items-center justify-center shrink-0'}
+            className="flex h-12 md:h-16 items-center gap-2 shrink-0 pr-2"
             aria-label={t('nav.home')}
             title={t('nav.home')}
           >
-            {apex ? <span className="text-white italic font-black tracking-tight text-[20px]">calabi</span> : <span className="text-white font-black text-lg">c</span>}
+            <span className="text-white italic font-black tracking-tight text-[20px]">calabi</span>
           </button>
         </div>
 
