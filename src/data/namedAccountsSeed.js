@@ -53,23 +53,16 @@ export function findNamedAccountLogin(email) {
   return NAMED_ACCOUNTS.find((row) => row.n === n) || null
 }
 
+/** Do not invent people. Purge any previously seeded named-* rows. Symbol kept for live-smoke. */
 export function seedNamedAccounts() {
   const users = lsGet(USERS_INDEX, {})
   if (!users || typeof users !== 'object') return
-  if (users['named-0001']?.handle) return
-  for (const row of NAMED_ACCOUNTS) {
-    users[row.id] = {
-      id: row.id,
-      email: row.email,
-      handle: row.handle,
-      displayName: row.displayName,
-      creatorStatus: 'none',
-      isCreator: false,
-      avatarUrl: BLACK_PROFILE_URL,
-      bannerUrl: BLACK_PROFILE_URL,
-      bio: '',
-      updatedAt: '2026-08-24T12:00:00.000Z',
+  let dirty = false
+  for (const key of Object.keys(users)) {
+    if (String(key).startsWith('named-')) {
+      delete users[key]
+      dirty = true
     }
   }
-  lsSet(USERS_INDEX, users)
+  if (dirty) lsSet(USERS_INDEX, users)
 }
