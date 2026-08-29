@@ -206,9 +206,9 @@ export default function NewsPage({ onNavigate, onOpenAuth }) {
       className="min-h-full bg-black"
       style={{ '--font-paper': '"Libre Baskerville", "Source Serif 4", Georgia, "Times New Roman", serif' }}
     >
-      <div className="p-3">
+      <div className="p-0">
         {items.length === 0 ? (
-          <div className="py-20 text-center space-y-3">
+          <div className="p-4 space-y-3">
             <p className="font-[family-name:var(--font-paper)] text-sm text-neutral-500">
               No stories yet.
             </p>
