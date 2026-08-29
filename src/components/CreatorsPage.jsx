@@ -6,14 +6,10 @@ import ChannelAvatar from './ChannelAvatar'
 import VerifiedBadge from './VerifiedBadge'
 import { isOfficialCreator } from '../lib/uiFormat'
 import { isVerifiedChannel } from '../lib/verification'
-import { t, subscribeLocale } from '../lib/i18n'
 
 export default function CreatorsPage() {
   const syncTick = useContentSyncTick()
   const [ranked, setRanked] = useState(() => listSidebarCreators(24))
-  const [, bump] = useState(0)
-
-  useEffect(() => subscribeLocale(() => bump((n) => n + 1)), [])
 
   useEffect(() => {
     const next = listSidebarCreators(24)
@@ -22,7 +18,7 @@ export default function CreatorsPage() {
 
   return (
     <div className="p-4 md:p-6 max-w-[720px] mx-auto">
-      <h1 className="text-2xl font-bold text-white mb-6">{t('creators.title')}</h1>
+      <h1 className="text-2xl font-bold text-white mb-6">Following</h1>
       {ranked.length === 0 ? (
         <div className="rounded-2xl border border-[#272727] bg-[#0f0f0f] px-6 py-16 text-center">
           <Users className="h-8 w-8 text-white mx-auto" />
