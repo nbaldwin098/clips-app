@@ -7,7 +7,7 @@ import { getImports, mergeImports, lsGet, lsSet } from '../lib/storage'
 import { hiddenBrokenIds, isHttpUrl, isKnownDeadUrl } from '../lib/catalogHealth'
 import { indexUser } from '../lib/moderation'
 
-export const CATALOG_GENERATION = 'official-pd-v6'
+export const CATALOG_GENERATION = 'official-pd-v7'
 const GEN_KEY = 'clips_catalog_generation'
 
 export const OFFICIAL_CREATORS = [
@@ -20,8 +20,8 @@ export const OFFICIAL_CREATORS = [
     isCreator: true,
     email: 'nasa@calabi.local',
     passwordHash: 'sha256$a1b2c3d4e5f60718293a4b5c6d7e8f90$06c37682a05b7b08cd9661494ee7dd45014cc07ee74af2e7c46ddd382f7f1d53',
-    avatarUrl: 'https://yt3.googleusercontent.com/eIf5fNPcIcj9ig-wZBeq4stFy1lgjWTW1nLT5dYlFkHZprZ03QBiMcbpwNMB6XSBjrSFGtAGQg=s900-c-k-c0x00ffffff-no-rj',
-    bannerUrl: 'https://yt3.googleusercontent.com/wene-k08O5GIa5h7syMVe6IKiiRiKh6vpajQSUYma01_wG5aMOCqvvAdd2NuljADPuUNPpMkrw=w1707-fcrop64=1,00005a57ffffa5a8-k-c0xffffffff-no-nd-rj',
+    avatarUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/NASA_logo.svg/240px-NASA_logo.svg.png',
+    bannerUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/NASA_logo.svg/1280px-NASA_logo.svg.png',
   },
   {
     id: 'org-noaa',
@@ -33,9 +33,9 @@ export const OFFICIAL_CREATORS = [
     creatorStatus: 'approved',
     isCreator: true,
     avatarUrl:
-      'https://yt3.googleusercontent.com/ZzC_NmDSYP4IJPG1a75R8SKFYJzmdAE2lNj0Ij7dabKbCN4yOjJxb3cNuAORr2Hv2GsCPYCgcI4=s900-c-k-c0x00ffffff-no-rj',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/NOAA_logo.svg/240px-NOAA_logo.svg.png',
     bannerUrl:
-      'https://yt3.googleusercontent.com/FgfgE3TbfS1LJYonfbQ4r_W9LzvDtHoarLvGYOUqbWXOIn_FJvphyIylAQz5R14RifQWYDRc=w1707-fcrop64=1,00005a57ffffa5a8-k-c0xffffffff-no-nd-rj',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/NOAA_logo.svg/1280px-NOAA_logo.svg.png',
   },
   {
     id: 'org-esa',
@@ -47,9 +47,9 @@ export const OFFICIAL_CREATORS = [
     creatorStatus: 'approved',
     isCreator: true,
     avatarUrl:
-      'https://yt3.googleusercontent.com/pvp0P35jE_uZ8mf4b0ihGj0xJVId7-457KtfsNJnO9mE14OqNJMqbTcBYbLaAGwjBSjI055x=s900-c-k-c0x00ffffff-no-rj',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bd/ESA_logo.svg/240px-ESA_logo.svg.png',
     bannerUrl:
-      'https://yt3.googleusercontent.com/8SBD0WB27GA2CAgD9wBzV2vwOvu3d3HI7HDJgoTj4GY0nUv_xAIwG1jnqDcj-KqfGy28NOrF2Uo=w1707-fcrop64=1,00005a57ffffa5a8-k-c0xffffffff-no-nd-rj',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bd/ESA_logo.svg/1280px-ESA_logo.svg.png',
   },
   {
     id: 'org-usfws',
@@ -61,9 +61,9 @@ export const OFFICIAL_CREATORS = [
     creatorStatus: 'approved',
     isCreator: true,
     avatarUrl:
-      'https://yt3.googleusercontent.com/ytc/AIdro_nnb_-jDuGW2QQhuTXC7QomGdd0zs25rJihLmaZGpUtRw=s900-c-k-c0x00ffffff-no-rj',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/US-FishAndWildlifeService-Logo.svg/240px-US-FishAndWildlifeService-Logo.svg.png',
     bannerUrl:
-      'https://yt3.googleusercontent.com/rDwoJtoEboZ_BU8UwBmSfnH9Nadfs4F_A2L0wufOmkLYiYyeS695gaIwYXHpqGpqwroxJm4q=w1707-fcrop64=1,00005a57ffffa5a8-k-c0xffffffff-no-nd-rj',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/US-FishAndWildlifeService-Logo.svg/1280px-US-FishAndWildlifeService-Logo.svg.png',
   },
   {
     id: 'org-nasaconnect',
@@ -74,8 +74,8 @@ export const OFFICIAL_CREATORS = [
     bio: 'Classroom science, maths, and history films NASA made for kids. Public domain.',
     creatorStatus: 'approved',
     isCreator: true,
-    avatarUrl: 'https://yt3.googleusercontent.com/bpfrBmM6vZk_p4mFIkMny87Hn0GsuB-Fx9TdY7tBsOjW10-6jn6OEGHTTv3wy0OnGRMT1A-o7ww=s900-c-k-c0x00ffffff-no-rj',
-    bannerUrl: 'https://yt3.googleusercontent.com/tJcaHTXaSsGmUCAqrNqpCHFXUpxk4m6nySU4H5TjEzN1GBLrcoAv1VXsTTNehYqpa-Im01K6RA=w1707-fcrop64=1,00005a57ffffa5a8-k-c0xffffffff-no-nd-rj',
+    avatarUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/NASA_logo.svg/240px-NASA_logo.svg.png',
+    bannerUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/NASA_logo.svg/1280px-NASA_logo.svg.png',
   },
   {
     id: 'org-classroom',
@@ -86,8 +86,8 @@ export const OFFICIAL_CREATORS = [
     bio: 'Public-domain school films for reading, maths, English, and manners.',
     creatorStatus: 'approved',
     isCreator: true,
-    avatarUrl: 'https://yt3.googleusercontent.com/o6HhJR65S6QLzBdfLVzuohmCuhq4ajQ0Y0MFlCgfzhp0fq8HYBOGM4bQI-aOtkS8NZ5rurhK=s900-c-k-c0x00ffffff-no-rj',
-    bannerUrl: 'https://yt3.googleusercontent.com/uKU80Zp3sHG-1DBBsbiN78U6vG8xFDAuoBLVWXynRXXJJuSVluOMeAL-2RgoKBBckHI5ssfRDQ=w1707-fcrop64=1,00005a57ffffa5a8-k-c0xffffffff-no-nd-rj',
+    avatarUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/Book_icon_1.png/240px-Book_icon_1.png',
+    bannerUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/Book_icon_1.png/640px-Book_icon_1.png',
   },
   {
     id: 'org-nara',
@@ -98,8 +98,8 @@ export const OFFICIAL_CREATORS = [
     bio: 'US government history films and documentaries. Public domain.',
     creatorStatus: 'approved',
     isCreator: true,
-    avatarUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_lbyMtBC27JVL62Bd9YIeWaT4JbXoTxe6qe46UpgaFivCM=s900-c-k-c0x00ffffff-no-rj',
-    bannerUrl: 'https://yt3.googleusercontent.com/wIU4xXck4dlL_Ev5fiOxgFEMxk0hVrqBPg1p9J3850JnZ2bwB5SyP1zSQ6udh4w2KCOxJqyNKtY=w1707-fcrop64=1,00005a57ffffa5a8-k-c0xffffffff-no-nd-rj',
+    avatarUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/US-NARA-Logo.svg/240px-US-NARA-Logo.svg.png',
+    bannerUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/US-NARA-Logo.svg/1280px-US-NARA-Logo.svg.png',
   },
 ]
 
