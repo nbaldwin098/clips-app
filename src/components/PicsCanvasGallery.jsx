@@ -8,10 +8,10 @@ import { getMediaBlobUrl } from '../lib/videoStorage'
 
 const CELL = 200
 const GAP = 10
-const MIN_ZOOM = 0.15
-const MAX_ZOOM = 8
-const ENTER_ZOOM_FILL = 0.72 // tile covers this fraction of viewport → enter focus
-const WORLD_PAD = 80
+const MIN_ZOOM = 0.08
+const MAX_ZOOM = 12
+const ENTER_ZOOM_FILL = 0.5 // zoom far enough → clips-style viewer
+const WORLD_PAD = 240
 
 function layoutTiles(count) {
   const cols = Math.max(3, Math.ceil(Math.sqrt(count * 1.35)))
