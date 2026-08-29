@@ -590,9 +590,16 @@ export default function WatchPage({
 
   return (
     <div className="pb-24">
-      <div className="px-5 md:px-8 pt-4">
-        <div className="grid lg:grid-cols-[minmax(0,1fr)_280px] border border-white/10 bg-[#0a0a0a]">
-          <div className="relative aspect-video w-full overflow-hidden bg-black">
+      <div className="bg-[#050506] border-b border-white/[0.06]">
+        <div
+          className={`relative w-full overflow-hidden mx-auto ${
+            isVertical
+              ? 'aspect-[9/16] max-h-[78vh] max-w-md'
+              : theater
+                ? 'aspect-video max-h-[88vh]'
+                : 'aspect-video max-h-[72vh]'
+          } ${ambient ? 'bg-zinc-950' : 'bg-black'}`}
+        >
             {locked && (
               <div className="absolute inset-0 z-40 bg-black/85 flex flex-col items-center justify-center p-6 text-center gap-3">
                 <p className="text-lg font-semibold text-white">Paid post</p>
@@ -642,7 +649,7 @@ export default function WatchPage({
                 onEnded={onEnded}
                 onError={tryNext}
                 style={filterCss(item?.filterId || item?.engagement?.filterId) ? { filter: filterCss(item?.filterId || item?.engagement?.filterId) } : undefined}
-                className="absolute left-1/2 top-1/2 h-auto w-auto min-h-full min-w-full -translate-x-1/2 -translate-y-1/2 object-cover bg-black"
+                className="absolute inset-0 w-full h-full object-contain bg-transparent"
               />
             )}
             {captionsOn && cueText ? (
@@ -684,13 +691,6 @@ export default function WatchPage({
               </div>
             )}
           </div>
-          <aside className="flex min-h-[240px] flex-col border-t border-white/10 lg:border-l lg:border-t-0">
-            <p className="border-b border-white/10 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-[#8a8a8a]">Comments</p>
-            <div className="min-h-0 flex-1 overflow-y-auto p-3">
-              <CommentsPanel contentId={item.id} creatorId={item.creatorId || item.userId} />
-            </div>
-          </aside>
-        </div>
       </div>
 
           {chapters.length > 0 && (
@@ -941,6 +941,9 @@ export default function WatchPage({
             <NextStrip title="From this creator" items={moreFrom} onOpen={onPlayItem} />
           </div>
 
+          <div className="max-w-3xl mx-auto px-4 md:px-6 mt-10">
+            <CommentsPanel contentId={item.id} creatorId={item.creatorId || item.userId} />
+          </div>
 
       <PlaylistPicker open={playlistOpen} onClose={() => setPlaylistOpen(false)} contentId={item.id} onOpenAuth={onOpenAuth} />
       <ReportModal open={reportOpen} onClose={() => setReportOpen(false)} target={{ id: item.id, contentId: item.id, userId: item.creatorId || item.userId, handle: item.handle }} />
