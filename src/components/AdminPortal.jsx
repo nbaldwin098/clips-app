@@ -286,6 +286,7 @@ export default function AdminPortal({ initialTab = '' }) {
                 reports={tickets.filter((t) => t.status !== 'closed').length}
                 revenueUsd={0}
                 pendingPayoutsUsd={0}
+                onOpen={setTab}
               />
             </div>
           )}
