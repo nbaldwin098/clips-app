@@ -14,7 +14,7 @@ import { listIndexedUsers } from '../lib/moderation'
 import { listImportsNormalized, listPopularCreators } from '../lib/contentService'
 import { lsGet } from '../lib/storage'
 import { useContentSyncTick } from '../lib/useContentSync'
-import { getViews } from '../lib/engagement'
+import { getViews, listViewedContent, totalViewCount } from '../lib/engagement'
 import PageHeader from './PageHeader'
 import SiteBubbleMap from './studio/SiteBubbleMap'
 
@@ -43,17 +43,15 @@ export default function StatsPage({ onNavigate }) {
   const { totalLikes, totalDislikes, totalViews } = useMemo(() => {
     let up = 0
     let down = 0
-    let views = 0
     for (const item of allItems) {
-      views += getViews(item.id)
       const vote = likesMap[item.id]
       if (vote) {
         up += vote.up || 0
         down += vote.down || 0
       }
     }
-    return { totalLikes: up, totalDislikes: down, totalViews: views }
-  }, [allItems, likesMap])
+    return { totalLikes: up, totalDislikes: down, totalViews: totalViewCount() }
+  }, [allItems, likesMap, syncTick])
 
   const clips = useMemo(() => allItems.filter((i) => i.type === 'short'), [allItems])
   const videos = useMemo(() => allItems.filter((i) => i.type === 'video'), [allItems])
@@ -66,20 +64,21 @@ export default function StatsPage({ onNavigate }) {
   const numCreators = popularCreators.length
 
   const viewedRows = useMemo(() => {
-    return allItems
-      .map((item) => ({
-        id: item.id,
-        contentId: item.id,
-        contentType: item.type,
-        title: item.title || 'Untitled',
-        handle: item.handle || '',
-        thumbUrl: item.thumbUrl || item.mediaUrl || null,
-        creatorId: item.creatorId || item.userId || null,
-        weight: Math.max(0, getViews(item.id)),
-      }))
-      .filter((row) => row.weight > 0)
-      .sort((a, b) => b.weight - a.weight)
-  }, [allItems])
+    const byId = new Map(allItems.map((i) => [i.id, i]))
+    return listViewedContent().map((row) => {
+      const item = byId.get(row.id)
+      return {
+        id: row.id,
+        contentId: row.id,
+        contentType: item?.type,
+        title: item?.title || 'Untitled',
+        handle: item?.handle || '',
+        thumbUrl: item?.thumbUrl || item?.mediaUrl || null,
+        creatorId: item?.creatorId || item?.userId || null,
+        weight: row.views,
+      }
+    })
+  }, [allItems, syncTick])
 
   const bubbleBuckets = useMemo(() => {
     const toRow = (item, weight, contentType) => ({
@@ -176,7 +175,7 @@ export default function StatsPage({ onNavigate }) {
         likes={totalLikes}
         dislikes={totalDislikes}
         creators={numCreators}
-        views={viewedRows.length}
+        views={totalViews}
         buckets={bubbleBuckets}
         onNavigate={onNavigate}
       />
