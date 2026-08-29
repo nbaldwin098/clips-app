@@ -10,11 +10,25 @@ import { useContentSyncTick } from '../lib/useContentSync'
 import { subscribeContentUpdates } from '../lib/contentSync'
 import { getMediaBlobUrl } from '../lib/videoStorage'
 import { copyShareUrl, replaceHash } from '../lib/routes'
+import { resolvePublicCreator } from '../lib/contentService'
 import ShortsStage, { ShortsCard } from './ShortsStage'
 import { downloadPostedMedia } from '../lib/mediaDownload'
 import { preloadPostedItems } from '../lib/preloadMedia'
 import { cn } from '../lib/utils'
 import PicsCanvasGallery from './PicsCanvasGallery'
+import ChannelAvatar from './ChannelAvatar'
+
+function shufflePics(list, avoidIds = []) {
+  const avoid = new Set(avoidIds.filter(Boolean))
+  const a = (list || []).filter((p) => p?.id && !avoid.has(p.id))
+  for (let i = a.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1))
+    const tmp = a[i]
+    a[i] = a[j]
+    a[j] = tmp
+  }
+  return a
+}
 
 function PicImage({ pic, className, alt = '', full = false, fill = false, eager = false, onUnplayable, style }) {
   const immediate = pickImmediatePhotoSrc(pic, { full })
@@ -131,7 +145,6 @@ function PicHeartBtn({ pic, active, onOpenAuth, className = '' }) {
   )
 }
 
-/** Focus view: contain by default; wheel zooms image overflow; drag pans overflow. */
 function FocusPicImage({ pic, active, eager }) {
   const wrapRef = useRef(null)
   const [scale, setScale] = useState(1)
@@ -152,7 +165,6 @@ function FocusPicImage({ pic, active, eager }) {
     const el = wrapRef.current
     if (!el) return undefined
     const onWheel = (e) => {
-      // Vertical reel nav at scale 1 uses ShortsStage; when zoomed, pan/zoom the photo.
       if (scaleRef.current <= 1.02 && Math.abs(e.deltaY) > Math.abs(e.deltaX)) return
       e.preventDefault()
       e.stopPropagation()
@@ -243,6 +255,8 @@ function PicSlide({ pic, active, onOpenProfile, onOpenAuth, eager = true }) {
     } catch {}
   }
   const handle = pic.handle ? `@${String(pic.handle).replace(/^@/, '')}` : ''
+  const creatorId = pic.creatorId || pic.userId
+  const creator = resolvePublicCreator(pic.handle, creatorId)
   const attach = pic.attachments?.[0]
   const actions = (
     <>
@@ -258,11 +272,23 @@ function PicSlide({ pic, active, onOpenProfile, onOpenAuth, eager = true }) {
           <Download className="h-5 w-5" />
         </span>
       </button>
+      <button
+        type="button"
+        onClick={() => onOpenProfile?.(pic.handle, creatorId)}
+        className="h-11 w-11 rounded-full overflow-hidden ring-2 ring-white/80"
+        aria-label={handle || 'Creator'}
+      >
+        <ChannelAvatar
+          src={pic.avatarUrl || creator?.avatarUrl}
+          name={pic.displayName || pic.handle || 'C'}
+          size={44}
+        />
+      </button>
     </>
   )
 
   return (
-    <ShortsCard actions={actions}>
+    <ShortsCard actions={actions} fillMobile>
       <FocusPicImage pic={pic} active={active} eager={eager} />
       {attach?.url && (attach.type === 'video' || attach.type === 'gif') ? (
         <video
@@ -274,15 +300,10 @@ function PicSlide({ pic, active, onOpenProfile, onOpenAuth, eager = true }) {
           autoPlay={active}
         />
       ) : null}
-      {attach?.type === 'live' ? (
-        <span className="absolute top-4 left-4 bg-[#eb0400] text-white text-[10px] font-bold uppercase px-2 py-1">
-          Live attached
-        </span>
-      ) : null}
       {handle ? (
         <div className="absolute inset-x-0 bottom-0 z-10">
           <div className="pt-16 pb-2 px-3 bg-gradient-to-t from-black/70 to-transparent">
-            <button type="button" onClick={() => onOpenProfile?.(pic.handle, pic.creatorId)} className="text-sm font-semibold text-white">
+            <button type="button" onClick={() => onOpenProfile?.(pic.handle, creatorId)} className="text-sm font-semibold text-white">
               {handle}
             </button>
           </div>
@@ -296,33 +317,33 @@ function PicSlide({ pic, active, onOpenProfile, onOpenAuth, eager = true }) {
 export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
   const { user } = useAuth()
   const [items, setItems] = useState(() => getPicsFeed())
-  const [viewerIndex, setViewerIndex] = useState(() => (initialPicId ? 0 : null))
-  const [openedAt, setOpenedAt] = useState(0)
+  const [viewerIndex, setViewerIndex] = useState(null)
+  const [reel, setReel] = useState([])
   const [camera, setCamera] = useState(null)
   const goToRef = useRef(null)
   const skipAutoOpen = useRef(false)
   const selfNav = useRef(false)
 
-  // Stable catalog order — do not reshuffle on every URL change.
-  const scrollItems = useMemo(() => {
-    const list = (items || []).filter(isFeedable)
-    if (!initialPicId) return list
-    if (list.some((p) => p.id === initialPicId)) return list
-    return list
-  }, [items, initialPicId])
+  const scrollItems = useMemo(() => (items || []).filter(isFeedable), [items])
 
   const refresh = useCallback(() => setItems(getPicsFeed()), [])
   const dropBroken = useCallback((id) => {
-    // Session hide only — never delete cloud catalog from a decode/CDN error.
     hideBrokenMedia(id)
     refresh()
   }, [refresh])
 
+  const openReel = useCallback((startPic) => {
+    if (!startPic) return
+    const rest = shufflePics(scrollItems, [startPic.id])
+    setReel([startPic, ...rest])
+    setViewerIndex(0)
+  }, [scrollItems])
+
   useEffect(() => subscribeContentUpdates(refresh), [refresh])
   useEffect(() => {
-    const from = viewerIndex == null ? 0 : viewerIndex + 1
-    preloadPostedItems(scrollItems.slice(from), viewerIndex == null ? 6 : 3)
-  }, [scrollItems, viewerIndex])
+    if (viewerIndex == null) return
+    preloadPostedItems(reel.slice(viewerIndex + 1), 4)
+  }, [reel, viewerIndex])
 
   useEffect(() => {
     if (!initialPicId || skipAutoOpen.current) return
@@ -330,35 +351,31 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
       selfNav.current = false
       return
     }
-    const idx = scrollItems.findIndex((p) => p.id === initialPicId)
-    if (idx >= 0) {
-      setOpenedAt(idx)
-      setViewerIndex(idx)
-    }
-  }, [initialPicId, scrollItems])
+    const pic = scrollItems.find((p) => p.id === initialPicId)
+    if (pic) openReel(pic)
+  }, [initialPicId, scrollItems, openReel])
 
   const closeViewer = () => {
     skipAutoOpen.current = true
     setViewerIndex(null)
+    setReel([])
     replaceHash('pics')
   }
 
   const enterPic = useCallback((idx, id) => {
     skipAutoOpen.current = false
-    setOpenedAt(idx)
-    setViewerIndex(idx)
+    const pic = scrollItems[idx] || scrollItems.find((p) => p.id === id)
+    openReel(pic)
     if (id) {
       selfNav.current = true
       replaceHash('content', id)
     }
-  }, [])
+  }, [scrollItems, openReel])
 
   useEffect(() => {
     if (viewerIndex == null) return
-    const pic = scrollItems[viewerIndex]
+    const pic = reel[viewerIndex]
     if (!pic?.id) return
-    // Count once per opened pic — do not depend on scrollItems identity
-    // (catalog refresh used to re-fire forever and crash the page).
     recordView(pic.id, {
       creatorId: pic.creatorId || pic.userId,
       title: pic.title,
@@ -366,7 +383,7 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
       surface: 'pics',
       contentType: 'pic',
     })
-  }, [viewerIndex, scrollItems[viewerIndex]?.id, user?.id])
+  }, [viewerIndex, reel[viewerIndex]?.id, user?.id])
 
   useEffect(() => {
     if (viewerIndex == null) return
@@ -375,35 +392,40 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [viewerIndex])
 
-  // Deep-link / canvas zoom-enter opens the reel; then scroll between pics.
-  if (viewerIndex != null && scrollItems.length > 0) {
+  if (viewerIndex != null && reel.length > 0) {
     return (
       <div className="h-full min-h-0 flex flex-col bg-black">
         <ShortsStage
           key="pic-reel"
-          count={scrollItems.length}
+          count={reel.length}
           activeIndex={viewerIndex}
           goToRef={goToRef}
-          loop={scrollItems.length >= 1}
+          loop={false}
+          bleedMobile
           onActiveIndex={(i) => {
             setViewerIndex(i)
-            const pic = scrollItems[i]
+            const pic = reel[i]
             if (pic?.id) {
               selfNav.current = true
               replaceHash('content', pic.id)
             }
+            if (i >= reel.length - 2 && scrollItems.length) {
+              setReel((prev) => {
+                const extra = shufflePics(scrollItems, prev.slice(-4).map((p) => p.id))
+                return extra.length ? [...prev, ...extra] : prev
+              })
+            }
           }}
-          initialIndex={openedAt}
+          initialIndex={0}
           header={(
-            <div className="shrink-0 flex items-center justify-between px-3 py-2">
+            <div className="shrink-0 flex items-center px-3 py-2">
               <button type="button" onClick={closeViewer} className="h-9 px-3 bg-white/10 text-white text-xs inline-flex items-center gap-1.5">
                 <X className="h-4 w-4" /> Canvas
               </button>
-              <p className="text-[11px] text-white/50">{viewerIndex + 1}/{scrollItems.length}</p>
             </div>
           )}
           renderSlide={(index, active, warm) => {
-            const pic = scrollItems[index]
+            const pic = reel[index]
             return pic ? (
               <PicSlide pic={pic} active={active} onOpenProfile={onOpenProfile} onOpenAuth={onOpenAuth} eager={active || warm} />
             ) : null
