@@ -36,7 +36,7 @@ import { t, subscribeLocale } from '../lib/i18n'
 
 const itemCls = (active, collapsed) =>
   cn(
-    'w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-[13px] font-semibold transition-colors',
+    'w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-[15px] font-semibold transition-colors',
     collapsed && 'justify-center px-0',
     active ? 'text-white bg-[#1f1f28]' : 'text-zinc-400 hover:text-white hover:bg-[#181820]'
   )
@@ -149,7 +149,7 @@ export default function CollapsibleSidebar({
         {liveNow.length > 0 ? (
           <div className="pt-3 border-t border-[#1e1e27] space-y-1">
             {!collapsed && (
-              <p className="px-2.5 text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-1 flex items-center gap-1.5">
+              <p className="px-2.5 text-[12px] font-bold uppercase tracking-wider text-zinc-500 mb-1 flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#eb0400]" />
                 {liveNow.some(isOnAir) ? t('live.onNow') : t('live.lobby')} ({liveNow.length})
               </p>
@@ -180,20 +180,20 @@ export default function CollapsibleSidebar({
                 </span>
                 {!collapsed && (
                   <span className="min-w-0 flex-1">
-                    <span className="block text-xs text-zinc-200 truncate">{s.displayName}</span>
-                    <span className="block text-[10px] text-zinc-500 truncate">
+                    <span className="block text-[14px] text-zinc-200 truncate">{s.displayName}</span>
+                    <span className="block text-[12px] text-zinc-500 truncate">
                       {liveBadgeLabel(s)} · {s.title}
                     </span>
                   </span>
                 )}
-                {!collapsed && <span className="text-[10px] text-zinc-500 shrink-0">{formatElapsed(s.startedAt)}</span>}
+                {!collapsed && <span className="text-[12px] text-zinc-500 shrink-0">{formatElapsed(s.startedAt)}</span>}
               </button>
             ))}
           </div>
         ) : null}
 
         <div className="pt-2 border-t border-[#1e1e27] space-y-0.5">
-          {!collapsed && <p className="px-2.5 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">{t('nav.creators')}</p>}
+          {!collapsed && <p className="px-2.5 mb-1 text-[12px] font-semibold uppercase tracking-wider text-zinc-500">{t('nav.creators')}</p>}
           <NavBtn collapsed={collapsed} active={currentView === 'creators'} onClick={() => go('creators')} icon={Users} label={t('nav.creators')} />
           {recommendedCreators.map((c) => (
             <button
@@ -216,11 +216,11 @@ export default function CollapsibleSidebar({
               <ChannelAvatar src={c.avatarUrl} name={c.displayName} size={collapsed ? 40 : 35} />
               {!collapsed && (
                 <span className="min-w-0">
-                  <span className="flex items-center gap-1 text-[12px] text-zinc-200 truncate">
+                  <span className="flex items-center gap-1 text-[14px] text-zinc-200 truncate">
                     {c.displayName}
                     {isVerifiedChannel(c.id, c.handle) ? <VerifiedBadge title={isOfficialCreator(c.id, c.handle) ? 'Official channel' : 'Verified'} /> : null}
                   </span>
-                  <span className="block text-[11px] text-[#aaa] truncate">@{c.handle}</span>
+                  <span className="block text-[13px] text-[#aaa] truncate">@{c.handle}</span>
                 </span>
               )}
             </button>
@@ -228,7 +228,7 @@ export default function CollapsibleSidebar({
         </div>
 
         <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
-          {!collapsed && <p className="px-2.5 mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">{t('nav.library')}</p>}
+          {!collapsed && <p className="px-2.5 mb-1 text-[12px] font-semibold uppercase tracking-wider text-zinc-500">{t('nav.library')}</p>}
           <NavBtn collapsed={collapsed} active={currentView === 'history'} onClick={() => go('history')} icon={History} label={t('nav.history')} />
           <NavBtn collapsed={collapsed} active={currentView === 'watch-again'} onClick={() => go('watch-again')} icon={RotateCcw} label={t('nav.watchAgain')} />
           <NavBtn collapsed={collapsed} active={currentView === 'watch-later'} onClick={() => go('watch-later')} icon={Clock} label={t('nav.watchLater')} />
