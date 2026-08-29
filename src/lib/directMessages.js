@@ -11,6 +11,52 @@ const CACHE_THREADS = 'calabi.dm.threads.v1'
 const CACHE_MSGS = 'calabi.dm.messages.v1'
 const RATE_KEY = 'calabi.dm.rate.v1'
 const MAX_BODY = 2000
+const ENC_PREFIX = 'enc1:'
+
+async function threadAesKey(threadId) {
+  const enc = new TextEncoder()
+  const material = await crypto.subtle.importKey(
+    'raw',
+    enc.encode(`calabi-dm:${threadId}`),
+    'PBKDF2',
+    false,
+    ['deriveKey'],
+  )
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt: enc.encode('calabi-dm-v1'), iterations: 120000, hash: 'SHA-256' },
+    material,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt'],
+  )
+}
+
+export async function encryptDmBody(threadId, text) {
+  if (!text) return ''
+  const key = await threadAesKey(threadId)
+  const iv = crypto.getRandomValues(new Uint8Array(12))
+  const buf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(text))
+  const packed = new Uint8Array(iv.byteLength + buf.byteLength)
+  packed.set(iv, 0)
+  packed.set(new Uint8Array(buf), 12)
+  let bin = ''
+  packed.forEach((b) => { bin += String.fromCharCode(b) })
+  return ENC_PREFIX + btoa(bin)
+}
+
+export async function decryptDmBody(threadId, body) {
+  const raw = String(body || '')
+  if (!raw.startsWith(ENC_PREFIX)) return raw
+  try {
+    const bin = atob(raw.slice(ENC_PREFIX.length))
+    const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0))
+    const key = await threadAesKey(threadId)
+    const buf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytes.slice(0, 12) }, key, bytes.slice(12))
+    return new TextDecoder().decode(buf)
+  } catch {
+    return ''
+  }
+}
 const MAX_PER_MINUTE = 20
 const DM_EVENT = 'clips-dms'
 
@@ -171,6 +217,7 @@ export async function sendDm({ me, peerId, body }) {
   const opened = await openDmThread(me, { id: peerId })
   if (!opened.ok) return opened
   const threadId = opened.thread.id
+  const storedBody = await encryptDmBody(threadId, text)
 
   if (!canCloud()) return { ok: false, error: 'Cloud unavailable.' }
   const sb = await getSupabase()
@@ -180,7 +227,7 @@ export async function sendDm({ me, peerId, body }) {
     id: `dmm_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
     thread_id: threadId,
     sender_id: me.id,
-    body: text,
+    body: storedBody,
     created_at: new Date().toISOString(),
     read_at: null,
   }
@@ -248,7 +295,7 @@ export async function pullMyThreads(me) {
       peerId,
       peerHandle: '',
       updatedAt: t.updated_at || t.created_at,
-      lastBody: last?.body || '',
+      lastBody: last?.body ? await decryptDmBody(t.id, last.body) : '',
       unread: Number(count) || 0,
     })
   }
@@ -279,14 +326,17 @@ export async function pullThreadMessages(me, threadId) {
 
   if (error) return { ok: false, error: error.message, messages: cachedMessages(threadId) }
 
-  const rows = (data || []).map((m) => ({
-    id: m.id,
-    threadId: m.thread_id,
-    senderId: m.sender_id,
-    body: m.body,
-    createdAt: m.created_at,
-    readAt: m.read_at,
-  }))
+  const rows = []
+  for (const m of data || []) {
+    rows.push({
+      id: m.id,
+      threadId: m.thread_id,
+      senderId: m.sender_id,
+      body: await decryptDmBody(threadId, m.body),
+      createdAt: m.created_at,
+      readAt: m.read_at,
+    })
+  }
   cacheMessages(threadId, rows)
 
   // Mark peer messages read
