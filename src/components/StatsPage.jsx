@@ -14,6 +14,7 @@ import { listIndexedUsers } from '../lib/moderation'
 import { listImportsNormalized, listPopularCreators } from '../lib/contentService'
 import { lsGet } from '../lib/storage'
 import { useContentSyncTick } from '../lib/useContentSync'
+import { getViews } from '../lib/engagement'
 import PageHeader from './PageHeader'
 import SiteBubbleMap from './studio/SiteBubbleMap'
 
@@ -44,7 +45,7 @@ export default function StatsPage({ onNavigate }) {
     let down = 0
     let views = 0
     for (const item of allItems) {
-      views += item.views || 0
+      views += getViews(item.id)
       const vote = likesMap[item.id]
       if (vote) {
         up += vote.up || 0
@@ -66,7 +67,6 @@ export default function StatsPage({ onNavigate }) {
 
   const viewedRows = useMemo(() => {
     return allItems
-      .filter((i) => (Number(i.views) || 0) > 0)
       .map((item) => ({
         id: item.id,
         contentId: item.id,
@@ -75,8 +75,9 @@ export default function StatsPage({ onNavigate }) {
         handle: item.handle || '',
         thumbUrl: item.thumbUrl || item.mediaUrl || null,
         creatorId: item.creatorId || item.userId || null,
-        weight: Math.max(1, Number(item.views) || 1),
+        weight: Math.max(0, getViews(item.id)),
       }))
+      .filter((row) => row.weight > 0)
       .sort((a, b) => b.weight - a.weight)
   }, [allItems])
 
@@ -127,9 +128,9 @@ export default function StatsPage({ onNavigate }) {
     }))
 
     return {
-      videos: videos.map((v) => toRow(v, (v.views || 0) + 1, 'video')),
-      clips: clips.map((c) => toRow(c, (c.views || 0) + 1, 'short')),
-      pics: pics.map((p) => toRow(p, 1, 'pic')),
+      videos: videos.map((v) => toRow(v, getViews(v.id) + 1, 'video')),
+      clips: clips.map((c) => toRow(c, getViews(c.id) + 1, 'short')),
+      pics: pics.map((p) => toRow(p, getViews(p.id) + 1, 'pic')),
       lives: liveRows,
       likes: liked,
       dislikes: disliked,
