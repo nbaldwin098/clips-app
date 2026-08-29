@@ -592,12 +592,10 @@ export default function WatchPage({
     <div className="pb-24">
       <div className="bg-[#050506] border-b border-white/[0.06]">
         <div
-          className={`relative w-full overflow-hidden mx-auto ${
+          className={`relative w-full overflow-hidden ${
             isVertical
-              ? 'aspect-[9/16] max-h-[78vh] max-w-md'
-              : theater
-                ? 'aspect-video max-h-[88vh]'
-                : 'aspect-video max-h-[72vh]'
+              ? 'aspect-video'
+              : 'aspect-video'
           } ${ambient ? 'bg-zinc-950' : 'bg-black'}`}
         >
             {locked && (
@@ -649,7 +647,7 @@ export default function WatchPage({
                 onEnded={onEnded}
                 onError={tryNext}
                 style={filterCss(item?.filterId || item?.engagement?.filterId) ? { filter: filterCss(item?.filterId || item?.engagement?.filterId) } : undefined}
-                className="absolute inset-0 w-full h-full object-contain bg-transparent"
+                className="absolute inset-0 w-full h-full object-cover bg-black"
               />
             )}
             {captionsOn && cueText ? (
