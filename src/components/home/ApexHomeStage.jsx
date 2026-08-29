@@ -123,11 +123,11 @@ export default function ApexHomeStage({
                   onClick={() => onOpenProfile?.(featured.handle, featured.userId)}
                   className="shrink-0"
                 >
-                  <ChannelAvatar src={featured.avatarUrl || lookupUser(featured.userId)?.avatarUrl} name={name} size={40} />
+                  <ChannelAvatar src={featured.avatarUrl || lookupUser(featured.userId)?.avatarUrl} name={name} size={36} />
                 </button>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[15px] font-semibold text-white truncate">{title || 'Live'}</p>
-                  <p className="text-[12px] text-[#b3b3b3] truncate inline-flex items-center gap-1">
+                  <p className="text-sm font-medium text-zinc-100 truncate">{title || 'Live'}</p>
+                  <p className="text-xs text-[#aaa] truncate inline-flex items-center gap-1">
                     {name}
                     {official ? <VerifiedBadge className="h-3.5 w-3.5 bg-white text-black" /> : null}
                   </p>
@@ -216,14 +216,14 @@ export default function ApexHomeStage({
                     </span>
                   </div>
                   <div className="mt-2 flex items-start gap-2">
-                    <ChannelAvatar src={s.avatarUrl || lookupUser(s.userId)?.avatarUrl} name={nm} size={32} />
+                    <ChannelAvatar src={s.avatarUrl || lookupUser(s.userId)?.avatarUrl} name={nm} size={36} />
                     <div className="min-w-0">
-                      <p className="text-[13px] font-semibold text-white truncate">{s.title || 'Live'}</p>
-                      <p className="text-[12px] text-[#b3b3b3] truncate inline-flex items-center gap-1">
+                      <p className="text-sm font-medium text-zinc-100 truncate">{s.title || 'Live'}</p>
+                      <p className="text-xs text-[#aaa] truncate inline-flex items-center gap-1">
                         {nm}
                         {ok ? <VerifiedBadge className="h-3 w-3 bg-white text-black" /> : null}
                       </p>
-                      {s.category ? <p className="text-[11px] text-[#8a8a8a] truncate">{s.category}</p> : null}
+                      {s.category ? <p className="text-xs text-[#aaa] truncate">{s.category}</p> : null}
                     </div>
                   </div>
                 </button>
