@@ -1,4 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
+import { ArrowLeft } from 'lucide-react'
 import { useAuth } from './context/AuthContext'
 import { warnIfSupabaseMissing } from './lib/supabaseClient'
 import { initLocale } from './lib/i18n'
@@ -139,7 +140,7 @@ function AppShell() {
   useEffect(() => {
     if (typeof document === 'undefined') return
     const titles = { home: 'Recommended', clips: 'Shorts', shorts: 'Shorts', pics: 'Pics', live: 'Live', news: 'News', shop: 'Shop', marketplace: 'Shop', explore: 'Explore', creators: 'Top creators', create: 'Create', following: 'Following', subscriptions: 'Subscriptions', history: 'History', 'watch-again': 'Watch again', 'watch-later': 'Watch later', liked: 'Liked', hearts: 'Hearts', playlists: 'Playlists', library: 'Library', messages: 'Messages', notifications: 'Notifications', settings: 'Settings', wallet: 'Wallet', 'calabi-cash': 'Wallet', rewards: 'Wallet', help: 'Help', about: 'About', support: 'Support', appeals: 'Appeals', stats: 'Stats', api: 'API', seller: 'Seller portal', 'seller-portal': 'Seller portal', advertise: 'Monetize', 'advertiser-portal': 'Monetize', admin: 'Admin', watch: 'Watch', profile: profileTarget.handle ? `@${profileTarget.handle}` : 'Profile', checkout: 'Premium', dashboard: 'Creator Studio', analytics: 'Analytics', vods: 'VODs', verify: 'Get verified', 'legal-tos': 'Terms', 'legal-privacy': 'Privacy', 'legal-creator': 'Creator Agreement', 'legal-community': 'Community Guidelines' }
-    document.title = titles[view] ? `${titles[view]} \u00b7 calabi` : 'calabi'
+    document.title = titles[view] ? `${titles[view]} · calabi` : 'calabi'
   }, [view, routeId, profileTarget.handle])
 
   useEffect(() => {
@@ -437,7 +438,7 @@ function AppShell() {
   }
 
   const isLiveView = view === 'live'
-  const studioChrome = view === 'dashboard' || view === 'analytics' || view === 'vods' || view === 'verify' || view === 'admin'
+  const studioChrome = view === 'dashboard' || view === 'analytics' || view === 'vods' || view === 'verify' || view === 'admin' || view === 'advertiser-portal' || view === 'advertise'
   const lockStage = view === 'clips' || view === 'shorts' || view === 'pics' || studioChrome
 
   return (
@@ -445,10 +446,11 @@ function AppShell() {
       <ToastLiveRegion />
       {studioChrome ? (
         <header className="shrink-0 h-12 px-3 flex items-center gap-3 border-b border-white/10 bg-black">
-          <button type="button" onClick={() => navigate('home')} className="inline-flex items-center gap-2 text-sm font-medium text-zinc-200">
-            \u2190 Back
+          <button type="button" onClick={() => navigate('home')} className="inline-flex h-9 items-center gap-2 rounded-lg px-2 text-sm font-medium text-zinc-200 hover:bg-white/5">
+            <ArrowLeft className="h-4 w-4" />
+            Back
           </button>
-          <span className="text-xs text-zinc-500">{view === 'admin' ? 'Admin' : 'Studio'}</span>
+          <span className="text-xs text-zinc-500">{view === 'admin' ? 'Admin' : (view === 'advertiser-portal' || view === 'advertise' ? 'Advertise' : 'Studio')}</span>
         </header>
       ) : (
         <StreamingNavbar onNavigate={navigate} onOpenAuth={openAuth} onOpenWatch={openWatch} searchQuery={searchQuery} onSearchChange={(q) => { setSearchQuery(q); setView('explore'); goPath('explore', '', q?.trim() ? { q: q.trim() } : null) }} />
@@ -460,7 +462,7 @@ function AppShell() {
           <CollapsibleSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} currentView={view} onNavigate={navigate} onSelectLiveStream={selectLiveStreamFromSidebar} focusedStreamUserId={focusedLiveStream?.userId} />
         ) : null}
         <main id="main-content" tabIndex={-1} className={`flex-1 min-h-0 min-w-0 bg-[#000000] ${lockStage ? 'overflow-hidden' : 'overflow-y-auto'}`}>
-          <Suspense fallback={<div className="p-8 text-sm text-zinc-500">Loading\u2026</div>}>
+          <Suspense fallback={<div className="p-8 text-sm text-zinc-500">Loading…</div>}>
             {renderMain()}
           </Suspense>
         </main>
