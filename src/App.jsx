@@ -367,7 +367,7 @@ function AppShell() {
 
   const renderMain = () => {
     if (!KNOWN_VIEWS.has(view)) return <NotFoundPage onNavigate={navigate} />
-    const needsAuth = view === 'dashboard' || view === 'settings' || view === 'channel' || view === 'analytics' || view === 'studio-tools' || view === 'calabi-studio' || view === 'vods' || view === 'verify'
+    const needsAuth = view === 'channel' || view === 'analytics' || view === 'studio-tools' || view === 'calabi-studio' || view === 'vods' || view === 'verify'
     if (needsAuth && !isAuthenticated) {
       return <AuthRequired title="Sign in" description="Sign in." onOpenAuth={openAuth} />
     }
@@ -398,7 +398,7 @@ function AppShell() {
       case 'community': return <CommunityPage onNavigate={navigate} onOpenAuth={openAuth} />
       case 'studio-tools': return <StudioToolsPage onNavigate={navigate} />
       case 'calabi-studio': return <CalabiStudioPage onNavigate={navigate} onOpenAuth={openAuth} initialMode={routeId || 'edit'} />
-      case 'settings': return <SettingsHub section={routeId} onNavigate={navigate} initialTab={routeParams.tab} />
+      case 'settings': return <SettingsHub section={routeId} onNavigate={navigate} initialTab={routeParams.tab} onOpenAuth={openAuth} />
       case 'explore': return <ExplorePage onPlayItem={openWatch} onOpenPic={openPic} onOpenTag={openTag} initialQuery={searchQuery} onApplyQuery={setSearchQuery} />
       case 'pics': return <PicsPage onOpenAuth={openAuth} onOpenProfile={openProfile} initialPicId={routeId} />
       case 'checkout': return <CheckoutPage onNavigate={navigate} creatorId={checkoutTarget.id} returnParams={routeParams} />
@@ -439,12 +439,13 @@ function AppShell() {
 
   const isLiveView = view === 'live'
   const studioChrome = view === 'dashboard' || view === 'analytics' || view === 'vods' || view === 'verify' || view === 'admin' || view === 'advertiser-portal' || view === 'advertise'
+  const studioOwnsTopbar = view === 'dashboard' || view === 'analytics' || view === 'vods' || view === 'verify'
   const lockStage = view === 'clips' || view === 'shorts' || view === 'pics' || studioChrome
 
   return (
     <div className="h-dvh overflow-hidden bg-[#000000] text-zinc-100 flex flex-col selection:bg-white selection:text-black">
       <ToastLiveRegion />
-      {studioChrome ? (
+      {studioOwnsTopbar ? null : studioChrome ? (
         <header className="shrink-0 h-14 px-3 flex items-center gap-3 border-b border-white/10 bg-black">
           <button type="button" onClick={() => navigate('home')} className="inline-flex h-10 items-center gap-2 rounded-lg border border-white/15 bg-[#141414] pl-2.5 pr-3.5 text-sm font-semibold text-white hover:bg-white/10">
             <ArrowLeft className="h-5 w-5" />

@@ -3,7 +3,7 @@ import {
 } from 'lucide-react'
 import StudioShell from '../dash/StudioShell'
 
-/** Site / account settings only — opened from the profile dropdown. calabi black. */
+/** Site / account settings only — opened from the profile dropdown. TikTok-white (B). */
 export const SITE_SECTIONS = [
   { id: 'account', label: 'Account', icon: User, group: 'Settings' },
   { id: 'security', label: 'Security', icon: Shield, group: 'Settings' },
@@ -40,18 +40,21 @@ export function isCreatorSettingsSection(section) {
   return settingsModeForSection(section) === 'creator'
 }
 
-export default function SettingsLayout({ section, onSection, children, onBack }) {
+export default function SettingsLayout({ section, onSection, children, onBack, onNavigate }) {
   const sections = SITE_SECTIONS
   const active = sections.some((s) => s.id === section) ? section : 'account'
 
   return (
     <StudioShell
+      tone="light"
       title="Settings"
       nav={sections}
       activeId={active}
       onNav={onSection}
       onBack={onBack}
       backLabel="Back"
+      onNotify={() => onNavigate?.('notifications')}
+      onHelp={() => onNavigate?.('help')}
     >
       <div className="max-w-3xl">
         {children}

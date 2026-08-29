@@ -143,16 +143,36 @@ export default function MessagesPage({
 
   if (!isAuthenticated) {
     return (
-      <div className="p-6 max-w-md mx-auto text-sm text-neutral-500">
-        <button type="button" onClick={onOpenAuth} className="text-neutral-900 font-medium">Sign in</button>
-        {' '}to use messages.
-      </div>
+      <StudioShell
+        tone="light"
+        title="Messages"
+        nav={[{ id: 'inbox', label: 'Inbox', icon: MessageSquare, group: 'Messages' }]}
+        activeId="inbox"
+        onNav={() => {}}
+        onBack={() => onNavigate?.('home')}
+        onNotify={() => onNavigate?.('notifications')}
+        onHelp={() => onNavigate?.('help')}
+      >
+        <p className="text-sm text-neutral-500">
+          <button type="button" onClick={onOpenAuth} className="text-neutral-900 font-medium">Sign in</button>
+          {' '}to use messages.
+        </p>
+      </StudioShell>
     )
   }
 
   if (user?.provider !== 'supabase') {
     return (
-      <StudioShell title="Messages" onBack={() => onNavigate?.('home')}>
+      <StudioShell
+        tone="light"
+        title="Messages"
+        nav={[{ id: 'inbox', label: 'Inbox', icon: MessageSquare, group: 'Messages' }]}
+        activeId="inbox"
+        onNav={() => {}}
+        onBack={() => onNavigate?.('home')}
+        onNotify={() => onNavigate?.('notifications')}
+        onHelp={() => onNavigate?.('help')}
+      >
         <button type="button" onClick={onOpenAuth} className="h-10 px-4 bg-neutral-900 text-white text-sm font-semibold rounded-lg">
           Sign in with cloud
         </button>
@@ -162,8 +182,14 @@ export default function MessagesPage({
 
   return (
     <StudioShell
+      tone="light"
       title="Messages"
+      nav={[{ id: 'inbox', label: 'Inbox', icon: MessageSquare, group: 'Messages' }]}
+      activeId="inbox"
+      onNav={() => {}}
       onBack={() => onNavigate?.('home')}
+      onNotify={() => onNavigate?.('notifications')}
+      onHelp={() => onNavigate?.('help')}
       headerRight={(
         <button
           type="button"
@@ -174,7 +200,7 @@ export default function MessagesPage({
         </button>
       )}
     >
-      <div className="h-[calc(100%-0.5rem)] min-h-[420px] flex border border-neutral-200 rounded-xl overflow-hidden bg-white">
+      <div className="h-[calc(100%-0.5rem)] min-h-[420px] flex border border-neutral-200 rounded-2xl overflow-hidden bg-white">
         <aside
           className={cn(
             'w-full sm:w-72 shrink-0 border-r border-neutral-200 flex flex-col bg-white',
@@ -237,7 +263,7 @@ export default function MessagesPage({
                       onClick={() => selectThread(t.id)}
                       className={cn(
                         'w-full flex items-center gap-3 px-3 py-3 text-left hover:bg-neutral-50',
-                        activeId === t.id && 'bg-[#141418]'
+                        activeId === t.id && 'bg-neutral-100'
                       )}
                     >
                       <ChannelAvatar src={peer?.avatarUrl} name={peer?.displayName || t.peerHandle || '?'} size={40} />
@@ -262,17 +288,17 @@ export default function MessagesPage({
 
         <section
           className={cn(
-            'flex-1 min-w-0 flex flex-col bg-[#050506]',
+            'flex-1 min-w-0 flex flex-col bg-white',
             (!mobileShowThread || composeOpen) ? 'hidden sm:flex' : 'flex'
           )}
         >
           {!active ? (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-              <MessageSquare className="h-8 w-8 text-zinc-600" />
-              <p className="mt-3 text-sm text-zinc-300">Select a conversation</p>
+              <MessageSquare className="h-8 w-8 text-neutral-300" />
+              <p className="mt-3 text-sm text-neutral-500">Select a conversation</p>
               <button
                 type="button"
-                className="mt-4 h-9 px-4 bg-neutral-900 text-white text-xs font-semibold"
+                className="mt-4 h-9 px-4 bg-neutral-900 text-white text-xs font-semibold rounded-lg"
                 onClick={() => setComposeOpen(true)}
               >
                 New message
@@ -283,7 +309,7 @@ export default function MessagesPage({
               <div className="shrink-0 h-12 px-3 border-b border-neutral-200 flex items-center gap-2">
                 <button
                   type="button"
-                  className="sm:hidden h-8 w-8 inline-flex items-center justify-center text-zinc-300"
+                  className="sm:hidden h-8 w-8 inline-flex items-center justify-center text-neutral-700"
                   onClick={() => setMobileShowThread(false)}
                   aria-label="Back to inbox"
                 >

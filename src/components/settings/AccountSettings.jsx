@@ -3,7 +3,6 @@ import { Camera } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { getLocale, setLocale, listLocales, t, subscribeLocale } from '../../lib/i18n'
 import {
-  SettingsPageHeader,
   SettingsSection,
   SettingsCard,
   SettingsInput,
@@ -86,10 +85,7 @@ export default function AccountSettings({ onNavigate }) {
 
   return (
     <div className="space-y-8 pb-20">
-      <SettingsPageHeader
-        title="Account"
-        subtitle="Name, photo, and bio. Changes save as you type."
-      />
+      <p className="text-sm text-neutral-500">Name, photo, and bio. Changes save as you type.</p>
 
       <SettingsSection title="Profile">
         <SettingsCard>
@@ -98,20 +94,20 @@ export default function AccountSettings({ onNavigate }) {
               <button
                 type="button"
                 onClick={() => avatarRef.current?.click()}
-                className="relative h-28 w-28 rounded-full bg-[#121218] border border-zinc-800 overflow-hidden shrink-0"
+                className="relative h-28 w-28 rounded-full bg-neutral-100 border border-neutral-200 overflow-hidden shrink-0"
                 title="Change profile picture"
               >
                 {avatarSrc ? <img src={avatarSrc} alt="" className="h-full w-full object-cover" /> : (
-                  <span className="flex h-full items-center justify-center text-2xl text-white">{displayName?.[0]?.toUpperCase() || '?'}</span>
+                  <span className="flex h-full items-center justify-center text-2xl text-neutral-700">{displayName?.[0]?.toUpperCase() || '?'}</span>
                 )}
                 <span className="absolute inset-0 flex items-center justify-center bg-black/45 text-white">
                   <Camera className="h-5 w-5" />
                 </span>
               </button>
               <div className="text-center sm:text-left pt-1">
-                <p className="text-sm text-white font-medium">Profile picture</p>
-                <p className="text-xs text-zinc-500 mt-1">Shown on your channel and posts. No banners.</p>
-                <button type="button" onClick={() => avatarRef.current?.click()} className="mt-2 text-xs text-zinc-300 underline">
+                <p className="text-sm text-neutral-900 font-medium">Profile picture</p>
+                <p className="text-xs text-neutral-500 mt-1">Shown on your channel and posts. No banners.</p>
+                <button type="button" onClick={() => avatarRef.current?.click()} className="mt-2 text-xs text-neutral-600 underline">
                   Change photo
                 </button>
               </div>
@@ -128,11 +124,11 @@ export default function AccountSettings({ onNavigate }) {
             />
             <SettingsField label="Handle">
               <div className="mt-1 flex items-center">
-                <span className="h-10 flex items-center px-3 rounded-l-lg border border-r-0 border-zinc-800 bg-[#121218] text-sm text-zinc-500">@</span>
+                <span className="h-10 flex items-center px-3 rounded-l-lg border border-r-0 border-neutral-200 bg-neutral-50 text-sm text-neutral-500">@</span>
                 <input
                   value={handle}
                   onChange={(e) => setHandle(e.target.value.replace(/\s/g, '').toLowerCase())}
-                  className="h-10 flex-1 rounded-r-lg border border-zinc-800 bg-[#000000] px-3 text-sm text-zinc-100"
+                  className="h-10 flex-1 rounded-r-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-900"
                 />
               </div>
             </SettingsField>
@@ -146,8 +142,8 @@ export default function AccountSettings({ onNavigate }) {
               />
             </SettingsField>
             <SettingsInput label="Email" value={user?.email || ''} readOnly />
-            {err ? <p className="text-sm text-red-400">{err}</p> : null}
-            <p className="text-[11px] text-zinc-500">{busy ? 'Saving…' : 'Saved as you type.'}</p>
+            {err ? <p className="text-sm text-red-600">{err}</p> : null}
+            <p className="text-[11px] text-neutral-500">{busy ? 'Saving…' : 'Saved as you type.'}</p>
           </div>
         </SettingsCard>
       </SettingsSection>

@@ -1,9 +1,11 @@
 import { useEffect } from 'react'
+import { useAuth } from '../../context/AuthContext'
 import SettingsLayout, { isCreatorSettingsSection } from './SettingsLayout'
 import AccountSettings from './AccountSettings'
 import SecuritySettings from './SecuritySettings'
 import NotificationsSettings from './NotificationsSettings'
 import LegalSettings from './LegalSettings'
+import AuthRequired from '../AuthRequired'
 
 const SITE_PAGES = {
   account: AccountSettings,
@@ -13,7 +15,8 @@ const SITE_PAGES = {
 }
 
 /** Site settings shell only. Creator pages open inside Creator Studio. */
-export default function SettingsHub({ section, onNavigate, initialTab = null }) {
+export default function SettingsHub({ section, onNavigate, initialTab = null, onOpenAuth }) {
+  const { isAuthenticated } = useAuth()
   const redirectCreator = section === 'revenue' || (isCreatorSettingsSection(section) && !SITE_PAGES[section])
 
   useEffect(() => {
@@ -24,7 +27,7 @@ export default function SettingsHub({ section, onNavigate, initialTab = null }) 
   }, [redirectCreator, section, onNavigate])
 
   if (redirectCreator) {
-    return <p className="p-6 text-sm text-zinc-500">Opening Creator Studio…</p>
+    return <p className="p-6 text-sm text-neutral-500">Opening Creator Studio…</p>
   }
 
   const id = SITE_PAGES[section] ? section : 'account'
@@ -34,8 +37,18 @@ export default function SettingsHub({ section, onNavigate, initialTab = null }) 
       section={id}
       onSection={(next) => onNavigate?.('settings', next)}
       onBack={() => onNavigate?.('home')}
+      onNavigate={onNavigate}
     >
-      <Page onNavigate={onNavigate} initialTab={initialTab} />
+      {isAuthenticated ? (
+        <Page onNavigate={onNavigate} initialTab={initialTab} />
+      ) : (
+        <AuthRequired
+          light
+          title="Settings"
+          description="Sign in to change account, security, and notifications."
+          onOpenAuth={onOpenAuth}
+        />
+      )}
     </SettingsLayout>
   )
 }

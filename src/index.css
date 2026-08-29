@@ -43,6 +43,22 @@ header input[type="search"] {
   border-radius: var(--radius-control) !important;
 }
 
+/* Option B / D mockups — rounded cards and pills, not site-square chrome */
+[data-studio="calabi"] button,
+[data-studio="tiktok-white"] button,
+[data-studio="twitch-black"] button {
+  border-radius: 0.75rem !important;
+}
+[data-studio="calabi"] button.rounded-none,
+[data-studio="tiktok-white"] button.rounded-none,
+[data-studio="twitch-black"] button.rounded-none {
+  border-radius: 0 !important;
+}
+[data-studio="calabi"] input[type="search"],
+[data-studio="tiktok-white"] input[type="search"] {
+  border-radius: 9999px !important;
+}
+
 html, body, #root {
   height: 100%;
   margin: 0;
@@ -181,56 +197,60 @@ body::before {
 }
 
 /* Creator Studio custom chrome — header + left menu match site black */
-[data-studio="tiktok-white"] > aside,
-[data-studio="calabi"] > aside {
+[data-studio="calabi"] > aside,
+[data-studio="twitch-black"] > aside {
   background-color: #0f0f0f !important;
   border-right-color: #272727 !important;
   color: #e4e4e7 !important;
 }
-[data-studio="tiktok-white"] > aside button,
-[data-studio="calabi"] > aside button {
+[data-studio="calabi"] > aside button,
+[data-studio="twitch-black"] > aside button {
   color: #a1a1aa;
 }
-[data-studio="tiktok-white"] > aside button:hover,
-[data-studio="calabi"] > aside button:hover {
+[data-studio="calabi"] > aside button:hover,
+[data-studio="twitch-black"] > aside button:hover {
   color: #fff !important;
   background-color: rgba(255, 255, 255, 0.05) !important;
 }
-[data-studio="tiktok-white"] > aside button.bg-neutral-100,
-[data-studio="tiktok-white"] > aside button.bg-white\/10,
 [data-studio="calabi"] > aside button.bg-neutral-100,
-[data-studio="calabi"] > aside button.bg-white\/10 {
+[data-studio="calabi"] > aside button.bg-white\/10,
+[data-studio="twitch-black"] > aside button.bg-neutral-100,
+[data-studio="twitch-black"] > aside button.bg-white\/10 {
   background-color: rgba(255, 255, 255, 0.1) !important;
   color: #fff !important;
 }
-[data-studio="tiktok-white"] > aside p,
-[data-studio="calabi"] > aside p {
+[data-studio="calabi"] > aside p,
+[data-studio="twitch-black"] > aside p {
   color: #71717a !important;
 }
-[data-studio="tiktok-white"] > main > header,
-[data-studio="calabi"] > main > header {
+[data-studio="calabi"] > main > header,
+[data-studio="twitch-black"] > main > header {
   background-color: #0f0f0f !important;
   border-bottom-color: #272727 !important;
 }
-[data-studio="tiktok-white"] > main > header p,
-[data-studio="calabi"] > main > header p {
+[data-studio="calabi"] > main > header p,
+[data-studio="twitch-black"] > main > header p {
   color: #fff !important;
 }
-[data-studio="tiktok-white"] > .sm\:hidden,
-[data-studio="calabi"] > .sm\:hidden {
+[data-studio="calabi"] > .sm\:hidden,
+[data-studio="twitch-black"] > .sm\:hidden {
   background-color: #0f0f0f !important;
   border-bottom-color: #272727 !important;
 }
 
-/* Flatten leftover light utility classes inside studio / dash shells */
-[data-studio],
+/* Flatten leftover light utility classes inside dark studio / dash only */
+[data-studio="calabi"],
+[data-studio="twitch-black"],
 [data-dash] {
   background-color: #0f0f0f;
   color: #f4f4f5;
 }
-[data-studio] input,
-[data-studio] select,
-[data-studio] textarea,
+[data-studio="calabi"] input,
+[data-studio="calabi"] select,
+[data-studio="calabi"] textarea,
+[data-studio="twitch-black"] input,
+[data-studio="twitch-black"] select,
+[data-studio="twitch-black"] textarea,
 [data-dash] input,
 [data-dash] select,
 [data-dash] textarea {
@@ -238,26 +258,36 @@ body::before {
   color: #f4f4f5 !important;
   border-color: #272727 !important;
 }
-[data-studio] .bg-white:not(button),
-[data-studio] .bg-neutral-50,
-[data-studio] .bg-neutral-100,
-[data-studio] .bg-\[\#f8f8f8\],
+[data-studio="calabi"] .bg-white:not(button),
+[data-studio="calabi"] .bg-neutral-50,
+[data-studio="calabi"] .bg-neutral-100,
+[data-studio="calabi"] .bg-\[\#f8f8f8\],
+[data-studio="twitch-black"] .bg-white:not(button),
+[data-studio="twitch-black"] .bg-neutral-50,
+[data-studio="twitch-black"] .bg-neutral-100,
+[data-studio="twitch-black"] .bg-\[\#f8f8f8\],
 [data-dash] .bg-white:not(button),
 [data-dash] .bg-slate-100,
 [data-dash] .bg-slate-50 {
   background-color: #18181f !important;
 }
-[data-studio] .text-neutral-900,
-[data-studio] .text-neutral-800,
-[data-studio] .text-neutral-700,
-[data-studio] .text-slate-900,
+[data-studio="calabi"] .text-neutral-900,
+[data-studio="calabi"] .text-neutral-800,
+[data-studio="calabi"] .text-neutral-700,
+[data-studio="calabi"] .text-slate-900,
+[data-studio="twitch-black"] .text-neutral-900,
+[data-studio="twitch-black"] .text-neutral-800,
+[data-studio="twitch-black"] .text-neutral-700,
+[data-studio="twitch-black"] .text-slate-900,
 [data-dash] .text-slate-900,
 [data-dash] .text-neutral-900 {
   color: #f4f4f5 !important;
 }
-[data-studio] .border-neutral-200,
-[data-studio] .border-neutral-100,
-[data-studio] .border-slate-200 {
+[data-studio="calabi"] .border-neutral-200,
+[data-studio="calabi"] .border-neutral-100,
+[data-studio="twitch-black"] .border-neutral-200,
+[data-studio="twitch-black"] .border-neutral-100,
+[data-studio="twitch-black"] .border-slate-200 {
   border-color: #272727 !important;
 }
 

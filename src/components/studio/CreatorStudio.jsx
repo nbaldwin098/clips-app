@@ -1,9 +1,8 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import {
   LayoutDashboard,
   BarChart3,
   CircleDollarSign,
-  Video,
   BadgeCheck,
   Settings,
   Play,
@@ -15,16 +14,17 @@ import {
   Image as ImageIcon,
   Radio,
   FolderOpen,
-  Newspaper,
   ShoppingBag,
-  Eye,
-  Users,
-  DollarSign,
-  CheckCircle2,
-  Circle,
+  Search,
+  Bell,
+  CircleHelp,
+  Mail,
+  Sparkles,
+  MessageSquare,
+  MoreVertical,
+  ArrowLeft,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
-import CreatorOnboarding from '../CreatorOnboarding'
 import { lsGet, lsSet } from '../../lib/storage'
 import { liveBadgeLabel } from '../../lib/liveStatus'
 import { getCreatorContent, deleteCatalogItem, setContentVisibility } from '../../lib/contentService'
@@ -33,7 +33,6 @@ import {
   getVotes,
   getSubscriberCount,
   getCreatorAnalytics,
-  getMembershipPrice,
 } from '../../lib/engagement'
 import { creatorBalance } from '../../lib/payouts'
 import { listVods, setVodVisibility, getVodChannel } from '../../lib/vods'
@@ -48,6 +47,9 @@ import { formatCount } from '../../lib/uiFormat'
 import { formatPostedAt, postedAtOf } from '../../lib/mediaMeta'
 import { cn } from '../../lib/utils'
 import { useContentSyncTick, useInteractionSyncTick } from '../../lib/useContentSync'
+import BrandMark from '../BrandMark'
+import ChannelAvatar from '../ChannelAvatar'
+import { listWithdrawMethods } from '../../lib/calabiCash'
 import InteractionBubbleMap from './InteractionBubbleMap'
 import StudioRealtimeAnalytics from './StudioRealtimeAnalytics'
 import CreatorEarningsPanel from './CreatorEarningsPanel'
@@ -70,16 +72,17 @@ import {
   SettingsButton,
   SettingsNotice,
 } from '../settings/SettingsTemplates'
-import { StudioKpi, StudioCard, StudioAreaChart, StudioBarChart } from '../dash/StudioShell'
+import { DashToneProvider } from '../dash/StudioShell'
 import StudioControlDeck from './StudioControlDeck'
 
 const STUDIO_NAV = [
-  { id: 'overview', label: 'Overview', icon: LayoutDashboard, group: 'Studio' },
+  { id: 'overview', label: 'Home', icon: LayoutDashboard, group: 'Studio' },
   { id: 'lab', label: 'Calabi Studio', icon: Clapperboard, group: 'Studio' },
+  { id: 'alerts', label: 'Alerts', icon: Bell, group: 'Studio', href: 'notifications' },
   { id: 'content', label: 'Content', icon: FolderOpen, group: 'Studio' },
   { id: 'analytics', label: 'Analytics', icon: BarChart3, group: 'Studio' },
-  { id: 'socials', label: 'Socials', icon: Share2, group: 'Studio' },
-  { id: 'earnings', label: 'Earnings', icon: CircleDollarSign, group: 'Money' },
+  { id: 'socials', label: 'Community', icon: Share2, group: 'Studio' },
+  { id: 'earnings', label: 'Monetization', icon: CircleDollarSign, group: 'Money' },
   { id: 'shop', label: 'Shop', icon: ShoppingBag, group: 'Money' },
   { id: 'settings', label: 'Settings', icon: Settings, group: 'Account' },
   { id: 'verify', label: 'Get verified', icon: BadgeCheck, group: 'Account' },
@@ -143,65 +146,6 @@ function buildOverviewSeries(creatorId, posts, days = 14) {
     followers: keys.map((k) => ({ day: k.slice(5), value: followers[k] })),
     posts: keys.map((k) => ({ day: k.slice(5), value: postCounts[k] })),
   }
-}
-
-function OverviewTasks({ postsLen, hasPayout, membershipSet, verified, onNavigate, onOpenUpload }) {
-  const tasks = [
-    {
-      id: 'upload',
-      label: 'Upload your first post',
-      done: postsLen > 0,
-      action: () => onOpenUpload?.('video'),
-    },
-    {
-      id: 'membership',
-      label: 'Set membership price in Earnings',
-      done: membershipSet,
-      action: () => onNavigate?.('dashboard', 'earnings'),
-    },
-    {
-      id: 'payout',
-      label: 'Add a payout method',
-      done: hasPayout,
-      action: () => onNavigate?.('dashboard', 'earnings'),
-    },
-    {
-      id: 'verify',
-      label: 'Get verified',
-      done: verified,
-      action: () => onNavigate?.('dashboard', 'verify'),
-    },
-    {
-      id: 'go-live',
-      label: 'Go live from Calabi Studio',
-      done: false,
-      action: () => onNavigate?.('dashboard', 'lab'),
-    },
-  ]
-  return (
-    <StudioCard title="Tasks">
-      <ul className="space-y-2">
-        {tasks.map((t) => (
-          <li key={t.id}>
-            <button
-              type="button"
-              onClick={t.action}
-              className="w-full flex items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-neutral-50"
-            >
-              {t.done ? (
-                <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-              ) : (
-                <Circle className="h-4 w-4 text-zinc-600 shrink-0" />
-              )}
-              <span className={cn('text-sm', t.done ? 'text-zinc-500 line-through' : 'text-zinc-200')}>
-                {t.label}
-              </span>
-            </button>
-          </li>
-        ))}
-      </ul>
-    </StudioCard>
-  )
 }
 
 function PostRow({ post, active, deleting, onSelect, onPlay, onDelete, onVisibility }) {
@@ -685,7 +629,6 @@ export default function CreatorStudio({
       : (lsGet('calabi_studio_section', initialSection) || initialSection)
     return raw === 'post' ? 'lab' : raw
   })
-  const [onboardingDone, setOnboardingDone] = useState(() => lsGet(`calabi_onboarding_done_${user?.id}`, false))
   const [selectedPostId, setSelectedPostId] = useState(null)
   const [range, setRange] = useState('all')
   const [postFilter, setPostFilter] = useState('all')
@@ -694,6 +637,9 @@ export default function CreatorStudio({
   const [untilMs, setUntilMs] = useState(null)
   const [labTool, setLabTool] = useState(null) // 'controls' | 'stream' | null
   const [mapTick, setMapTick] = useState(0)
+  const [studioQuery, setStudioQuery] = useState('')
+  const [searchOpen, setSearchOpen] = useState(false)
+  const searchRef = useRef(null)
 
   // Debounce analytics map rebuilds so 12s sync ticks do not remount the bubble.
   useEffect(() => {
@@ -741,10 +687,6 @@ export default function CreatorStudio({
   }, [section])
 
   useEffect(() => {
-    if (user?.id) setOnboardingDone(lsGet(`calabi_onboarding_done_${user.id}`, false))
-  }, [user?.id])
-
-  useEffect(() => {
     if (!user?.id || user.provider !== 'supabase') return undefined
     let cancelled = false
     const sync = () => {
@@ -773,17 +715,11 @@ export default function CreatorStudio({
     }
   }, [user?.id, user?.provider, user?.handle, section])
 
-  const finishOnboarding = () => {
-    if (user?.id) lsSet(`calabi_onboarding_done_${user.id}`, true)
-    setOnboardingDone(true)
-  }
-
   const posts = useMemo(() => getCreatorContent(user?.id, user?.handle), [user?.id, user?.handle, syncTick])
   const overviewSeries = useMemo(
     () => buildOverviewSeries(user?.id, posts, 14),
     [user?.id, posts, syncTick, mapTick]
   )
-  const showOnboarding = !onboardingDone && posts.length === 0
   const live = lsGet(`live_state_${user?.id}`, null)
   const views = posts.reduce((n, c) => n + getViews(c.id), 0)
   const likes = posts.reduce((n, c) => n + (getVotes(c.id)?.up || 0), 0)
@@ -794,6 +730,11 @@ export default function CreatorStudio({
   const balance = creatorBalance(user?.id, user?.handle)
   const vods = listVods(user?.id)
   const verified = isOfficialCreator(user?.id, user?.handle) || isVerifiedChannel(user?.id, user?.handle)
+  const hasPayout = (listWithdrawMethods(user?.id) || []).length > 0
+  const recentActivity = useMemo(
+    () => listCreatorInteractions(user?.id, { range: '7d', limit: 12, includeSubscribe: true }),
+    [user?.id, mapTick, syncTick]
+  )
   const verifyStatus = getIdVerificationForUser(user?.id)?.status
   const navGroups = groupNav(STUDIO_NAV)
   const showPostsColumn = section === 'analytics'
@@ -854,28 +795,121 @@ export default function CreatorStudio({
     }
   }
 
+  const goNav = (item) => {
+    if (item?.href) {
+      onNavigate?.(item.href)
+      return
+    }
+    if (item?.id) setSection(item.id)
+  }
+
+  const searchHits = useMemo(() => {
+    const needle = studioQuery.trim().toLowerCase()
+    if (!needle) return []
+    return posts.filter((p) => String(p.title || '').toLowerCase().includes(needle)).slice(0, 8)
+  }, [studioQuery, posts])
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && String(e.key).toLowerCase() === 'k') {
+        e.preventDefault()
+        searchRef.current?.focus()
+        setSearchOpen(true)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  const liveOn = Boolean(live?.isLive || live?.live)
+
   return (
-    <div className="h-[calc(100dvh-3.5rem)] min-h-[480px] flex bg-[#0b0b0b] text-zinc-200 overflow-hidden" data-studio="calabi">
-      <aside className="hidden sm:flex w-56 shrink-0 border-r border-white/10 bg-[#0e0e12] flex-col py-4 text-zinc-300">
+    <DashToneProvider tone="dark">
+    <div className="h-full min-h-[480px] flex flex-col bg-[#0b0b0b] text-zinc-200 overflow-hidden" data-studio="calabi">
+      <header className="shrink-0 h-14 px-3 sm:px-4 flex items-center gap-3 border-b border-white/10 bg-[#0b0b0b]">
+        <BrandMark size={28} withWord className="shrink-0 hidden sm:inline-flex" />
+        <div className="flex-1 max-w-xl mx-auto relative">
+          <div className="flex items-center gap-2 h-9 rounded-full border border-white/10 bg-[#141414] px-3">
+            <Search className="h-4 w-4 text-zinc-500 shrink-0" />
+            <input
+              ref={searchRef}
+              type="search"
+              value={studioQuery}
+              onChange={(e) => { setStudioQuery(e.target.value); setSearchOpen(true) }}
+              onFocus={() => setSearchOpen(true)}
+              onBlur={() => setTimeout(() => setSearchOpen(false), 150)}
+              placeholder="Search (Ctrl + K)"
+              className="flex-1 min-w-0 bg-transparent text-[13px] text-white placeholder:text-zinc-500 outline-none"
+              aria-label="Search your posts"
+            />
+          </div>
+          {searchOpen && studioQuery.trim() ? (
+            <div className="absolute left-0 right-0 top-full mt-1 rounded-xl border border-white/10 bg-[#141414] py-1 z-30 shadow-xl">
+              {searchHits.length ? searchHits.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => { setSearchOpen(false); setStudioQuery(''); openPost(p) }}
+                  className="w-full text-left px-3 py-2 text-[13px] text-zinc-200 hover:bg-white/5 truncate"
+                >
+                  {p.title || 'Untitled'}
+                </button>
+              )) : (
+                <p className="px-3 py-2 text-[12px] text-zinc-500">No posts match.</p>
+              )}
+            </div>
+          ) : null}
+        </div>
+        <div className="flex items-center gap-0.5 shrink-0">
+          <button type="button" onClick={() => onNavigate?.('help')} aria-label="Help" className="h-9 w-9 rounded-full inline-flex items-center justify-center text-zinc-300 hover:bg-white/5">
+            <CircleHelp className="h-4 w-4" />
+          </button>
+          <button type="button" onClick={() => setSection('analytics')} aria-label="Analytics" className="h-9 w-9 rounded-full inline-flex items-center justify-center text-zinc-300 hover:bg-white/5">
+            <Sparkles className="h-4 w-4" />
+          </button>
+          <button type="button" onClick={() => onNavigate?.('messages')} aria-label="Messages" className="h-9 w-9 rounded-full inline-flex items-center justify-center text-zinc-300 hover:bg-white/5">
+            <Mail className="h-4 w-4" />
+          </button>
+          <button type="button" onClick={() => setSection('lab')} aria-label="Calabi Studio" className="h-9 w-9 rounded-full inline-flex items-center justify-center text-zinc-300 hover:bg-white/5">
+            <MessageSquare className="h-4 w-4" />
+          </button>
+          <button type="button" onClick={() => onNavigate?.('notifications')} aria-label="Notifications" className="h-9 w-9 rounded-full inline-flex items-center justify-center text-zinc-300 hover:bg-white/5">
+            <Bell className="h-4 w-4" />
+          </button>
+          <span className="relative ml-1">
+            <ChannelAvatar src={user?.avatarUrl} name={user?.displayName || user?.handle} size={32} />
+            <span
+              className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full ring-2 ring-[#0b0b0b]"
+              style={{ background: liveOn ? '#22c55e' : '#52525b' }}
+            />
+          </span>
+        </div>
+      </header>
+
+      <div className="flex flex-1 min-h-0 relative">
+      <aside className="hidden sm:flex w-[240px] shrink-0 border-r border-white/10 bg-[#0b0b0b] flex-col">
+        <div className="px-4 py-3 flex items-center justify-between">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Creator Dashboard</p>
+        </div>
         <nav className="flex-1 px-3 space-y-5 overflow-y-auto">
           {navGroups.map((g) => (
             <div key={g.name}>
-              <p className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">{g.name}</p>
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {g.items.map((item) => {
                   const Icon = item.icon
-                  const active = section === item.id
+                  const active = !item.href && section === item.id
                   return (
                     <button
                       key={item.id}
                       type="button"
-                      onClick={() => setSection(item.id)}
+                      onClick={() => goNav(item)}
                       className={cn(
-                        'w-full flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-left rounded-lg',
-                        active ? 'bg-white/10 text-white' : 'text-zinc-400 hover:bg-white/5 hover:text-white'
+                        'w-full flex items-center gap-3 px-3 py-2.5 text-[14px] font-medium text-left rounded-xl',
+                        active ? 'bg-white/5 text-[#22c55e]' : 'text-zinc-400 hover:bg-white/5 hover:text-white'
                       )}
                     >
-                      <Icon className="h-4 w-4 shrink-0" />
+                      <Icon className="h-[18px] w-[18px] shrink-0" />
                       {item.label}
                     </button>
                   )
@@ -884,13 +918,35 @@ export default function CreatorStudio({
             </div>
           ))}
         </nav>
+        <div className="px-3 pb-2">
+          <button
+            type="button"
+            onClick={() => onNavigate?.('home')}
+            className="w-full h-9 px-3 rounded-lg border border-white/15 text-[13px] font-semibold text-white inline-flex items-center gap-2 hover:bg-white/5"
+          >
+            <ArrowLeft className="h-4 w-4" /> Back to calabi
+          </button>
+        </div>
+        <div className="px-4 py-3 border-t border-white/10 flex items-center gap-2.5">
+          <ChannelAvatar src={user?.avatarUrl} name={user?.displayName || user?.handle} size={36} />
+          <div className="min-w-0 flex-1">
+            <p className="text-[13px] font-medium text-white truncate">{user?.displayName || user?.handle || 'You'}</p>
+            <p className="text-[11px]" style={{ color: liveOn ? '#22c55e' : '#71717a' }}>
+              {liveOn ? 'Online' : 'Offline'}
+            </p>
+          </div>
+          <MoreVertical className="h-4 w-4 text-zinc-500 shrink-0" />
+        </div>
       </aside>
 
       {/* Mobile section picker */}
       <div className="sm:hidden absolute top-0 left-0 right-0 z-10 border-b border-white/10 bg-[#0b0b0b] px-3 py-2">
         <select
           value={section}
-          onChange={(e) => setSection(e.target.value)}
+          onChange={(e) => {
+            const item = STUDIO_NAV.find((s) => s.id === e.target.value)
+            goNav(item || { id: e.target.value })
+          }}
           className="w-full h-9 border border-white/10 bg-black px-2 text-sm text-zinc-100 rounded-lg"
         >
           {STUDIO_NAV.map((s) => (
@@ -920,7 +976,7 @@ export default function CreatorStudio({
                   onClick={() => setPostFilter(t.id)}
                   className={cn(
                     'h-7 px-2 text-[11px] font-semibold rounded',
-                    postFilter === t.id ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-zinc-400'
+                    postFilter === t.id ? 'bg-white text-black' : 'bg-white/10 text-zinc-400'
                   )}
                 >
                   {t.label}
@@ -950,33 +1006,28 @@ export default function CreatorStudio({
       ) : null}
 
       {/* Main workspace */}
-      <main className="flex-1 min-w-0 min-h-0 flex flex-col max-sm:pt-12 bg-[#0b0b0b]">
+      <main className="flex-1 min-w-0 min-h-0 flex flex-col max-sm:pt-12 bg-black">
         <div className="flex-1 min-h-0 overflow-hidden px-5 md:px-6 py-5">
           {section === 'overview' ? (
-            <div className="h-full min-h-0 overflow-y-auto">
-              {showOnboarding ? (
-                <CreatorOnboarding
-                  onOpenUpload={onOpenUpload}
-                  onDone={finishOnboarding}
-                  onNavigate={onNavigate}
-                />
-              ) : null}
+            <div className="h-full min-h-0 overflow-hidden">
               <StudioControlDeck
                 user={user}
                 views={views}
                 followers={followers}
                 premiumSubs={premiumSubs}
                 posts={posts}
-                likes={likes}
-                vods={vods}
-                earningsUsd={Number(balance?.paid || 0)}
+                series={overviewSeries}
+                interactions={recentActivity}
                 live={live}
-                lastPost={posts[0] || null}
+                hasPayout={hasPayout}
+                verified={verified}
                 onGoLive={() => setSection('lab')}
                 onOpenUpload={onOpenUpload}
                 onOpenAnalytics={() => setSection('analytics')}
                 onOpenContent={() => setSection('content')}
                 onOpenEarnings={() => setSection('earnings')}
+                onOpenPost={openPost}
+                onOpenAuth={onOpenAuth}
               />
             </div>
           ) : null}
@@ -1112,6 +1163,8 @@ export default function CreatorStudio({
           ) : null}
         </div>
       </main>
+      </div>
     </div>
+    </DashToneProvider>
   )
 }
