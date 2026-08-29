@@ -8,7 +8,6 @@ import {
   formatUsdFromCents,
 } from '../lib/marketplaceSync'
 import {
-  productsWithDemo,
   listPaymentMethods,
   savePaymentMethod,
   removePaymentMethod,
@@ -20,6 +19,8 @@ import { redirectSafeUrl } from '../lib/safeUrl'
 import { ownCheckoutConfigured } from '../lib/stripeCheckout'
 import { membershipReturnPaid } from '../lib/stripeConfig'
 import { cn } from '../lib/utils'
+import { listCoinLedger, listCoinPacks } from '../lib/calabiCash'
+import CoinIcon from './CoinIcon'
 
 const TABS = [
   { id: 'shop', label: 'Shop', icon: ShoppingBag },
@@ -31,7 +32,7 @@ const TABS = [
 export default function ShopPage({ onNavigate, onOpenAuth }) {
   const { user, isAuthenticated } = useAuth()
   const [tab, setTab] = useState('shop')
-  const [products, setProducts] = useState(() => productsWithDemo(cachedProducts()))
+  const [products, setProducts] = useState(() => cachedProducts())
   const [query, setQuery] = useState('')
   const [busy, setBusy] = useState('')
   const [note, setNote] = useState('')
@@ -44,9 +45,9 @@ export default function ShopPage({ onNavigate, onOpenAuth }) {
 
   useEffect(() => {
     pullMarketplaceCatalog().then((res) => {
-      setProducts(productsWithDemo(res.products || cachedProducts()))
+      setProducts(res.products || cachedProducts())
     }).catch(() => {
-      setProducts(productsWithDemo(cachedProducts()))
+      setProducts(cachedProducts())
     })
   }, [])
 
@@ -116,21 +117,11 @@ export default function ShopPage({ onNavigate, onOpenAuth }) {
     setSavePrompt(false)
   }
 
+  const coinOrders = user?.id ? listCoinLedger(user.id) : []
+  const packsById = new Map(listCoinPacks().map((p) => [p.id, p]))
+
   return (
-    <div className="p-4 md:p-6 max-w-6xl mx-auto space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-white">Shop</h1>
-          <p className="text-xs text-zinc-500 mt-1">Creator merch and digital goods. Payment methods sync with Wallet.</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => onNavigate?.('seller')}
-          className="h-9 px-3 border border-zinc-700 text-xs text-white hover:bg-white hover:text-black"
-        >
-          Sell on calabi →
-        </button>
-      </div>
+    <div className="p-3 space-y-4">
 
       <div className="flex flex-wrap gap-1 border-b border-zinc-800 pb-1">
         {TABS.map((t) => {
@@ -213,12 +204,27 @@ export default function ShopPage({ onNavigate, onOpenAuth }) {
       ) : null}
 
       {tab === 'orders' ? (
-        <div className="border border-zinc-800 bg-[#0c0c10] p-5 space-y-2">
-          <p className="text-sm text-white font-medium">Orders</p>
-          <p className="text-xs text-zinc-500">Paid shop orders appear here after Stripe returns. Coin pack history stays in Wallet → Orders.</p>
-          <button type="button" onClick={() => onNavigate?.('wallet', '', { tab: 'orders' })} className="h-9 px-3 border border-zinc-700 text-xs text-zinc-200">
-            Open Wallet orders
-          </button>
+        <div className="border border-white/10 bg-[#0c0c10]">
+          {!coinOrders.length ? (
+            <p className="text-sm text-zinc-500 p-5">No orders yet.</p>
+          ) : (
+            <ul className="divide-y divide-white/10">
+              {coinOrders.map((row, i) => {
+                const pack = row.tierId ? packsById.get(row.tierId) : null
+                const delta = Number(row.delta) || 0
+                return (
+                  <li key={`${row.at || i}_${row.kind}`} className="flex items-center gap-3 px-4 py-3">
+                    <CoinIcon className="h-5 w-5 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-white truncate">{pack?.label || row.note || row.kind || 'Order'}</p>
+                      <p className="text-[11px] text-zinc-500">{row.at ? String(row.at).slice(0, 16) : ''}</p>
+                    </div>
+                    <p className="text-sm tabular-nums text-white">{delta > 0 ? '+' : ''}{delta.toLocaleString()} coins</p>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
         </div>
       ) : null}
 
