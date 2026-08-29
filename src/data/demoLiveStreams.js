@@ -10,7 +10,5 @@ export const DEMO_LIVE_STREAMS = [
 ]
 
 export function mergeDemoLiveBoard(board = []) {
-  const real = Array.isArray(board) ? board.filter((b) => b && !b.demo) : []
-  const ids = new Set(real.map((b) => b.userId))
-  return [...real, ...DEMO_LIVE_STREAMS.filter((d) => !ids.has(d.userId))]
+  return Array.isArray(board) ? board.filter((b) => b && !b.demo) : []
 }
