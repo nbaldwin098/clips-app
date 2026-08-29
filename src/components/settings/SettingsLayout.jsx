@@ -8,7 +8,6 @@ export const SITE_SECTIONS = [
   { id: 'account', label: 'Account', icon: User, group: 'Settings' },
   { id: 'security', label: 'Security', icon: Shield, group: 'Settings' },
   { id: 'notifications', label: 'Notifications', icon: Bell, group: 'Settings' },
-  { id: 'legal', label: 'Legal', icon: FileText, group: 'Settings' },
 ]
 
 /** Creator tools live in Creator Studio → Settings (not a second settings app). */
@@ -46,7 +45,7 @@ export default function SettingsLayout({ section, onSection, children, onBack, o
 
   return (
     <StudioShell
-      tone="light"
+      tone="dark"
       title="Settings"
       nav={sections}
       activeId={active}
