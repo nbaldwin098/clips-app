@@ -15,7 +15,7 @@ import { syncContentFromCloud } from '../lib/contentSync'
 import { lsGet } from '../lib/storage'
 import { listOnAirBoard } from '../lib/liveStatus'
 
-const GRID = 'grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-6'
+const GRID = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-6'
 
 export default function HomeFeed({
   onPlayItem,
@@ -72,7 +72,7 @@ export default function HomeFeed({
         onSelectLive={onSelectLive}
       />
 
-      <div className="px-5 md:px-8 py-8 w-full space-y-8">
+      <div className="px-4 md:px-8 py-6 md:py-8 w-full space-y-8">
       {promo && promo.placement === 'home' && (
         <button
           type="button"
