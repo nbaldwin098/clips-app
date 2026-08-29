@@ -132,8 +132,8 @@ export default function ApexHomeStage({
                   <ChannelAvatar src={featured.avatarUrl || lookupUser(featured.userId)?.avatarUrl} name={name} size={40} />
                 </button>
                 <div className="min-w-0 flex-1">
-                  <p className="text-lg font-semibold text-white truncate">{title || 'Live'}</p>
-                  <p className="text-sm text-[#b3b3b3] truncate inline-flex items-center gap-1">
+                  <p className="text-[15px] font-semibold text-white truncate">{title || 'Live'}</p>
+                  <p className="text-[12px] text-[#b3b3b3] truncate inline-flex items-center gap-1">
                     {name}
                     {official ? <VerifiedBadge className="h-3.5 w-3.5 bg-white text-black" /> : null}
                   </p>
@@ -195,13 +195,13 @@ export default function ApexHomeStage({
 
       <section className="px-5 md:px-8 pt-8 pb-2">
         <div className="flex items-end justify-between gap-3 mb-3">
-          <h2 className="text-xl font-semibold text-white">Live channels</h2>
+          <h2 className="text-[17px] font-semibold text-white">Live channels</h2>
           <button type="button" onClick={() => onNavigate?.('live')} className="text-[13px] text-[#8a8a8a] hover:text-white">
             View all
           </button>
         </div>
         {onAir.length ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-6">
             {onAir.slice(1, 10).map((s) => {
               const nm = s.displayName || s.handle || 'Creator'
               const ok = isOfficialCreator(s.userId, s.handle) || isVerifiedChannel(s.userId, s.handle)
@@ -224,8 +224,8 @@ export default function ApexHomeStage({
                   <div className="mt-2 flex items-start gap-2">
                     <ChannelAvatar src={s.avatarUrl || lookupUser(s.userId)?.avatarUrl} name={nm} size={32} />
                     <div className="min-w-0">
-                      <p className="text-base font-semibold text-white truncate">{s.title || 'Live'}</p>
-                      <p className="text-sm text-[#b3b3b3] truncate inline-flex items-center gap-1">
+                      <p className="text-[13px] font-semibold text-white truncate">{s.title || 'Live'}</p>
+                      <p className="text-[12px] text-[#b3b3b3] truncate inline-flex items-center gap-1">
                         {nm}
                         {ok ? <VerifiedBadge className="h-3 w-3 bg-white text-black" /> : null}
                       </p>
