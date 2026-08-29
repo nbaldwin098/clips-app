@@ -81,7 +81,6 @@ export default function HomeFeed({
   const continueVideos = continueItems.length
     ? continueItems
     : (items || []).filter((i) => i && i.type === 'video').slice(0, 12)
-  const continueLives = (onAir || []).slice(0, 12)
 
   useEffect(() => {
     syncContentFromCloud(user).catch(() => {})
@@ -127,31 +126,11 @@ export default function HomeFeed({
         </button>
       )}
 
-      <ThreeCarousel title="Continue watching · Videos">
+      <ThreeCarousel title="Continue watching">
         {continueVideos.map((item) => (
           <div key={item.id} className="w-[85%] sm:w-[calc((100%-1rem)/2)] md:w-[calc((100%-2rem)/3)] shrink-0 snap-start">
             <ContentCard item={item} onOpen={onPlayItem} onOpenProfile={onOpenProfile} variant="video" />
           </div>
-        ))}
-      </ThreeCarousel>
-
-      <ThreeCarousel title="Continue watching · Live">
-        {continueLives.map((s) => (
-          <button
-            key={s.userId}
-            type="button"
-            onClick={() => onSelectLive?.(s)}
-            className="w-[85%] sm:w-[calc((100%-1rem)/2)] md:w-[calc((100%-2rem)/3)] shrink-0 snap-start text-left"
-          >
-            <div className="relative aspect-video overflow-hidden bg-[#141414]">
-              {(s.thumbUrl || s.previewUrl) ? (
-                <img src={s.thumbUrl || s.previewUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
-              ) : null}
-              <span className="absolute top-2 left-2 px-1.5 py-0.5 text-[10px] font-bold uppercase text-white bg-[#eb0400]">Live</span>
-            </div>
-            <p className="mt-2 text-base font-semibold text-white truncate">{s.title || 'Live'}</p>
-            <p className="text-sm text-[#b3b3b3] truncate">{s.displayName || s.handle}</p>
-          </button>
         ))}
       </ThreeCarousel>
 
