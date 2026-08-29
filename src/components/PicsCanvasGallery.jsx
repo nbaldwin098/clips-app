@@ -464,8 +464,6 @@ export default function PicsCanvasGallery({
           Drag to pan · scroll / pinch to zoom · click or zoom into a photo
         </div>
       )}
-      {/* Smoke / a11y hooks for mosaic enter semantics */}
-      <span className="sr-only">ENTER_ZOOM tileAtViewportCenter Zoom the mosaic</span>
     </div>
   )
 }
