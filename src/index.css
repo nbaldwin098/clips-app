@@ -69,7 +69,10 @@ header[data-apex] input[type="search"] {
 }
 
 html {
-  font-size: 18px;
+  font-size: 16px;
+}
+@media (min-width: 768px) {
+  html { font-size: 18px; }
 }
 html, body, #root {
   height: 100%;
@@ -303,3 +306,26 @@ body::before {
   border-color: #272727 !important;
 }
 
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.sr-only:focus,
+.sr-only:focus-visible,
+.focus\:not-sr-only:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
