@@ -144,7 +144,7 @@ export default function MessagesPage({
   if (!isAuthenticated) {
     return (
       <StudioShell
-        tone="light"
+        tone="dark"
         title="Messages"
         nav={[{ id: 'inbox', label: 'Inbox', icon: MessageSquare, group: 'Messages' }]}
         activeId="inbox"
@@ -153,8 +153,8 @@ export default function MessagesPage({
         onNotify={() => onNavigate?.('notifications')}
         onHelp={() => onNavigate?.('help')}
       >
-        <p className="text-sm text-neutral-500">
-          <button type="button" onClick={onOpenAuth} className="text-neutral-900 font-medium">Sign in</button>
+        <p className="text-sm text-zinc-400">
+          <button type="button" onClick={onOpenAuth} className="text-white font-medium">Sign in</button>
           {' '}to use messages.
         </p>
       </StudioShell>
@@ -164,7 +164,7 @@ export default function MessagesPage({
   if (user?.provider !== 'supabase') {
     return (
       <StudioShell
-        tone="light"
+        tone="dark"
         title="Messages"
         nav={[{ id: 'inbox', label: 'Inbox', icon: MessageSquare, group: 'Messages' }]}
         activeId="inbox"
@@ -182,7 +182,7 @@ export default function MessagesPage({
 
   return (
     <StudioShell
-      tone="light"
+      tone="dark"
       title="Messages"
       nav={[{ id: 'inbox', label: 'Inbox', icon: MessageSquare, group: 'Messages' }]}
       activeId="inbox"
@@ -200,19 +200,19 @@ export default function MessagesPage({
         </button>
       )}
     >
-      <div className="h-[calc(100%-0.5rem)] min-h-[420px] flex border border-neutral-200 rounded-2xl overflow-hidden bg-white">
+      <div className="h-[calc(100%-0.5rem)] min-h-[420px] flex border border-white/10 rounded-2xl overflow-hidden bg-black">
         <aside
           className={cn(
-            'w-full sm:w-72 shrink-0 border-r border-neutral-200 flex flex-col bg-white',
+            'w-full sm:w-72 shrink-0 border-r border-white/10 flex flex-col bg-black',
             mobileShowThread && !composeOpen ? 'hidden sm:flex' : 'flex'
           )}
         >
           {composeOpen ? (
             <div className="flex flex-col h-full">
-              <div className="px-3 py-2 border-b border-neutral-200 space-y-2">
+              <div className="px-3 py-2 border-b border-white/10 space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-neutral-900">New message</p>
-                  <button type="button" className="text-[11px] text-neutral-500 hover:text-neutral-900" onClick={() => setComposeOpen(false)}>
+                  <p className="text-xs font-semibold text-white">New message</p>
+                  <button type="button" className="text-[11px] text-zinc-400 hover:text-white" onClick={() => setComposeOpen(false)}>
                     Cancel
                   </button>
                 </div>
@@ -220,25 +220,25 @@ export default function MessagesPage({
                   value={composeQ}
                   onChange={(e) => setComposeQ(e.target.value)}
                   placeholder="@handle"
-                  className="w-full h-9 border border-neutral-200 bg-neutral-50 px-3 text-sm text-neutral-900"
+                  className="w-full h-9 border border-white/10 bg-[#141414] px-3 text-sm text-white"
                   autoFocus
                 />
               </div>
               <ul className="flex-1 overflow-y-auto">
                 {people.length === 0 ? (
-                  <li className="p-6 text-center text-xs text-neutral-500">No people found.</li>
+                  <li className="p-6 text-center text-xs text-zinc-400">No people found.</li>
                 ) : people.map((p) => (
                   <li key={p.id}>
                     <button
                       type="button"
                       disabled={busy}
                       onClick={() => startWith(p)}
-                      className="w-full flex items-center gap-3 px-3 py-3 text-left hover:bg-neutral-50"
+                      className="w-full flex items-center gap-3 px-3 py-3 text-left hover:bg-[#141414]"
                     >
                       <ChannelAvatar src={p.avatarUrl} name={p.displayName || p.handle} size={36} />
                       <div className="min-w-0">
-                        <p className="text-sm text-neutral-900 truncate">{p.displayName || p.handle}</p>
-                        <p className="text-[11px] text-neutral-500 truncate">@{String(p.handle || '').replace(/^@/, '')}</p>
+                        <p className="text-sm text-white truncate">{p.displayName || p.handle}</p>
+                        <p className="text-[11px] text-zinc-400 truncate">@{String(p.handle || '').replace(/^@/, '')}</p>
                       </div>
                     </button>
                   </li>
@@ -248,9 +248,9 @@ export default function MessagesPage({
           ) : (
             <ul className="flex-1 overflow-y-auto">
               {threads.length === 0 ? (
-                <li className="p-6 text-center text-xs text-neutral-500">
+                <li className="p-6 text-center text-xs text-zinc-400">
                   No messages yet.
-                  <button type="button" className="block mx-auto mt-3 text-neutral-900 underline" onClick={() => setComposeOpen(true)}>
+                  <button type="button" className="block mx-auto mt-3 text-white underline" onClick={() => setComposeOpen(true)}>
                     Start a message
                   </button>
                 </li>
@@ -262,21 +262,21 @@ export default function MessagesPage({
                       type="button"
                       onClick={() => selectThread(t.id)}
                       className={cn(
-                        'w-full flex items-center gap-3 px-3 py-3 text-left hover:bg-neutral-50',
-                        activeId === t.id && 'bg-neutral-100'
+                        'w-full flex items-center gap-3 px-3 py-3 text-left hover:bg-[#141414]',
+                        activeId === t.id && 'bg-white/10'
                       )}
                     >
                       <ChannelAvatar src={peer?.avatarUrl} name={peer?.displayName || t.peerHandle || '?'} size={40} />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
-                          <p className="text-sm text-neutral-900 truncate">{peerLabel(t.peerId, t.peerHandle || peer?.handle)}</p>
+                          <p className="text-sm text-white truncate">{peerLabel(t.peerId, t.peerHandle || peer?.handle)}</p>
                           {t.unread ? (
                             <span className="shrink-0 h-5 min-w-5 px-1.5 rounded-full bg-neutral-900 text-white text-[10px] font-bold flex items-center justify-center">
                               {t.unread}
                             </span>
                           ) : null}
                         </div>
-                        <p className="text-[11px] text-neutral-500 truncate mt-0.5">{t.lastBody || '—'}</p>
+                        <p className="text-[11px] text-zinc-400 truncate mt-0.5">{t.lastBody || '—'}</p>
                       </div>
                     </button>
                   </li>
@@ -288,14 +288,14 @@ export default function MessagesPage({
 
         <section
           className={cn(
-            'flex-1 min-w-0 flex flex-col bg-white',
+            'flex-1 min-w-0 flex flex-col bg-black',
             (!mobileShowThread || composeOpen) ? 'hidden sm:flex' : 'flex'
           )}
         >
           {!active ? (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-              <MessageSquare className="h-8 w-8 text-neutral-300" />
-              <p className="mt-3 text-sm text-neutral-500">Select a conversation</p>
+              <MessageSquare className="h-8 w-8 text-zinc-600" />
+              <p className="mt-3 text-sm text-zinc-400">Select a conversation</p>
               <button
                 type="button"
                 className="mt-4 h-9 px-4 bg-neutral-900 text-white text-xs font-semibold rounded-lg"
@@ -306,10 +306,10 @@ export default function MessagesPage({
             </div>
           ) : (
             <>
-              <div className="shrink-0 h-12 px-3 border-b border-neutral-200 flex items-center gap-2">
+              <div className="shrink-0 h-12 px-3 border-b border-white/10 flex items-center gap-2">
                 <button
                   type="button"
-                  className="sm:hidden h-8 w-8 inline-flex items-center justify-center text-neutral-700"
+                  className="sm:hidden h-8 w-8 inline-flex items-center justify-center text-zinc-300"
                   onClick={() => setMobileShowThread(false)}
                   aria-label="Back to inbox"
                 >
@@ -317,7 +317,7 @@ export default function MessagesPage({
                 </button>
                 <button
                   type="button"
-                  className="text-sm font-semibold text-neutral-900 truncate hover:underline"
+                  className="text-sm font-semibold text-white truncate hover:underline"
                   onClick={() => {
                     const peer = peerAvatar(active.peerId)
                     onNavigate?.('profile', peer?.handle || active.peerHandle || '')
@@ -333,7 +333,7 @@ export default function MessagesPage({
                     <div key={m.id} className={cn('flex', mine ? 'justify-end' : 'justify-start')}>
                       <div className={cn(
                         'max-w-[80%] px-3 py-2 text-sm',
-                        mine ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-800'
+                        mine ? 'bg-neutral-900 text-white' : 'bg-white/10 text-zinc-200'
                       )}>
                         {m.body}
                       </div>
@@ -342,12 +342,12 @@ export default function MessagesPage({
                 })}
               </div>
               {note ? <p className="px-3 text-xs text-rose-400">{note}</p> : null}
-              <form onSubmit={onSend} className="shrink-0 p-3 border-t border-neutral-200 flex gap-2">
+              <form onSubmit={onSend} className="shrink-0 p-3 border-t border-white/10 flex gap-2">
                 <input
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
                   placeholder="Message"
-                  className="flex-1 h-10 border border-neutral-200 bg-neutral-50 px-3 text-sm text-neutral-900"
+                  className="flex-1 h-10 border border-white/10 bg-[#141414] px-3 text-sm text-white"
                 />
                 <button
                   type="submit"
