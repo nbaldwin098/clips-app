@@ -1,2 +1,0 @@
-import StudioControlDeck from './StudioControlDeck'
-export { default } from './CreatorStudio.jsx'
