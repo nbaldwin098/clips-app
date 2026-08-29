@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { CreditCard, Wallet } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import CalabiCashShop from '../CalabiCashShop'
-import CoinIcon from '../CoinIcon'
-import { listCoinLedger, listCoinPacks, refreshWalletFromCloud, getCoinBalance } from '../../lib/calabiCash'
+import { listCoinPacks, refreshWalletFromCloud, getCoinBalance } from '../../lib/calabiCash'
 import {
   listPaymentMethods,
   savePaymentMethod,
@@ -14,46 +13,20 @@ import {
 import StudioShell, { StudioCard, StudioKpi } from '../dash/StudioShell'
 import AuthRequired from '../AuthRequired'
 
-function formatWhen(iso) {
-  if (!iso) return ''
-  try {
-    return new Date(iso).toLocaleString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    })
-  } catch {
-    return String(iso)
-  }
-}
-
-function orderLabel(row, packsById) {
-  const pack = row.tierId ? packsById.get(row.tierId) : null
-  if (pack) return pack.label
-  if (row.note) return row.note
-  if (row.kind === 'pack' || row.kind === 'coin_credit') return 'Coin pack'
-  if (row.kind === 'redeem' || row.kind === 'coin_debit') return 'Spent'
-  return row.kind || 'Order'
-}
-
 const NAV = [
   { id: 'coins', label: 'Coins', icon: Wallet, group: 'Wallet' },
-  { id: 'orders', label: 'Orders', icon: Wallet, group: 'Wallet' },
   { id: 'payments', label: 'Payment methods', icon: CreditCard, group: 'Wallet' },
 ]
 
-/** Coins + Orders + payment methods — TikTok-white profile shell (B). */
 export default function WalletSettings({ onNavigate, onOpenAuth, initialTab = null }) {
   const { user, isAuthenticated } = useAuth()
-  const start = initialTab === 'orders' || initialTab === 'payments' ? initialTab : 'coins'
+  const start = initialTab === 'payments' ? 'payments' : 'coins'
   const [tab, setTab] = useState(start)
   const [, bump] = useState(0)
   const [savePrompt, setSavePrompt] = useState(false)
 
   useEffect(() => {
-    setTab(initialTab === 'orders' || initialTab === 'payments' ? initialTab : 'coins')
+    setTab(initialTab === 'payments' ? 'payments' : 'coins')
   }, [initialTab])
 
   useEffect(() => {
@@ -62,27 +35,24 @@ export default function WalletSettings({ onNavigate, onOpenAuth, initialTab = nu
     if (shouldPromptSavePayment(user.id)) setSavePrompt(true)
   }, [user?.id])
 
-  const packsById = useMemo(() => new Map(listCoinPacks().map((p) => [p.id, p])), [])
-  const rows = listCoinLedger(user?.id)
   const methods = listPaymentMethods(user?.id)
   const coins = getCoinBalance(user?.id)
 
   if (!isAuthenticated) {
     const packs = listCoinPacks()
     return (
-      <StudioShell tone="light" title="Wallet" nav={NAV} activeId="coins" onNav={() => {}} onBack={() => onNavigate?.('home')} onNotify={() => onNavigate?.('notifications')} onHelp={() => onNavigate?.('help')}>
+      <StudioShell tone="dark" title="Wallet" nav={NAV} activeId="coins" onNav={() => {}} onBack={() => onNavigate?.('home')} onNotify={() => onNavigate?.('notifications')} onHelp={() => onNavigate?.('help')}>
         <div className="space-y-6 max-w-3xl">
-          <p className="text-sm text-neutral-500">Sign in to buy coins and manage payment methods.</p>
+          <p className="text-sm text-zinc-500">Sign in to buy coins and manage payment methods.</p>
           <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
             {packs.map((p) => (
-              <div key={p.id} className="border border-neutral-200 bg-white p-4 text-center rounded-xl">
-                <p className="text-sm font-bold text-neutral-900">{p.label}</p>
-                <p className="mt-2 text-base font-bold text-neutral-900">${Number(p.usd).toFixed(2)}</p>
+              <div key={p.id} className="border border-white/10 bg-[#141414] p-4 text-center">
+                <p className="text-sm font-bold text-white">{p.label}</p>
+                <p className="mt-2 text-base font-bold text-white">${Number(p.usd).toFixed(2)}</p>
               </div>
             ))}
           </div>
           <AuthRequired
-            light
             title="Sign in to buy"
             description="Cloud account required to purchase Coins."
             onOpenAuth={onOpenAuth}
@@ -107,7 +77,7 @@ export default function WalletSettings({ onNavigate, onOpenAuth, initialTab = nu
 
   return (
     <StudioShell
-      tone="light"
+      tone="dark"
       title="Wallet"
       nav={NAV}
       activeId={tab}
@@ -117,18 +87,17 @@ export default function WalletSettings({ onNavigate, onOpenAuth, initialTab = nu
       onHelp={() => onNavigate?.('help')}
     >
       <div className="space-y-5 max-w-4xl">
-        <div className="grid sm:grid-cols-3 gap-3">
+        <div className="grid sm:grid-cols-2 gap-3">
           <StudioKpi label="Coin balance" value={coins.toLocaleString()} icon={Wallet} />
-          <StudioKpi label="Orders" value={String(rows.length)} icon={Wallet} />
           <StudioKpi label="Saved methods" value={String(methods.length)} icon={CreditCard} />
         </div>
 
         {savePrompt ? (
           <StudioCard title="Save payment method?">
-            <p className="text-sm text-neutral-600 mb-3">Use this card again in Shop and Wallet.</p>
+            <p className="text-sm text-zinc-400 mb-3">Use this card again in Shop and Wallet.</p>
             <div className="flex gap-2">
-              <button type="button" onClick={acceptSave} className="h-9 px-3 bg-neutral-900 text-white text-xs font-semibold rounded-lg">Save</button>
-              <button type="button" onClick={() => { clearPaymentSavePrompt(user.id); setSavePrompt(false) }} className="h-9 px-3 border border-neutral-200 text-xs rounded-lg">Not now</button>
+              <button type="button" onClick={acceptSave} className="h-9 px-3 bg-white text-black text-xs font-semibold">Save</button>
+              <button type="button" onClick={() => { clearPaymentSavePrompt(user.id); setSavePrompt(false) }} className="h-9 px-3 border border-white/20 text-xs">Not now</button>
             </div>
           </StudioCard>
         ) : null}
@@ -139,58 +108,24 @@ export default function WalletSettings({ onNavigate, onOpenAuth, initialTab = nu
           </StudioCard>
         ) : null}
 
-        {tab === 'orders' ? (
-          <StudioCard title="Coin orders">
-            {!rows.length ? (
-              <div className="text-center space-y-3 py-4">
-                <p className="text-sm text-neutral-500">No coin orders yet.</p>
-                <button type="button" onClick={() => onTab('coins')} className="h-9 px-4 bg-neutral-900 text-white text-xs font-semibold rounded-lg">Buy Coins</button>
-              </div>
-            ) : (
-              <ul className="divide-y divide-neutral-100 border border-neutral-200 rounded-xl overflow-hidden">
-                {rows.map((row, i) => {
-                  const delta = Number(row.delta) || 0
-                  const usd = Number(row.usd) || 0
-                  const credit = delta > 0
-                  return (
-                    <li key={`${row.at || i}_${row.kind}_${delta}`} className="flex items-center gap-3 px-4 py-3 bg-white">
-                      <CoinIcon className="h-5 w-5 shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm text-neutral-900 truncate">{orderLabel(row, packsById)}</p>
-                        <p className="text-[11px] text-neutral-500">{formatWhen(row.at)}</p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className={`text-sm font-semibold tabular-nums ${credit ? 'text-amber-600' : 'text-neutral-700'}`}>
-                          {credit ? '+' : ''}{delta.toLocaleString()} coins
-                        </p>
-                        {usd > 0 ? <p className="text-[11px] text-neutral-500 tabular-nums">${usd.toFixed(2)}</p> : null}
-                      </div>
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
-          </StudioCard>
-        ) : null}
-
         {tab === 'payments' ? (
           <StudioCard title="Payment methods">
-            <p className="text-xs text-neutral-500 mb-3">Shared with Shop. Brand + last four only.</p>
+            <p className="text-xs text-zinc-500 mb-3">Shared with Shop. Brand + last four only.</p>
             {!methods.length ? (
-              <p className="text-sm text-neutral-500">No saved methods yet.</p>
+              <p className="text-sm text-zinc-500">No saved methods yet.</p>
             ) : (
-              <ul className="divide-y divide-neutral-100 border border-neutral-200 rounded-xl overflow-hidden">
+              <ul className="divide-y divide-white/10 border border-white/10 overflow-hidden">
                 {methods.map((m) => (
                   <li key={m.id} className="flex items-center gap-3 px-4 py-3">
-                    <CreditCard className="h-4 w-4 text-neutral-400" />
+                    <CreditCard className="h-4 w-4 text-zinc-400" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm text-neutral-900">{m.label}</p>
-                      <p className="text-[11px] text-neutral-500">Exp {m.expMonth}/{m.expYear}</p>
+                      <p className="text-sm text-white">{m.label}</p>
+                      <p className="text-[11px] text-zinc-500">Exp {m.expMonth}/{m.expYear}</p>
                     </div>
                     <button
                       type="button"
                       onClick={() => { removePaymentMethod(user.id, m.id); bump((n) => n + 1) }}
-                      className="text-[11px] text-neutral-500 hover:text-neutral-900"
+                      className="text-[11px] text-zinc-500 hover:text-white"
                     >
                       Remove
                     </button>
@@ -198,7 +133,7 @@ export default function WalletSettings({ onNavigate, onOpenAuth, initialTab = nu
                 ))}
               </ul>
             )}
-            <button type="button" onClick={() => onNavigate?.('shop')} className="mt-3 text-xs text-neutral-700 hover:text-neutral-900">
+            <button type="button" onClick={() => onNavigate?.('shop')} className="mt-3 text-xs text-zinc-300 hover:text-white">
               Open Shop →
             </button>
           </StudioCard>
