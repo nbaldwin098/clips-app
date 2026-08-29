@@ -211,13 +211,13 @@ export default function ContentCard({ item, onOpen, onOpenProfile, variant }) {
             <button type="button" onClick={open} className="w-full text-left">
               <p className="text-base font-semibold text-white line-clamp-2 leading-snug hover:text-white">{item.title || 'Untitled'}</p>
             </button>
-            <p className="text-xs text-[#aaa] mt-1 inline-flex items-center gap-1 min-w-0">
+            <p className="text-sm text-[#aaa] mt-1 inline-flex items-center gap-1 min-w-0">
               <button type="button" onClick={openProfile} className="hover:text-white truncate">
                 {name}
               </button>
               {official ? <VerifiedBadge /> : null}
             </p>
-            <p className="text-xs text-[#aaa] pointer-events-none">
+            <p className="text-sm text-[#aaa] pointer-events-none">
               {viewsLabel(views)}
               {item.createdAt || item.publishedAt ? <> · <PostedStamp item={item} /></> : ''}
               {followLine ? ` · ${followLine}` : ''}
