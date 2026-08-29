@@ -17,10 +17,6 @@ import {
   ShoppingBag,
   Search,
   Bell,
-  CircleHelp,
-  Mail,
-  Sparkles,
-  MessageSquare,
   MoreVertical,
   ArrowLeft,
 } from 'lucide-react'
@@ -47,7 +43,6 @@ import { formatCount } from '../../lib/uiFormat'
 import { formatPostedAt, postedAtOf } from '../../lib/mediaMeta'
 import { cn } from '../../lib/utils'
 import { useContentSyncTick, useInteractionSyncTick } from '../../lib/useContentSync'
-import BrandMark from '../BrandMark'
 import ChannelAvatar from '../ChannelAvatar'
 import { listWithdrawMethods } from '../../lib/calabiCash'
 import InteractionBubbleMap from './InteractionBubbleMap'
@@ -827,7 +822,6 @@ export default function CreatorStudio({
     <DashToneProvider tone="dark">
     <div className="h-full min-h-[480px] flex flex-col bg-[#0b0b0b] text-zinc-200 overflow-hidden" data-studio="calabi">
       <header className="shrink-0 h-14 px-3 sm:px-4 flex items-center gap-3 border-b border-white/10 bg-[#0b0b0b]">
-        <BrandMark size={28} withWord className="shrink-0 hidden sm:inline-flex" />
         <div className="flex-1 max-w-xl mx-auto relative">
           <div className="flex items-center gap-2 h-9 rounded-full border border-white/10 bg-[#141414] px-3">
             <Search className="h-4 w-4 text-zinc-500 shrink-0" />
@@ -838,7 +832,7 @@ export default function CreatorStudio({
               onChange={(e) => { setStudioQuery(e.target.value); setSearchOpen(true) }}
               onFocus={() => setSearchOpen(true)}
               onBlur={() => setTimeout(() => setSearchOpen(false), 150)}
-              placeholder="Search (Ctrl + K)"
+              placeholder="Search your posts"
               className="flex-1 min-w-0 bg-transparent text-[13px] text-white placeholder:text-zinc-500 outline-none"
               aria-label="Search your posts"
             />
@@ -856,24 +850,12 @@ export default function CreatorStudio({
                   {p.title || 'Untitled'}
                 </button>
               )) : (
-                <p className="px-3 py-2 text-[12px] text-zinc-500">No posts match.</p>
+                <p className="px-3 py-2 text-[12px] text-zinc-500">No posts match. This search is your dashboard only.</p>
               )}
             </div>
           ) : null}
         </div>
         <div className="flex items-center gap-0.5 shrink-0">
-          <button type="button" onClick={() => onNavigate?.('help')} aria-label="Help" className="h-9 w-9 rounded-full inline-flex items-center justify-center text-zinc-300 hover:bg-white/5">
-            <CircleHelp className="h-4 w-4" />
-          </button>
-          <button type="button" onClick={() => setSection('analytics')} aria-label="Analytics" className="h-9 w-9 rounded-full inline-flex items-center justify-center text-zinc-300 hover:bg-white/5">
-            <Sparkles className="h-4 w-4" />
-          </button>
-          <button type="button" onClick={() => onNavigate?.('messages')} aria-label="Messages" className="h-9 w-9 rounded-full inline-flex items-center justify-center text-zinc-300 hover:bg-white/5">
-            <Mail className="h-4 w-4" />
-          </button>
-          <button type="button" onClick={() => setSection('lab')} aria-label="Calabi Studio" className="h-9 w-9 rounded-full inline-flex items-center justify-center text-zinc-300 hover:bg-white/5">
-            <MessageSquare className="h-4 w-4" />
-          </button>
           <button type="button" onClick={() => onNavigate?.('notifications')} aria-label="Notifications" className="h-9 w-9 rounded-full inline-flex items-center justify-center text-zinc-300 hover:bg-white/5">
             <Bell className="h-4 w-4" />
           </button>
@@ -881,7 +863,7 @@ export default function CreatorStudio({
             <ChannelAvatar src={user?.avatarUrl} name={user?.displayName || user?.handle} size={32} />
             <span
               className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full ring-2 ring-[#0b0b0b]"
-              style={{ background: liveOn ? '#22c55e' : '#52525b' }}
+              style={{ background: liveOn ? '#ffffff' : '#52525b' }}
             />
           </span>
         </div>
@@ -906,7 +888,7 @@ export default function CreatorStudio({
                       onClick={() => goNav(item)}
                       className={cn(
                         'w-full flex items-center gap-3 px-3 py-2.5 text-[14px] font-medium text-left rounded-xl',
-                        active ? 'bg-white/5 text-[#22c55e]' : 'text-zinc-400 hover:bg-white/5 hover:text-white'
+                        active ? 'bg-white/10 text-white' : 'text-zinc-400 hover:bg-white/5 hover:text-white'
                       )}
                     >
                       <Icon className="h-[18px] w-[18px] shrink-0" />
@@ -931,7 +913,7 @@ export default function CreatorStudio({
           <ChannelAvatar src={user?.avatarUrl} name={user?.displayName || user?.handle} size={36} />
           <div className="min-w-0 flex-1">
             <p className="text-[13px] font-medium text-white truncate">{user?.displayName || user?.handle || 'You'}</p>
-            <p className="text-[11px]" style={{ color: liveOn ? '#22c55e' : '#71717a' }}>
+            <p className="text-[11px]" style={{ color: liveOn ? '#ffffff' : '#71717a' }}>
               {liveOn ? 'Online' : 'Offline'}
             </p>
           </div>
