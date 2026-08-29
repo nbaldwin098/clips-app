@@ -80,8 +80,5 @@ export const DEMO_SHOP_PRODUCTS = [
 ]
 
 export function productsWithDemo(cloudProducts = []) {
-  const cloud = Array.isArray(cloudProducts) ? cloudProducts : []
-  if (cloud.length >= 4) return cloud
-  const ids = new Set(cloud.map((p) => p.id))
-  return [...cloud, ...DEMO_SHOP_PRODUCTS.filter((p) => !ids.has(p.id))]
+  return Array.isArray(cloudProducts) ? cloudProducts.filter((p) => p && !String(p.id || '').startsWith('demo_')) : []
 }
