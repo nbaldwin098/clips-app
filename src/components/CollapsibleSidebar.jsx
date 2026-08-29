@@ -40,7 +40,7 @@ import { t, subscribeLocale } from '../lib/i18n'
 
 const itemCls = (active, collapsed) =>
   cn(
-    'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-semibold transition-colors',
+    'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-semibold transition-colors',
     collapsed && 'justify-center px-0',
     active ? 'text-white bg-[#1f1f28]' : 'text-zinc-400 hover:text-white hover:bg-[#181820]'
   )
@@ -53,7 +53,7 @@ function NavBtn({ active, onClick, icon: Icon, label, collapsed }) {
       className={itemCls(active, collapsed)}
       title={collapsed ? label : undefined}
     >
-      {Icon && <Icon className={cn('h-4 w-4 shrink-0', active && 'text-white')} />}
+      {Icon && <Icon className={cn('h-5 w-5 shrink-0', active && 'text-white')} />}
       {!collapsed && <span className="truncate">{label}</span>}
     </button>
   )
@@ -77,8 +77,7 @@ export default function CollapsibleSidebar({
   onSelectLiveStream,
   focusedStreamUserId,
 }) {
-  const collapsed = true // Icons-only forever — never expand the left rail
-  // width formula kept for layout contract: collapsed ? 'w-14' : 'w-60'
+  const collapsed = false
   const [moreOpen, setMoreOpen] = useState(false)
   const [liveNow, setLiveNow] = useState(() => listLiveBoard(lsGet('live_board', []) || []))
   const [recommendedCreators, setRecommendedCreators] = useState(() => listSidebarCreators(8))
@@ -280,7 +279,7 @@ export default function CollapsibleSidebar({
     <>
       <aside
         className={cn(
-          'flex flex-col shrink-0 h-[calc(100dvh-3.5rem)] sticky top-14 bg-[#0f0f0f] border-r border-[#272727] z-30 overflow-hidden w-14'
+          'flex flex-col shrink-0 h-[calc(100dvh-4rem)] sticky top-16 bg-black border-r border-[#272727] z-30 overflow-hidden w-56'
         )}
       >
         {body}
