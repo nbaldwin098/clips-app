@@ -4,9 +4,11 @@ import { useAuth } from './context/AuthContext'
 import { warnIfSupabaseMissing } from './lib/supabaseClient'
 import { initLocale } from './lib/i18n'
 import { initTheme } from './lib/theme'
+import { setPageMeta } from './lib/pageMeta'
 import ErrorBoundary from './components/ErrorBoundary'
 import StreamingNavbar from './components/StreamingNavbar'
 import CollapsibleSidebar from './components/CollapsibleSidebar'
+import MobileTabBar from './components/MobileTabBar'
 import LiveChatPanel from './components/LiveChatPanel'
 import MfaGate from './components/MfaGate'
 import HomeFeed from './components/HomeFeed'
@@ -140,7 +142,24 @@ function AppShell() {
   useEffect(() => {
     if (typeof document === 'undefined') return
     const titles = { home: 'Recommended', clips: 'Shorts', shorts: 'Shorts', pics: 'Pics', live: 'Live', news: 'News', shop: 'Shop', marketplace: 'Shop', explore: 'Explore', creators: 'Top creators', create: 'Create', following: 'Following', subscriptions: 'Subscriptions', history: 'History', 'watch-again': 'Watch again', 'watch-later': 'Watch later', liked: 'Liked', hearts: 'Hearts', playlists: 'Playlists', library: 'Library', messages: 'Messages', notifications: 'Notifications', settings: 'Settings', wallet: 'Wallet', 'calabi-cash': 'Wallet', rewards: 'Wallet', help: 'Help', about: 'About', support: 'Support', appeals: 'Appeals', stats: 'Stats', api: 'API', seller: 'Seller portal', 'seller-portal': 'Seller portal', advertise: 'Monetize', 'advertiser-portal': 'Monetize', admin: 'Admin', watch: 'Watch', profile: profileTarget.handle ? `@${profileTarget.handle}` : 'Profile', checkout: 'Premium', dashboard: 'Creator Studio', analytics: 'Analytics', vods: 'VODs', verify: 'Get verified', 'legal-tos': 'Terms', 'legal-privacy': 'Privacy', 'legal-creator': 'Creator Agreement', 'legal-community': 'Community Guidelines' }
-    document.title = titles[view] ? `${titles[view]} · calabi` : 'calabi'
+    const label = titles[view] || 'calabi'
+    const descriptions = {
+      home: 'Watch live streams, videos, clips, and pics on calabi.',
+      live: 'Live channels on calabi.',
+      clips: 'Short clips on calabi.',
+      shorts: 'Short clips on calabi.',
+      pics: 'Photo posts on calabi.',
+      news: 'News on calabi.',
+      shop: 'Creator shop on calabi.',
+      creators: 'Top creators on calabi.',
+      explore: 'Search calabi.',
+    }
+    setPageMeta({
+      title: titles[view] ? label : 'calabi',
+      description: descriptions[view] || 'Watch live streams, videos, clips, and pics on calabi.',
+      url: typeof window !== 'undefined' ? window.location.href : 'https://calabi.us/',
+      image: 'https://calabi.us/apple-touch-icon.png',
+    })
   }, [view, routeId, profileTarget.handle])
 
   useEffect(() => {
@@ -463,7 +482,7 @@ function AppShell() {
         {!studioChrome ? (
           <CollapsibleSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} currentView={view} onNavigate={navigate} onSelectLiveStream={selectLiveStreamFromSidebar} focusedStreamUserId={focusedLiveStream?.userId} />
         ) : null}
-        <main id="main-content" tabIndex={-1} className={`flex-1 min-h-0 min-w-0 bg-[#000000] ${lockStage ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+        <main id="main-content" tabIndex={-1} className={`flex-1 min-h-0 min-w-0 bg-[#000000] ${lockStage ? 'overflow-hidden' : 'overflow-y-auto'} pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0`}>
           <Suspense fallback={<div className="p-8 text-sm text-zinc-500">Loading…</div>}>
             {renderMain()}
           </Suspense>
@@ -472,6 +491,7 @@ function AppShell() {
           <LiveChatPanel channel={focusedLiveStream} collapsed={chatCollapsed} onToggleCollapse={toggleChat} mobileOpen={mobileChatOpen} onMobileClose={() => setMobileChatOpen(false)} onOpenAuth={openAuth} />
         )}
       </div>
+      {!studioChrome ? <MobileTabBar currentView={view} onNavigate={navigate} /> : null}
       <ImportShortModal open={importOpen} onClose={() => setImportOpen(false)} onOpenAuth={openAuth} />
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
       {mfaPending ? <MfaGate /> : null}
