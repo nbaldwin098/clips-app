@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   Wallet,
   MessageSquare,
+  Mail,
   RadioTower,
   Scale,
   Users,
@@ -15,6 +16,7 @@ import {
   Moon,
   Sun,
   Check,
+  ChevronDown,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { isPlatformOwner } from '../lib/moderation'
@@ -51,6 +53,7 @@ export default function StreamingNavbar({
   searchQuery,
   onSearchChange,
   onOpenWatch,
+  currentView = 'home',
 }) {
   const { user, isAuthenticated, logout } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -60,6 +63,8 @@ export default function StreamingNavbar({
   const [theme, setThemeState] = useState(() => getTheme())
   const menuRef = useRef(null)
   const guestRef = useRef(null)
+  const searchRef = useRef(null)
+  const apex = currentView === 'home'
   const [, setWalletTick] = useState(0)
   const [, bump] = useState(0)
   const coins = getCoinBalance(user?.id)
@@ -76,6 +81,18 @@ export default function StreamingNavbar({
     if (!user?.id) return
     refreshWalletFromCloud(user.id).then(() => setWalletTick((n) => n + 1)).catch(() => {})
   }, [user?.id])
+
+  useEffect(() => {
+    if (!apex) return undefined
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && String(e.key).toLowerCase() === 'k') {
+        e.preventDefault()
+        searchRef.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [apex])
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -110,25 +127,76 @@ export default function StreamingNavbar({
     setThemeState(toggleTheme())
   }
 
+  const apexLinks = [
+    { id: 'home', label: 'Home', view: 'home' },
+    { id: 'browse', label: 'Browse', view: 'explore' },
+    { id: 'esports', label: 'Esports', view: 'live' },
+    { id: 'creators', label: 'Creators', view: 'creators' },
+  ]
+
   return (
-    <header className="sticky top-0 z-50 h-14 w-full border-b border-[#272727] bg-[#0f0f0f]">
-      <div className="flex h-full w-full min-w-0 items-center gap-1 pr-1.5 sm:pr-3">
+    <header
+      className={apex
+        ? 'sticky top-0 z-50 h-16 w-full bg-black'
+        : 'sticky top-0 z-50 h-14 w-full border-b border-[#272727] bg-[#0f0f0f]'}
+      data-apex={apex ? 'home' : undefined}
+    >
+      <div className={apex
+        ? 'flex h-full w-full min-w-0 items-center gap-3 px-3 sm:px-5'
+        : 'flex h-full w-full min-w-0 items-center gap-1 pr-1.5 sm:pr-3'}
+      >
         <div className="flex items-center shrink-0">
           <button
             type="button"
             onClick={() => handleNav('home')}
-            className="flex h-14 w-11 sm:w-14 items-center justify-center shrink-0"
+            className={apex
+              ? 'flex h-16 items-center gap-2 shrink-0 pr-2'
+              : 'flex h-14 w-11 sm:w-14 items-center justify-center shrink-0'}
             aria-label={t('nav.home')}
             title={t('nav.home')}
           >
-            <BrandMark size={32} />
+            <BrandMark size={32} withWord={apex} wordClassName="text-white italic font-black tracking-tight" />
           </button>
         </div>
+
+        {apex ? (
+          <nav className="hidden md:flex items-center gap-5 shrink-0">
+            {apexLinks.map((link) => {
+              const active = currentView === link.view || (link.view === 'home' && currentView === 'home')
+              return (
+                <button
+                  key={link.id}
+                  type="button"
+                  onClick={() => handleNav(link.view)}
+                  className={`relative h-16 text-[14px] font-semibold ${active ? 'text-white' : 'text-[#a0a0a0] hover:text-white'}`}
+                >
+                  {link.label}
+                  {active ? <span className="absolute left-0 right-0 bottom-3 h-[2px] rounded-full bg-[#FF4B11]" /> : null}
+                </button>
+              )
+            })}
+          </nav>
+        ) : null}
 
         <form
           className="flex-1 flex justify-center min-w-0 px-1 sm:px-4"
           onSubmit={(e) => { e.preventDefault(); handleNav('explore') }}
         >
+          {apex ? (
+            <div className="flex w-full max-w-[420px] min-w-0 h-10 items-center gap-2 rounded-full bg-[#1a1a1a] border border-white/10 px-3">
+              <Search className="h-4 w-4 text-[#8a8a8a] shrink-0" />
+              <input
+                ref={searchRef}
+                type="search"
+                value={searchQuery || ''}
+                onChange={(e) => onSearchChange?.(e.target.value)}
+                onFocus={() => handleNav('explore')}
+                placeholder="Search calabi"
+                className="flex-1 min-w-0 bg-transparent text-[13px] text-white placeholder:text-[#6b6b6b] outline-none"
+              />
+              <span className="hidden sm:inline text-[11px] text-[#6b6b6b] font-semibold">⌘K</span>
+            </div>
+          ) : (
           <div className="flex w-full max-w-[560px] min-w-0">
             <input
               type="search"
@@ -146,6 +214,7 @@ export default function StreamingNavbar({
               <Search className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </button>
           </div>
+          )}
         </form>
 
         <div className="flex items-center gap-0.5 sm:gap-1.5 shrink-0 flex-nowrap">
@@ -157,15 +226,27 @@ export default function StreamingNavbar({
                 onOpenAuth={onOpenAuth}
               />
 
+              {apex ? (
+                <button
+                  type="button"
+                  onClick={() => handleNav('messages')}
+                  aria-label={t('nav.messages')}
+                  className="h-9 w-9 inline-flex items-center justify-center rounded-full text-white hover:bg-white/10"
+                >
+                  <Mail className="h-5 w-5" />
+                </button>
+              ) : null}
+
               <div className="relative shrink-0" ref={menuRef}>
                 <button
                   type="button"
                   data-avatar-btn
                   onClick={() => { setMenuOpen((o) => !o); setLangOpen(false) }}
-                  className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-white/10 shrink-0"
+                  className="flex h-9 items-center justify-center gap-0.5 rounded-full hover:bg-white/10 shrink-0 px-0.5"
                   aria-label={t('nav.account')}
                 >
                   <ChannelAvatar src={user?.avatarUrl} name={user?.displayName || user?.handle} size={28} />
+                  {apex ? <ChevronDown className="h-3.5 w-3.5 text-[#a0a0a0]" /> : null}
                 </button>
 
                 {menuOpen && (
@@ -266,12 +347,24 @@ export default function StreamingNavbar({
               </div>
             </>
           ) : (
-            <div className="relative shrink-0" ref={guestRef}>
+            <div className="relative shrink-0 flex items-center gap-0.5" ref={guestRef}>
+              {apex ? (
+                <button
+                  type="button"
+                  onClick={() => handleNav('messages')}
+                  aria-label={t('nav.messages')}
+                  className="h-9 w-9 inline-flex items-center justify-center rounded-full text-white hover:bg-white/10"
+                >
+                  <Mail className="h-5 w-5" />
+                </button>
+              ) : null}
               <button
                 type="button"
                 data-avatar-btn
                 onClick={() => { setGuestOpen((o) => !o); setLangOpen(false) }}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-[#3ea6ff]/40 text-[#3ea6ff] hover:bg-[#3ea6ff]/10 shrink-0"
+                className={apex
+                  ? 'flex h-9 w-9 items-center justify-center rounded-full text-white hover:bg-white/10 shrink-0'
+                  : 'flex h-9 w-9 items-center justify-center rounded-full border border-[#3ea6ff]/40 text-[#3ea6ff] hover:bg-[#3ea6ff]/10 shrink-0'}
                 aria-label={t('nav.account')}
               >
                 <CircleUserRound className="h-5 w-5" />

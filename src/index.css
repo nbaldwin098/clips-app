@@ -42,6 +42,15 @@ button[data-avatar-btn] {
 header input[type="search"] {
   border-radius: var(--radius-control) !important;
 }
+header[data-apex] input[type="search"] {
+  border-radius: 9999px !important;
+}
+[data-home="apex"] button.apex-pill {
+  border-radius: 9999px !important;
+}
+[data-home="apex"] button.apex-card {
+  border-radius: 12px !important;
+}
 
 /* Option B / D mockups — rounded cards and pills, not site-square chrome */
 [data-studio="calabi"] button,
