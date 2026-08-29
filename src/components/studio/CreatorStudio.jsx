@@ -25,7 +25,6 @@ import {
   ArrowLeft,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
-import CreatorOnboarding from '../CreatorOnboarding'
 import { lsGet, lsSet } from '../../lib/storage'
 import { liveBadgeLabel } from '../../lib/liveStatus'
 import { getCreatorContent, deleteCatalogItem, setContentVisibility } from '../../lib/contentService'
@@ -630,7 +629,6 @@ export default function CreatorStudio({
       : (lsGet('calabi_studio_section', initialSection) || initialSection)
     return raw === 'post' ? 'lab' : raw
   })
-  const [onboardingDone, setOnboardingDone] = useState(() => lsGet(`calabi_onboarding_done_${user?.id}`, false))
   const [selectedPostId, setSelectedPostId] = useState(null)
   const [range, setRange] = useState('all')
   const [postFilter, setPostFilter] = useState('all')
@@ -689,10 +687,6 @@ export default function CreatorStudio({
   }, [section])
 
   useEffect(() => {
-    if (user?.id) setOnboardingDone(lsGet(`calabi_onboarding_done_${user.id}`, false))
-  }, [user?.id])
-
-  useEffect(() => {
     if (!user?.id || user.provider !== 'supabase') return undefined
     let cancelled = false
     const sync = () => {
@@ -721,17 +715,11 @@ export default function CreatorStudio({
     }
   }, [user?.id, user?.provider, user?.handle, section])
 
-  const finishOnboarding = () => {
-    if (user?.id) lsSet(`calabi_onboarding_done_${user.id}`, true)
-    setOnboardingDone(true)
-  }
-
   const posts = useMemo(() => getCreatorContent(user?.id, user?.handle), [user?.id, user?.handle, syncTick])
   const overviewSeries = useMemo(
     () => buildOverviewSeries(user?.id, posts, 14),
     [user?.id, posts, syncTick, mapTick]
   )
-  const showOnboarding = !onboardingDone && posts.length === 0
   const live = lsGet(`live_state_${user?.id}`, null)
   const views = posts.reduce((n, c) => n + getViews(c.id), 0)
   const likes = posts.reduce((n, c) => n + (getVotes(c.id)?.up || 0), 0)
@@ -1022,13 +1010,6 @@ export default function CreatorStudio({
         <div className="flex-1 min-h-0 overflow-hidden px-5 md:px-6 py-5">
           {section === 'overview' ? (
             <div className="h-full min-h-0 overflow-hidden">
-              {showOnboarding ? (
-                <CreatorOnboarding
-                  onOpenUpload={onOpenUpload}
-                  onDone={finishOnboarding}
-                  onNavigate={onNavigate}
-                />
-              ) : (
               <StudioControlDeck
                 user={user}
                 views={views}
@@ -1048,7 +1029,6 @@ export default function CreatorStudio({
                 onOpenPost={openPost}
                 onOpenAuth={onOpenAuth}
               />
-              )}
             </div>
           ) : null}
 
