@@ -3,7 +3,6 @@ import { hideBrokenMedia } from './catalogHealth'
 import { listIndexedUsers, indexUser, normalizeHandle, validateHandle } from './moderation'
 import { isOwnerAccount } from '../data/ownerLogin'
 import { OFFICIAL_CREATORS } from '../data/publicMediaSeed'
-import { NAMED_ACCOUNTS } from '../data/namedAccountsSeed'
 import { createNotification } from './notifications'
 
 const KEY = 'clips_trust_safety'
@@ -202,13 +201,6 @@ export function listAdminPeople({ query = '' } = {}) {
         source: 'library',
         creatorStatus: 'approved',
       }
-    }
-  }
-  if (q) {
-    for (const row of NAMED_ACCOUNTS) {
-      const blob = `${row.displayName} ${row.handle} ${row.email}`.toLowerCase()
-      if (!blob.includes(q)) continue
-      if (!map[row.id]) map[row.id] = { ...row, source: 'named', creatorStatus: 'approved' }
     }
   }
   let list = Object.values(map)
