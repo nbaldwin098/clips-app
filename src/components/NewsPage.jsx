@@ -203,10 +203,10 @@ export default function NewsPage({ onNavigate, onOpenAuth }) {
 
   return (
     <div
-      className="min-h-full bg-[#0a0a09]"
+      className="min-h-full bg-black"
       style={{ '--font-paper': '"Libre Baskerville", "Source Serif 4", Georgia, "Times New Roman", serif' }}
     >
-      <div className="px-3 sm:px-5 md:px-8 py-4 md:py-6 max-w-[1200px] mx-auto">
+      <div className="p-3">
         {items.length === 0 ? (
           <div className="py-20 text-center space-y-3">
             <p className="font-[family-name:var(--font-paper)] text-sm text-neutral-500">
