@@ -97,11 +97,9 @@ export default function HomeFeed({
       {continueItems.length > 0 && (
         <section>
           <h2 className="text-[17px] font-semibold text-white mb-3">Continue watching</h2>
-          <div className="flex gap-4 overflow-x-auto pb-2 chip-scroll">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-6">
             {continueItems.slice(0, 8).map((item) => (
-              <div key={item.id} className="w-[260px] sm:w-[280px] shrink-0">
-                <ContentCard item={item} onOpen={onPlayItem} onOpenProfile={onOpenProfile} variant="video" />
-              </div>
+              <ContentCard key={item.id} item={item} onOpen={onPlayItem} onOpenProfile={onOpenProfile} variant="video" />
             ))}
           </div>
         </section>
