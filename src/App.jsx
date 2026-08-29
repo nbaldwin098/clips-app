@@ -367,9 +367,10 @@ function AppShell() {
 
   const renderMain = () => {
     if (!KNOWN_VIEWS.has(view)) return <NotFoundPage onNavigate={navigate} />
-    const needsAuth = view === 'channel' || view === 'analytics' || view === 'studio-tools' || view === 'calabi-studio' || view === 'vods' || view === 'verify'
+    const needsAuth = view === 'channel' || view === 'analytics' || view === 'studio-tools' || view === 'calabi-studio' || view === 'vods' || view === 'verify' || view === 'dashboard' || view === 'stream-settings' || view === 'messages' || view === 'wallet' || view === 'calabi-cash' || view === 'seller' || view === 'seller-portal'
     if (needsAuth && !isAuthenticated) {
-      return <AuthRequired title="Sign in" description="Sign in." onOpenAuth={openAuth} />
+      const studio = view === 'dashboard' || view === 'analytics' || view === 'vods' || view === 'verify' || view === 'stream-settings' || view === 'calabi-studio' || view === 'studio-tools' || view === 'channel'
+      return <AuthRequired title="Sign in" description={studio ? 'Sign in to open Studio and manage your channel.' : 'Sign in to continue. You can still watch and browse without an account.'} onOpenAuth={openAuth} />
     }
     if (view === 'admin') {
       if (user && !isPlatformOwner(user) && !isAdminSession(user)) return <NotFoundPage onNavigate={navigate} />

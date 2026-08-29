@@ -87,8 +87,8 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onOpenProfile, onNavig
         </div>
       ) : (
         <div className="rounded-xl border border-[#272727] bg-[#0f0f0f] px-5 py-10 text-center">
-          <p className="text-sm font-semibold text-white">Lobby idle</p>
-          <p className="mt-1 text-sm text-zinc-500">Live channels appear from ingest. Nothing is invented here.</p>
+          <p className="text-sm font-semibold text-white">No one is live</p>
+          <p className="mt-1 text-sm text-zinc-500">When a creator goes live, they show up here.</p>
           {onNavigate ? (
             <button type="button" onClick={() => onNavigate('create')} className="mt-4 h-9 px-4 rounded-lg bg-white text-black text-xs font-semibold">
               Go live
@@ -164,7 +164,7 @@ export default function HomeFeed({ onPlayItem, onOpenPic, onOpenProfile, onNavig
       ) : shelfCount === 0 ? (
         <div className="rounded-2xl border border-[#272727] bg-[#0f0f0f] px-6 py-16 text-center">
           <p className="mt-0 text-sm font-medium text-zinc-200">No posts yet</p>
-          <p className="mt-2 text-xs text-zinc-500">When creators publish, they show up here. Try Create (+) or Following.</p>
+          <p className="mt-2 text-xs text-zinc-500">When creators publish, they land here. Start with Create.</p>
           {onNavigate ? (
             <button
               type="button"

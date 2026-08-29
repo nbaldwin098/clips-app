@@ -16,7 +16,6 @@ import {
   FolderOpen,
   ShoppingBag,
   Search,
-  Bell,
   MoreVertical,
   ArrowLeft,
 } from 'lucide-react'
@@ -73,7 +72,6 @@ import StudioControlDeck from './StudioControlDeck'
 const STUDIO_NAV = [
   { id: 'overview', label: 'Home', icon: LayoutDashboard, group: 'Studio' },
   { id: 'lab', label: 'Calabi Studio', icon: Clapperboard, group: 'Studio' },
-  { id: 'alerts', label: 'Alerts', icon: Bell, group: 'Studio', href: 'notifications' },
   { id: 'content', label: 'Content', icon: FolderOpen, group: 'Studio' },
   { id: 'analytics', label: 'Analytics', icon: BarChart3, group: 'Studio' },
   { id: 'socials', label: 'Community', icon: Share2, group: 'Studio' },
@@ -856,9 +854,6 @@ export default function CreatorStudio({
           ) : null}
         </div>
         <div className="flex items-center gap-0.5 shrink-0">
-          <button type="button" onClick={() => onNavigate?.('notifications')} aria-label="Notifications" className="h-9 w-9 rounded-full inline-flex items-center justify-center text-zinc-300 hover:bg-white/5">
-            <Bell className="h-4 w-4" />
-          </button>
           <span className="relative ml-1">
             <ChannelAvatar src={user?.avatarUrl} name={user?.displayName || user?.handle} size={32} />
             <span
