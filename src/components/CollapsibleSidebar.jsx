@@ -36,7 +36,7 @@ import { t, subscribeLocale } from '../lib/i18n'
 
 const itemCls = (active, collapsed) =>
   cn(
-    'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-semibold transition-colors',
+    'w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-[13px] font-semibold transition-colors',
     collapsed && 'justify-center px-0',
     active ? 'text-white bg-[#1f1f28]' : 'text-zinc-400 hover:text-white hover:bg-[#181820]'
   )
@@ -49,7 +49,7 @@ function NavBtn({ active, onClick, icon: Icon, label, collapsed }) {
       className={itemCls(active, collapsed)}
       title={collapsed ? label : undefined}
     >
-      {Icon && <Icon className={cn('h-4 w-4 shrink-0', active && 'text-white')} />}
+      {Icon && <Icon className={cn('h-5 w-5 shrink-0', active && 'text-white')} />}
       {!collapsed && <span className="truncate">{label}</span>}
     </button>
   )
@@ -168,7 +168,7 @@ export default function CollapsibleSidebar({
               >
                 <span className="relative shrink-0">
                   <span className={cn(
-                    'h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold border-2 bg-white/10 text-white',
+                    'h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold border-2 bg-white/10 text-white',
                     isOnAir(s) ? 'border-[#eb0400]' : 'border-amber-500/80'
                   )}>
                     {(s.displayName || s.handle || '?')[0]?.toUpperCase()}
@@ -213,7 +213,7 @@ export default function CollapsibleSidebar({
                 collapsed ? 'justify-center py-1.5' : 'gap-2.5 px-2.5 py-1.5'
               )}
             >
-              <ChannelAvatar src={c.avatarUrl} name={c.displayName} size={collapsed ? 32 : 28} />
+              <ChannelAvatar src={c.avatarUrl} name={c.displayName} size={collapsed ? 40 : 35} />
               {!collapsed && (
                 <span className="min-w-0">
                   <span className="flex items-center gap-1 text-[12px] text-zinc-200 truncate">
@@ -240,11 +240,11 @@ export default function CollapsibleSidebar({
         <div className="pt-3 border-t border-[#1e1e27] space-y-0.5">
           {collapsed ? (
             <button type="button" onClick={() => setMoreOpen((v) => !v)} className={itemCls(false, true)} title={t('nav.more')}>
-              {moreOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              {moreOpen ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
             </button>
           ) : (
             <button type="button" onClick={() => setMoreOpen((v) => !v)} className={itemCls(false, false)}>
-              {moreOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              {moreOpen ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
               <span>{t('nav.more')}</span>
             </button>
           )}
@@ -264,11 +264,11 @@ export default function CollapsibleSidebar({
   )
 
   return (
-    <div className="hidden md:block w-14 shrink-0 relative">
+    <div className="hidden md:block w-[4.375rem] shrink-0 relative">
       <aside
         className={cn(
           'flex flex-col h-[calc(100dvh-3.5rem)] sticky top-14 bg-[#0f0f0f] border-r border-[#272727] z-40 overflow-hidden transition-[width] duration-150',
-          hovered ? 'w-60 shadow-[8px_0_24px_rgba(0,0,0,0.45)]' : 'w-14'
+          hovered ? 'w-[18.75rem] shadow-[8px_0_24px_rgba(0,0,0,0.45)]' : 'w-[4.375rem]'
         )}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => {
