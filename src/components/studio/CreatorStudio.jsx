@@ -191,9 +191,9 @@ function OverviewTasks({ postsLen, hasPayout, membershipSet, verified, onNavigat
               {t.done ? (
                 <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
               ) : (
-                <Circle className="h-4 w-4 text-neutral-300 shrink-0" />
+                <Circle className="h-4 w-4 text-zinc-600 shrink-0" />
               )}
-              <span className={cn('text-sm', t.done ? 'text-neutral-400 line-through' : 'text-neutral-800')}>
+              <span className={cn('text-sm', t.done ? 'text-zinc-500 line-through' : 'text-zinc-200')}>
                 {t.label}
               </span>
             </button>
@@ -211,19 +211,19 @@ function PostRow({ post, active, deleting, onSelect, onPlay, onDelete, onVisibil
   return (
     <div
       className={cn(
-        'border border-neutral-200 bg-white p-3 text-left transition-colors rounded-xl',
-        active ? 'border-neutral-900' : 'hover:border-neutral-400'
+        'border border-white/10 bg-[#141414] p-3 text-left transition-colors rounded-xl',
+        active ? 'border-white/40' : 'hover:border-white/20'
       )}
     >
       <button type="button" onClick={() => onSelect(post.id)} className="w-full text-left">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="text-[10px] uppercase tracking-wider text-neutral-500">{typeLabel(post.type)}</p>
-            <p className="text-sm font-semibold text-neutral-900 truncate mt-0.5">{post.title || 'Untitled'}</p>
+            <p className="text-[10px] uppercase tracking-wider text-zinc-500">{typeLabel(post.type)}</p>
+            <p className="text-sm font-semibold text-zinc-100 truncate mt-0.5">{post.title || 'Untitled'}</p>
           </div>
-          <span className="shrink-0 text-[10px] text-neutral-500">{formatPostedAt(postedAtOf(post)) || '—'}</span>
+          <span className="shrink-0 text-[10px] text-zinc-500">{formatPostedAt(postedAtOf(post)) || '—'}</span>
         </div>
-        <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] text-neutral-500">
+        <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] text-zinc-500">
           <span>{formatCount(views)} views</span>
           <span>·</span>
           <span>{formatCount(likes)} likes</span>
@@ -235,7 +235,7 @@ function PostRow({ post, active, deleting, onSelect, onPlay, onDelete, onVisibil
         <button
           type="button"
           onClick={() => onPlay(post)}
-          className="h-8 flex-1 inline-flex items-center justify-center gap-1.5 border border-neutral-200 text-xs text-neutral-900 hover:bg-neutral-900 hover:text-white rounded-lg"
+          className="h-8 flex-1 inline-flex items-center justify-center gap-1.5 border border-white/10 text-xs text-zinc-100 hover:bg-white hover:text-black rounded-lg"
         >
           <Play className="h-3.5 w-3.5" /> Open
         </button>
@@ -243,7 +243,7 @@ function PostRow({ post, active, deleting, onSelect, onPlay, onDelete, onVisibil
           <select
             value={vis}
             onChange={(e) => onVisibility(post, e.target.value)}
-            className="h-8 border border-neutral-200 bg-white px-1 text-[10px] text-neutral-900 rounded-lg"
+            className="h-8 border border-white/10 bg-black px-1 text-[10px] text-zinc-100 rounded-lg"
             title="Visibility"
           >
             <option value="public">Public</option>
@@ -540,28 +540,28 @@ function ContentLibrary({
         <button
           type="button"
           onClick={() => onOpenUpload?.('video')}
-          className="h-8 px-3 border border-neutral-200 text-[11px] text-neutral-800 hover:border-neutral-900 rounded-lg"
+          className="h-8 px-3 border border-white/10 text-[11px] text-zinc-200 hover:border-white/40 rounded-lg"
         >
           Upload video
         </button>
         <button
           type="button"
           onClick={() => onOpenUpload?.('short')}
-          className="h-8 px-3 border border-neutral-200 text-[11px] text-neutral-800 hover:border-neutral-900 rounded-lg"
+          className="h-8 px-3 border border-white/10 text-[11px] text-zinc-200 hover:border-white/40 rounded-lg"
         >
           Upload clip
         </button>
         <button
           type="button"
           onClick={() => onNavigate?.('create')}
-          className="h-8 px-3 border border-neutral-200 text-[11px] text-neutral-800 hover:border-neutral-900 rounded-lg"
+          className="h-8 px-3 border border-white/10 text-[11px] text-zinc-200 hover:border-white/40 rounded-lg"
         >
           Post pic
         </button>
         <button
           type="button"
           onClick={() => onNavigate?.('news')}
-          className="h-8 px-3 border border-neutral-200 text-[11px] text-neutral-800 hover:border-neutral-900 rounded-lg"
+          className="h-8 px-3 border border-white/10 text-[11px] text-zinc-200 hover:border-white/40 rounded-lg"
         >
           News
         </button>
@@ -574,7 +574,7 @@ function ContentLibrary({
             onClick={() => setFilter(t.id)}
             className={cn(
               'h-7 px-2.5 text-[11px] font-semibold',
-              filter === t.id ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600'
+              filter === t.id ? 'bg-white text-black' : 'bg-white/10 text-zinc-400'
             )}
           >
             {t.label}
@@ -585,16 +585,16 @@ function ContentLibrary({
         {rows.length === 0 ? (
           <li className="text-sm text-zinc-500 py-8 text-center">No content yet.</li>
         ) : rows.map((row) => (
-          <li key={`${row.kind}_${row.id}`} className="border border-neutral-200 bg-white p-3 rounded-xl">
+          <li key={`${row.kind}_${row.id}`} className="border border-white/10 bg-[#141414] p-3 rounded-xl">
             <button type="button" onClick={() => openRow(row)} className="w-full text-left">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-[10px] uppercase tracking-wider text-neutral-500">
+                  <p className="text-[10px] uppercase tracking-wider text-zinc-500">
                     {row.kind === 'clip' ? 'Clip' : row.kind === 'pic' ? 'Pic' : row.kind === 'vod' ? 'VOD' : row.kind === 'news' ? 'News' : 'Video'}
                   </p>
-                  <p className="text-sm font-semibold text-neutral-900 truncate mt-0.5">{row.title}</p>
+                  <p className="text-sm font-semibold text-zinc-100 truncate mt-0.5">{row.title}</p>
                 </div>
-                <span className="shrink-0 text-[10px] text-neutral-500">{formatPostedAt(row.at) || '—'}</span>
+                <span className="shrink-0 text-[10px] text-zinc-500">{formatPostedAt(row.at) || '—'}</span>
               </div>
             </button>
             {row.kind !== 'news' && row.kind !== 'vod' ? (
@@ -602,7 +602,7 @@ function ContentLibrary({
                 <button
                   type="button"
                   onClick={() => openRow(row)}
-                  className="h-8 flex-1 inline-flex items-center justify-center gap-1.5 border border-neutral-200 text-xs text-neutral-900 hover:bg-neutral-900 hover:text-white rounded-lg"
+                  className="h-8 flex-1 inline-flex items-center justify-center gap-1.5 border border-white/10 text-xs text-zinc-100 hover:bg-white hover:text-black rounded-lg"
                 >
                   <Play className="h-3.5 w-3.5" /> Open
                 </button>
@@ -610,7 +610,7 @@ function ContentLibrary({
                   <select
                     value={row.raw.visibility === 'private' || row.raw.status === 'draft' ? 'private' : (row.raw.visibility || 'public')}
                     onChange={(e) => onVisibility(row.raw, e.target.value)}
-                    className="h-8 border border-neutral-200 bg-white px-1 text-[10px] text-neutral-900 rounded-lg"
+                    className="h-8 border border-white/10 bg-black px-1 text-[10px] text-zinc-100 rounded-lg"
                   >
                     <option value="public">Public</option>
                     <option value="private">Private</option>
@@ -920,7 +920,7 @@ export default function CreatorStudio({
                   onClick={() => setPostFilter(t.id)}
                   className={cn(
                     'h-7 px-2 text-[11px] font-semibold rounded',
-                    postFilter === t.id ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600'
+                    postFilter === t.id ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-zinc-400'
                   )}
                 >
                   {t.label}
@@ -930,7 +930,7 @@ export default function CreatorStudio({
           </div>
           <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-2">
             {filteredPosts.length === 0 ? (
-              <p className="p-3 text-xs text-neutral-500">No posts yet.</p>
+              <p className="p-3 text-xs text-zinc-500">No posts yet.</p>
             ) : filteredPosts.map((post) => (
               <PostRow
                 key={post.id}
@@ -989,7 +989,7 @@ export default function CreatorStudio({
                   onClick={() => setLabTool((t) => (t === 'controls' ? null : 'controls'))}
                   className={cn(
                     'h-8 px-2.5 text-[11px] font-semibold border inline-flex items-center gap-1.5',
-                    labTool === 'controls' ? 'border-neutral-900 text-neutral-900 bg-white' : 'border-neutral-200 text-neutral-600 hover:text-neutral-900'
+                    labTool === 'controls' ? 'border-white text-white bg-white/10' : 'border-white/10 text-zinc-400 hover:text-white'
                   )}
                 >
                   <SlidersHorizontal className="h-3.5 w-3.5" /> Controls
@@ -999,7 +999,7 @@ export default function CreatorStudio({
                   onClick={() => setLabTool((t) => (t === 'stream' ? null : 'stream'))}
                   className={cn(
                     'h-8 px-2.5 text-[11px] font-semibold border inline-flex items-center gap-1.5',
-                    labTool === 'stream' ? 'border-neutral-900 text-neutral-900 bg-white' : 'border-neutral-200 text-neutral-600 hover:text-neutral-900'
+                    labTool === 'stream' ? 'border-white text-white bg-white/10' : 'border-white/10 text-zinc-400 hover:text-white'
                   )}
                 >
                   <Radio className="h-3.5 w-3.5" /> Stream
@@ -1012,12 +1012,12 @@ export default function CreatorStudio({
                 />
               ) : null}
               {labTool === 'stream' ? (
-                <div className="max-w-2xl border border-neutral-200 bg-white p-4 rounded-xl">
+                <div className="max-w-2xl border border-white/10 bg-[#141414] p-4 rounded-xl">
                   <StreamSettings />
                 </div>
               ) : null}
               <MakePostPanel onOpenUpload={onOpenUpload} onNavigate={onNavigate} compact />
-              <div className="border-t border-neutral-200 pt-6">
+              <div className="border-t border-white/10 pt-6">
                 <CreatorLab onNavigate={onNavigate} onOpenAuth={onOpenAuth} compact />
               </div>
             </div>
