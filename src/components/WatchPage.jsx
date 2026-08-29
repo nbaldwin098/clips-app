@@ -44,8 +44,10 @@ function Pill({ children, onClick, active = false, title, disabled }) {
       onClick={onClick}
       title={title}
       disabled={disabled}
-      className={`h-9 px-4 rounded-full text-sm font-medium inline-flex items-center gap-2 shrink-0 transition-colors disabled:opacity-40 ${
-        active ? 'bg-white text-black' : 'bg-[#272727] text-white hover:bg-[#3f3f3f]'
+      className={`h-9 px-3 text-sm font-medium inline-flex items-center gap-2 shrink-0 border disabled:opacity-40 ${
+        active
+          ? 'border-white bg-white text-black'
+          : 'border-white/20 bg-transparent text-white hover:border-white/50 hover:bg-white/5'
       }`}
     >
       {children}
@@ -776,25 +778,13 @@ export default function WatchPage({
               </div>
 
               <div className="flex items-center gap-2 overflow-x-auto pb-0.5 lg:justify-end">
-                <div className="inline-flex h-9 rounded-full bg-[#272727] overflow-hidden shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => vote('up')}
-                    className={`h-full px-4 inline-flex items-center gap-2 text-sm font-medium hover:bg-[#3f3f3f] ${myVote === 'up' ? 'text-white' : 'text-zinc-100'}`}
-                  >
-                    <ThumbsUp className={`h-4 w-4 ${myVote === 'up' ? 'fill-current' : ''}`} />
-                    {likesLabel(votes.up)}
-                  </button>
-                  <span className="w-px my-2 bg-white/15" />
-                  <button
-                    type="button"
-                    onClick={() => vote('down')}
-                    className={`h-full px-3.5 inline-flex items-center hover:bg-[#3f3f3f] ${myVote === 'down' ? 'text-red-400' : 'text-zinc-100'}`}
-                    title="Dislike"
-                  >
-                    <ThumbsDown className={`h-4 w-4 ${myVote === 'down' ? 'fill-current' : ''}`} />
-                  </button>
-                </div>
+                <Pill onClick={() => vote('up')} active={myVote === 'up'} title="Like">
+                  <ThumbsUp className={`h-4 w-4 ${myVote === 'up' ? 'fill-current' : ''}`} />
+                  {likesLabel(votes.up)}
+                </Pill>
+                <Pill onClick={() => vote('down')} active={myVote === 'down'} title="Dislike">
+                  <ThumbsDown className={`h-4 w-4 ${myVote === 'down' ? 'fill-current' : ''}`} />
+                </Pill>
                 <Pill onClick={() => share(false)}>
                   <Share2 className="h-4 w-4" />
                   {copied === 'link' ? 'Copied' : 'Share'}
