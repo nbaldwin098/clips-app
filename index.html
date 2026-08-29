@@ -7,19 +7,38 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="theme-color" content="#000000" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="calabi — watch clips, pics, and live streams from creators." />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="calabi" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="description" content="calabi — watch live streams, videos, clips, and pics. A black creator platform for going live and posting." />
+    <link rel="canonical" href="https://calabi.us/" />
+    <meta property="og:site_name" content="calabi" />
     <meta property="og:title" content="calabi" />
-    <meta property="og:description" content="Watch clips, pics, and live streams." />
+    <meta property="og:description" content="Watch live streams, videos, clips, and pics on calabi." />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://calabi.us/" />
+    <meta property="og:image" content="https://calabi.us/apple-touch-icon.png" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="calabi" />
+    <meta name="twitter:description" content="Watch live streams, videos, clips, and pics on calabi." />
+    <meta name="twitter:image" content="https://calabi.us/apple-touch-icon.png" />
     <meta name="6a97888e-site-verification" content="1d873aa2131ea8d9ba1950a936ce2035" />
-    <title>calabi</title>
+    <title>calabi — live, videos, clips, pics</title>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@graph":[
+      {"@type":"WebSite","name":"calabi","url":"https://calabi.us/","potentialAction":{"@type":"SearchAction","target":"https://calabi.us/explore?q={search_term_string}","query-input":"required name=search_term_string"}},
+      {"@type":"Organization","name":"calabi","url":"https://calabi.us/","logo":"https://calabi.us/logo.png"}
+    ]}
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
   </head>
   <body class="bg-[#000000] text-zinc-100 antialiased selection:bg-white/30 selection:text-white">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-white focus:text-black focus:px-3 focus:py-2">Skip to content</a>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
