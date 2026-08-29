@@ -415,7 +415,7 @@ function ClipSlide({
         </div>
       </div>
 
-      <div className="md:hidden absolute right-2 bottom-28 z-20 flex flex-col items-center gap-4">
+      <div className="md:hidden absolute right-2 top-20 z-20 flex flex-col items-center gap-4">
         {actions(true)}
       </div>
 
