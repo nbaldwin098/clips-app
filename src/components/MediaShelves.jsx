@@ -23,7 +23,7 @@ export default function MediaShelves({ items, onPlayItem, onOpenPic, onOpenProfi
       {showVideos && videos.length > 0 && (
         <section>
           {filter === 'all' ? <h2 className="text-lg font-semibold text-white mb-4">Videos</h2> : null}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-8">
             {videos.map((item) => (
               <div key={item.id} className="relative">
                 {pinOverlay?.(item)}
