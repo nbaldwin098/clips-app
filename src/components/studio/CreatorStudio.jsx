@@ -43,6 +43,7 @@ import { formatPostedAt, postedAtOf } from '../../lib/mediaMeta'
 import { cn } from '../../lib/utils'
 import { useContentSyncTick, useInteractionSyncTick } from '../../lib/useContentSync'
 import ChannelAvatar from '../ChannelAvatar'
+import NotificationsMenu from '../NotificationsMenu'
 import { listWithdrawMethods } from '../../lib/calabiCash'
 import InteractionBubbleMap from './InteractionBubbleMap'
 import StudioRealtimeAnalytics from './StudioRealtimeAnalytics'
@@ -854,6 +855,11 @@ export default function CreatorStudio({
           ) : null}
         </div>
         <div className="flex items-center gap-0.5 shrink-0">
+          <NotificationsMenu
+            onNavigate={onNavigate}
+            onOpenWatch={(id) => onNavigate?.('watch', id)}
+            onOpenAuth={onOpenAuth}
+          />
           <span className="relative ml-1">
             <ChannelAvatar src={user?.avatarUrl} name={user?.displayName || user?.handle} size={32} />
             <span
