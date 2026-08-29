@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useState, useRef, useCallback } from 'react'
 import { ChevronLeft, Clapperboard, Heart, MessageCircle, Search, Share2, Volume2, VolumeX, X, RotateCcw } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { getStableShortsFeed, getWatchItem, getCreatorPublicContent } from '../lib/contentService'
+import { getStableShortsFeed, getWatchItem, getCreatorPublicContent, resolvePublicCreator } from '../lib/contentService'
 import { isFeedable } from '../lib/catalogHealth'
 import { getMediaBlobUrl } from '../lib/videoStorage'
 import { parseEmbedUrl } from '../lib/videoEmbed'
@@ -16,6 +16,7 @@ import ShortsStage, { ShortsCard } from './ShortsStage'
 import { preloadPostedItems } from '../lib/preloadMedia'
 import { useContentSyncTick } from '../lib/useContentSync'
 import { filterCss } from '../lib/streamFilters'
+import ChannelAvatar from './ChannelAvatar'
 
 function resolvePlayUrl(item) {
   return item?.mediaUrl || item?.sourceUrl || ''
@@ -236,7 +237,11 @@ function ClipSlide({
         className="h-11 w-11 rounded-full overflow-hidden bg-white/20 text-white text-sm font-semibold flex items-center justify-center ring-2 ring-white/80"
         aria-label={handle}
       >
-        {item.avatarUrl ? <img src={item.avatarUrl} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" /> : (handle[1] || 'C').toUpperCase()}
+        <ChannelAvatar
+          src={item.avatarUrl || resolvePublicCreator(item.handle, creatorId)?.avatarUrl}
+          name={item.displayName || item.handle || 'C'}
+          size={44}
+        />
       </button>
     </>
   )
