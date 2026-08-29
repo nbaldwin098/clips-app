@@ -101,7 +101,7 @@ export default function ApexHomeStage({
   return (
     <div className="w-full bg-black" data-home="apex">
       <section className="px-5 md:px-8 pt-4">
-        <div className="grid lg:grid-cols-[minmax(0,1fr)_280px] border border-white/10 bg-[#0a0a0a]">
+        <div className="w-[85%] mx-auto grid lg:grid-cols-[minmax(0,1fr)_280px] border border-white/10 bg-[#0a0a0a]">
           <div className="min-w-0">
             <button
               type="button"
@@ -202,7 +202,7 @@ export default function ApexHomeStage({
         </div>
         {onAir.length ? (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-6">
-            {onAir.map((s) => {
+            {onAir.slice(1, 10).map((s) => {
               const nm = s.displayName || s.handle || 'Creator'
               const ok = isOfficialCreator(s.userId, s.handle) || isVerifiedChannel(s.userId, s.handle)
               return (
@@ -224,8 +224,8 @@ export default function ApexHomeStage({
                   <div className="mt-2 flex items-start gap-2">
                     <ChannelAvatar src={s.avatarUrl || lookupUser(s.userId)?.avatarUrl} name={nm} size={32} />
                     <div className="min-w-0">
-                      <p className="text-[13px] font-semibold text-white truncate">{s.title || 'Live'}</p>
-                      <p className="text-[12px] text-[#b3b3b3] truncate inline-flex items-center gap-1">
+                      <p className="text-base font-semibold text-white truncate">{s.title || 'Live'}</p>
+                      <p className="text-sm text-[#b3b3b3] truncate inline-flex items-center gap-1">
                         {nm}
                         {ok ? <VerifiedBadge className="h-3 w-3 bg-white text-black" /> : null}
                       </p>
