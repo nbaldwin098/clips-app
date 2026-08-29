@@ -280,7 +280,7 @@ export default function CollapsibleSidebar({
     <>
       <aside
         className={cn(
-          'flex flex-col shrink-0 h-[calc(100dvh-3.5rem)] sticky top-14 bg-[#0f0f0f] border-r border-[#272727] z-30 overflow-hidden w-14'
+          'hidden md:flex flex-col shrink-0 h-[calc(100dvh-4rem)] sticky top-16 bg-[#0f0f0f] border-r border-[#272727] z-30 overflow-hidden w-14'
         )}
       >
         {body}
