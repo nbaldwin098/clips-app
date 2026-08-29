@@ -29,6 +29,7 @@ export function setPageMeta({
   upsertMeta('name', 'description', description)
   upsertMeta('property', 'og:title', fullTitle)
   upsertMeta('property', 'og:description', description)
+  upsertMeta('property', 'og:site_name', SITE)
   upsertMeta('property', 'og:type', type)
   if (url) upsertMeta('property', 'og:url', url)
   if (image) {
