@@ -8,7 +8,7 @@ import {
   ShieldCheck,
   Wallet,
   MessageSquare,
-  Mail,
+  Send,
   RadioTower,
   Scale,
   Users,
@@ -20,7 +20,6 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { isPlatformOwner } from '../lib/moderation'
-import BrandMark from './BrandMark'
 import ChannelAvatar from './ChannelAvatar'
 import NotificationsMenu from './NotificationsMenu'
 import { getCoinBalance, refreshWalletFromCloud } from '../lib/calabiCash'
@@ -155,7 +154,7 @@ export default function StreamingNavbar({
             aria-label={t('nav.home')}
             title={t('nav.home')}
           >
-            <BrandMark size={32} withWord={apex} wordClassName="text-white italic font-black tracking-tight" />
+            {apex ? <span className="text-white italic font-black tracking-tight text-[20px]">calabi</span> : <span className="text-white font-black text-lg">c</span>}
           </button>
         </div>
 
@@ -233,7 +232,7 @@ export default function StreamingNavbar({
                   aria-label={t('nav.messages')}
                   className="h-9 w-9 inline-flex items-center justify-center rounded-full text-white hover:bg-white/10"
                 >
-                  <Mail className="h-5 w-5" />
+                  <Send className="h-5 w-5" />
                 </button>
               ) : null}
 
@@ -355,7 +354,7 @@ export default function StreamingNavbar({
                   aria-label={t('nav.messages')}
                   className="h-9 w-9 inline-flex items-center justify-center rounded-full text-white hover:bg-white/10"
                 >
-                  <Mail className="h-5 w-5" />
+                  <Send className="h-5 w-5" />
                 </button>
               ) : null}
               <button
