@@ -10,6 +10,7 @@ import { findOwnerLogin, isLocalOwnerLogin, isOwnerAccount, OWNER_LOGIN, ownerCl
 import { parseVastXml, parseVastClock, videoInStreamBreaks, EXOCLICK_VAST_URL, videoVastAdsEnabled } from '../src/lib/vastAds.js'
 import { mixFeedAds, mixClipFeedRows, mixPicFeedRows, getActiveAdForVideo, adsAreRunning } from '../src/lib/adEngine.js'
 import { featuredWindowStart, nextFeaturedRefreshAt, lastHourRange, interleaveHourlyHits, HOURLY_PATTERN, HOURLY_VIDEO_COUNT, HOURLY_CLIP_COUNT, HOURLY_PIC_COUNT } from '../src/lib/hourWindow.js'
+import { DEMO_HOME_STREAMS, mixHomeLiveRows } from '../src/lib/homeDemoStreams.js'
 
 let failed = 0
 function assert(cond, msg) {
@@ -355,12 +356,20 @@ assert(homeSrc.includes("label: 'All'"), 'home defines All filter label')
 assert(homeSrc.includes("label: 'Pics'") || homeSrc.includes("label: 'Clips'"), 'home has type filter chips')
 assert(homeSrc.includes('ApexHomeStage'), 'home mounts the APEX hero stage beside the existing icon rail')
 assert(homeSrc.includes('data-home="apex"'), 'home uses the APEX dark/orange chrome')
-assert(!homeSrc.includes('NitroFlux'), 'home does not invent mockup streamer names')
+assert(!homeSrc.includes('HourlyHitsCarousel'), 'home no longer mounts the old hourly slider')
 const apexSrc = readFileSync(new URL('../src/components/home/ApexHomeStage.jsx', import.meta.url), 'utf8')
 assert(apexSrc.includes('Live Channels'), 'APEX stage has the live channels row')
-assert(apexSrc.includes('Nobody is live') || apexSrc.includes('No live channels'), 'APEX empty live state is honest')
+assert(apexSrc.includes('mixHomeLiveRows'), 'APEX hero fills with temporary demo streams')
 assert(apexSrc.includes('listOnAirBoard') === false && apexSrc.includes('onAir'), 'APEX hero uses real on-air rows passed in')
-assert(!apexSrc.includes('7.3K') && !apexSrc.includes('LunaLyte'), 'APEX stage does not hardcode mockup viewer counts')
+assert(!apexSrc.includes("id: 'discover'"), 'APEX hero has no floating Discover dock')
+assert(!apexSrc.includes("label: 'Community'"), 'APEX hero has no floating Community dock')
+assert(!apexSrc.includes('absolute bottom-4 left-1/2'), 'APEX hero has no mid-screen nav bar')
+const demoSrc = readFileSync(new URL('../src/lib/homeDemoStreams.js', import.meta.url), 'utf8')
+assert(demoSrc.includes('DEMO_HOME_STREAMS') && demoSrc.includes('NitroFlux'), 'homepage demo streams live in homeDemoStreams')
+assert(demoSrc.includes('do not write') || demoSrc.includes('Not written to live_board'), 'demo streams stay off live_board')
+assert(DEMO_HOME_STREAMS.length >= 6, 'homepage has a full demo live row')
+assert(mixHomeLiveRows([]).every((s) => s.demo), 'empty on-air board fills with demo streams')
+assert(mixHomeLiveRows([{ userId: 'real-on-air', handle: 'real' }])[0].userId === 'real-on-air', 'real on-air rows stay first')
 assert(readFileSync(new URL('../src/components/StreamingNavbar.jsx', import.meta.url), 'utf8').includes("label: 'Browse'"), 'home header copies APEX nav links')
 assert(readFileSync(new URL('../src/components/StreamingNavbar.jsx', import.meta.url), 'utf8').includes('Search calabi'), 'home header has the APEX pill search')
 assert(readFileSync(new URL('../src/components/CollapsibleSidebar.jsx', import.meta.url), 'utf8').includes('collapsed = true'), 'APEX home keeps the existing icon-only left rail')
@@ -1238,7 +1247,7 @@ assert(mixed.filter((i) => i.type === 'video').length === 5, 'interleave keeps 5
 assert(mixed.filter((i) => i.type === 'short').length === 10, 'interleave keeps 10 clips')
 assert(mixed.filter((i) => i.type === 'pic').length === 3, 'interleave keeps 3 pics')
 const homeSrc2 = readFileSync(new URL('../src/components/HomeFeed.jsx', import.meta.url), 'utf8')
-assert(homeSrc2.includes('HourlyHitsCarousel'), 'home puts the hourly stage under the search bar')
+assert(!homeSrc2.includes('HourlyHitsCarousel'), 'home does not mount the old hourly slider')
 const carouselSrc = readFileSync(new URL('../src/components/HourlyHitsCarousel.jsx', import.meta.url), 'utf8')
 assert(carouselSrc.includes('useContentSyncTick'), 'hourly stage refreshes after catalog sync')
 assert(carouselSrc.includes('onOpenProfile'), 'hourly stage separates profile from play')

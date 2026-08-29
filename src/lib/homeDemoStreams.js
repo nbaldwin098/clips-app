@@ -1,0 +1,122 @@
+/**
+ * Temporary homepage live placeholders so the APEX layout can be reviewed.
+ * Not written to live_board. Real on-air rows still win when they exist.
+ */
+export const DEMO_HOME_STREAMS = [
+  {
+    userId: 'demo-live-nitroflux',
+    handle: 'nitroflux',
+    displayName: 'NitroFlux',
+    title: 'RANKED GRIND TO #1',
+    category: 'Apex Legends',
+    tags: ['FPS', 'Ranked', 'English'],
+    bio: 'Ranked grind — pubs later if we hit pred.',
+    watchers: 7300,
+    demo: true,
+    verified: true,
+    isLive: true,
+    ingestConnected: true,
+    thumbUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1600&q=80',
+    avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=128&h=128&q=80',
+    chat: [
+      { id: 'nf-1', handle: 'octane_main', text: 'push now' },
+      { id: 'nf-2', handle: 'wraithotp', text: 'that was clean' },
+      { id: 'nf-3', handle: 'pred_queue', text: '7-3 so far?' },
+      { id: 'nf-4', handle: 'causticlab', text: 'gg lobby' },
+      { id: 'nf-5', handle: 'mirage_main', text: 'NitroFlux clipped that' },
+    ],
+  },
+  {
+    userId: 'demo-live-lunalyte',
+    handle: 'lunalyte',
+    displayName: 'LunaLyte',
+    title: 'RADIANT ONLY',
+    category: 'VALORANT',
+    tags: ['Tactical', 'Ranked'],
+    watchers: 5200,
+    demo: true,
+    verified: true,
+    isLive: true,
+    ingestConnected: true,
+    thumbUrl: 'https://images.unsplash.com/photo-1542751110-97427bbecf20?auto=format&fit=crop&w=900&q=80',
+    avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=128&h=128&q=80',
+    chat: [
+      { id: 'll-1', handle: 'jett_otp', text: 'clutch' },
+      { id: 'll-2', handle: 'sova_line', text: 'site B' },
+      { id: 'll-3', handle: 'reyna_otp', text: 'LunaLyte is cracked' },
+    ],
+  },
+  {
+    userId: 'demo-live-kairo',
+    handle: 'kairo',
+    displayName: 'Kairo',
+    title: 'LATE NIGHT RANKED',
+    category: 'League of Legends',
+    tags: ['MOBA'],
+    watchers: 4100,
+    demo: true,
+    isLive: true,
+    ingestConnected: true,
+    thumbUrl: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=900&q=80',
+    avatarUrl: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&w=128&h=128&q=80',
+    chat: [{ id: 'k-1', handle: 'baron_timer', text: 'herald now' }],
+  },
+  {
+    userId: 'demo-live-nova',
+    handle: 'novavex',
+    displayName: 'NovaVex',
+    title: 'WARZONE TRIOS',
+    category: 'Warzone',
+    tags: ['Battle Royale'],
+    watchers: 2800,
+    demo: true,
+    isLive: true,
+    ingestConnected: true,
+    thumbUrl: 'https://images.unsplash.com/photo-1493711662062-fa29a3c4c0f0?auto=format&fit=crop&w=900&q=80',
+    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=128&h=128&q=80',
+    chat: [{ id: 'nv-1', handle: 'gulag_king', text: 'drop super' }],
+  },
+  {
+    userId: 'demo-live-rift',
+    handle: 'riftbyte',
+    displayName: 'RiftByte',
+    title: 'FIRST CLEAR ATTEMPT',
+    category: 'Just Chatting',
+    tags: ['IRL'],
+    watchers: 1900,
+    demo: true,
+    isLive: true,
+    ingestConnected: true,
+    thumbUrl: 'https://images.unsplash.com/photo-1511882150382-421056c89033?auto=format&fit=crop&w=900&q=80',
+    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=128&h=128&q=80',
+    chat: [{ id: 'rb-1', handle: 'chat', text: 'lets go' }],
+  },
+  {
+    userId: 'demo-live-pixel',
+    handle: 'pixeloria',
+    displayName: 'Pixeloria',
+    title: 'CREATIVE LOBBY',
+    category: 'Fortnite',
+    tags: ['Creative'],
+    watchers: 1600,
+    demo: true,
+    isLive: true,
+    ingestConnected: true,
+    thumbUrl: 'https://images.unsplash.com/photo-1538481199705-c710c4ea8888?auto=format&fit=crop&w=900&q=80',
+    avatarUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=128&h=128&q=80',
+    chat: [{ id: 'px-1', handle: 'buildfight', text: '1v1' }],
+  },
+]
+
+export function mixHomeLiveRows(onAir = []) {
+  const real = Array.isArray(onAir) ? onAir.filter((s) => s && !String(s.userId || '').startsWith('demo-live-')) : []
+  if (real.length >= 6) return real
+  const used = new Set(real.map((s) => s.userId))
+  const fill = DEMO_HOME_STREAMS.filter((s) => !used.has(s.userId)).map((s) => ({
+    ...s,
+    id: s.userId,
+    isLive: true,
+    ingestConnected: true,
+  }))
+  return [...real, ...fill]
+}

@@ -2,9 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Heart,
   Gift,
-  Home,
-  Compass,
-  Users,
   Trophy,
   Radio,
   ChevronRight,
@@ -22,6 +19,7 @@ import { listIndexedUsers } from '../../lib/moderation'
 import { isSubscribed, toggleSubscribe } from '../../lib/engagement'
 import { trySendLiveChat } from '../../lib/liveChat'
 import { subscribeLiveChat, resolveLiveChatChannelId, GLOBAL_LIVE_CHANNEL_ID } from '../../lib/liveChatSync'
+import { mixHomeLiveRows } from '../../lib/homeDemoStreams'
 import { cn } from '../../lib/utils'
 
 const ORANGE = '#FF4B11'
@@ -40,6 +38,7 @@ function lookupUser(id) {
 }
 
 function streamTags(stream) {
+  if (stream?.demo && stream.tags?.length) return stream.tags.slice(0, 3)
   if (!stream?.userId) return []
   const settings = getStreamSettings(stream.userId)
   const tags = []
@@ -51,6 +50,7 @@ function streamTags(stream) {
 }
 
 function streamBio(stream) {
+  if (stream?.demo && stream.bio) return String(stream.bio).slice(0, 180)
   const u = lookupUser(stream?.userId)
   const bio = String(u?.bio || '').trim()
   return bio.slice(0, 180)
@@ -60,6 +60,21 @@ function watchersOf(stream) {
   if (!stream) return 0
   if (Array.isArray(stream.watcherIds) && stream.watcherIds.length) return stream.watcherIds.length
   return Number(stream.watchers) || 0
+}
+
+function streamIsLive(stream) {
+  return !!(stream?.demo || isOnAir(stream))
+}
+
+function streamBadge(stream) {
+  if (stream?.demo) return 'Live'
+  return liveBadgeLabel(stream)
+}
+
+function streamOfficial(stream) {
+  if (!stream) return false
+  if (stream.verified) return true
+  return isOfficialCreator(stream.userId, stream.handle) || isVerifiedChannel(stream.userId, stream.handle)
 }
 
 function LiveThumb({ stream, className = '' }) {
@@ -77,41 +92,49 @@ export default function ApexHomeStage({
   onSelectLive,
 }) {
   const { user, isAuthenticated } = useAuth()
-  const featured = onAir[0] || null
+  const rows = useMemo(() => mixHomeLiveRows(onAir), [onAir])
+  const [featuredId, setFeaturedId] = useState(null)
+  const featured = rows.find((row) => (row.userId || row.id) === featuredId) || rows[0] || null
   const rail = useRef(null)
   const [draft, setDraft] = useState('')
   const [chat, setChat] = useState([])
   const [note, setNote] = useState('')
   const [, bump] = useState(0)
 
-  const channelId = featured?.userId || GLOBAL_LIVE_CHANNEL_ID
-  const followed = featured && user?.id ? isSubscribed(user.id, featured.userId) : false
-  const official = featured
-    ? isOfficialCreator(featured.userId, featured.handle) || isVerifiedChannel(featured.userId, featured.handle)
-    : false
+  const channelId = featured?.demo ? null : (featured?.userId || GLOBAL_LIVE_CHANNEL_ID)
+  const followed = featured && !featured.demo && user?.id ? isSubscribed(user.id, featured.userId) : false
+  const official = streamOfficial(featured)
   const tags = useMemo(() => (featured ? streamTags(featured) : []), [featured])
   const bio = featured ? streamBio(featured) : ''
   const watchers = watchersOf(featured)
-  const liveOn = featured ? isOnAir(featured) : false
-  const badge = featured ? liveBadgeLabel(featured) : ''
+  const liveOn = featured ? streamIsLive(featured) : false
+  const badge = featured ? streamBadge(featured) : ''
   const name = featured?.displayName || featured?.handle || ''
   const title = featured?.title || ''
 
   useEffect(() => {
+    if (featured?.demo) {
+      setChat(Array.isArray(featured.chat) ? featured.chat.slice(-40) : [])
+      return undefined
+    }
+    if (!channelId) {
+      setChat([])
+      return undefined
+    }
     return subscribeLiveChat(resolveLiveChatChannelId(channelId), (list) => {
       setChat(Array.isArray(list) ? list.slice(-40) : [])
     })
-  }, [channelId])
+  }, [channelId, featured?.demo, featured?.chat])
 
   const onFollow = () => {
-    if (!featured?.userId) return
+    if (!featured?.userId || featured.demo) return
     if (!isAuthenticated) { onOpenAuth?.(); return }
     toggleSubscribe(user.id, featured.userId)
     bump((n) => n + 1)
   }
 
   const onGift = () => {
-    if (!featured?.userId) return
+    if (!featured?.userId || featured.demo) return
     if (!isAuthenticated) { onOpenAuth?.(); return }
     onOpenCheckout?.(featured.userId, featured.handle)
   }
@@ -121,6 +144,15 @@ export default function ApexHomeStage({
     if (!isAuthenticated) { onOpenAuth?.(); return }
     const text = draft.trim()
     if (!text) return
+    if (featured?.demo) {
+      setChat((prev) => [
+        ...prev,
+        { id: `local-${Date.now()}`, handle: user.handle || user.displayName || 'you', text },
+      ])
+      setDraft('')
+      setNote('')
+      return
+    }
     const res = trySendLiveChat(channelId, {
       text,
       userId: user.id,
@@ -134,18 +166,11 @@ export default function ApexHomeStage({
     setNote('')
   }
 
-  const openLive = (stream) => {
-    if (stream) onSelectLive?.(stream)
-    else onNavigate?.('live')
+  const pickStream = (stream) => {
+    if (!stream) return
+    setFeaturedId(stream.userId || stream.id)
+    if (!stream.demo) onSelectLive?.(stream)
   }
-
-  const dock = [
-    { id: 'home', label: 'Home', Icon: Home, go: () => onNavigate?.('home'), active: true },
-    { id: 'discover', label: 'Discover', Icon: Compass, go: () => onNavigate?.('explore') },
-    { id: 'following', label: 'Following', Icon: Users, go: () => onNavigate?.('following') },
-    { id: 'esports', label: 'Esports', Icon: Trophy, go: () => onNavigate?.('live') },
-    { id: 'community', label: 'Community', Icon: Users, go: () => onNavigate?.('community') },
-  ]
 
   return (
     <div className="w-full bg-black" data-home="apex">
@@ -161,7 +186,7 @@ export default function ApexHomeStage({
         </div>
 
         <div className="relative z-10 flex min-h-[520px] md:min-h-[580px]">
-          <div className="flex-1 min-w-0 flex flex-col px-5 md:px-8 pt-6 pb-28">
+          <div className="flex-1 min-w-0 flex flex-col px-5 md:px-8 pt-6 pb-10">
             {featured ? (
               <>
                 <div className="flex items-center gap-2">
@@ -240,10 +265,10 @@ export default function ApexHomeStage({
               <div className="mt-16 max-w-lg">
                 <p className="text-[11px] font-extrabold uppercase tracking-wide text-[#a0a0a0]">Live</p>
                 <h1 className="mt-3 text-[36px] md:text-[44px] font-extrabold tracking-tight text-white leading-none">
-                  Nobody is live
+                  Stage is dark
                 </h1>
                 <p className="mt-4 text-[15px] text-[#a0a0a0] leading-relaxed">
-                  When a creator goes on-air they land in this hero. Nothing here is invented.
+                  Demo streams load here. When a real creator goes on-air they take this stage.
                 </p>
                 <button
                   type="button"
@@ -260,7 +285,9 @@ export default function ApexHomeStage({
 
           <aside className="hidden lg:flex w-[300px] shrink-0 flex-col border-l border-white/10 bg-black/55 backdrop-blur-sm">
             <div className="px-4 py-3">
-              <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-white">Live chat</p>
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-white">
+                Live chat{featured?.demo ? ' · demo' : ''}
+              </p>
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto px-4 space-y-2.5">
               {chat.length ? chat.map((m) => (
@@ -290,37 +317,6 @@ export default function ApexHomeStage({
             </form>
           </aside>
         </div>
-
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 w-[min(720px,calc(100%-2rem))]">
-          <div className="apex-pill flex items-center gap-1 px-2 py-1.5 bg-[#1a1a1a]/90 border border-white/10 backdrop-blur-md">
-            {dock.map((item) => {
-              const Icon = item.Icon
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={item.go}
-                  className={cn(
-                    'apex-pill flex-1 h-10 px-2 inline-flex flex-col items-center justify-center gap-0.5',
-                    item.active ? 'text-[#FF4B11]' : 'text-[#cfcfcf] hover:text-white'
-                  )}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span className="text-[10px] font-semibold hidden sm:block">{item.label}</span>
-                </button>
-              )
-            })}
-            <button
-              type="button"
-              onClick={() => onNavigate?.('create')}
-              className="apex-pill h-10 px-4 shrink-0 inline-flex items-center gap-1.5 text-[13px] font-bold text-white"
-              style={{ background: ORANGE }}
-            >
-              <Radio className="h-4 w-4" />
-              Go Live
-            </button>
-          </div>
-        </div>
       </section>
 
       <section className="px-5 md:px-8 pt-6 pb-2">
@@ -330,26 +326,27 @@ export default function ApexHomeStage({
             View All
           </button>
         </div>
-        {onAir.length ? (
+        {rows.length ? (
           <div className="relative">
             <div ref={rail} className="flex gap-4 overflow-x-auto pb-3 chip-scroll">
-              {onAir.map((s) => {
+              {rows.map((s) => {
                 const nm = s.displayName || s.handle || 'Creator'
-                const ok = isOfficialCreator(s.userId, s.handle) || isVerifiedChannel(s.userId, s.handle)
+                const ok = streamOfficial(s)
+                const selected = (featured?.userId || featured?.id) === (s.userId || s.id)
                 return (
                   <button
-                    key={s.userId}
+                    key={s.userId || s.id}
                     type="button"
-                    onClick={() => openLive(s)}
-                    className="apex-card w-[220px] shrink-0 text-left"
+                    onClick={() => pickStream(s)}
+                    className={cn('apex-card w-[220px] shrink-0 text-left', selected && 'ring-1 ring-[#FF4B11]')}
                   >
                     <div className="relative aspect-video overflow-hidden rounded-xl bg-[#141414]">
                       <LiveThumb stream={s} className="absolute inset-0 h-full w-full" />
                       <span
                         className="absolute top-2 left-2 px-1.5 py-0.5 text-[10px] font-extrabold uppercase text-white rounded"
-                        style={{ background: isOnAir(s) ? ORANGE : '#3f3f46' }}
+                        style={{ background: streamIsLive(s) ? ORANGE : '#3f3f46' }}
                       >
-                        {liveBadgeLabel(s)}
+                        {streamBadge(s)}
                       </span>
                       <span className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-black/70 text-white text-[10px] font-semibold inline-flex items-center gap-1 tabular-nums">
                         <User className="h-3 w-3" />
@@ -371,7 +368,7 @@ export default function ApexHomeStage({
                 )
               })}
             </div>
-            {onAir.length > 3 ? (
+            {rows.length > 3 ? (
               <button
                 type="button"
                 aria-label="More live channels"
@@ -384,8 +381,8 @@ export default function ApexHomeStage({
           </div>
         ) : (
           <div className="rounded-xl border border-white/10 bg-[#0a0a0a] px-5 py-10 text-center">
-            <p className="text-sm font-semibold text-white">No live channels</p>
-            <p className="mt-1 text-sm text-[#8a8a8a]">They appear from ingest. Nothing is invented here.</p>
+            <p className="text-sm font-semibold text-white">No channels on this row</p>
+            <p className="mt-1 text-sm text-[#8a8a8a]">Demo streams fill this row when nobody is on air.</p>
           </div>
         )}
       </section>

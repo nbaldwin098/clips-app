@@ -7,7 +7,6 @@ import { getActivePromotion, recordPromoClick } from '../lib/promotions'
 import MediaShelves from './MediaShelves'
 import ContentCard from './ContentCard'
 import Footer from './Footer'
-import HourlyHitsCarousel from './HourlyHitsCarousel'
 import FilterChips from './FilterChips'
 import ApexHomeStage from './home/ApexHomeStage'
 import { preloadPostedItem, preloadPostedItems } from '../lib/preloadMedia'
@@ -90,8 +89,6 @@ export default function HomeFeed({
         onOpenCheckout={onOpenCheckout}
         onSelectLive={onSelectLive}
       />
-
-      <HourlyHitsCarousel onPlayItem={onPlayItem} onOpenPic={onOpenPic} onOpenProfile={onOpenProfile} />
 
       <div className="px-5 md:px-8 py-6 max-w-[1600px] mx-auto w-full space-y-6">
       {promo && promo.placement === 'home' && (
