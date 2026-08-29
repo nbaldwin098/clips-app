@@ -167,7 +167,7 @@ export default function StreamingNavbar({
                   key={link.id}
                   type="button"
                   onClick={() => handleNav(link.view)}
-                  className={`relative h-16 text-[14px] font-semibold ${active ? 'text-white' : 'text-[#a0a0a0] hover:text-white'}`}
+                  className={`relative h-16 text-base font-semibold ${active ? 'text-white' : 'text-[#a0a0a0] hover:text-white'}`}
                 >
                   {link.label}
                   {active ? <span className="absolute left-0 right-0 bottom-3 h-[2px] bg-white" /> : null}
@@ -182,8 +182,8 @@ export default function StreamingNavbar({
           onSubmit={(e) => { e.preventDefault(); handleNav('explore') }}
         >
           {apex ? (
-            <div className="flex w-full max-w-[420px] min-w-0 h-10 items-center gap-2 rounded-full bg-[#1a1a1a] border border-white/10 px-3">
-              <Search className="h-4 w-4 text-[#8a8a8a] shrink-0" />
+            <div className="flex w-full max-w-[560px] min-w-0 h-12 items-center gap-2 rounded-full bg-[#1a1a1a] border border-white/10 px-3">
+              <Search className="h-5 w-5 text-[#8a8a8a] shrink-0" />
               <input
                 ref={searchRef}
                 type="search"
@@ -191,7 +191,7 @@ export default function StreamingNavbar({
                 onChange={(e) => onSearchChange?.(e.target.value)}
                 onFocus={() => handleNav('explore')}
                 placeholder="Search calabi"
-                className="flex-1 min-w-0 bg-transparent text-[13px] text-white placeholder:text-[#6b6b6b] outline-none"
+                className="flex-1 min-w-0 bg-transparent text-base text-white placeholder:text-[#6b6b6b] outline-none"
               />
               <span className="hidden sm:inline text-[11px] text-[#6b6b6b] font-semibold">⌘K</span>
             </div>
@@ -203,11 +203,11 @@ export default function StreamingNavbar({
               onChange={(e) => onSearchChange?.(e.target.value)}
               onFocus={() => handleNav('explore')}
               placeholder={t('nav.search')}
-              className="w-full min-w-0 h-8 border border-[#303030] bg-[#121212] pl-3 pr-2 text-xs sm:text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-[#3ea6ff] focus:outline-none"
+              className="w-full min-w-0 h-10 border border-[#303030] bg-[#121212] pl-3 pr-2 text-sm sm:text-base text-zinc-100 placeholder:text-zinc-500 focus:border-[#3ea6ff] focus:outline-none"
             />
             <button
               type="submit"
-              className="h-8 w-10 sm:w-12 shrink-0 border border-l-0 border-[#303030] bg-[#222222] text-zinc-200 hover:bg-[#2a2a2a] flex items-center justify-center"
+              className="h-10 w-12 sm:w-14 shrink-0 border border-l-0 border-[#303030] bg-[#222222] text-zinc-200 hover:bg-[#2a2a2a] flex items-center justify-center"
               aria-label={t('nav.search')}
             >
               <Search className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -230,9 +230,9 @@ export default function StreamingNavbar({
                   type="button"
                   onClick={() => handleNav('messages')}
                   aria-label={t('nav.messages')}
-                  className="h-9 w-9 inline-flex items-center justify-center rounded-full text-white hover:bg-white/10"
+                  className="h-11 w-11 inline-flex items-center justify-center rounded-full text-white hover:bg-white/10"
                 >
-                  <Send className="h-5 w-5" />
+                  <Send className="h-6 w-6" />
                 </button>
               ) : null}
 
@@ -241,7 +241,7 @@ export default function StreamingNavbar({
                   type="button"
                   data-avatar-btn
                   onClick={() => { setMenuOpen((o) => !o); setLangOpen(false) }}
-                  className="flex h-9 items-center justify-center gap-0.5 rounded-full hover:bg-white/10 shrink-0 px-0.5"
+                  className="flex h-11 items-center justify-center gap-0.5 rounded-full hover:bg-white/10 shrink-0 px-0.5"
                   aria-label={t('nav.account')}
                 >
                   <ChannelAvatar src={user?.avatarUrl} name={user?.displayName || user?.handle} size={28} />
@@ -352,9 +352,9 @@ export default function StreamingNavbar({
                   type="button"
                   onClick={() => handleNav('messages')}
                   aria-label={t('nav.messages')}
-                  className="h-9 w-9 inline-flex items-center justify-center rounded-full text-white hover:bg-white/10"
+                  className="h-11 w-11 inline-flex items-center justify-center rounded-full text-white hover:bg-white/10"
                 >
-                  <Send className="h-5 w-5" />
+                  <Send className="h-6 w-6" />
                 </button>
               ) : null}
               <button
@@ -362,11 +362,11 @@ export default function StreamingNavbar({
                 data-avatar-btn
                 onClick={() => { setGuestOpen((o) => !o); setLangOpen(false) }}
                 className={apex
-                  ? 'flex h-9 w-9 items-center justify-center rounded-full text-white hover:bg-white/10 shrink-0'
-                  : 'flex h-9 w-9 items-center justify-center rounded-full border border-[#3ea6ff]/40 text-[#3ea6ff] hover:bg-[#3ea6ff]/10 shrink-0'}
+                  ? 'flex h-11 w-11 items-center justify-center rounded-full text-white hover:bg-white/10 shrink-0'
+                  : 'flex h-11 w-11 items-center justify-center rounded-full border border-[#3ea6ff]/40 text-[#3ea6ff] hover:bg-[#3ea6ff]/10 shrink-0'}
                 aria-label={t('nav.account')}
               >
-                <CircleUserRound className="h-5 w-5" />
+                <CircleUserRound className="h-6 w-6" />
               </button>
               {guestOpen ? (
                 <div className="absolute right-0 mt-2 w-64 border border-[#272727] bg-[#0f0f0f] shadow-2xl py-1 z-50 max-h-[min(80vh,520px)] overflow-y-auto">
