@@ -10,9 +10,6 @@ import {
   ChevronDown,
   ChevronRight,
   HelpCircle,
-  FileText,
-  Shield,
-  Scale,
   BookOpen,
   ListVideo,
   LifeBuoy,
@@ -25,7 +22,6 @@ import {
   ShoppingBag,
   Store,
   Newspaper,
-  Code2,
 } from 'lucide-react'
 import { lsGet } from '../lib/storage'
 import { listLiveBoard, liveBadgeLabel, isOnAir } from '../lib/liveStatus'
@@ -256,19 +252,10 @@ export default function CollapsibleSidebar({
             <div className={cn('space-y-0.5', collapsed ? '' : 'ml-2 border-l border-[#23232c] pl-2')}>
               <NavBtn collapsed={collapsed} active={currentView === 'seller' || currentView === 'seller-portal'} onClick={() => go('seller')} icon={Store} label={t('nav.seller')} />
               <NavBtn collapsed={collapsed} active={currentView === 'stats'} onClick={() => go('stats')} icon={Activity} label={t('nav.stats')} />
-              <NavBtn collapsed={collapsed} active={currentView === 'api'} onClick={() => go('api')} icon={Code2} label={t('nav.api')} />
               <NavBtn collapsed={collapsed} active={currentView === 'support'} onClick={() => go('support')} icon={LifeBuoy} label={t('nav.support')} />
-              {FEATURE_ADS ? (
-                <NavBtn collapsed={collapsed} active={currentView === 'advertise' || currentView === 'advertiser-portal'} onClick={() => go('advertise')} icon={Megaphone} label={t('nav.advertise')} />
-              ) : (
-                <NavBtn collapsed={collapsed} active={currentView === 'advertise' || currentView === 'advertiser-portal'} onClick={() => go('advertise')} icon={Megaphone} label={t('nav.monetize')} />
-              )}
+              <NavBtn collapsed={collapsed} active={currentView === 'advertise' || currentView === 'advertiser-portal'} onClick={() => go('advertise')} icon={Megaphone} label={FEATURE_ADS ? t('nav.advertise') : t('nav.monetize')} />
               <NavBtn collapsed={collapsed} active={currentView === 'about'} onClick={() => go('about')} icon={BookOpen} label={t('nav.about')} />
               <NavBtn collapsed={collapsed} active={currentView === 'help'} onClick={() => go('help')} icon={HelpCircle} label={t('nav.help')} />
-              <NavBtn collapsed={collapsed} active={currentView === 'legal-tos'} onClick={() => go('legal-tos')} icon={FileText} label={t('nav.tos')} />
-              <NavBtn collapsed={collapsed} active={currentView === 'legal-privacy'} onClick={() => go('legal-privacy')} icon={Shield} label={t('nav.privacy')} />
-              <NavBtn collapsed={collapsed} active={currentView === 'legal-creator'} onClick={() => go('legal-creator')} icon={Scale} label={t('nav.creatorAgreement')} />
-              <NavBtn collapsed={collapsed} active={currentView === 'legal-community'} onClick={() => go('legal-community')} icon={Users} label={t('nav.community')} />
             </div>
           )}
         </div>
