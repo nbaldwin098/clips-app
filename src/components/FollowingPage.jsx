@@ -29,25 +29,35 @@ export default function FollowingPage({ onNavigate, onOpenAuth, onPlayItem, onOp
 
   return (
     <div className="p-4 md:p-6 max-w-[1200px] mx-auto space-y-8">
-      <PageHeader title="Live Creators" subtitle="People you follow" onBack={() => onNavigate?.('home')} />
-      {channels.length === 0 ? (
-        <div className="border border-zinc-800 bg-[#121218] px-6 py-12 text-center">
-          <Users className="h-8 w-8 text-white mx-auto" />
-          <p className="mt-4 text-sm text-zinc-200">Not following anyone yet</p>
+      <PageHeader title="Following" subtitle="Live first, then offline" onBack={() => onNavigate?.('home')} />
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold text-white">Live</h2>
+        <div className="border border-zinc-800 bg-[#121218] px-6 py-10 text-center">
+          <p className="text-sm text-zinc-200">No one you follow is live</p>
+          <p className="mt-1 text-xs text-zinc-500">Lives appear from ingest. We do not invent channels.</p>
         </div>
-      ) : (
-        <div className="flex gap-3 overflow-x-auto pb-1">
-          {channels.map((c) => (
-            <button key={c.id} type="button" onClick={() => onOpenProfile?.(c.handle, c.id)} className="shrink-0 w-28 text-center">
-              <div className="h-12 w-12 mx-auto rounded-full bg-white/20 text-white flex items-center justify-center text-sm font-semibold overflow-hidden">
-                {c.avatarUrl ? <img src={c.avatarUrl} alt="" className="h-full w-full object-cover" /> : (c.displayName || '?')[0].toUpperCase()}
-              </div>
-              <p className="mt-1.5 text-xs text-zinc-100 truncate">{c.displayName}</p>
-              <p className="text-[10px] text-zinc-500 truncate">@{c.handle}</p>
-            </button>
-          ))}
-        </div>
-      )}
+      </section>
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold text-white">Offline</h2>
+        {channels.length === 0 ? (
+          <div className="border border-zinc-800 bg-[#121218] px-6 py-12 text-center">
+            <Users className="h-8 w-8 text-white mx-auto" />
+            <p className="mt-4 text-sm text-zinc-200">Not following anyone yet</p>
+          </div>
+        ) : (
+          <div className="flex gap-3 overflow-x-auto pb-1">
+            {channels.map((c) => (
+              <button key={c.id} type="button" onClick={() => onOpenProfile?.(c.handle, c.id)} className="shrink-0 w-28 text-center">
+                <div className="h-12 w-12 mx-auto rounded-full bg-white/20 text-white flex items-center justify-center text-sm font-semibold overflow-hidden">
+                  {c.avatarUrl ? <img src={c.avatarUrl} alt="" className="h-full w-full object-cover" /> : (c.displayName || '?')[0].toUpperCase()}
+                </div>
+                <p className="mt-1.5 text-xs text-zinc-100 truncate">{c.displayName}</p>
+                <p className="text-[10px] text-zinc-500 truncate">@{c.handle}</p>
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
       {uploads.length === 0 ? (
         channels.length > 0 ? (
           <div className="border border-zinc-800 bg-[#121218] px-6 py-12 text-center">
