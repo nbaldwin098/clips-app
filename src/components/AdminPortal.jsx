@@ -18,7 +18,7 @@ import {
   recordManualPayout, listPayoutLedger, getPayoutContact,
 } from '../lib/payouts'
 import { useAuth } from '../context/AuthContext'
-import { adminOverview, payoutsHeld } from '../lib/trustSafety'
+import { adminOverview } from '../lib/trustSafety'
 import AdminPromos from './AdminPromos'
 import AdminNews from './AdminNews'
 import AdminPeople from './admin/AdminPeople'
@@ -29,7 +29,7 @@ import AdminFinancePanel from './admin/AdminFinancePanel'
 import { listEscrow, adminReleaseEscrow, adminRefundEscrow } from '../lib/donationEscrow'
 import { getCreatorAnalytics } from '../lib/engagement'
 import { syncPublicEngagementFromCloud } from '../lib/graphSync'
-import { DashKpi, DashCard, DashAreaChart, DashBarChart } from './dash/DashboardShell'
+import AdminDeck from './admin/AdminDeck'
 
 function AdminEscrowPanel({ onChange }) {
   const rows = listEscrow({ limit: 40 })
@@ -238,9 +238,8 @@ export default function AdminPortal({ initialTab = '' }) {
   const ledger = listPayoutLedger()
 
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] bg-slate-100 text-slate-900 flex" data-dash="light">
-      <aside className="w-52 shrink-0 border-r border-white/10 bg-[#1c2434] py-4 text-slate-200">
-        <p className="px-4 text-[10px] uppercase tracking-wider text-slate-500 mb-2">Admin</p>
+    <div className="min-h-[calc(100vh-3.5rem)] bg-[#0b0b0b] text-zinc-200 flex" data-dash="calabi">
+      <aside className="w-52 shrink-0 border-r border-white/10 bg-[#0e0e12] py-4 text-zinc-300">
         <nav className="space-y-3 px-2">
           {['Home', 'Ops', 'Money', 'Content', 'Insights'].map((group) => {
             const items = NAV.filter((n) => n.group === group)
@@ -248,7 +247,7 @@ export default function AdminPortal({ initialTab = '' }) {
             return (
               <div key={group}>
                 {group !== 'Home' ? (
-                  <p className="px-3 mb-1 text-[10px] uppercase tracking-wider text-slate-500">{group}</p>
+                  <p className="px-3 mb-1 text-[10px] uppercase tracking-wider text-zinc-600">{group}</p>
                 ) : null}
                 <div className="space-y-0.5">
                   {items.map((item) => {
@@ -275,71 +274,22 @@ export default function AdminPortal({ initialTab = '' }) {
         </nav>
       </aside>
       <div className="flex-1 min-w-0 flex flex-col">
-        <header className="h-14 shrink-0 border-b border-slate-200 flex items-center px-5 bg-white">
-          <p className="text-sm font-semibold text-slate-900">{NAV.find((n) => n.id === tab)?.label || 'Admin'}</p>
-        </header>
         <div className="flex-1 min-h-0 overflow-y-auto">
           {tab === 'overview' && (
-            <div className="p-5 space-y-4">
-              <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
-                <DashKpi label="Open tickets" value={String(tickets.filter((t) => t.status !== 'closed').length)} icon={LifeBuoy} />
-                <DashKpi label="Seller apps" value={String(sellerApps.length)} icon={ShoppingBag} />
-                <DashKpi label="Creator apps" value={String(apps.filter((a) => a.status === 'pending').length)} icon={ClipboardList} />
-                <DashKpi label="Shop listings" value={String(shopProducts.length)} icon={Film} />
-              </div>
-              <div className="grid lg:grid-cols-3 gap-4">
-                <DashCard title="Ops snapshot" className="lg:col-span-2" action={<span className="text-[11px] text-slate-400">TailAdmin</span>}>
-                  <DashAreaChart
-                    seriesA={[
-                      tickets.filter((t) => t.status !== 'closed').length,
-                      sellerApps.length,
-                      apps.filter((a) => a.status === 'pending').length,
-                      shopProducts.length,
-                      balances.length,
-                      ledger.length,
-                    ]}
-                    seriesB={[
-                      tickets.length,
-                      Math.max(1, sellerApps.length + 1),
-                      apps.length,
-                      Math.max(1, shopProducts.length),
-                      Math.max(1, balances.length),
-                      Math.max(1, ledger.length),
-                    ]}
-                    labels={['Now', '']}
-                    height={200}
-                  />
-                </DashCard>
-                <DashCard title="Queue load">
-                  <DashBarChart
-                    values={[
-                      tickets.filter((t) => t.status !== 'closed').length,
-                      sellerApps.length,
-                      apps.filter((a) => a.status === 'pending').length,
-                      Object.keys(stats || {}).length,
-                    ]}
-                    labels={['Tickets', 'Sellers', 'Creators', 'Stats']}
-                  />
-                </DashCard>
-              </div>
-              <div className="grid sm:grid-cols-3 gap-3">
-                {Object.entries(stats || {}).map(([k, v]) => (
-                  <div key={k} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <p className="text-[10px] uppercase text-slate-500">{k}</p>
-                    <p className="text-xl font-bold mt-1 text-slate-900">{String(v)}</p>
-                  </div>
-                ))}
-              </div>
-              <DashCard title="Payouts">
-                <p className="text-sm text-slate-600">Payouts held: {payoutsHeld() ? 'yes' : 'no'}</p>
-              </DashCard>
-              <div className="flex flex-wrap gap-2">
-                <button type="button" className="h-9 px-3 bg-sky-600 text-white text-xs font-semibold rounded-lg" onClick={() => setTab('tickets')}>Open support desk</button>
-                <button type="button" className="h-9 px-3 border border-slate-300 bg-white text-xs text-slate-700 rounded-lg" onClick={() => setTab('shop')}>Marketplace</button>
-                <button type="button" className="h-9 px-3 border border-slate-300 bg-white text-xs text-slate-700 rounded-lg" onClick={() => setTab('analytics')}>Analytics</button>
-              </div>
+            <div className="p-5">
+              <AdminDeck
+                users={0}
+                creators={apps.filter((a) => a.status === 'approved').length}
+                posts={shopProducts.length}
+                live={0}
+                watching={0}
+                reports={tickets.filter((t) => t.status !== 'closed').length}
+                revenueUsd={0}
+                pendingPayoutsUsd={0}
+              />
             </div>
           )}
+
           {tab === 'analytics' && (
             <div className="p-5 space-y-4">
               <p className="text-xs text-zinc-500">Platform engagement snapshot (cloud tallies when synced).</p>
