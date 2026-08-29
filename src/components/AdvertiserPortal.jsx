@@ -28,11 +28,13 @@ export default function AdvertiserPortal() {
   const [placement, setPlacement] = useState('home')
   const [budget, setBudget] = useState('')
   const [brand, setBrand] = useState(() => lsGet('calabi_ad_brand', ''))
+  const [billEmail, setBillEmail] = useState(() => lsGet('calabi_ad_email', ''))
   const [campaigns, setCampaigns] = useState(() => lsGet('calabi_ad_campaigns', []))
   const [note, setNote] = useState('')
 
   useEffect(() => { lsSet('calabi_ad_campaigns', campaigns) }, [campaigns])
   useEffect(() => { lsSet('calabi_ad_brand', brand) }, [brand])
+  useEffect(() => { lsSet('calabi_ad_email', billEmail) }, [billEmail])
 
   const nav = [
     { id: 'home', label: 'Overview', icon: Home },
@@ -118,6 +120,32 @@ export default function AdvertiserPortal() {
                   <p className="text-[13px] text-zinc-500">No card on file.</p>
                 </Card>
               </div>
+              <Card title="Drafts">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-[13px]">
+                    <thead>
+                      <tr className="text-left text-[11px] uppercase tracking-wider text-zinc-500">
+                        <th className="py-2 pr-3 font-semibold">Name</th>
+                        <th className="py-2 pr-3 font-semibold">Placement</th>
+                        <th className="py-2 pr-3 font-semibold">Budget</th>
+                        <th className="py-2 font-semibold">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {campaigns.length === 0 ? (
+                        <tr><td colSpan={4} className="py-6 text-zinc-500">No drafts.</td></tr>
+                      ) : campaigns.map((c) => (
+                        <tr key={c.id} className="border-t border-white/10">
+                          <td className="py-2 pr-3">{c.name}</td>
+                          <td className="py-2 pr-3">{c.placement}</td>
+                          <td className="py-2 pr-3">${c.budget}/day</td>
+                          <td className="py-2">{c.status}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
             </>
           ) : null}
 
@@ -148,24 +176,40 @@ export default function AdvertiserPortal() {
           ) : null}
 
           {tab === 'list' ? (
-            <div className="max-w-lg space-y-3">
+            <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h1 className="text-[26px] font-semibold">Drafts</h1>
                 <button type="button" onClick={() => setTab('create')} className="h-10 px-3 rounded-lg border border-white/10 text-sm">New</button>
               </div>
               <Card>
-                {campaigns.length === 0 ? (
-                  <p className="text-[13px] text-zinc-500">No drafts.</p>
-                ) : (
-                  <ul className="divide-y divide-white/10">
-                    {campaigns.map((c) => (
-                      <li key={c.id} className="flex items-center justify-between py-2 text-sm">
-                        <span>{c.name} · {c.placement} · ${c.budget}/day · {c.status}</span>
-                        <button type="button" className="text-xs text-zinc-500" onClick={() => setCampaigns((x) => x.filter((r) => r.id !== c.id))}>Delete</button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-[13px]">
+                    <thead>
+                      <tr className="text-left text-[11px] uppercase tracking-wider text-zinc-500">
+                        <th className="py-2 pr-3 font-semibold">Name</th>
+                        <th className="py-2 pr-3 font-semibold">Placement</th>
+                        <th className="py-2 pr-3 font-semibold">Budget</th>
+                        <th className="py-2 pr-3 font-semibold">Status</th>
+                        <th className="py-2 font-semibold"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {campaigns.length === 0 ? (
+                        <tr><td colSpan={5} className="py-6 text-zinc-500">No drafts. Create one — it will not go live.</td></tr>
+                      ) : campaigns.map((c) => (
+                        <tr key={c.id} className="border-t border-white/10">
+                          <td className="py-2 pr-3">{c.name}</td>
+                          <td className="py-2 pr-3">{c.placement}</td>
+                          <td className="py-2 pr-3">${c.budget}/day</td>
+                          <td className="py-2 pr-3">{c.status}</td>
+                          <td className="py-2">
+                            <button type="button" className="text-xs text-zinc-500" onClick={() => setCampaigns((x) => x.filter((r) => r.id !== c.id))}>Delete</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </Card>
             </div>
           ) : null}
@@ -173,9 +217,16 @@ export default function AdvertiserPortal() {
           {tab === 'places' ? (
             <div className="max-w-lg space-y-3">
               <h1 className="text-[26px] font-semibold">Placements</h1>
+              <p className="text-[13px] text-zinc-500">Slots exist. Serving is locked off until we turn ads on.</p>
               {PLACEMENTS.map((p) => (
                 <Card key={p.id} title={p.label}>
-                  <p className="text-[13px] text-zinc-500">{p.hint}</p>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[13px] text-zinc-500">{p.hint}</p>
+                    <label className="flex items-center gap-2 text-sm text-zinc-500">
+                      <input type="checkbox" checked={false} disabled />
+                      Off
+                    </label>
+                  </div>
                 </Card>
               ))}
             </div>
@@ -187,6 +238,13 @@ export default function AdvertiserPortal() {
               <Card>
                 <p className="text-[32px] font-semibold tabular-nums">$0.00</p>
                 <p className="mt-2 text-[13px] text-zinc-500">No charges. Connect Stripe when ads go live — not before.</p>
+                <label className="block mt-4">
+                  <span className="mb-1 block text-xs text-zinc-500">Billing email</span>
+                  <input value={billEmail} onChange={(e) => setBillEmail(e.target.value)} className="h-10 w-full rounded-lg border border-white/10 bg-black px-3 text-sm" placeholder="ads@brand.com" />
+                </label>
+              </Card>
+              <Card title="Invoices">
+                <p className="text-[13px] text-zinc-500 py-4">No invoices.</p>
               </Card>
             </div>
           ) : null}
