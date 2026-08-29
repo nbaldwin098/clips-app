@@ -71,7 +71,7 @@ export default function HomeFeed({
         onSelectLive={onSelectLive}
       />
 
-      <div className="px-5 md:px-8 py-8 max-w-[1600px] mx-auto w-full space-y-8">
+      <div className="px-5 md:px-8 py-8 w-full space-y-8">
       {promo && promo.placement === 'home' && (
         <button
           type="button"
@@ -97,7 +97,7 @@ export default function HomeFeed({
       {continueItems.length > 0 && (
         <section>
           <h2 className="text-[17px] font-semibold text-white mb-3">Continue watching</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-6">
             {continueItems.slice(0, 8).map((item) => (
               <ContentCard key={item.id} item={item} onOpen={onPlayItem} onOpenProfile={onOpenProfile} variant="video" />
             ))}
