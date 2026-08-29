@@ -68,12 +68,6 @@ header[data-apex] input[type="search"] {
   border-radius: 9999px !important;
 }
 
-html {
-  font-size: 16px;
-}
-@media (min-width: 768px) {
-  html { font-size: 18px; }
-}
 html, body, #root {
   height: 100%;
   margin: 0;
