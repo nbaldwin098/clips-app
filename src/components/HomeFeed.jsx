@@ -1,4 +1,5 @@
-import { useMemo, useEffect } from 'react'
+import { useMemo, useEffect, useRef } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getStableHomeFeed, getStableFollowingFeed, getWatchItem } from '../lib/contentService'
 import { getPicsFeed } from '../lib/picsService'
@@ -15,6 +16,34 @@ import { syncContentFromCloud } from '../lib/contentSync'
 import { lsGet } from '../lib/storage'
 import { listOnAirBoard } from '../lib/liveStatus'
 import { mergeDemoLiveBoard } from '../data/demoLiveStreams'
+
+
+function ThreeCarousel({ title, children }) {
+  const ref = useRef(null)
+  const move = (dir) => {
+    const el = ref.current
+    if (!el) return
+    el.scrollBy({ left: dir * Math.max(el.clientWidth * 0.9, 240), behavior: 'smooth' })
+  }
+  return (
+    <section>
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <h2 className="text-lg font-semibold text-white">{title}</h2>
+        <div className="flex gap-1">
+          <button type="button" aria-label="Previous" onClick={() => move(-1)} className="h-8 w-8 inline-flex items-center justify-center border border-white/20 text-white hover:bg-white/10">
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button type="button" aria-label="Next" onClick={() => move(1)} className="h-8 w-8 inline-flex items-center justify-center border border-white/20 text-white hover:bg-white/10">
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+      <div ref={ref} className="flex gap-4 overflow-x-auto pb-1 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {children}
+      </div>
+    </section>
+  )
+}
 
 export default function HomeFeed({
   onPlayItem,
@@ -49,6 +78,10 @@ export default function HomeFeed({
     if (!user?.id) return []
     return listContinueWatching(user.id).map((row) => getWatchItem(row.contentId)).filter((i) => i && i.type === 'video')
   }, [user?.id, syncTick])
+  const continueVideos = continueItems.length
+    ? continueItems
+    : (items || []).filter((i) => i && i.type === 'video').slice(0, 12)
+  const continueLives = (onAir || []).slice(0, 12)
 
   useEffect(() => {
     syncContentFromCloud(user).catch(() => {})
@@ -94,16 +127,33 @@ export default function HomeFeed({
         </button>
       )}
 
-      {continueItems.length > 0 && (
-        <section>
-          <h2 className="text-[17px] font-semibold text-white mb-3">Continue watching</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-6">
-            {continueItems.slice(0, 8).map((item) => (
-              <ContentCard key={item.id} item={item} onOpen={onPlayItem} onOpenProfile={onOpenProfile} variant="video" />
-            ))}
+      <ThreeCarousel title="Continue watching · Videos">
+        {continueVideos.map((item) => (
+          <div key={item.id} className="w-[85%] sm:w-[calc((100%-1rem)/2)] md:w-[calc((100%-2rem)/3)] shrink-0 snap-start">
+            <ContentCard item={item} onOpen={onPlayItem} onOpenProfile={onOpenProfile} variant="video" />
           </div>
-        </section>
-      )}
+        ))}
+      </ThreeCarousel>
+
+      <ThreeCarousel title="Continue watching · Live">
+        {continueLives.map((s) => (
+          <button
+            key={s.userId}
+            type="button"
+            onClick={() => onSelectLive?.(s)}
+            className="w-[85%] sm:w-[calc((100%-1rem)/2)] md:w-[calc((100%-2rem)/3)] shrink-0 snap-start text-left"
+          >
+            <div className="relative aspect-video overflow-hidden bg-[#141414]">
+              {(s.thumbUrl || s.previewUrl) ? (
+                <img src={s.thumbUrl || s.previewUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+              ) : null}
+              <span className="absolute top-2 left-2 px-1.5 py-0.5 text-[10px] font-bold uppercase text-white bg-[#eb0400]">Live</span>
+            </div>
+            <p className="mt-2 text-base font-semibold text-white truncate">{s.title || 'Live'}</p>
+            <p className="text-sm text-[#b3b3b3] truncate">{s.displayName || s.handle}</p>
+          </button>
+        ))}
+      </ThreeCarousel>
 
       {following.length > 0 && (
         <section>
@@ -121,6 +171,7 @@ export default function HomeFeed({
         ) : (
           <MediaShelves
             items={items}
+            filter="video"
             onPlayItem={onPlayItem}
             onOpenPic={onOpenPic}
             onOpenProfile={onOpenProfile}
