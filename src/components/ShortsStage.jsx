@@ -296,7 +296,7 @@ export function ShortsCard({ children, actions, fillMobile = false }) {
   }
 
   return (
-    <div ref={hostRef} className="h-full w-full min-h-0 flex items-end justify-center gap-3">
+    <div ref={hostRef} className="h-full w-full min-h-0 flex items-start justify-center gap-3 pt-6">
       <div
         className="relative bg-black overflow-hidden rounded-xl sm:rounded-2xl shrink-0 shadow-[0_8px_40px_rgba(0,0,0,0.45)]"
         style={
@@ -308,7 +308,7 @@ export function ShortsCard({ children, actions, fillMobile = false }) {
         {children}
       </div>
       {actions ? (
-        <div className="hidden md:flex flex-col items-center gap-4 pb-8 shrink-0 w-14">
+        <div className="hidden md:flex flex-col items-center gap-4 pt-2 shrink-0 w-14">
           {actions}
         </div>
       ) : null}
