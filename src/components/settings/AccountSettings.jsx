@@ -3,7 +3,6 @@ import { Camera } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { getLocale, setLocale, listLocales, t, subscribeLocale } from '../../lib/i18n'
 import {
-  SettingsPageHeader,
   SettingsSection,
   SettingsCard,
   SettingsInput,
@@ -86,10 +85,7 @@ export default function AccountSettings({ onNavigate }) {
 
   return (
     <div className="space-y-8 pb-20">
-      <SettingsPageHeader
-        title="Account"
-        subtitle="Name, photo, and bio. Changes save as you type."
-      />
+      <p className="text-sm text-neutral-500">Name, photo, and bio. Changes save as you type.</p>
 
       <SettingsSection title="Profile">
         <SettingsCard>

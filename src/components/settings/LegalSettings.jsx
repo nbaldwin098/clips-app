@@ -4,8 +4,7 @@ export default function LegalSettings({ onNavigate }) {
   return (
     <div className="space-y-8 text-neutral-800">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">Legal & Data</h1>
-        <p className="mt-1 text-sm text-neutral-500">Public policies and how to reach Clips.</p>
+        <p className="text-sm text-neutral-500">Public policies and how to reach Clips.</p>
       </div>
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={() => onNavigate?.('legal-tos')} className="h-9 px-3 rounded-lg border border-neutral-200 text-sm text-neutral-800">Terms</button>

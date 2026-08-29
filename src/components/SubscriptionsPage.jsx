@@ -43,7 +43,7 @@ export default function SubscriptionsPage({ onNavigate, onOpenAuth, onOpenProfil
 
   if (!isAuthenticated) {
     return (
-      <StudioShell tone="light" title="Subscriptions" onBack={() => onNavigate?.('home')}>
+      <StudioShell tone="light" title="Subscriptions" onBack={() => onNavigate?.('home')} onNotify={() => onNavigate?.('notifications')} onHelp={() => onNavigate?.('help')}>
         <AuthRequired
           light
           title="Subscriptions"
@@ -62,6 +62,8 @@ export default function SubscriptionsPage({ onNavigate, onOpenAuth, onOpenProfil
       activeId="subs"
       onNav={() => {}}
       onBack={() => onNavigate?.('home')}
+      onNotify={() => onNavigate?.('notifications')}
+      onHelp={() => onNavigate?.('help')}
     >
       <div className="space-y-5 max-w-2xl">
         <StudioKpi label="Active memberships" value={String(memberships.length)} icon={Crown} />

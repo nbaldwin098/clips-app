@@ -70,12 +70,9 @@ export default function WalletSettings({ onNavigate, onOpenAuth, initialTab = nu
   if (!isAuthenticated) {
     const packs = listCoinPacks()
     return (
-      <StudioShell tone="light" title="Wallet" nav={NAV} activeId="coins" onNav={() => {}} onBack={() => onNavigate?.('home')}>
+      <StudioShell tone="light" title="Wallet" nav={NAV} activeId="coins" onNav={() => {}} onBack={() => onNavigate?.('home')} onNotify={() => onNavigate?.('notifications')} onHelp={() => onNavigate?.('help')}>
         <div className="space-y-6 max-w-3xl">
-          <div>
-            <h1 className="text-xl font-semibold text-neutral-900">Wallet</h1>
-            <p className="mt-1 text-sm text-neutral-500">Sign in to buy coins and manage payment methods.</p>
-          </div>
+          <p className="text-sm text-neutral-500">Sign in to buy coins and manage payment methods.</p>
           <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
             {packs.map((p) => (
               <div key={p.id} className="border border-neutral-200 bg-white p-4 text-center rounded-xl">
@@ -116,6 +113,8 @@ export default function WalletSettings({ onNavigate, onOpenAuth, initialTab = nu
       activeId={tab}
       onNav={onTab}
       onBack={() => onNavigate?.('home')}
+      onNotify={() => onNavigate?.('notifications')}
+      onHelp={() => onNavigate?.('help')}
     >
       <div className="space-y-5 max-w-4xl">
         <div className="grid sm:grid-cols-3 gap-3">

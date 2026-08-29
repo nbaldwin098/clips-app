@@ -21,7 +21,7 @@ export default function AppealsPage({ onNavigate, onOpenAuth }) {
 
   if (!isAuthenticated) {
     return (
-      <StudioShell tone="light" title="Appeals portal" onBack={() => onNavigate?.('home')}>
+      <StudioShell tone="light" title="Appeals portal" onBack={() => onNavigate?.('home')} onNotify={() => onNavigate?.('notifications')} onHelp={() => onNavigate?.('help')}>
         <AuthRequired light title="Appeals" description="Sign in to file an appeal." onOpenAuth={onOpenAuth} />
       </StudioShell>
     )
@@ -62,6 +62,8 @@ export default function AppealsPage({ onNavigate, onOpenAuth }) {
       activeId="appeals"
       onNav={() => {}}
       onBack={() => onNavigate?.('home')}
+      onNotify={() => onNavigate?.('notifications')}
+      onHelp={() => onNavigate?.('help')}
     >
       <div className="space-y-5 max-w-2xl">
         <StudioKpi label="Open appeals" value={String(mine.filter((a) => a.status !== 'closed').length)} icon={Scale} />

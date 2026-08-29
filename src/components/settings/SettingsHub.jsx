@@ -37,6 +37,7 @@ export default function SettingsHub({ section, onNavigate, initialTab = null, on
       section={id}
       onSection={(next) => onNavigate?.('settings', next)}
       onBack={() => onNavigate?.('home')}
+      onNavigate={onNavigate}
     >
       {isAuthenticated ? (
         <Page onNavigate={onNavigate} initialTab={initialTab} />

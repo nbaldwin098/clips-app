@@ -116,8 +116,7 @@ export default function SecuritySettings() {
   return (
     <div className="space-y-8 text-neutral-800">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">Security & Privacy</h1>
-        <p className="mt-1 text-sm text-neutral-500">Password, two-factor, and this device.</p>
+        <p className="text-sm text-neutral-500">Password, two-factor, and this device.</p>
       </div>
 
       <section className="space-y-4">

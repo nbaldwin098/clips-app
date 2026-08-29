@@ -82,7 +82,6 @@ export default function NotificationsSettings() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">Notifications</h1>
         <p className="mt-1 text-sm text-neutral-500">
           Preference toggles save on this device. Browser push needs a VAPID public key
           (see docs/INFRA.md). Email delivery needs the mail Edge Function.

@@ -43,6 +43,22 @@ header input[type="search"] {
   border-radius: var(--radius-control) !important;
 }
 
+/* Option B / D mockups — rounded cards and pills, not site-square chrome */
+[data-studio="calabi"] button,
+[data-studio="tiktok-white"] button,
+[data-studio="twitch-black"] button {
+  border-radius: 0.75rem !important;
+}
+[data-studio="calabi"] button.rounded-none,
+[data-studio="tiktok-white"] button.rounded-none,
+[data-studio="twitch-black"] button.rounded-none {
+  border-radius: 0 !important;
+}
+[data-studio="calabi"] input[type="search"],
+[data-studio="tiktok-white"] input[type="search"] {
+  border-radius: 9999px !important;
+}
+
 html, body, #root {
   height: 100%;
   margin: 0;

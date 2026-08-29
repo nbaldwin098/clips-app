@@ -40,7 +40,7 @@ export function isCreatorSettingsSection(section) {
   return settingsModeForSection(section) === 'creator'
 }
 
-export default function SettingsLayout({ section, onSection, children, onBack }) {
+export default function SettingsLayout({ section, onSection, children, onBack, onNavigate }) {
   const sections = SITE_SECTIONS
   const active = sections.some((s) => s.id === section) ? section : 'account'
 
@@ -53,6 +53,8 @@ export default function SettingsLayout({ section, onSection, children, onBack })
       onNav={onSection}
       onBack={onBack}
       backLabel="Back"
+      onNotify={() => onNavigate?.('notifications')}
+      onHelp={() => onNavigate?.('help')}
     >
       <div className="max-w-3xl">
         {children}
