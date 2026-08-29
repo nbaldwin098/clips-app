@@ -126,13 +126,6 @@ export default function StreamingNavbar({
     setThemeState(toggleTheme())
   }
 
-  const apexLinks = [
-    { id: 'home', label: 'Home', view: 'home' },
-    { id: 'browse', label: 'Browse', view: 'explore' },
-    { id: 'esports', label: 'Esports', view: 'live' },
-    { id: 'creators', label: 'Creators', view: 'creators' },
-  ]
-
   return (
     <header
       className={apex
@@ -157,25 +150,6 @@ export default function StreamingNavbar({
             {apex ? <span className="text-white italic font-black tracking-tight text-[20px]">calabi</span> : <span className="text-white font-black text-lg">c</span>}
           </button>
         </div>
-
-        {apex ? (
-          <nav className="hidden md:flex items-center gap-5 shrink-0">
-            {apexLinks.map((link) => {
-              const active = currentView === link.view || (link.view === 'home' && currentView === 'home')
-              return (
-                <button
-                  key={link.id}
-                  type="button"
-                  onClick={() => handleNav(link.view)}
-                  className={`relative h-16 text-base font-semibold ${active ? 'text-white' : 'text-[#a0a0a0] hover:text-white'}`}
-                >
-                  {link.label}
-                  {active ? <span className="absolute left-0 right-0 bottom-3 h-[2px] bg-white" /> : null}
-                </button>
-              )
-            })}
-          </nav>
-        ) : null}
 
         <form
           className="flex-1 flex justify-center min-w-0 px-1 sm:px-4"
