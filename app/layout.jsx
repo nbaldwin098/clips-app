@@ -7,19 +7,19 @@ export const metadata = {
     default: 'calabi',
     template: '%s · calabi',
   },
-  description: 'calabi — watch clips, pics, and live streams from creators.',
+  description: 'calabi — videos, pics, and live from creators.',
   applicationName: 'calabi',
   openGraph: {
     type: 'website',
     siteName: 'calabi',
     title: 'calabi',
-    description: 'Watch clips, pics, and live streams.',
+    description: 'Videos, pics, and live from creators.',
     url: 'https://calabi.us',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'calabi',
-    description: 'Watch clips, pics, and live streams.',
+    description: 'Videos, pics, and live from creators.',
   },
   icons: {
     icon: [{ url: '/logo.png', type: 'image/png' }, { url: '/favicon.svg', type: 'image/svg+xml' }],
