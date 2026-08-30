@@ -4,6 +4,7 @@
  *
  * REQUIRES a public Storage bucket named exactly "clips".
  * Create it in Supabase → Storage, or run supabase/migrations/0003_clips_storage_bucket.sql
+ * Owner should also run 0027 (RLS) and 0028 (size + MIME) in the SQL editor / Admin Setup.
  */
 import { getSupabase, isSupabaseConfigured } from './supabaseClient'
 
@@ -16,6 +17,41 @@ export const MAX_VIDEO_DURATION_SEC = 24 * 60 * 60
 export const MAX_UPLOAD_BYTES = 2 * 1024 * 1024 * 1024
 const MAX_IMAGE = 12 * 1024 * 1024
 const PUBLIC_MARKER = `/storage/v1/object/public/${BUCKET}/`
+
+/** Product allowlist — keep original iOS types (MOV/MP4). Do not force WebM. */
+export const ALLOWED_VIDEO_TYPES = Object.freeze([
+  'video/mp4',
+  'video/quicktime',
+  'video/webm',
+  'video/x-m4v',
+])
+export const ALLOWED_IMAGE_TYPES = Object.freeze([
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+])
+const VIDEO_EXTS = new Set(['mp4', 'mov', 'm4v', 'webm'])
+const IMAGE_EXTS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif'])
+
+export function isAllowedUploadFile(file, kind = 'videos') {
+  if (!file) return false
+  const type = String(file.type || '').toLowerCase()
+  const ext = extFromFile(file, '')
+  if (kind === 'pics') {
+    if (ALLOWED_IMAGE_TYPES.includes(type)) return true
+    return IMAGE_EXTS.has(ext)
+  }
+  if (ALLOWED_VIDEO_TYPES.includes(type)) return true
+  return VIDEO_EXTS.has(ext)
+}
+
+function rejectedTypeMessage(kind) {
+  return kind === 'pics'
+    ? 'Use a JPEG, PNG, WebP, or GIF.'
+    : 'Use MP4 or MOV. WebM is optional — iOS should upload the original file, not a re-encode.'
+}
 
 function extFromFile(file, fallback = 'bin') {
   const n = String(file?.name || '')
@@ -109,6 +145,9 @@ async function uploadToBucket(file, userId, { maxBytes, kind }) {
   if (!file) return { ok: false, error: 'No file' }
   if (!isSupabaseConfigured()) {
     return { ok: false, error: 'Storage not connected.' }
+  }
+  if (!isAllowedUploadFile(file, kind)) {
+    return { ok: false, error: rejectedTypeMessage(kind) }
   }
   if (file.size > maxBytes) {
     return {

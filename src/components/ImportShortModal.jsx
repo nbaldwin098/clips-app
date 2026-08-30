@@ -17,6 +17,11 @@ export default function ImportShortModal({ open, onClose, onOpenAuth }) {
     setError('')
     setResult(null)
     setSaved(false)
+    if (!user?.id) {
+      onOpenAuth?.()
+      setError('Sign in to import.')
+      return
+    }
     const res = importUserLink(url.trim(), user)
     if (!res.ok) {
       setError(res.error || 'Unable to import URL.')
@@ -66,6 +71,15 @@ export default function ImportShortModal({ open, onClose, onOpenAuth }) {
           <p className="text-sm text-zinc-400">
             Paste a public short link. Only metadata and a reference URL are stored — not the video file.
           </p>
+          {!user?.id ? (
+            <button
+              type="button"
+              onClick={() => onOpenAuth?.()}
+              className="w-full h-10 rounded-lg bg-white text-black text-sm font-bold hover:bg-zinc-200"
+            >
+              Sign in to import
+            </button>
+          ) : null}
           <div className="relative">
             <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
             <input
@@ -109,13 +123,15 @@ export default function ImportShortModal({ open, onClose, onOpenAuth }) {
               <p className="text-xs text-zinc-500 break-all">{result.sourceUrl}</p>
             </div>
           )}
-          <button
-            type="button"
-            onClick={handleParse}
-            className="w-full h-10 rounded-lg bg-white text-black text-sm font-bold hover:bg-zinc-200"
-          >
-            Import link
-          </button>
+          {user?.id ? (
+            <button
+              type="button"
+              onClick={handleParse}
+              className="w-full h-10 rounded-lg bg-white text-black text-sm font-bold hover:bg-zinc-200"
+            >
+              Import link
+            </button>
+          ) : null}
         </div>
       </div>
     </div>

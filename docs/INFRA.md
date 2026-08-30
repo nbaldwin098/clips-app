@@ -81,7 +81,9 @@ Generate VAPID (free): `npx web-push generate-vapid-keys`
 
 **Today:** Default upload keeps the **original file**. Optional compress via `prepareVideoForUploadMaybeTranscode` when `VITE_CLIENT_TRANSCODE=1` — always falls back to original; never forces WebM.
 
-**Recommendation:** Prefer **server** transcode after upload. Do not enable client wasm on phones by default.
+**There is no server transcode farm.** Do not enable a queue that does not exist. See `docs/STORAGE.md`.
+
+**Recommendation:** Prefer **server** transcode after upload *if* one is built later. Do not enable client wasm on phones by default.
 
 ---
 

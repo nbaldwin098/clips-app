@@ -562,6 +562,7 @@ export function listImportsNormalized() {
 }
 
 export function importUserLink(url, actor = null) {
+  if (!actor?.id) return { ok: false, item: null, error: 'Sign in to import.' }
   const trimmed = String(url || '').trim()
   if (!trimmed) return { ok: false, item: null, error: 'Paste a public short URL.' }
   try {

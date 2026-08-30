@@ -58,13 +58,13 @@ Ship-blocking P0s from the 2026-08-27/30 launch list are **cleared** (verified o
 | BUG-018 | SEO | Server-render real HTML for About/Help/Legal bodies | Done in #106 | `done` |
 | BUG-019 | Watch | Share OG tags depend on Supabase row fetch | Soft unavailable + article HTML in #106 | `done` |
 | BUG-020 | Uploads | Clip 60s / video 24h limits — confirm UX errors are clear | Modal hint + immediate duration probe + publish reject (`clipLimitsMessage` / `videoLimitsMessage`) | `done` |
-| BUG-021 | iOS | Keep original-file upload path (no WebM re-encode) | Fixed once; add regression test so it doesn’t return | `open` |
-| BUG-022 | Delete | Cloud delete path for admin/creator — verify on Node deploy | `deleteCatalogItem` + `deleteHostedMedia` hardened (signed/public URLs, warn on fail) | `open` |
+| BUG-021 | iOS | Keep original-file upload path (no WebM re-encode) | Code path confirmed: `VITE_CLIENT_TRANSCODE` default off; MIME allowlist keeps MOV/MP4. Add a browser regression test later | `open` |
+| BUG-022 | Delete | Cloud delete path for admin/creator | `deleteCatalogItem` + `deleteHostedMedia` (public/sign/authenticated URLs). Owner: confirm on Node after `0027`/`0028` | `done` |
 | BUG-023 | Chat | Live chat cloud sync reliability | Reconnect/poll fallback + dedupe subscribe + channel key normalize | `open` |
 | BUG-024 | Feed | Endless clip/pic scroll edge cases | Prior PRs fixed stalls; re-verify after Next | `open` |
 | BUG-028 | Home | All/Videos/Shorts/Pics chips + empty “No posts yet” | #111 + #112 hydrate/early sync | `done` |
 | BUG-025 | Error reports | ErrorReportPrompt shipped — confirm tickets show in Admin | PR #96 | `open` |
-| BUG-026 | Header | Logo-only header / no hamburger — confirm mobile sidebar OK | #97/#98 | `open` |
+| BUG-026 | Header | Logo-only header / no hamburger — confirm mobile sidebar OK | Logo header + bottom tabs; no hamburger | `done` |
 | BUG-027 | Open PRs | Close or rebase stale drafts #93, #101, #102, #58, #71 | Closed; merged branches deleted | `done` |
 
 ### P2 — cleanup & quality
@@ -78,8 +78,8 @@ Ship-blocking P0s from the 2026-08-27/30 launch list are **cleared** (verified o
 | BUG-044 | Knip | Run `npm run knip` and clear new unused after Next | | `open` |
 | BUG-045 | Docs | Update AdminSetup / Help for Node deploy + no hamburger | Help + AdminSetup updated on `cursor/do-500-batch-09e7` | `doing` |
 | BUG-046 | Env | Document required Render env vars for Node service | `docs/RENDER_ENV.md` + deploy checklist | `doing` |
-| BUG-047 | Dual write | Any remaining local-only media paths | Cloud is source of truth | `open` |
-| BUG-048 | Security | Review RLS on `videos` + storage policies after bucket recreate | | `open` |
+| BUG-047 | Dual write | Any remaining local-only media paths | Cloud is SOT for catalog/media; no new localStorage SOT. Import is metadata-only | `open` |
+| BUG-048 | Security | Review RLS on `videos` + storage policies after bucket recreate | `0027` owner-only private SELECT + storage folder checks; `0028` size/MIME. **Owner must run both in SQL editor / Admin Setup** | `done` |
 | BUG-049 | Perf | First Load JS ~255kB SpaShell — code-split peeled routes | | `open` |
 | BUG-050 | A11y | Live chat `aria-live` — spot-check after Next | LiveChatPanel has aria-live; toast region + skip-link on batch branch | `doing` |
 | BUG-051 | Legal | Terms still say “Clips” in places — brand to calabi | Done in #106 | `done` |
@@ -126,6 +126,9 @@ Ship-blocking P0s from the 2026-08-27/30 launch list are **cleared** (verified o
 | BUG-116 | Client exception / failed resource after deploys — `global-error` + `calabi_chunk_reload`; required `[...slug]` not `[[...slug]]` | #169 | 2026-08-27 |
 | BUG-117 | Admin Close session removed; Money nav is Stripe ledger + Pay creators | #169 | 2026-08-27 |
 | BUG-121 | Wallet/Settings keep the site left rail (`studioChrome` excludes them) | #169 | 2026-08-27 |
+| BUG-022 | Delete removes Storage objects via `deleteHostedMedia` (public/sign/authenticated URLs) | compete | 2026-08-30 |
+| BUG-026 | Logo header + mobile tab bar; no hamburger | #97/#98 + compete | 2026-08-30 |
+| BUG-048 | RLS `0027` + bucket limits `0028` — owner must run in SQL editor / Admin Setup | compete | 2026-08-30 |
 | BUG-020 | Upload limit errors shown before/at publish (clip 60s / video 24h) | ship-ready | 2026-08-30 |
 | BUG-119 | `/rewards` known view + alias to Wallet | #176 + ship-ready | 2026-08-30 |
 | BUG-001 | Production uploads confirmed after Next env fix | owner check | 2026-08-26 |
@@ -186,7 +189,7 @@ Rules:
 - Link a PR when status → `doing`  
 - Never delete history — move to Done / Won’t fix  
 
-Last updated: 2026-08-30 (P0 ship-blockers verified; product map says Calabi)
+Last updated: 2026-08-30 (compete: desktop clips 9:16 + watch rail + RLS/storage; owner must run 0027/0028)
 
 ### Product foundations (shipped partial — need ingest/OAuth/Stripe Cash SKUs)
 

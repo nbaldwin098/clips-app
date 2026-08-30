@@ -49,7 +49,7 @@ export function liveHlsPlayUrl(streamKey) {
 
 export function liveListingBlockedReason() {
   if (liveIngestConnected()) return ''
-  return 'Live ingest URLs are not on Render yet. Window share still works.'
+  return 'Live ingest is not connected. Share a window or camera from this page — OBS/RTMP stays off until a second device can play HLS.'
 }
 
 export function getObsConnectInfo(userId) {

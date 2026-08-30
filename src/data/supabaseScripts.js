@@ -22,6 +22,8 @@ import visibilityPayoutSecrets from '../../supabase/migrations/0021_visibility_p
 import directMessages from '../../supabase/migrations/0022_direct_messages.sql?raw'
 import connectPushScaffolds from '../../supabase/migrations/0023_connect_push_scaffolds.sql?raw'
 import stripeConnect from '../../supabase/migrations/0024_stripe_connect.sql?raw'
+import videosVisibilityRls from '../../supabase/migrations/0027_videos_visibility_rls_storage.sql?raw'
+import clipsBucketLimits from '../../supabase/migrations/0028_clips_bucket_limits.sql?raw'
 
 /** Run in order. 0001–0004 are required before anything that references profiles. */
 export const SETUP_SCRIPTS = [
@@ -168,5 +170,17 @@ export const SETUP_SCRIPTS = [
     title: 'Stripe Connect status + settlements + transfers',
     file: '0024_stripe_connect.sql',
     sql: String(stripeConnect || ''),
+  },
+  {
+    id: '0027',
+    title: 'Private videos owner-only + re-assert clips storage RLS (run in SQL editor)',
+    file: '0027_videos_visibility_rls_storage.sql',
+    sql: String(videosVisibilityRls || ''),
+  },
+  {
+    id: '0028',
+    title: 'clips bucket size + MIME allowlist (run in SQL editor)',
+    file: '0028_clips_bucket_limits.sql',
+    sql: String(clipsBucketLimits || ''),
   },
 ]

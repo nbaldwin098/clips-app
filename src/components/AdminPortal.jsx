@@ -82,21 +82,17 @@ const NAV = [
   { id: 'analytics', label: 'Analytics', icon: BarChart3, group: 'Insights' },
 ]
 
-const ADMIN_UNLOCK_KEY = 'clips_admin_ui_unlocked'
-
 const ADMIN_TAB_IDS = new Set(NAV.map((n) => n.id))
 
 export default function AdminPortal({ initialTab = '' }) {
   const { user, login } = useAuth()
-  const [unlocked, setUnlocked] = useState(() => {
-    try { return sessionStorage.getItem(ADMIN_UNLOCK_KEY) === '1' } catch { return false }
-  })
   const [identifier, setIdentifier] = useState('kiddnixk@gmail.com')
   const [password, setPassword] = useState('')
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
-  const authed = unlocked || isAdminSession(user) || isPlatformOwner(user)
+  // sessionStorage alone must never unlock admin chrome for a non-owner.
+  const authed = isPlatformOwner(user) || isAdminSession(user)
   const startTab = ADMIN_TAB_IDS.has(String(initialTab || '')) ? String(initialTab) : 'overview'
   const [tab, setTab] = useState(startTab)
   const [, bump] = useState(0)
@@ -121,11 +117,6 @@ export default function AdminPortal({ initialTab = '' }) {
   const [payAmt, setPayAmt] = useState('')
   const [payNote, setPayNote] = useState('')
   const [payVia, setPayVia] = useState('paypal')
-
-  const markUnlocked = () => {
-    try { sessionStorage.setItem(ADMIN_UNLOCK_KEY, '1') } catch {}
-    setUnlocked(true)
-  }
 
   const onUnlock = async (e) => {
     e?.preventDefault?.()
@@ -163,7 +154,7 @@ export default function AdminPortal({ initialTab = '' }) {
         setErr(result.error || 'Access denied')
         return
       }
-      markUnlocked()
+      refresh()
     } catch (ex) {
       setErr(ex?.message || 'Sign-in failed')
     } finally {

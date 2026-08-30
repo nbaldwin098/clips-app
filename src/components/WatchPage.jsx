@@ -58,12 +58,13 @@ function Pill({ children, onClick, active = false, title, disabled }) {
   )
 }
 
-function NextStrip({ title, items, onOpen }) {
+function NextStrip({ title, items, onOpen, layout = 'row' }) {
   if (!items?.length) return null
+  const rail = layout === 'rail'
   return (
-    <section className="mt-10">
-        <h2 className="text-lg font-semibold text-white mb-3">{title}</h2>
-      <div className="-mx-4 md:-mx-6 px-4 md:px-6 flex gap-3 overflow-x-auto pb-2">
+    <section className={rail ? 'mt-0' : 'mt-10'}>
+      <h2 className="text-lg font-semibold text-white mb-3">{title}</h2>
+      <div className={rail ? 'flex flex-col gap-3' : '-mx-4 md:-mx-6 px-4 md:px-6 flex gap-3 overflow-x-auto pb-2'}>
         {items.map((rel) => {
           const vertical = rel.type === 'short' || rel.type === 'pic'
           return (
@@ -71,9 +72,14 @@ function NextStrip({ title, items, onOpen }) {
               key={rel.id}
               type="button"
               onClick={() => onOpen?.(rel)}
-              className="w-40 sm:w-44 shrink-0 text-left group"
+              className={rail ? 'flex gap-3 text-left group w-full' : 'w-40 sm:w-44 shrink-0 text-left group'}
             >
-              <div className={`relative overflow-hidden bg-[#141418] ${vertical ? 'aspect-[3/4]' : 'aspect-[16/10]'}`}>
+              <div className={`relative overflow-hidden bg-[#141418] shrink-0 ${
+                rail
+                  ? (vertical ? 'w-24 aspect-[3/4]' : 'w-40 aspect-video')
+                  : (vertical ? 'aspect-[3/4]' : 'aspect-[16/10]')
+              }`}
+              >
                 {rel.thumbUrl ? (
                   <img
                     src={rel.thumbUrl}
@@ -89,8 +95,10 @@ function NextStrip({ title, items, onOpen }) {
                   </span>
                 ) : null}
               </div>
-              <p className="mt-2 text-[13px] text-zinc-100 leading-snug line-clamp-2">{rel.title || 'Untitled'}</p>
-              <p className="mt-0.5 text-[11px] text-zinc-500 truncate">{creatorDisplayName(rel)}</p>
+              <div className={rail ? 'min-w-0 flex-1 py-0.5' : ''}>
+                <p className="mt-2 text-[13px] text-zinc-100 leading-snug line-clamp-2">{rel.title || 'Untitled'}</p>
+                <p className="mt-0.5 text-[11px] text-zinc-500 truncate">{creatorDisplayName(rel)}</p>
+              </div>
             </button>
           )
         })}
@@ -620,8 +628,17 @@ export default function WatchPage({
 
   return (
     <div className="pb-24">
-      <div className="bg-[#050506] border-b border-white/[0.06]">
+      <a
+        href="#watch-comments"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-white focus:text-black focus:px-3 focus:py-2"
+      >
+        Skip to comments
+      </a>
+      <div className="max-w-[1400px] mx-auto px-4 md:px-6 pt-4 lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-6 lg:items-start">
+        <div className="min-w-0">
+      <div className="bg-[#050506] border border-white/[0.06]">
         <div
+          id="watch-player"
           className={`relative w-full overflow-hidden mx-auto ${
             isVertical
               ? 'aspect-[9/16] max-h-[78vh] max-w-md'
@@ -724,7 +741,7 @@ export default function WatchPage({
       </div>
 
           {chapters.length > 0 && (
-            <div className="max-w-3xl mx-auto px-4 md:px-6 mt-3 flex flex-wrap gap-1.5">
+            <div className="mt-3 flex flex-wrap gap-1.5">
               {chapters.map((ch) => (
                 <button
                   key={`${ch.t}-${ch.title}`}
@@ -738,7 +755,7 @@ export default function WatchPage({
             </div>
           )}
 
-          <div className="max-w-3xl mx-auto px-4 md:px-6 mt-6 space-y-5">
+          <div className="mt-6 space-y-5">
             <h1 className="text-[1.65rem] font-semibold text-white leading-tight tracking-tight">{item.title || 'Untitled'}</h1>
 
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -955,14 +972,21 @@ export default function WatchPage({
             ) : null}
           </div>
 
-          <div className="max-w-6xl mx-auto px-4 md:px-6">
-            <NextStrip title="Also on" items={related} onOpen={onPlayItem} />
-            <NextStrip title="From this creator" items={moreFrom} onOpen={onPlayItem} />
-          </div>
-
-          <div className="max-w-3xl mx-auto px-4 md:px-6 mt-10">
+          <div id="watch-comments" className="mt-10">
             <CommentsPanel contentId={item.id} creatorId={item.creatorId || item.userId} />
           </div>
+        </div>
+
+        <aside className="hidden lg:block sticky top-20 space-y-8 pt-1">
+          <NextStrip title="Up next" items={related} onOpen={onPlayItem} layout="rail" />
+          <NextStrip title="From this creator" items={moreFrom} onOpen={onPlayItem} layout="rail" />
+        </aside>
+      </div>
+
+      <div className="lg:hidden max-w-6xl mx-auto px-4 md:px-6">
+        <NextStrip title="Also on" items={related} onOpen={onPlayItem} />
+        <NextStrip title="From this creator" items={moreFrom} onOpen={onPlayItem} />
+      </div>
 
       <PlaylistPicker open={playlistOpen} onClose={() => setPlaylistOpen(false)} contentId={item.id} onOpenAuth={onOpenAuth} />
       <ReportModal open={reportOpen} onClose={() => setReportOpen(false)} target={{ id: item.id, contentId: item.id, userId: item.creatorId || item.userId, handle: item.handle }} />

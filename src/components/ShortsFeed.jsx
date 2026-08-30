@@ -41,9 +41,9 @@ function pauseIfPlaying(el) {
   if (playingClipEl === el) playingClipEl = null
 }
 
-function RailBtn({ onClick, label, children, active = false, circled = true }) {
+function RailBtn({ onClick, label, name, children, active = false, circled = true }) {
   return (
-    <button type="button" onClick={onClick} className="flex flex-col items-center gap-1">
+    <button type="button" onClick={onClick} aria-label={name || (label != null ? String(label) : undefined)} className="flex flex-col items-center gap-1">
       {circled ? (
         <span className={`h-11 w-11 rounded-full bg-[#272727] hover:bg-[#3d3d3d] flex items-center justify-center ${active ? 'text-red-400' : 'text-white'}`}>
           {children}
@@ -58,6 +58,7 @@ function RailBtn({ onClick, label, children, active = false, circled = true }) {
 
 function ClipSlide({
   item, active, warm = false, muted, onToggleMute, user, onOpenAuth, onOpenProfile, onOpenSound, onStitch, onBack, onSearch,
+  onPrev, onNext, showNav = false,
 }) {
   const vidRef = useRef(null)
   const [src, setSrc] = useState(() => resolvePlayUrl(item))
@@ -149,6 +150,30 @@ function ClipSlide({
     return () => pauseIfPlaying(el)
   }, [active, src, embed?.type])
 
+  useEffect(() => {
+    if (!active) return undefined
+    const onKey = (e) => {
+      if (e.target && ['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return
+      if (e.key === ' ' || e.key === 'k') {
+        e.preventDefault()
+        const el = vidRef.current
+        if (!el) return
+        if (el.paused) playOnly(el)
+        else el.pause()
+      }
+      if (e.key === 'm') {
+        e.preventDefault()
+        onToggleMute?.()
+      }
+      if (e.key === 'c') {
+        e.preventDefault()
+        setCommentsOpen((v) => !v)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [active, onToggleMute])
+
   const bindVideoRef = useCallback((node) => {
     vidRef.current = node
   }, [])
@@ -230,17 +255,17 @@ function ClipSlide({
 
   const actions = (circled) => (
     <>
-      <RailBtn onClick={like} label={votes.up || 0} active={myVote === 'up'} circled={circled}>
+      <RailBtn onClick={like} name="Like" label={votes.up || 0} active={myVote === 'up'} circled={circled}>
         <Heart className={`h-6 w-6 ${myVote === 'up' ? 'fill-current' : ''}`} />
       </RailBtn>
-      <RailBtn onClick={(e) => { e.stopPropagation(); setCommentsOpen(true) }} label={commentCount || 0} circled={circled}>
+      <RailBtn onClick={(e) => { e.stopPropagation(); setCommentsOpen(true) }} name="Comments" label={commentCount || 0} circled={circled}>
         <MessageCircle className="h-6 w-6" />
       </RailBtn>
-      <RailBtn onClick={share} label={shareCopied ? 'Copied' : 'Share'} circled={circled}>
+      <RailBtn onClick={share} name="Share" label={shareCopied ? 'Copied' : 'Share'} circled={circled}>
         <Share2 className="h-6 w-6" />
       </RailBtn>
       {onStitch ? (
-        <RailBtn onClick={(e) => { e.stopPropagation(); onStitch(item) }} label="Stitch" circled={circled}>
+        <RailBtn onClick={(e) => { e.stopPropagation(); onStitch(item) }} name="Stitch" label="Stitch" circled={circled}>
           <Clapperboard className="h-6 w-6" />
         </RailBtn>
       ) : null}
@@ -261,7 +286,7 @@ function ClipSlide({
   )
 
   return (
-    <ShortsCard actions={actions(true)} fillMobile>
+    <ShortsCard actions={actions(true)} fillMobile showNav={showNav} onPrev={onPrev} onNext={onNext}>
       <div className="absolute inset-0 z-[1] pointer-events-none touch-pan-y">
         {isIframe && (active || warm) && safeIframeSrc(videoSrc) ? (
           <iframe
@@ -278,7 +303,13 @@ function ClipSlide({
             ref={bindVideoRef}
             src={safeMediaUrl(videoSrc)}
             className="absolute inset-0 w-full h-full object-cover bg-black pointer-events-none"
-            style={filterCss(item.filterId || item.engagement?.filterId) ? { filter: filterCss(item.filterId || item.engagement?.filterId) } : undefined}
+            style={{
+              objectFit: 'cover',
+              objectPosition: 'center',
+              ...(filterCss(item.filterId || item.engagement?.filterId)
+                ? { filter: filterCss(item.filterId || item.engagement?.filterId) }
+                : {}),
+            }}
             playsInline
             loop
             muted={muted}
@@ -590,6 +621,7 @@ export default function ShortsFeed({
       )}
       renderSlide={(index, active, warm) => {
         const item = items[index]
+        const n = items.length
         return item ? (
           <ClipSlide
             item={item}
@@ -604,6 +636,9 @@ export default function ShortsFeed({
             onStitch={onStitch}
             onBack={backHome}
             onSearch={() => onNavigate?.('explore')}
+            showNav={n > 1}
+            onPrev={() => goToRef.current?.((activeIdx - 1 + n) % n)}
+            onNext={() => goToRef.current?.((activeIdx + 1) % n)}
           />
         ) : null
       }}

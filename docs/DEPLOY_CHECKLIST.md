@@ -16,7 +16,7 @@
 3. [ ] Supabase Edge secrets set: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `APP_PUBLIC_URL=https://calabi.us`.
 4. [ ] Edge Functions deployed: `create-checkout-session`, `stripe-webhook`, `admin-withdraw`, `admin-finance`, `push-subscribe`.
 5. [ ] `npm run build` succeeds.
-6. [ ] Apply any new files under `supabase/migrations/` in the SQL editor.
+6. [ ] Apply any new files under `supabase/migrations/` in the SQL editor. **`0027` (private video RLS + storage policies) and `0028` (clips bucket size + MIME)** must be run by the owner if not already applied. Same SQL is in Admin → Setup (`SETUP_SCRIPTS`).
 7. [ ] `GET https://calabi.us/api/health` returns `{ ok: true }` with `supabaseConfigured: true`.
 8. [ ] Spot-check: sign-in, upload a clip, refresh, play; open Coins; open Creator Studio.
 9. [ ] Stripe **test** purchase credits Coins once (refresh must not double-credit).
