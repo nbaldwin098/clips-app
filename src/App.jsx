@@ -252,7 +252,7 @@ function AppShell() {
       return
     }
     if (KNOWN_VIEWS.has(kind)) {
-      if (kind === 'explore' && params?.q) setSearchQuery(String(params.q))
+      if (kind === 'explore') setSearchQuery(String(params?.q || ''))
       setView(kind === 'shorts' ? 'clips' : kind)
       setRouteId(id || '')
     }
@@ -277,6 +277,16 @@ function AppShell() {
   const goPath = (kind, id = '', params = null) => {
     const path = buildHash(kind, id, params)
     try {
+      if (typeof window !== 'undefined') {
+        const current = `${window.location.pathname}${window.location.search}`
+        if (current === path) return path
+        const pathOnly = path.split('?')[0]
+        if (window.location.pathname === pathOnly) {
+          window.history.replaceState({ clips: true }, '', path)
+          try { nextNav?.router?.replace?.(path) } catch { /* keep replaceState */ }
+          return path
+        }
+      }
       if (nextNav?.router?.push) nextNav.router.push(path)
       else pushHash(kind, id, params)
     } catch { pushHash(kind, id, params) }
@@ -497,7 +507,7 @@ function AppShell() {
           <span className="text-sm font-medium text-zinc-400">{view === 'admin' ? 'Admin' : (view === 'advertiser-portal' || view === 'advertise' ? 'Advertise' : 'Studio')}</span>
         </header>
       ) : (
-        <StreamingNavbar currentView={view} onNavigate={navigate} onOpenAuth={openAuth} onOpenWatch={openWatch} searchQuery={searchQuery} onSearchChange={(q) => { setSearchQuery(q); setView('explore'); goPath('explore', '', q?.trim() ? { q: q.trim() } : null) }} />
+        <StreamingNavbar currentView={view} onNavigate={navigate} onOpenAuth={openAuth} onOpenWatch={openWatch} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
       )}
       <EnvConfigBanner />
       <PromoBanner onNavigate={navigate} onOpenWatch={openWatch} />

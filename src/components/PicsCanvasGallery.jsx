@@ -2,7 +2,7 @@
  * Interactive Pics mosaic — HTML Canvas 2D camera (pan / cursor-zoom / pinch).
  * Zooming into or clicking a tile locks the camera and opens focus view.
  */
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { pickImmediatePhotoSrc, isHttpUrl, isDataImageUrl } from '../lib/picsService'
 import { getMediaBlobUrl } from '../lib/videoStorage'
 
@@ -93,6 +93,7 @@ export default function PicsCanvasGallery({
   const pinchRef = useRef(null)
   const dragRef = useRef(null)
   const hoverRef = useRef(-1)
+  const [ready, setReady] = useState(false)
 
   const markDirty = () => {
     dirtyRef.current = true
@@ -190,29 +191,43 @@ export default function PicsCanvasGallery({
     markDirty()
 
     let cancelled = false
+    const pending = items.filter((pic) => pic?.id && !imagesRef.current.has(pic.id))
+    if (!items.length || !pending.length) setReady(true)
+    else setReady(false)
     const loadAll = async () => {
-      for (const pic of items) {
-        if (cancelled) return
-        if (imagesRef.current.has(pic.id)) continue
-        try {
-          const url = await resolvePicUrl(pic)
-          if (!url) {
+      if (!pending.length) return
+      const CONCURRENCY = 8
+      let cursor = 0
+      const worker = async () => {
+        while (!cancelled) {
+          const idx = cursor
+          cursor += 1
+          if (idx >= pending.length) return
+          const pic = pending[idx]
+          try {
+            const url = await resolvePicUrl(pic)
+            if (cancelled) return
+            if (!url) {
+              imagesRef.current.set(pic.id, 'failed')
+              onUnplayable?.(pic.id)
+              markDirty()
+              continue
+            }
+            const img = await loadImage(url)
+            if (cancelled) return
+            imagesRef.current.set(pic.id, img)
+            markDirty()
+            setReady(true)
+          } catch {
+            if (cancelled) return
             imagesRef.current.set(pic.id, 'failed')
             onUnplayable?.(pic.id)
             markDirty()
-            continue
           }
-          const img = await loadImage(url)
-          if (cancelled) return
-          imagesRef.current.set(pic.id, img)
-          markDirty()
-        } catch {
-          if (cancelled) return
-          imagesRef.current.set(pic.id, 'failed')
-          onUnplayable?.(pic.id)
-          markDirty()
         }
       }
+      await Promise.all(Array.from({ length: Math.min(CONCURRENCY, pending.length) }, () => worker()))
+      if (!cancelled) setReady(true)
     }
     loadAll()
     return () => { cancelled = true }
@@ -458,6 +473,10 @@ export default function PicsCanvasGallery({
       {!items.length ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-6">
           <p className="text-sm text-zinc-500">No pics yet — post from Create (+)</p>
+        </div>
+      ) : !ready ? (
+        <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-black">
+          <p className="text-sm text-[#8a8a8a]">Loading photos…</p>
         </div>
       ) : (
         <div className="pointer-events-none absolute bottom-3 left-1/2 z-30 -translate-x-1/2 px-3 py-1 bg-black/60 text-[11px] text-zinc-400">

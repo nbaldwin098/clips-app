@@ -172,7 +172,6 @@ export default function StreamingNavbar({
                 type="search"
                 value={searchQuery || ''}
                 onChange={(e) => onSearchChange?.(e.target.value)}
-                onFocus={() => goExplore()}
                 placeholder="Search calabi"
                 className="flex-1 min-w-0 bg-transparent text-base text-white placeholder:text-[#6b6b6b] outline-none"
               />
@@ -184,7 +183,6 @@ export default function StreamingNavbar({
               type="search"
               value={searchQuery || ''}
               onChange={(e) => onSearchChange?.(e.target.value)}
-              onFocus={() => goExplore()}
               placeholder={t('nav.search')}
               className="w-full min-w-0 h-10 border border-[#303030] bg-[#121212] pl-3 pr-2 text-sm sm:text-base text-zinc-100 placeholder:text-zinc-500 focus:border-[#3ea6ff] focus:outline-none"
             />
