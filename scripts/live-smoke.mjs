@@ -98,7 +98,7 @@ assert(readFileSync(new URL('../public/_redirects', import.meta.url), 'utf8').in
   assert(yaml.includes('runtime: node') || yaml.includes('next start'), 'render blueprint runs Next.js on Node for SEO')
   assert(yaml.includes('npm run build'), 'render blueprint builds the app')
 }
-assert(existsSync(new URL('../netlify.toml', import.meta.url)), 'netlify spa fallback is present')
+assert(!existsSync(new URL('../netlify.toml', import.meta.url)), 'netlify spa fallback is removed')
 assert(readFileSync(new URL('../vite.config.js', import.meta.url), 'utf8').includes('spa-index-fallback'), 'vite fallback kept for legacy builds')
 assert(existsSync(new URL('../app/layout.jsx', import.meta.url)), 'Next.js App Router layout exists')
 assert(existsSync(new URL('../app/content/[id]/page.jsx', import.meta.url)), 'content pages have SEO metadata route')
