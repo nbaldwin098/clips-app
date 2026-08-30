@@ -507,9 +507,17 @@ export function listCatalogTags(limit = 24) {
     .map(([tag, count]) => ({ tag, count }))
 }
 
+function resolveCatalogId(id) {
+  const raw = String(id || '')
+  if (!raw) return ''
+  if (raw === 'org-nasa-iss-earth-views') return 'org-nasa-iss-earth'
+  return raw
+}
+
 export function getById(id) {
   if (!id) return null
-  const fromImport = getImports().find((i) => i.id === id)
+  const resolved = resolveCatalogId(id)
+  const fromImport = getImports().find((i) => i.id === resolved || i.id === id)
   if (fromImport && !isReferenceItem(fromImport) && !isRetiredCatalogItem(fromImport) && isReleased(fromImport)) {
     return normalizeItem(withViewCounts([fromImport])[0])
   }
@@ -538,12 +546,13 @@ function peekWatchStash(id) {
 
 export function getWatchItem(id, fallback = null) {
   if (!id) return null
-  const strict = getById(id)
+  const resolved = resolveCatalogId(id)
+  const strict = getById(resolved) || (resolved !== String(id) ? getById(id) : null)
   if (strict) return strict
-  const stashed = peekWatchStash(id)
-  const fb = fallback && String(fallback.id) === String(id) ? fallback : stashed
+  const stashed = peekWatchStash(resolved) || peekWatchStash(id)
+  const fb = fallback && (String(fallback.id) === String(id) || String(fallback.id) === resolved) ? fallback : stashed
   if (fb) return normalizeItem(withViewCounts([fb])[0])
-  const raw = getImports().find((i) => i.id === id)
+  const raw = getImports().find((i) => i.id === resolved || i.id === id)
   if (raw) return normalizeItem(withViewCounts([raw])[0])
   return null
 }

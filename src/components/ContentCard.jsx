@@ -7,7 +7,7 @@ import { toggleSaved, getSaved } from '../lib/storage'
 import { notifyContentChanged } from '../lib/contentSync'
 import { getWatchProgress } from '../lib/watchProgress'
 import { copyShareUrl } from '../lib/routes'
-import { hideBrokenMedia } from '../lib/catalogHealth'
+import { hideBrokenMedia, isFeedable } from '../lib/catalogHealth'
 import { isUserUploadRecord } from '../lib/mediaMeta'
 import { openSafeUrl } from '../lib/safeUrl'
 import ReportModal from './ReportModal'
@@ -64,7 +64,7 @@ export default function ContentCard({ item, onOpen, onOpenProfile, variant }) {
     return () => document.removeEventListener('mousedown', onDoc)
   }, [])
 
-  if (!item || gone) return null
+  if (!item?.id || gone || !isFeedable(item)) return null
 
   const drop = () => {
     if (isUserUploadRecord(item)) {

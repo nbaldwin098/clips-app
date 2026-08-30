@@ -40,10 +40,11 @@ function serverSupabase() {
 
 export async function fetchContentById(id) {
   if (!id) return null
+  const resolved = String(id) === 'org-nasa-iss-earth-views' ? 'org-nasa-iss-earth' : String(id)
   const sb = serverSupabase()
   if (!sb) return null
   try {
-    const { data, error } = await sb.from('videos').select('*').eq('id', id).maybeSingle()
+    const { data, error } = await sb.from('videos').select('*').eq('id', resolved).maybeSingle()
     if (error || !data) return null
     return mapRow(data)
   } catch {
@@ -68,7 +69,7 @@ export async function fetchRecentContent(limit = 24) {
       .order('created_at', { ascending: false })
       .limit(Math.max(1, Math.min(100, Number(limit) || 24)))
     if (error || !data) return []
-    return data.map(mapRow).filter(Boolean)
+    return data.map(mapRow).filter((r) => r && r.id && (r.mediaUrl || r.sourceUrl || r.thumbUrl))
   } catch {
     return []
   }
