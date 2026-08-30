@@ -44,6 +44,11 @@ export async function fetchContentById(id) {
   const sb = serverSupabase()
   if (!sb) return null
   try {
+    const rpc = await sb.rpc('get_video_by_id', { p_id: resolved })
+    if (!rpc.error && rpc.data) {
+      const row = Array.isArray(rpc.data) ? rpc.data[0] : rpc.data
+      if (row?.id) return mapRow(row)
+    }
     const { data, error } = await sb.from('videos').select('*').eq('id', resolved).maybeSingle()
     if (error || !data) return null
     return mapRow(data)

@@ -58,9 +58,9 @@ Ship-blocking P0s from the 2026-08-27/30 launch list are **cleared** (verified o
 | BUG-018 | SEO | Server-render real HTML for About/Help/Legal bodies | Done in #106 | `done` |
 | BUG-019 | Watch | Share OG tags depend on Supabase row fetch | Soft unavailable + article HTML in #106 | `done` |
 | BUG-020 | Uploads | Clip 60s / video 24h limits — confirm UX errors are clear | Modal hint + immediate duration probe + publish reject (`clipLimitsMessage` / `videoLimitsMessage`) | `done` |
-| BUG-021 | iOS | Keep original-file upload path (no WebM re-encode) | Fixed once; add regression test so it doesn’t return | `open` |
-| BUG-022 | Delete | Cloud delete path for admin/creator — verify on Node deploy | `deleteCatalogItem` + `deleteHostedMedia` hardened (signed/public URLs, warn on fail) | `open` |
-| BUG-023 | Chat | Live chat cloud sync reliability | Reconnect/poll fallback + dedupe subscribe + channel key normalize | `open` |
+| BUG-021 | iOS | Keep original-file upload path (no WebM re-encode) | Regression test + WebM refuse in `videoTranscode`; default stays original-file | `doing` |
+| BUG-022 | Delete | Cloud delete path for admin/creator — verify on Node deploy | Harden `deleteCatalogItem` + `deleteHostedMedia` (signed/public/path, cloud row fetch, warn on fail) | `doing` |
+| BUG-023 | Chat | Live chat cloud sync reliability | Reconnect/poll fallback + shared subscribe hub + channel key normalize | `doing` |
 | BUG-024 | Feed | Endless clip/pic scroll edge cases | Prior PRs fixed stalls; re-verify after Next | `open` |
 | BUG-028 | Home | All/Videos/Shorts/Pics chips + empty “No posts yet” | #111 + #112 hydrate/early sync | `done` |
 | BUG-025 | Error reports | ErrorReportPrompt shipped — confirm tickets show in Admin | PR #96 | `open` |
@@ -79,7 +79,7 @@ Ship-blocking P0s from the 2026-08-27/30 launch list are **cleared** (verified o
 | BUG-045 | Docs | Update AdminSetup / Help for Node deploy + no hamburger | Help + AdminSetup updated on `cursor/do-500-batch-09e7` | `doing` |
 | BUG-046 | Env | Document required Render env vars for Node service | `docs/RENDER_ENV.md` + deploy checklist | `doing` |
 | BUG-047 | Dual write | Any remaining local-only media paths | Cloud is source of truth | `open` |
-| BUG-048 | Security | Review RLS on `videos` + storage policies after bucket recreate | | `open` |
+| BUG-048 | Security | Review RLS on `videos` + storage policies after bucket recreate | 0028: WITH CHECK, admin delete, unlisted via `get_video_by_id` | `doing` |
 | BUG-049 | Perf | First Load JS ~255kB SpaShell — code-split peeled routes | | `open` |
 | BUG-050 | A11y | Live chat `aria-live` — spot-check after Next | LiveChatPanel has aria-live; toast region + skip-link on batch branch | `doing` |
 | BUG-051 | Legal | Terms still say “Clips” in places — brand to calabi | Done in #106 | `done` |
@@ -186,7 +186,7 @@ Rules:
 - Link a PR when status → `doing`  
 - Never delete history — move to Done / Won’t fix  
 
-Last updated: 2026-08-30 (P0 ship-blockers verified; product map says Calabi)
+Last updated: 2026-08-30 (BUG-021/022/023/048 cluster in flight)
 
 ### Product foundations (shipped partial — need ingest/OAuth/Stripe Cash SKUs)
 
