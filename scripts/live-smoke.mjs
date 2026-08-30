@@ -839,7 +839,7 @@ assert(readFileSync(new URL('../src/components/SubscriptionsPage.jsx', import.me
 assert(readFileSync(new URL('../src/components/FollowingPage.jsx', import.meta.url), 'utf8').includes('getFollowingFeed'), 'following page keeps free follow feed')
 assert(readFileSync(new URL('../src/components/AppealsPage.jsx', import.meta.url), 'utf8').includes('getEnforcement'), 'appeals shows enforcement status')
 assert(!navSrc.includes('Your Coins'), 'profile menu does not say Your Coins')
-assert(readFileSync(new URL('../src/components/settings/WalletSettings.jsx', import.meta.url), 'utf8').includes('Orders') || readFileSync(new URL('../src/components/settings/WalletSettings.jsx', import.meta.url), 'utf8').includes('orders'), 'wallet has Coins/Orders tabs')
+assert(readFileSync(new URL('../src/components/settings/WalletSettings.jsx', import.meta.url), 'utf8').includes("id: 'coins'"), 'wallet has Coins tab')
 assert(!navSrc.includes('> VODs'), 'profile menu has no vods')
 assert(!navSrc.includes('Get verified'), 'profile menu has no get verified')
 assert(!navSrc.includes('> Channel'), 'profile menu has no channel')
