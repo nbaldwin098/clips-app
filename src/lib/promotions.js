@@ -342,17 +342,40 @@ function fromRow(r) {
   }
 }
 
-let promosCloudDisabled = false
+// Live project does not have public.site_promos (0005 not applied). Skip REST
+// so App.jsx's 45s/focus pull does not 404. Flip to true after owner runs
+// supabase/migrations/0005_site_promos.sql in the SQL Editor.
+const SITE_PROMOS_CLOUD_ENABLED = false
+const MISS_KEY = 'clips_site_promos_missing'
+
+function readPromosCloudDisabled() {
+  if (SITE_PROMOS_CLOUD_ENABLED === false) return true
+  if (typeof sessionStorage === 'undefined') return false
+  try { return sessionStorage.getItem(MISS_KEY) === '1' } catch { return false }
+}
+
+let promosCloudDisabled = readPromosCloudDisabled()
+let promosSyncInFlight = null
+
+function disablePromosCloud() {
+  promosCloudDisabled = true
+  try { if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(MISS_KEY, '1') } catch {}
+}
 
 function isMissingPromoTable(error) {
   const code = String(error?.code || '')
-  const msg = String(error?.message || '')
+  const msg = String(error?.message || error?.details || '')
+  const status = Number(error?.status || 0)
   return (
-    code === 'PGRST205'
+    status === 404
+    || code === '404'
+    || code === 'PGRST205'
+    || code === 'PGRST202'
     || code === '42P01'
     || /could not find the table/i.test(msg)
     || /schema cache/i.test(msg)
     || /does not exist/i.test(msg)
+    || /not found/i.test(msg)
   )
 }
 
@@ -363,7 +386,7 @@ async function pushPromoToCloud(promo) {
     if (!sb) return false
     const { error } = await sb.from(TABLE).upsert(toRow(promo), { onConflict: 'id' })
     if (error) {
-      if (isMissingPromoTable(error)) promosCloudDisabled = true
+      if (isMissingPromoTable(error)) disablePromosCloud()
       console.warn('[Clips] Promo sync failed:', error.message)
       return false
     }
@@ -379,32 +402,41 @@ async function deletePromoFromCloud(id) {
   try {
     const sb = await getSupabase()
     if (!sb) return
-    await sb.from(TABLE).delete().eq('id', id)
+    const { error } = await sb.from(TABLE).delete().eq('id', id)
+    if (error && isMissingPromoTable(error)) disablePromosCloud()
   } catch {}
 }
 
 export async function syncPromotionsFromCloud() {
   if (promosCloudDisabled || !isSupabaseConfigured()) return []
-  try {
-    const sb = await getSupabase()
-    if (!sb) return []
-    const { data, error } = await sb.from(TABLE).select('*').order('updated_at', { ascending: false }).limit(40)
-    if (error || !data) {
-      if (isMissingPromoTable(error)) promosCloudDisabled = true
+  if (promosSyncInFlight) return promosSyncInFlight
+  promosSyncInFlight = (async () => {
+    try {
+      const sb = await getSupabase()
+      if (!sb) return []
+      const { data, error } = await sb.from(TABLE).select('*').order('updated_at', { ascending: false }).limit(40)
+      if (error || !data) {
+        if (isMissingPromoTable(error)) disablePromosCloud()
+        return []
+      }
+      const incoming = data.map(fromRow)
+      const local = readList()
+      const byId = new Map(local.map((p) => [p.id, p]))
+      for (const row of incoming) {
+        const prev = byId.get(row.id)
+        if (!prev || new Date(row.updatedAt || 0) >= new Date(prev.updatedAt || 0)) {
+          byId.set(row.id, { ...prev, ...row })
+        }
+      }
+      writeList([...byId.values()])
+      return incoming
+    } catch {
       return []
     }
-    const incoming = data.map(fromRow)
-    const local = readList()
-    const byId = new Map(local.map((p) => [p.id, p]))
-    for (const row of incoming) {
-      const prev = byId.get(row.id)
-      if (!prev || new Date(row.updatedAt || 0) >= new Date(prev.updatedAt || 0)) {
-        byId.set(row.id, { ...prev, ...row })
-      }
-    }
-    writeList([...byId.values()])
-    return incoming
-  } catch {
-    return []
+  })()
+  try {
+    return await promosSyncInFlight
+  } finally {
+    promosSyncInFlight = null
   }
 }
