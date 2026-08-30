@@ -24,16 +24,36 @@ function resolvePlayUrl(item) {
 
 /** Only one clip <video> may play. Off-screen copies (triple-buffer) must stay paused. */
 let playingClipEl = null
+function pauseOthers(el) {
+  if (typeof document === 'undefined') return
+  document.querySelectorAll('video').forEach((v) => {
+    if (v !== el) {
+      try { v.pause() } catch { /* ok */ }
+    }
+  })
+}
 function playOnly(el) {
   if (!el) return
-  if (playingClipEl && playingClipEl !== el) {
-    try { playingClipEl.pause() } catch { /* ok */ }
-  }
+  pauseOthers(el)
   playingClipEl = el
-  el.play?.().catch(() => {
-    el.muted = true
-    el.play?.().catch(() => {})
-  })
+  const p = el.play?.()
+  if (p && typeof p.then === 'function') {
+    p.then(() => {
+      if (playingClipEl !== el) {
+        try { el.pause() } catch { /* ok */ }
+      } else {
+        pauseOthers(el)
+      }
+    }).catch(() => {
+      if (playingClipEl !== el) return
+      el.muted = true
+      el.play?.().then(() => {
+        if (playingClipEl !== el) {
+          try { el.pause() } catch { /* ok */ }
+        }
+      }).catch(() => {})
+    })
+  }
 }
 function pauseIfPlaying(el) {
   if (!el) return
@@ -91,10 +111,7 @@ function ClipSlide({
     const el = vidRef.current
     if (!el) return
     try { el.currentTime = 0 } catch {}
-    el.play?.().catch(() => {
-      el.muted = true
-      el.play()?.catch(() => {})
-    })
+    playOnly(el)
     if (user?.id) {
       recordWatchProgress(user.id, {
         contentId: item.id,
@@ -184,7 +201,7 @@ function ClipSlide({
   }
   const holdEnd = () => {
     window.clearTimeout(holdTimer.current)
-    if (active) vidRef.current?.play?.().catch(() => {})
+    if (active) playOnly(vidRef.current)
   }
 
   const like = (e) => {
