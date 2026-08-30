@@ -17,10 +17,8 @@ function stubMediaDom() {
     setTimeout,
     clearTimeout,
   }
-  globalThis.URL = {
-    createObjectURL: () => 'blob:mock-video',
-    revokeObjectURL: () => {},
-  }
+  globalThis.URL.createObjectURL = () => 'blob:mock-video'
+  globalThis.URL.revokeObjectURL = () => {}
   globalThis.document = {
     createElement(tag) {
       if (tag === 'video') {
