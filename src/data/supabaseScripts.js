@@ -26,6 +26,7 @@ import cloudflareLiveInputs from '../../supabase/migrations/0025_cloudflare_live
 import liveLobbyIngest from '../../supabase/migrations/0026_live_lobby_ingest.sql?raw'
 import videosVisibilityRls from '../../supabase/migrations/0027_videos_visibility_rls_storage.sql?raw'
 import videosRlsAudit from '../../supabase/migrations/0028_videos_rls_storage_audit.sql?raw'
+import clipsBucketLimits from '../../supabase/migrations/0029_clips_bucket_limits.sql?raw'
 
 /** Run in order. 0001–0004 are required before anything that references profiles. */
 export const SETUP_SCRIPTS = [
@@ -196,5 +197,11 @@ export const SETUP_SCRIPTS = [
     title: 'Videos/storage RLS audit (WITH CHECK, admin delete, unlisted RPC)',
     file: '0028_videos_rls_storage_audit.sql',
     sql: String(videosRlsAudit || ''),
+  },
+  {
+    id: '0029',
+    title: 'clips bucket size + MIME allowlist (run in SQL editor)',
+    file: '0029_clips_bucket_limits.sql',
+    sql: String(clipsBucketLimits || ''),
   },
 ]

@@ -657,6 +657,12 @@ export default function WatchPage({
 
   return (
     <div className="pb-24">
+      <a
+        href="#watch-comments"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-white focus:text-black focus:px-3 focus:py-2"
+      >
+        Skip to comments
+      </a>
       <div className="bg-[#050506] border-b border-white/[0.06]">
         <div
           className={`relative w-full overflow-hidden mx-auto ${
@@ -995,7 +1001,7 @@ export default function WatchPage({
             ) : null}
           </div>
 
-          <div className="mt-10">
+          <div id="watch-comments" className="mt-10">
             <CommentsPanel contentId={item.id} creatorId={item.creatorId || item.userId} />
           </div>
           </div>

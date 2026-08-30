@@ -58,6 +58,7 @@ function RailBtn({ onClick, label, children, active = false, circled = true }) {
 
 function ClipSlide({
   item, active, warm = false, muted, onToggleMute, user, onOpenAuth, onOpenProfile, onOpenSound, onStitch, onBack, onSearch,
+  onPrev, onNext, showNav = false,
 }) {
   const vidRef = useRef(null)
   const [src, setSrc] = useState(() => resolvePlayUrl(item))
@@ -261,7 +262,7 @@ function ClipSlide({
   )
 
   return (
-    <ShortsCard actions={actions(true)} fillMobile>
+    <ShortsCard actions={actions(true)} fillMobile showNav={showNav} onPrev={onPrev} onNext={onNext}>
       <div className="absolute inset-0 z-[1] pointer-events-none touch-pan-y">
         {isIframe && (active || warm) && safeIframeSrc(videoSrc) ? (
           <iframe
@@ -604,6 +605,9 @@ export default function ShortsFeed({
             onStitch={onStitch}
             onBack={backHome}
             onSearch={() => onNavigate?.('explore')}
+            showNav={items.length > 1}
+            onPrev={() => goToRef.current?.((activeIdx - 1 + items.length) % items.length)}
+            onNext={() => goToRef.current?.((activeIdx + 1) % items.length)}
           />
         ) : null
       }}
