@@ -342,13 +342,28 @@ function fromRow(r) {
   }
 }
 
+let promosCloudDisabled = false
+
+function isMissingPromoTable(error) {
+  const code = String(error?.code || '')
+  const msg = String(error?.message || '')
+  return (
+    code === 'PGRST205'
+    || code === '42P01'
+    || /could not find the table/i.test(msg)
+    || /schema cache/i.test(msg)
+    || /does not exist/i.test(msg)
+  )
+}
+
 async function pushPromoToCloud(promo) {
-  if (!isSupabaseConfigured() || !promo?.id) return false
+  if (promosCloudDisabled || !isSupabaseConfigured() || !promo?.id) return false
   try {
     const sb = await getSupabase()
     if (!sb) return false
     const { error } = await sb.from(TABLE).upsert(toRow(promo), { onConflict: 'id' })
     if (error) {
+      if (isMissingPromoTable(error)) promosCloudDisabled = true
       console.warn('[Clips] Promo sync failed:', error.message)
       return false
     }
@@ -360,7 +375,7 @@ async function pushPromoToCloud(promo) {
 }
 
 async function deletePromoFromCloud(id) {
-  if (!isSupabaseConfigured() || !id) return
+  if (promosCloudDisabled || !isSupabaseConfigured() || !id) return
   try {
     const sb = await getSupabase()
     if (!sb) return
@@ -369,12 +384,15 @@ async function deletePromoFromCloud(id) {
 }
 
 export async function syncPromotionsFromCloud() {
-  if (!isSupabaseConfigured()) return []
+  if (promosCloudDisabled || !isSupabaseConfigured()) return []
   try {
     const sb = await getSupabase()
     if (!sb) return []
     const { data, error } = await sb.from(TABLE).select('*').order('updated_at', { ascending: false }).limit(40)
-    if (error || !data) return []
+    if (error || !data) {
+      if (isMissingPromoTable(error)) promosCloudDisabled = true
+      return []
+    }
     const incoming = data.map(fromRow)
     const local = readList()
     const byId = new Map(local.map((p) => [p.id, p]))

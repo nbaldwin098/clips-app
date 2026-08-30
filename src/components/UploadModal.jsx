@@ -4,8 +4,47 @@ import { useAuth } from '../context/AuthContext'
 import { publishLocalMedia, stashWatchItem } from '../lib/contentService'
 import { canPost, postDeniedMessage } from '../lib/trustSafety'
 import { LIVE_CATEGORIES, mergeTags } from '../lib/mediaMeta'
+import {
+  clipLimitsMessage,
+  videoLimitsMessage,
+  MAX_CLIP_DURATION_SEC,
+  MAX_VIDEO_DURATION_SEC,
+} from '../lib/mediaUpload'
 import HashtagInput from './HashtagInput'
 import { cn } from '../lib/utils'
+
+function readDurationSec(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file)
+    const video = document.createElement('video')
+    video.muted = true
+    video.playsInline = true
+    video.preload = 'metadata'
+    video.src = url
+    const done = (fn) => {
+      try { URL.revokeObjectURL(url) } catch {}
+      fn()
+    }
+    const t = window.setTimeout(() => done(() => reject(new Error('Could not read this video.'))), 15000)
+    video.onloadedmetadata = () => {
+      window.clearTimeout(t)
+      const dur = Number(video.duration)
+      done(() => resolve(Number.isFinite(dur) ? dur : 0))
+    }
+    video.onerror = () => {
+      window.clearTimeout(t)
+      done(() => reject(new Error('Could not read this video. Try MP4 (H.264).')))
+    }
+  })
+}
+
+function durationLimitError(kind, durationSec) {
+  const dur = Number(durationSec)
+  if (!Number.isFinite(dur) || dur <= 0) return ''
+  if (kind === 'short' && dur > MAX_CLIP_DURATION_SEC + 0.5) return clipLimitsMessage(dur)
+  if (kind !== 'short' && dur > MAX_VIDEO_DURATION_SEC + 0.5) return videoLimitsMessage(dur)
+  return ''
+}
 
 const VISIBILITY = [
   { id: 'public', label: 'Public' },
@@ -27,6 +66,7 @@ export default function UploadModal({ open, onClose, onDone, initialKind = 'vide
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const [progress, setProgress] = useState('')
+  const [durationSec, setDurationSec] = useState(0)
   const inputRef = useRef(null)
 
   useEffect(() => {
@@ -43,6 +83,7 @@ export default function UploadModal({ open, onClose, onDone, initialKind = 'vide
     setErr('')
     setProgress('')
     setBusy(false)
+    setDurationSec(0)
   }, [open, initialKind])
 
   useEffect(() => {
@@ -55,6 +96,15 @@ export default function UploadModal({ open, onClose, onDone, initialKind = 'vide
     return () => URL.revokeObjectURL(url)
   }, [file])
 
+  useEffect(() => {
+    if (!durationSec) return
+    const limitErr = durationLimitError(kind, durationSec)
+    setErr((prev) => {
+      const wasLimit = prev && (prev.includes('clips must be') || prev.includes('videos must be') || prev.includes('Clips must be') || prev.includes('Videos must be'))
+      if (limitErr) return limitErr
+      return wasLimit ? '' : prev
+    })
+  }, [kind, durationSec])
 
   if (!open) return null
 
@@ -70,6 +120,7 @@ export default function UploadModal({ open, onClose, onDone, initialKind = 'vide
     setErr('')
     setProgress('')
     setBusy(false)
+    setDurationSec(0)
   }
 
   const onPick = (e) => {
@@ -77,9 +128,15 @@ export default function UploadModal({ open, onClose, onDone, initialKind = 'vide
     if (!f) return
     setFile(f)
     setErr('')
+    setDurationSec(0)
     if (!title.trim()) {
       setTitle(String(f.name || '').replace(/\.[^.]+$/, '').slice(0, 120))
     }
+    readDurationSec(f).then((dur) => {
+      setDurationSec(dur)
+      const limitErr = durationLimitError(kind, dur)
+      if (limitErr) setErr(limitErr)
+    }).catch(() => {})
   }
 
   const submit = async () => {
@@ -93,6 +150,11 @@ export default function UploadModal({ open, onClose, onDone, initialKind = 'vide
     }
     if (!file) {
       setErr('Choose a video file.')
+      return
+    }
+    const limitErr = durationLimitError(kind, durationSec)
+    if (limitErr) {
+      setErr(limitErr)
       return
     }
     setBusy(true)

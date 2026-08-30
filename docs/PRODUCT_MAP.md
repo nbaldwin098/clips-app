@@ -1,4 +1,6 @@
-# Clips — complete product map (deploy checklist)
+# Calabi — complete product map (deploy checklist)
+
+The product is **calabi**. **Clips** is the short-form format (route `/clips`, Storage bucket `clips`) — those identifiers stay.
 
 ## Public pages (no login)
 

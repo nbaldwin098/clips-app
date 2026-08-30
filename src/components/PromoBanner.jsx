@@ -25,8 +25,9 @@ export default function PromoBanner({ onNavigate, onOpenWatch }) {
 
   const go = () => {
     recordPromoClick(promo.id)
-    if (promo.destView === 'watch' && (promo.destId || promo.featureContentId)) {
-      onOpenWatch?.(promo.destId || promo.featureContentId)
+    const destId = promo.destId || promo.featureContentId
+    if (promo.destView === 'watch' && destId) {
+      onOpenWatch?.(destId)
       return
     }
     onNavigate?.(promo.destView || 'home', promo.destId || '')

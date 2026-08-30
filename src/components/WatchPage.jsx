@@ -31,6 +31,8 @@ import ContentCard from './ContentCard'
 import VerifiedBadge from './VerifiedBadge'
 import FollowButton from './FollowButton'
 import EnableNotificationsButton from './EnableNotificationsButton'
+import WatchSkeleton from './WatchSkeleton'
+import { isCatalogHydrated } from '../lib/catalogStore'
 import { creatorDisplayName, isOfficialCreator, likesLabel, viewsLabel, formatDuration } from '../lib/uiFormat'
 import { isVerifiedChannel } from '../lib/verification'
 import { startPremiumCheckout } from '../lib/checkout'
@@ -117,6 +119,9 @@ export default function WatchPage({
   const { user, isAuthenticated } = useAuth()
   const syncTick = useContentSyncTick()
   const item = useMemo(() => (itemId ? getWatchItem(itemId) : null), [itemId, syncTick])
+  useEffect(() => {
+    if (item?.type === 'short' && item.id) onPlayItem?.(item)
+  }, [item?.id, item?.type])
   const browseVideos = useMemo(
     () => (itemId ? [] : (listImportsNormalized() || []).filter((i) => i.type === 'video' || i.type === 'short')),
     [itemId, syncTick]
@@ -576,7 +581,8 @@ export default function WatchPage({
     )
   }
 
-  if (!item) {
+  if (itemId && !item) {
+    if (!isCatalogHydrated()) return <WatchSkeleton />
     return (
       <div className="flex flex-1 items-center justify-center p-8 min-h-[50vh]">
         <div className="max-w-md text-center space-y-3">
@@ -651,9 +657,9 @@ export default function WatchPage({
               <img src={thumb} alt="" className="absolute inset-0 w-full h-full object-cover blur-3xl opacity-40 scale-110" />
             ) : null}
             {phase === 'loading' && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-zinc-400">
-                <Loader2 className="h-8 w-8 animate-spin" />
-                <p className="text-xs">Loading…</p>
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-zinc-500">
+                <div className="h-10 w-10 rounded-full bg-white/10 animate-pulse" />
+                <p className="text-sm font-medium">calabi</p>
               </div>
             )}
             {phase === 'ready' && mode === 'iframe' && safeIframeSrc(playSrc) && (
@@ -739,8 +745,9 @@ export default function WatchPage({
               <div className="flex items-center gap-3 min-w-0">
                 <button
                   type="button"
+                  data-avatar-btn
                   onClick={() => onOpenProfile?.(item.handle, item.creatorId)}
-                  className="shrink-0"
+                  className="shrink-0 rounded-full"
                 >
                   <ChannelAvatar
                     src={item.avatarUrl}

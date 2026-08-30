@@ -34,28 +34,11 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 
 ### P0 — fix first
 
+Ship-blocking P0s from the 2026-08-27/30 launch list are **cleared** (verified on `main` + this PR). Remaining live risk is infra, not product crashes: **BUG-010** (real RTMP/HLS) stays P1 and must not be faked.
+
 | ID | Area | Issue | Notes | Status |
 |----|------|-------|-------|--------|
-| BUG-001 | Cloud / uploads | Confirm production uploads work after Next env fix (#104) | Owner confirmed uploads stick after refresh on Node deploy | `done` |
-| BUG-002 | Storage | Confirm public bucket named exactly `clips` exists | Migration `0003_clips_storage_bucket.sql`; user confirmed | `done` |
-| BUG-003 | Catalog | Confirm `videos` table still has rows after migrate | Live SSR titles for `/FoHGp57XPSB`, `/ZVD42PXmSuI`, org posts; removed stale `public/sitemap.xml` that hid dynamic sitemap | `done` |
-| BUG-004 | Auth | CS1 / owner cloud login edge cases still fragile | Owner is kiddnixk (gmail); cs1 aliases removed | `done` |
-| BUG-005 | Next / SEO | SpaShell still owns most routes | Finish PR: every known path has App Router page + metadata; SpaShell remains client UI bridge | `done` |
-| BUG-006 | Next / nav | Client `pushState` routing vs Next App Router | Done in #107 (`NextNavContext` + `router.push`) | `done` |
-| BUG-007 | Deploy | Old Static Render service must stay deleted/suspended | Domain only on Node web service | `open` |
-| BUG-008 | Smoke | `live-smoke.mjs` still asserts removed ExoClick/VAST behavior | Smoke rewritten for no-op stubs + deleted ad modules | `done` |
-| BUG-090 | Auth | Admin unlock broken; owner still treated as cs1 on live | #121 + #124 | `done` |
-| BUG-091 | Clips | Clips open glitched sideways (object routeId) | openClip + scrollbar-gutter | `doing` |
-| BUG-092 | UX | Taste picker / banners / messy create | Removed picker; avatars; YT-style upload filters | `doing` |
-| BUG-114 | Home | Cannot scroll homepage (fixed SpaShell + min-h-screen) | App shell always `h-dvh`; main scrolls | `doing` |
-| BUG-115 | Home | Square boxes over circular profile avatars | Global square-button CSS vs rounded-full | `doing` |
-| BUG-116 | Crash | Client-side exception / failed resource after deploys | global-error + chunk reload; fix `/` vs `[[...slug]]` conflict | `doing` |
-| BUG-117 | Admin | Close session button; Stripe money hard to find | Removed close; Accounts menu → Stripe ledger / Pay creators | `doing` |
-| BUG-118 | Coins | Starter pack was $0.99/100 and client rejected &lt;$1 | Now **$1.99 / 200 coins** (`c200`); Edge min 199¢; legacy `c100` aliases | `done` |
-| BUG-119 | Nav | `/rewards` 404 — not in `KNOWN_VIEWS` despite redirect case | Added to KNOWN_VIEWS → Wallet | `done` |
-| BUG-120 | i18n | Guests had no language menu; Library/More hard-coded EN | Guest account menu + sidebar `t()` | `done` |
-| BUG-121 | UX | Site sidebar vanished on Wallet/Settings (hard to leave) | Keep site rail for wallet/settings; studio immersive only | `doing` |
-| BUG-122 | SEO | Sparse `document.title` map → odd tab titles | Expanded titles for major views | `done` |
+| — | — | No open P0 ship-blockers | See [Done](#done) for BUG-007 / 091 / 092 / 114–117 / 121 | — |
 
 ### P1 — important
 
@@ -74,7 +57,7 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 | BUG-017 | SEO | Dynamic sitemap for public content ids | Done in #106 | `done` |
 | BUG-018 | SEO | Server-render real HTML for About/Help/Legal bodies | Done in #106 | `done` |
 | BUG-019 | Watch | Share OG tags depend on Supabase row fetch | Soft unavailable + article HTML in #106 | `done` |
-| BUG-020 | Uploads | Clip 60s / video 24h limits — confirm UX errors are clear | Limits enforced in `publishLocalMedia` | `open` |
+| BUG-020 | Uploads | Clip 60s / video 24h limits — confirm UX errors are clear | Modal hint + immediate duration probe + publish reject (`clipLimitsMessage` / `videoLimitsMessage`) | `done` |
 | BUG-021 | iOS | Keep original-file upload path (no WebM re-encode) | Fixed once; add regression test so it doesn’t return | `open` |
 | BUG-022 | Delete | Cloud delete path for admin/creator — verify on Node deploy | `deleteCatalogItem` + `deleteHostedMedia` hardened (signed/public URLs, warn on fail) | `open` |
 | BUG-023 | Chat | Live chat cloud sync reliability | Reconnect/poll fallback + dedupe subscribe + channel key normalize | `open` |
@@ -135,6 +118,16 @@ Living backlog. Add every bug, debt item, and “we should fix this” note here
 
 | ID | Issue | PR | Date |
 |----|-------|-----|------|
+| BUG-007 | Production `calabi.us` is Next.js on Render Node (`clips-app-2jlx.onrender.com`; `x-render-origin-server: Render`; `/api/health` 200). Do not re-add a Static Site. | verified live | 2026-08-30 |
+| BUG-091 | Clips open sideways: object `routeId` already stringified (#169); Next `globals.css` now has `scrollbar-gutter: stable`; catalog hydrate re-applies `/id` so shorts are not stuck on `/watch` | #169 + ship-ready | 2026-08-30 |
+| BUG-092 | Taste picker / banners / messy create — picker gone; Create is format chips; upload is YT-style details | #169 | 2026-08-27 |
+| BUG-114 | Homepage scroll — App shell `h-dvh` + `main` `overflow-y-auto` (Apex home is in-flow, not a locked stage) | #169 | 2026-08-27 |
+| BUG-115 | Square boxes over circular avatars — `button.rounded-full` / `data-avatar-btn`; remaining home/watch/pics wrappers tagged | #169 + ship-ready | 2026-08-30 |
+| BUG-116 | Client exception / failed resource after deploys — `global-error` + `calabi_chunk_reload`; required `[...slug]` not `[[...slug]]` | #169 | 2026-08-27 |
+| BUG-117 | Admin Close session removed; Money nav is Stripe ledger + Pay creators | #169 | 2026-08-27 |
+| BUG-121 | Wallet/Settings keep the site left rail (`studioChrome` excludes them) | #169 | 2026-08-27 |
+| BUG-020 | Upload limit errors shown before/at publish (clip 60s / video 24h) | ship-ready | 2026-08-30 |
+| BUG-119 | `/rewards` known view + alias to Wallet | #176 + ship-ready | 2026-08-30 |
 | BUG-001 | Production uploads confirmed after Next env fix | owner check | 2026-08-26 |
 | BUG-003 | `videos` catalog has live rows; drop static sitemap override | #110 | 2026-08-26 |
 | BUG-113 | Next SEO finish: all known routes have App Router pages + metadata | #109 | 2026-08-26 |
@@ -172,10 +165,10 @@ Ads-related wontfix (**BUG-012/013**) remain correct: no in-stream/VAST inventor
 
 ## Next 5 to pull (suggested order)
 
-1. **BUG-010** — Live ingest (RTMP/HLS)  
-2. **BUG-016** — Stripe Connect payouts  
-3. **BUG-014 / BUG-015** — Finish studio/settings polish after hub PR  
-4. **BUG-053** — MFA enroll flow spot-check on cloud  
+1. **BUG-010** — Live ingest (RTMP/HLS) — only after a second device can play HLS; keep `liveIngestFlagOn` false until then  
+2. **BUG-016** — Own payouts / admin withdraw (Stripe Express stays off)  
+3. **BUG-053** — MFA enroll flow spot-check on cloud  
+4. **BUG-021** — iOS original-file upload regression test  
 5. **BUG-040** — Quarantine or fix flaky named-activity smoke
 
 ---
@@ -193,7 +186,7 @@ Rules:
 - Link a PR when status → `doing`  
 - Never delete history — move to Done / Won’t fix  
 
-Last updated: 2026-08-26 (platform differentiators foundations: Cash, pools, Ghost AI, Studio)
+Last updated: 2026-08-30 (P0 ship-blockers verified; product map says Calabi)
 
 ### Product foundations (shipped partial — need ingest/OAuth/Stripe Cash SKUs)
 

@@ -120,8 +120,9 @@ export default function ApexHomeStage({
               <div className="flex items-start gap-3 p-3">
                 <button
                   type="button"
+                  data-avatar-btn
                   onClick={() => onOpenProfile?.(featured.handle, featured.userId)}
-                  className="shrink-0"
+                  className="shrink-0 rounded-full"
                 >
                   <ChannelAvatar src={featured.avatarUrl || lookupUser(featured.userId)?.avatarUrl} name={name} size={36} />
                 </button>

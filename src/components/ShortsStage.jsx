@@ -194,9 +194,7 @@ export default function ShortsStage({
     }
   }
 
-  const slideShell = bleedMobile
-    ? 'w-full snap-start snap-always shrink-0 overflow-hidden flex items-stretch justify-start px-0 py-0'
-    : 'w-full snap-start snap-always shrink-0 overflow-hidden flex items-stretch justify-start px-0 py-0'
+  const slideShell = 'w-full snap-start snap-always shrink-0 overflow-hidden flex items-stretch justify-center px-0 py-0'
 
   return (
     <div className="h-full min-h-0 w-full bg-[#000000] flex flex-col relative">
@@ -247,18 +245,18 @@ export default function ShortsStage({
 
 export function ShortsCard({ children, actions, fillMobile = false }) {
   return (
-    <div className="h-full w-full min-h-0 flex items-stretch md:items-center justify-start gap-3">
+    <div className="h-full w-full min-h-0 flex items-stretch md:items-center justify-center gap-0 md:gap-5">
       <div
         className={
           fillMobile
-            ? 'relative bg-black overflow-hidden h-full w-full min-h-0 md:w-auto md:aspect-[9/16] md:shrink-0'
+            ? 'relative bg-black overflow-hidden h-full w-full min-h-0 md:h-full md:w-auto md:aspect-[9/16] md:max-h-full md:shrink-0'
             : 'relative bg-black overflow-hidden h-full aspect-[9/16] shrink-0'
         }
       >
         {children}
       </div>
       {actions ? (
-        <div className="hidden md:flex flex-col items-center gap-4 pt-2 shrink-0 w-14">
+        <div className="hidden md:flex flex-col items-center justify-end gap-4 shrink-0 w-14 pb-16 self-stretch">
           {actions}
         </div>
       ) : null}

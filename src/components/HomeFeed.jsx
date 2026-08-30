@@ -11,6 +11,7 @@ import ApexHomeStage from './home/ApexHomeStage'
 import { preloadPostedItem, preloadPostedItems } from '../lib/preloadMedia'
 import { useContentSyncTick } from '../lib/useContentSync'
 import { isCatalogHydrated } from '../lib/catalogStore'
+import { isFeedable } from '../lib/catalogHealth'
 import { syncContentFromCloud } from '../lib/contentSync'
 import { lsGet } from '../lib/storage'
 import { listOnAirBoard } from '../lib/liveStatus'
@@ -34,7 +35,7 @@ export default function HomeFeed({
     const pics = (getPicsFeed() || []).map((p) => ({ ...p, type: 'pic' }))
     const seen = new Set(feed.map((i) => i.id))
     const extra = pics.filter((p) => p?.id && !seen.has(p.id))
-    return [...feed, ...extra]
+    return [...feed, ...extra].filter((i) => i?.id && isFeedable(i) && getWatchItem(i.id))
   }, [user?.id, syncTick])
   const following = useMemo(() => getStableFollowingFeed(user?.id || null), [user?.id, syncTick])
   const promo = useMemo(() => getActivePromotion(), [syncTick])
@@ -79,7 +80,8 @@ export default function HomeFeed({
           onClick={() => {
             recordPromoClick(promo.id)
             if (featured) onPlayItem?.(featured)
-            else onNavigate?.(promo.destView || 'home', promo.destId || '')
+            else if (promo.destId && getWatchItem(promo.destId)) onPlayItem?.(getWatchItem(promo.destId))
+            else if (!promo.destId) onNavigate?.(promo.destView || 'home')
           }}
           className="relative w-full text-left overflow-hidden min-h-[96px] border border-white/10"
         >

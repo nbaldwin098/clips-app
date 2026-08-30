@@ -27,7 +27,8 @@ export function liveHlsBaseUrl() {
 }
 
 export function liveIngestConnected() {
-  if (liveRtmpServerUrl() && liveHlsBaseUrl()) return true
+  // URLs alone must never invent a connected ingest. Flip the flag only
+  // after a second device can actually play HLS.
   return envFlag('VITE_LIVE_INGEST_CONNECTED', false)
     || envFlag('NEXT_PUBLIC_LIVE_INGEST_CONNECTED', false)
 }

@@ -6,6 +6,7 @@ import { initLocale } from './lib/i18n'
 import { initTheme } from './lib/theme'
 import { setPageMeta } from './lib/pageMeta'
 import ErrorBoundary from './components/ErrorBoundary'
+import WatchSkeleton from './components/WatchSkeleton'
 import StreamingNavbar from './components/StreamingNavbar'
 import CollapsibleSidebar from './components/CollapsibleSidebar'
 import MobileTabBar from './components/MobileTabBar'
@@ -57,7 +58,7 @@ import {
 } from './components/legal/LegalPages'
 import { startSession } from './lib/algorithmEngine'
 import { lsGet, lsSet } from './lib/storage'
-import { syncContentFromCloud, notifyContentChanged, subscribeCloudCatalog } from './lib/contentSync'
+import { syncContentFromCloud, notifyContentChanged, subscribeCloudCatalog, subscribeContentUpdates } from './lib/contentSync'
 import { pullLiveFeatureState } from './lib/liveFeatureSync'
 import { setGraphActor, syncGraphFromCloud, syncPublicEngagementFromCloud } from './lib/graphSync'
 import { promoteDeviceUploadsToCloud } from './lib/promoteUploads'
@@ -89,7 +90,7 @@ const BubbleApiPage = lazy(() => import('./components/BubbleApiPage'))
 const AppealsPage = lazy(() => import('./components/AppealsPage'))
 
 const KNOWN_VIEWS = new Set([
-  'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
+  'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings', 'rewards',
   'explore', 'history', 'watch-again', 'hearts', 'liked', 'watch-later', 'library', 'stats', 'help', 'about',
   'notifications', 'pics', 'checkout', 'creator-apply', 'verify', 'advertise', 'advertiser-portal', 'support', 'admin',
   'analytics', 'channel', 'profile', 'content-rules', 'vods',
@@ -225,6 +226,11 @@ function AppShell() {
       setView('profile')
       return
     }
+    if (kind === 'rewards' || kind === 'calabi-cash') {
+      setView('wallet')
+      setRouteId('')
+      return
+    }
     if (kind === 'playlist' && id) { setRouteId(id); setView('playlists'); return }
     if (kind === 'pic' && id) { setRouteId(id); setView('pics'); return }
     if (kind === 'checkout') {
@@ -246,7 +252,13 @@ function AppShell() {
     applyRoute()
     const onPop = () => applyRoute()
     window.addEventListener('popstate', onPop)
-    return () => window.removeEventListener('popstate', onPop)
+    // Bare /{id} shares resolve type from the catalog. Re-apply after cloud hydrate
+    // so a clip is not stuck on the sideways /watch player.
+    const offSync = subscribeContentUpdates(() => applyRoute())
+    return () => {
+      window.removeEventListener('popstate', onPop)
+      try { offSync?.() } catch {}
+    }
   }, [])
 
   useEffect(() => { applyRoute() }, [pathname])
@@ -483,7 +495,7 @@ function AppShell() {
           <CollapsibleSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} currentView={view} onNavigate={navigate} onSelectLiveStream={selectLiveStreamFromSidebar} focusedStreamUserId={focusedLiveStream?.userId} />
         ) : null}
         <main id="main-content" tabIndex={-1} className={`flex-1 min-h-0 min-w-0 bg-[#000000] ${lockStage ? 'overflow-hidden' : 'overflow-y-auto'} pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0`}>
-          <Suspense fallback={<div className="p-8 text-sm text-zinc-500">Loading…</div>}>
+          <Suspense fallback={<WatchSkeleton />}>
             {renderMain()}
           </Suspense>
         </main>

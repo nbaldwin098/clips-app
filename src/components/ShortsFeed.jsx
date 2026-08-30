@@ -22,6 +22,25 @@ function resolvePlayUrl(item) {
   return item?.mediaUrl || item?.sourceUrl || ''
 }
 
+/** Only one clip <video> may play. Off-screen copies (triple-buffer) must stay paused. */
+let playingClipEl = null
+function playOnly(el) {
+  if (!el) return
+  if (playingClipEl && playingClipEl !== el) {
+    try { playingClipEl.pause() } catch { /* ok */ }
+  }
+  playingClipEl = el
+  el.play?.().catch(() => {
+    el.muted = true
+    el.play?.().catch(() => {})
+  })
+}
+function pauseIfPlaying(el) {
+  if (!el) return
+  try { el.pause() } catch { /* ok */ }
+  if (playingClipEl === el) playingClipEl = null
+}
+
 function RailBtn({ onClick, label, children, active = false, circled = true }) {
   return (
     <button type="button" onClick={onClick} className="flex flex-col items-center gap-1">
@@ -124,15 +143,10 @@ function ClipSlide({
 
   useEffect(() => {
     const el = vidRef.current
-    if (!el || embed?.type === 'iframe') return
-    if (active) {
-      el.play?.().catch(() => {
-        el.muted = true
-        el.play()?.catch(() => {})
-      })
-    } else {
-      el.pause?.()
-    }
+    if (!el || embed?.type === 'iframe') return undefined
+    if (active) playOnly(el)
+    else pauseIfPlaying(el)
+    return () => pauseIfPlaying(el)
   }, [active, src, embed?.type])
 
   const bindVideoRef = useCallback((node) => {
@@ -249,7 +263,7 @@ function ClipSlide({
   return (
     <ShortsCard actions={actions(true)} fillMobile>
       <div className="absolute inset-0 z-[1] pointer-events-none touch-pan-y">
-        {isIframe && safeIframeSrc(videoSrc) ? (
+        {isIframe && (active || warm) && safeIframeSrc(videoSrc) ? (
           <iframe
             src={active ? safeIframeSrc(videoSrc) : undefined}
             title={item.title || 'Clip'}
@@ -259,16 +273,16 @@ function ClipSlide({
             sandbox="allow-scripts allow-same-origin allow-presentation"
             referrerPolicy="strict-origin-when-cross-origin"
           />
-        ) : safeMediaUrl(videoSrc) ? (
+        ) : (active || warm) && safeMediaUrl(videoSrc) ? (
           <video
             ref={bindVideoRef}
             src={safeMediaUrl(videoSrc)}
-            className="absolute inset-0 w-full h-full object-cover md:object-contain bg-black pointer-events-none"
+            className="absolute inset-0 w-full h-full object-cover bg-black pointer-events-none"
             style={filterCss(item.filterId || item.engagement?.filterId) ? { filter: filterCss(item.filterId || item.engagement?.filterId) } : undefined}
             playsInline
             loop
             muted={muted}
-            preload={active || warm ? 'auto' : 'metadata'}
+            preload={active ? 'auto' : 'metadata'}
             onTimeUpdate={(e) => {
               const el = e.target
               if (!el?.duration) return
@@ -320,6 +334,8 @@ function ClipSlide({
               }).catch(() => {})
             }}
           />
+        ) : item.thumbUrl ? (
+          <img src={item.thumbUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
         ) : resolving ? (
           <div className="absolute inset-0 flex items-center justify-center text-zinc-500 text-sm">Loading…</div>
         ) : (

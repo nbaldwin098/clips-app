@@ -19,6 +19,10 @@ export async function sendVerificationCodeEmail({ to, code, purpose = 'verify' }
 
   const url = String(runtimeEnv('VITE_MAIL_FUNCTION_URL') || '').trim()
   if (!url) {
+    const host = typeof window !== 'undefined' ? window.location.hostname : ''
+    if (/(^|\.)calabi\.us$/i.test(host)) {
+      return { ok: false, error: 'Mail is not configured.' }
+    }
     return {
       ok: true,
       demo: true,

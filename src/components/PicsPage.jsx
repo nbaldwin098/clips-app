@@ -274,6 +274,7 @@ function PicSlide({ pic, active, onOpenProfile, onOpenAuth, eager = true }) {
       </button>
       <button
         type="button"
+        data-avatar-btn
         onClick={() => onOpenProfile?.(pic.handle, creatorId)}
         className="h-11 w-11 rounded-full overflow-hidden ring-2 ring-white/80"
         aria-label={handle || 'Creator'}
