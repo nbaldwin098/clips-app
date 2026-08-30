@@ -25,8 +25,9 @@ assert.equal(sql.includes('visibility <> \'private\''), false, 'unlisted must no
 assert.equal(sql.includes('using (true)'), false, 'videos select is not open-to-all')
 
 assert.match(scripts, /0028_videos_rls_storage_audit\.sql/)
-assert.match(server, /get_video_by_id/)
+assert.match(server, /from\('videos'\)/)
 assert.match(sync, /fetchContentRecordById/)
-assert.match(sync, /get_video_by_id/)
+assert.equal(server.includes("rpc('get_video_by_id'"), false, 'client must not probe missing RPC')
+assert.equal(sync.includes("rpc('get_video_by_id'"), false, 'client must not probe missing RPC')
 
 console.log('ok videos RLS audit regression')

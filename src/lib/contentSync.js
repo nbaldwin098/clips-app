@@ -169,8 +169,9 @@ export async function pushContentRecord(record, actor) {
 }
 
 /**
- * Single-row fetch for watch / delete. Prefers get_video_by_id (unlisted
- * link-reach after 0028) and falls back to a table select if the RPC is missing.
+ * Single-row fetch for watch / delete.
+ * Do not call get_video_by_id until 0028 is applied on the live project —
+ * the RPC 404s and the videos table select already succeeds.
  */
 export async function fetchContentRecordById(id) {
   const resolved = String(id || '').trim()
@@ -178,11 +179,6 @@ export async function fetchContentRecordById(id) {
   try {
     const sb = await getSupabase()
     if (!sb) return null
-    const rpc = await sb.rpc('get_video_by_id', { p_id: resolved })
-    if (!rpc.error && rpc.data) {
-      const row = Array.isArray(rpc.data) ? rpc.data[0] : rpc.data
-      if (row?.id) return fromRow(row)
-    }
     const { data, error } = await sb.from(TABLE).select('*').eq('id', resolved).maybeSingle()
     if (error || !data) return null
     return fromRow(data)
