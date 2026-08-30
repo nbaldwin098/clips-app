@@ -117,6 +117,9 @@ export default function WatchPage({
   const { user, isAuthenticated } = useAuth()
   const syncTick = useContentSyncTick()
   const item = useMemo(() => (itemId ? getWatchItem(itemId) : null), [itemId, syncTick])
+  useEffect(() => {
+    if (item?.type === 'short' && item.id) onPlayItem?.(item)
+  }, [item?.id, item?.type])
   const browseVideos = useMemo(
     () => (itemId ? [] : (listImportsNormalized() || []).filter((i) => i.type === 'video' || i.type === 'short')),
     [itemId, syncTick]
@@ -739,8 +742,9 @@ export default function WatchPage({
               <div className="flex items-center gap-3 min-w-0">
                 <button
                   type="button"
+                  data-avatar-btn
                   onClick={() => onOpenProfile?.(item.handle, item.creatorId)}
-                  className="shrink-0"
+                  className="shrink-0 rounded-full"
                 >
                   <ChannelAvatar
                     src={item.avatarUrl}

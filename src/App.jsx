@@ -57,7 +57,7 @@ import {
 } from './components/legal/LegalPages'
 import { startSession } from './lib/algorithmEngine'
 import { lsGet, lsSet } from './lib/storage'
-import { syncContentFromCloud, notifyContentChanged, subscribeCloudCatalog } from './lib/contentSync'
+import { syncContentFromCloud, notifyContentChanged, subscribeCloudCatalog, subscribeContentUpdates } from './lib/contentSync'
 import { pullLiveFeatureState } from './lib/liveFeatureSync'
 import { setGraphActor, syncGraphFromCloud, syncPublicEngagementFromCloud } from './lib/graphSync'
 import { promoteDeviceUploadsToCloud } from './lib/promoteUploads'
@@ -89,7 +89,7 @@ const BubbleApiPage = lazy(() => import('./components/BubbleApiPage'))
 const AppealsPage = lazy(() => import('./components/AppealsPage'))
 
 const KNOWN_VIEWS = new Set([
-  'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings',
+  'home', 'creators', 'clips', 'shorts', 'live', 'dashboard', 'wallet', 'settings', 'rewards',
   'explore', 'history', 'watch-again', 'hearts', 'liked', 'watch-later', 'library', 'stats', 'help', 'about',
   'notifications', 'pics', 'checkout', 'creator-apply', 'verify', 'advertise', 'advertiser-portal', 'support', 'admin',
   'analytics', 'channel', 'profile', 'content-rules', 'vods',
@@ -225,6 +225,11 @@ function AppShell() {
       setView('profile')
       return
     }
+    if (kind === 'rewards' || kind === 'calabi-cash') {
+      setView('wallet')
+      setRouteId('')
+      return
+    }
     if (kind === 'playlist' && id) { setRouteId(id); setView('playlists'); return }
     if (kind === 'pic' && id) { setRouteId(id); setView('pics'); return }
     if (kind === 'checkout') {
@@ -246,7 +251,13 @@ function AppShell() {
     applyRoute()
     const onPop = () => applyRoute()
     window.addEventListener('popstate', onPop)
-    return () => window.removeEventListener('popstate', onPop)
+    // Bare /{id} shares resolve type from the catalog. Re-apply after cloud hydrate
+    // so a clip is not stuck on the sideways /watch player.
+    const offSync = subscribeContentUpdates(() => applyRoute())
+    return () => {
+      window.removeEventListener('popstate', onPop)
+      try { offSync?.() } catch {}
+    }
   }, [])
 
   useEffect(() => { applyRoute() }, [pathname])
