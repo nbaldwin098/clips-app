@@ -115,6 +115,11 @@ export default function StreamingNavbar({
     onNavigate(v, id, params)
   }
 
+  const goExplore = (q = searchQuery) => {
+    const trimmed = String(q || '').trim()
+    handleNav('explore', '', trimmed ? { q: trimmed } : null)
+  }
+
   const pickLanguage = (id) => {
     setLocale(id)
     setLocaleState(id)
@@ -151,13 +156,13 @@ export default function StreamingNavbar({
           type="button"
           className="md:hidden ml-auto h-11 w-11 inline-flex items-center justify-center text-white"
           aria-label={t('nav.search')}
-          onClick={() => handleNav('explore')}
+          onClick={() => goExplore()}
         >
           <Search className="h-6 w-6" />
         </button>
         <form
           className="hidden md:flex flex-1 justify-center min-w-0 px-1 sm:px-4"
-          onSubmit={(e) => { e.preventDefault(); handleNav('explore') }}
+          onSubmit={(e) => { e.preventDefault(); goExplore() }}
         >
           {apex ? (
             <div className="flex w-full max-w-[560px] min-w-0 h-12 items-center gap-2 rounded-full bg-[#1a1a1a] border border-white/10 px-3">
@@ -167,7 +172,7 @@ export default function StreamingNavbar({
                 type="search"
                 value={searchQuery || ''}
                 onChange={(e) => onSearchChange?.(e.target.value)}
-                onFocus={() => handleNav('explore')}
+                onFocus={() => goExplore()}
                 placeholder="Search calabi"
                 className="flex-1 min-w-0 bg-transparent text-base text-white placeholder:text-[#6b6b6b] outline-none"
               />
@@ -179,7 +184,7 @@ export default function StreamingNavbar({
               type="search"
               value={searchQuery || ''}
               onChange={(e) => onSearchChange?.(e.target.value)}
-              onFocus={() => handleNav('explore')}
+              onFocus={() => goExplore()}
               placeholder={t('nav.search')}
               className="w-full min-w-0 h-10 border border-[#303030] bg-[#121212] pl-3 pr-2 text-sm sm:text-base text-zinc-100 placeholder:text-zinc-500 focus:border-[#3ea6ff] focus:outline-none"
             />
