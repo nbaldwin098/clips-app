@@ -408,7 +408,7 @@ export function getExplore(query = '', kind = 'all') {
 
 export function getRelated(item, limit = 8) {
   if (!item?.id) return []
-  const pool = onlyReleased(withViewCounts(getImports().map(normalizeItem))).filter((i) => i.id !== item.id && i.type !== 'pic')
+  const pool = onlyReleased(withViewCounts(getImports().map(normalizeItem))).filter((i) => i.id !== item.id && i.type !== 'pic' && isFeedable(i))
   const tags = new Set((item.tags || []).map((t) => String(t).toLowerCase()))
   const scored = pool.map((i) => {
     let score = 0
@@ -453,7 +453,7 @@ export function getWatchQueue(item) {
 }
 
 export function getBySound(soundId, soundTitle) {
-  const all = onlyReleased(withViewCounts(getImports().map(normalizeItem))).filter((i) => i.type !== 'pic')
+  const all = onlyReleased(withViewCounts(getImports().map(normalizeItem))).filter((i) => i.type !== 'pic' && isFeedable(i))
   return all.filter((i) => {
     if (soundId && i.soundId === soundId) return true
     if (soundTitle && i.soundTitle && String(i.soundTitle) === String(soundTitle)) return true
@@ -464,7 +464,7 @@ export function getBySound(soundId, soundTitle) {
 export function getByTag(tag) {
   const t = String(tag || '').trim().toLowerCase().replace(/^#/, '')
   if (!t) return []
-  const all = onlyReleased(withViewCounts(getImports().map(normalizeItem)))
+  const all = onlyReleased(withViewCounts(getImports().map(normalizeItem))).filter(isFeedable)
   // Exact tag match only — never fuzzy title substring (that polluted #tag pages).
   return all.filter((i) => (i.tags || []).some((x) => String(x).toLowerCase() === t))
 }
@@ -583,7 +583,16 @@ export function listImportsNormalized() {
   return withViewCounts(getImports().map(normalizeItem))
 }
 
+/** Catalog row that still exists and is safe to link from a card. */
+export function resolvePlayableItem(id) {
+  if (!id) return null
+  const item = getWatchItem(id)
+  if (!item?.id || !isFeedable(item)) return null
+  return item
+}
+
 export function importUserLink(url, actor = null) {
+  if (!actor?.id) return { ok: false, item: null, error: 'Sign in to import.' }
   const trimmed = String(url || '').trim()
   if (!trimmed) return { ok: false, item: null, error: 'Paste a public short URL.' }
   try {
@@ -841,6 +850,11 @@ export async function deleteCatalogItem(id, actor = null, opts = {}) {
       storageResults.push({ url: path, removed: false })
     }
   }
+
+  try {
+    const { deleteMediaBlob } = await import('./videoStorage')
+    await deleteMediaBlob(id)
+  } catch { /* IndexedDB may be unavailable */ }
 
   try {
     await syncContentFromCloud(actor)

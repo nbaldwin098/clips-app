@@ -10,6 +10,7 @@ import { findOwnerLogin, isLocalOwnerLogin, isOwnerAccount, OWNER_LOGIN, ownerCl
 import { parseVastXml, parseVastClock, videoInStreamBreaks, EXOCLICK_VAST_URL, videoVastAdsEnabled } from '../src/lib/vastAds.js'
 import { mixFeedAds, mixClipFeedRows, mixPicFeedRows, getActiveAdForVideo, adsAreRunning } from '../src/lib/adEngine.js'
 import { featuredWindowStart, nextFeaturedRefreshAt, lastHourRange, interleaveHourlyHits, HOURLY_PATTERN, HOURLY_VIDEO_COUNT, HOURLY_CLIP_COUNT, HOURLY_PIC_COUNT } from '../src/lib/hourWindow.js'
+import { isOnAir, isLobbyLive, MAX_LIVE_SESSION_MS } from '../src/lib/liveStatus.js'
 
 let failed = 0
 function assert(cond, msg) {
@@ -1319,6 +1320,42 @@ assert(watchSrc2.includes('placeholder="Other"'), 'watch page has custom donate'
 assert(panelSrc.includes("kind === 'donation'"), 'live donations render in chat')
 
 assert(EXOCLICK_VAST_URL === '', 'no live ExoClick VAST URL to probe')
+
+{
+  const stale = {
+    isLive: true,
+    startedAt: new Date(Date.now() - 41 * 3600_000).toISOString(),
+    hlsUrl: 'https://example.com/live.m3u8',
+    ingestConnected: true,
+  }
+  assert(MAX_LIVE_SESSION_MS === 12 * 60 * 60 * 1000, 'live session TTL is 12 hours')
+  assert(!isLobbyLive(stale), '41h lobby ghost is not listed')
+  assert(!isOnAir(stale), '41h stream is not on-air')
+  const urlOnly = { isLive: true, startedAt: new Date().toISOString(), hlsUrl: 'https://example.com/live.m3u8' }
+  assert(isLobbyLive(urlOnly), 'fresh listing without encoder is lobby')
+  assert(!isOnAir(urlOnly), 'HLS URL alone is not on-air')
+  const sharing = { isLive: true, startedAt: new Date().toISOString(), sharing: true }
+  assert(isOnAir(sharing), 'browser share is on-air')
+  const connected = { isLive: true, startedAt: new Date().toISOString(), ingestConnected: true }
+  assert(isOnAir(connected), 'explicit ingestConnected is on-air')
+}
+
+assert(liveViewSrc.includes('listOnAirBoard'), 'live On now uses on-air board not stale lobby')
+assert(liveViewSrc.includes('listLobbyOnlyBoard'), 'live keeps lobby-only rows off On now')
+assert(liveLobbySrc.includes('liveIngestConnected()'), 'cloudflare provision does not auto-mark connected')
+assert(contentSvcSafety.includes('resolvePlayableItem') || readFileSync(new URL('../src/lib/contentService.js', import.meta.url), 'utf8').includes('resolvePlayableItem'), 'playable-item helper exists')
+assert(readFileSync(new URL('../src/lib/contentService.js', import.meta.url), 'utf8').includes('Sign in to import'), 'import requires a signed-in actor')
+assert(readFileSync(new URL('../src/lib/contentService.js', import.meta.url), 'utf8').includes('deleteMediaBlob'), 'cloud delete also drops IndexedDB blobs')
+assert(readFileSync(new URL('../src/lib/youtubeParity.js', import.meta.url), 'utf8').includes('if (!contentId || !userId)'), 'comments require an author')
+assert(chatLib.includes('Sign in to chat'), 'live chat requires a signed-in actor')
+assert(panelSrc.includes('safeChatGifUrl') || panelSrc.includes('safeMediaUrl'), 'live chat GIFs go through a URL allowlist')
+assert(!readFileSync(new URL('../next.config.mjs', import.meta.url), 'utf8').includes('VITE_ADMIN_CODE'), 'admin code is not inlined into the Next client bundle')
+assert(!readFileSync(new URL('../src/lib/runtimeEnv.js', import.meta.url), 'utf8').includes('VITE_ADMIN_CODE'), 'admin code is not in the client env map')
+assert(readFileSync(new URL('../src/lib/moderation.js', import.meta.url), 'utf8').includes("return ''"), 'getAdminCode never returns a client secret')
+assert(existsSync(new URL('../supabase/migrations/0029_clips_bucket_limits.sql', import.meta.url)), 'bucket size/MIME limits migration exists')
+assert(watchSrc2.includes('stacked') && watchSrc2.includes('Up next'), 'watch page has a stacked Up next rail')
+assert(videoStorageSrc.includes('Original file bytes are uploaded as-is'), 'iOS upload keeps original MP4 bytes')
+assert(!videoStorageSrc.includes('MediaRecorder'), 'iOS upload path does not force WebM')
 
 if (failed) {
   console.error(`${failed} failed`)

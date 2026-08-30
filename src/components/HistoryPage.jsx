@@ -7,7 +7,7 @@ import {
   percentLabel,
   pullWatchProgressFromCloud,
 } from '../lib/watchProgress'
-import { getWatchItem } from '../lib/contentService'
+import { resolvePlayableItem } from '../lib/contentService'
 import { openSafeUrl } from '../lib/safeUrl'
 import PageHeader from './PageHeader'
 
@@ -30,7 +30,8 @@ export default function HistoryPage({ onNavigate, onPlayItem }) {
   }
 
   const handlePlay = (item) => {
-    const full = getWatchItem(item.contentId) || item
+    const full = resolvePlayableItem(item.contentId)
+    if (!full) return
     if (onPlayItem) {
       onPlayItem(full)
     } else if (full.sourceUrl) {
@@ -75,6 +76,7 @@ export default function HistoryPage({ onNavigate, onPlayItem }) {
         <div className="space-y-2.5">
           {historyItems.map((item) => {
             const ratio = item.lastRatio ?? item.watchRatio
+            const playable = !!resolvePlayableItem(item.contentId)
             return (
               <div
                 key={item.contentId || item.id}
@@ -96,10 +98,11 @@ export default function HistoryPage({ onNavigate, onPlayItem }) {
                 </div>
                 <button
                   type="button"
+                  disabled={!playable}
                   onClick={() => handlePlay(item)}
-                  className="inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-lg bg-white text-black text-xs font-bold hover:bg-zinc-200 transition-all shrink-0"
+                  className="inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-lg bg-white text-black text-xs font-bold hover:bg-zinc-200 transition-all shrink-0 disabled:opacity-40 disabled:hover:bg-white"
                 >
-                  <Play className="h-3.5 w-3.5 fill-current" /> {item.completed ? 'Watch again' : 'Resume'}
+                  <Play className="h-3.5 w-3.5 fill-current" /> {playable ? (item.completed ? 'Watch again' : 'Resume') : 'Unavailable'}
                 </button>
               </div>
             )

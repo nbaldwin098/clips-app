@@ -3,6 +3,7 @@ import { RotateCcw, Play } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { listWatchAgain, pullWatchProgressFromCloud, percentLabel } from '../lib/watchProgress'
 import { getById, getWatchItem } from '../lib/contentService'
+import { isFeedable } from '../lib/catalogHealth'
 import PageHeader from './PageHeader'
 import MediaShelves from './MediaShelves'
 
@@ -18,12 +19,13 @@ export default function WatchAgainPage({ onNavigate, onPlayItem }) {
 
   const rows = useMemo(() => (user?.id ? listWatchAgain(user.id) : []), [user?.id, tick])
   const items = useMemo(
-    () => rows.map((row) => getWatchItem(row.contentId) || getById(row.contentId) || row).filter((i) => i?.type !== 'pic'),
+    () => rows.map((row) => getWatchItem(row.contentId) || getById(row.contentId)).filter((i) => i?.id && i.type !== 'pic' && isFeedable(i)),
     [rows, tick],
   )
 
   const handlePlay = (item) => {
-    const full = getWatchItem(item?.id || item?.contentId) || getById(item?.id || item?.contentId) || item
+    const full = getWatchItem(item?.id || item?.contentId) || getById(item?.id || item?.contentId)
+    if (!full || !isFeedable(full)) return
     onPlayItem?.(full)
   }
 

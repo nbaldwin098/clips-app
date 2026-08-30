@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getById, getWatchItem, ensureWatchItem, getRelated, getMoreFromCreator, getWatchQueue, listImportsNormalized } from '../lib/contentService'
+import { isFeedable } from '../lib/catalogHealth'
 import { recordView, getViews, toggleVote, getVotes, getUserVote, canAccessPaidPost } from '../lib/engagement'
 import { getWatchProgress, recordWatchProgress } from '../lib/watchProgress'
 import { recordInteraction } from '../lib/algorithmEngine'
@@ -58,14 +59,45 @@ function Pill({ children, onClick, active = false, title, disabled }) {
   )
 }
 
-function NextStrip({ title, items, onOpen }) {
+function NextStrip({ title, items, onOpen, stacked = false }) {
   if (!items?.length) return null
   return (
-    <section className="mt-10">
-        <h2 className="text-lg font-semibold text-white mb-3">{title}</h2>
-      <div className="-mx-4 md:-mx-6 px-4 md:px-6 flex gap-3 overflow-x-auto pb-2">
+    <section className={stacked ? 'mb-8' : 'mt-10'}>
+      <h2 className="text-sm font-semibold text-white mb-3">{title}</h2>
+      <div className={stacked ? 'flex flex-col gap-3' : '-mx-4 md:-mx-6 px-4 md:px-6 flex gap-3 overflow-x-auto pb-2'}>
         {items.map((rel) => {
           const vertical = rel.type === 'short' || rel.type === 'pic'
+          if (stacked) {
+            return (
+              <button
+                key={rel.id}
+                type="button"
+                onClick={() => onOpen?.(rel)}
+                className="w-full flex gap-2.5 text-left group"
+              >
+                <div className={`relative overflow-hidden bg-[#141418] shrink-0 ${vertical ? 'w-24 aspect-[3/4]' : 'w-40 aspect-video'}`}>
+                  {rel.thumbUrl ? (
+                    <img
+                      src={rel.thumbUrl}
+                      alt=""
+                      className="absolute inset-0 h-full w-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                      loading="lazy"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : null}
+                  {rel.durationSec > 0 ? (
+                    <span className="absolute bottom-1.5 right-1.5 text-[10px] font-medium text-white/90">
+                      {formatDuration(rel.durationSec)}
+                    </span>
+                  ) : null}
+                </div>
+                <div className="min-w-0 flex-1 py-0.5">
+                  <p className="text-[13px] text-zinc-100 leading-snug line-clamp-2">{rel.title || 'Untitled'}</p>
+                  <p className="mt-1 text-[12px] text-zinc-500 truncate">{creatorDisplayName(rel)}</p>
+                </div>
+              </button>
+            )
+          }
           return (
             <button
               key={rel.id}
@@ -128,7 +160,7 @@ export default function WatchPage({
     if (item?.type === 'short' && item.id) onPlayItem?.(item)
   }, [item?.id, item?.type])
   const browseVideos = useMemo(
-    () => (itemId ? [] : (listImportsNormalized() || []).filter((i) => i.type === 'video' || i.type === 'short')),
+    () => (itemId ? [] : (listImportsNormalized() || []).filter((i) => (i.type === 'video' || i.type === 'short') && isFeedable(i))),
     [itemId, syncTick]
   )
   const related = useMemo(() => getRelated(item, 8), [item, syncTick])
@@ -728,8 +760,11 @@ export default function WatchPage({
           </div>
       </div>
 
+      <div className="max-w-[1400px] mx-auto px-4 md:px-6">
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-8 lg:items-start">
+          <div>
           {chapters.length > 0 && (
-            <div className="max-w-3xl mx-auto px-4 md:px-6 mt-3 flex flex-wrap gap-1.5">
+            <div className="mt-3 flex flex-wrap gap-1.5">
               {chapters.map((ch) => (
                 <button
                   key={`${ch.t}-${ch.title}`}
@@ -743,7 +778,7 @@ export default function WatchPage({
             </div>
           )}
 
-          <div className="max-w-3xl mx-auto px-4 md:px-6 mt-6 space-y-5">
+          <div className="mt-6 space-y-5">
             <h1 className="text-[1.65rem] font-semibold text-white leading-tight tracking-tight">{item.title || 'Untitled'}</h1>
 
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -960,14 +995,17 @@ export default function WatchPage({
             ) : null}
           </div>
 
-          <div className="max-w-6xl mx-auto px-4 md:px-6">
-            <NextStrip title="Also on" items={related} onOpen={onPlayItem} />
-            <NextStrip title="From this creator" items={moreFrom} onOpen={onPlayItem} />
-          </div>
-
-          <div className="max-w-3xl mx-auto px-4 md:px-6 mt-10">
+          <div className="mt-10">
             <CommentsPanel contentId={item.id} creatorId={item.creatorId || item.userId} />
           </div>
+          </div>
+
+          <aside className="mt-10 lg:mt-6 lg:sticky lg:top-16">
+            <NextStrip title="Up next" items={related} onOpen={onPlayItem} stacked />
+            <NextStrip title="From this creator" items={moreFrom} onOpen={onPlayItem} stacked />
+          </aside>
+        </div>
+      </div>
 
       <PlaylistPicker open={playlistOpen} onClose={() => setPlaylistOpen(false)} contentId={item.id} onOpenAuth={onOpenAuth} />
       <ReportModal open={reportOpen} onClose={() => setReportOpen(false)} target={{ id: item.id, contentId: item.id, userId: item.creatorId || item.userId, handle: item.handle }} />

@@ -17,7 +17,7 @@ import { isChannelMod, timeoutChatUser, banChatUser } from '../lib/channelStaff'
 import { startTipCheckout, TIP_AMOUNTS, TIP_AMOUNT_MIN, TIP_AMOUNT_MAX } from '../lib/tips'
 import { ownCheckoutConfigured } from '../lib/stripeCheckout'
 import CoinIcon from './CoinIcon'
-import { redirectSafeUrl } from '../lib/safeUrl'
+import { redirectSafeUrl, safeMediaUrl } from '../lib/safeUrl'
 
 const QUICK_EMOTES = [
   '😀', '😂', '❤️', '🔥', '👏', '🎉', '👀', '💯', '🙌', '😮', '😢', '🤔',
@@ -35,13 +35,32 @@ const QUICK_GIFS = [
 
 const GIF_RE = /\[gif\](https?:\/\/[^\s]+)\[\/gif\]/i
 
+function safeChatGifUrl(raw) {
+  const url = safeMediaUrl(raw)
+  if (!url || !url.startsWith('https://')) return ''
+  try {
+    const host = new URL(url).hostname.toLowerCase()
+    if (
+      host === 'giphy.com'
+      || host.endsWith('.giphy.com')
+      || host === 'tenor.com'
+      || host.endsWith('.tenor.com')
+    ) {
+      return url
+    }
+  } catch {}
+  return ''
+}
+
 function ChatBody({ text }) {
   const raw = String(text || '')
   const gifMatch = raw.match(GIF_RE)
   if (gifMatch) {
+    const src = safeChatGifUrl(gifMatch[1])
+    if (!src) return <span className="text-zinc-200 select-text">{raw}</span>
     return (
       <span className="inline-block align-middle">
-        <img src={gifMatch[1]} alt="" className="max-h-24 rounded-md border border-zinc-700 mt-0.5" loading="lazy" />
+        <img src={src} alt="" className="max-h-24 rounded-md border border-zinc-700 mt-0.5" loading="lazy" />
       </span>
     )
   }

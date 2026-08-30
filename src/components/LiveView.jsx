@@ -3,7 +3,7 @@ import { Radio, MonitorUp } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { lsGet } from '../lib/storage'
 import { pullLiveBoard } from '../lib/liveBoardSync'
-import { listLiveBoard, liveBadgeLabel, isOnAir } from '../lib/liveStatus'
+import { listOnAirBoard, listLobbyOnlyBoard, liveBadgeLabel, isOnAir } from '../lib/liveStatus'
 import { getSubscriberCount } from '../lib/engagement'
 import FollowButton from './FollowButton'
 import { cn } from '../lib/utils'
@@ -27,7 +27,8 @@ function formatElapsed(startedAt) {
 
 export default function LiveView({ focusedStream, onFocusStream, onOpenAuth, onNavigate }) {
   const { user, isAuthenticated } = useAuth()
-  const [liveNow, setLiveNow] = useState(() => listLiveBoard(lsGet('live_board', []) || []))
+  const [liveNow, setLiveNow] = useState(() => listOnAirBoard(lsGet('live_board', []) || []))
+  const [lobbyOnly, setLobbyOnly] = useState(() => listLobbyOnlyBoard(lsGet('live_board', []) || []))
   const [, setTick] = useState(0)
   const [sharing, setSharing] = useState(false)
   const [screenError, setScreenError] = useState('')
@@ -36,10 +37,16 @@ export default function LiveView({ focusedStream, onFocusStream, onOpenAuth, onN
   const screenRef = useRef(null)
   const hlsRef = useRef(null)
 
+  const readBoards = () => {
+    const board = lsGet('live_board', []) || []
+    setLiveNow(listOnAirBoard(board))
+    setLobbyOnly(listLobbyOnlyBoard(board))
+  }
+
   const refreshLiveBoard = useCallback(() => {
-    setLiveNow(listLiveBoard(lsGet('live_board', []) || []))
+    readBoards()
     pullLiveBoard().then(() => {
-      setLiveNow(listLiveBoard(lsGet('live_board', []) || []))
+      readBoards()
     }).catch(() => {})
   }, [])
 
@@ -196,6 +203,7 @@ export default function LiveView({ focusedStream, onFocusStream, onOpenAuth, onN
           {liveNow.length === 0 ? (
             <div className="border border-zinc-800/80 bg-[#0a0a0c] px-6 py-20 text-center">
               <p className="text-sm font-medium text-zinc-200">Quiet right now</p>
+              <p className="text-xs text-zinc-500 mt-1">Stale listings drop after 12 hours. A URL is not a live stream.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-8">
@@ -219,6 +227,30 @@ export default function LiveView({ focusedStream, onFocusStream, onOpenAuth, onN
             </div>
           )}
         </section>
+        {lobbyOnly.length > 0 ? (
+          <section>
+            <h2 className="text-lg font-semibold text-white tracking-tight mb-4">Listed</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-8">
+              {lobbyOnly.map((s) => (
+                <button key={s.userId} type="button" onClick={() => selectStream(s)} className="text-left group">
+                  <div className={cn('relative aspect-video overflow-hidden bg-[#121018]', focusedStream?.userId === s.userId ? 'ring-2 ring-white' : '')}>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="h-14 w-14 rounded-full bg-black/50 border border-white/25 flex items-center justify-center text-xl font-bold text-white">
+                        {(s.displayName || s.handle || '?')[0]?.toUpperCase()}
+                      </span>
+                    </div>
+                    <span className="absolute top-2 left-2 px-1.5 py-0.5 text-white text-[11px] font-bold uppercase bg-amber-600">
+                      Lobby
+                    </span>
+                  </div>
+                  <p className="mt-2.5 text-sm font-semibold text-white">{s.title || 'Lobby'}</p>
+                  <p className="text-xs text-zinc-400">{s.displayName || s.handle}</p>
+                  <p className="text-[11px] text-zinc-600">{formatElapsed(s.startedAt)}</p>
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : null}
         <Footer onNavigate={onNavigate} />
       </div>
     </div>

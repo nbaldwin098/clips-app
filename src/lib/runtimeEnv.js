@@ -23,7 +23,6 @@ const CLIENT_ENV = {
     (typeof process !== 'undefined' && (process.env.VITE_STRIPE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)) || '',
   VITE_STRIPE_PAYMENT_LINK: (typeof process !== 'undefined' && process.env.VITE_STRIPE_PAYMENT_LINK) || '',
   VITE_PLATFORM_OWNER_ID: (typeof process !== 'undefined' && process.env.VITE_PLATFORM_OWNER_ID) || '',
-  VITE_ADMIN_CODE: (typeof process !== 'undefined' && process.env.VITE_ADMIN_CODE) || '',
   VITE_LIVE_INGEST_CONNECTED:
     (typeof process !== 'undefined' && (process.env.VITE_LIVE_INGEST_CONNECTED || process.env.NEXT_PUBLIC_LIVE_INGEST_CONNECTED)) || '',
   NEXT_PUBLIC_LIVE_INGEST_CONNECTED:
