@@ -6,11 +6,8 @@ import { sanitizeAuthError } from '../lib/authBrand'
 import BrandMark from './BrandMark'
 import { findOwnerLogin } from '../data/ownerLogin'
 
-// Apple omitted until Auth → Providers enables it (broken otherwise).
-const OAUTH = [
-  { id: 'azure', label: 'Continue with Microsoft' },
-  { id: 'twitter', label: 'Continue with X' },
-]
+// Apple, Microsoft (azure), and X (twitter) omitted until Auth → Providers enables them.
+const OAUTH = []
 
 export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
   const { login, loginWithOAuth, sendPhoneCode, verifyPhoneCode, sendPasswordReset: sendReset, synced } = useAuth()
@@ -181,6 +178,7 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
         <div className="p-5">
           {(mode === 'signin' || mode === 'signup') && (
             <>
+              {OAUTH.length > 0 && (
               <div className="space-y-2">
                 {OAUTH.map((p) => (
                   <button
@@ -203,14 +201,17 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
                   </button>
                 ))}
               </div>
+              )}
               <p className="mt-2 text-[11px] text-zinc-500">
                 CapCut cannot sign people into calabi. It is an editor. Export the file, then upload.
               </p>
+              {OAUTH.length > 0 && (
               <div className="my-4 flex items-center gap-3 text-[10px] uppercase tracking-wider text-zinc-600">
                 <span className="h-px flex-1 bg-[#2f2f37]" />
                 or
                 <span className="h-px flex-1 bg-[#2f2f37]" />
               </div>
+              )}
               <div className="mb-3 flex gap-1 rounded-full bg-white/10 p-1 w-fit">
                 {['email', 'phone'].map((id) => (
                   <button
