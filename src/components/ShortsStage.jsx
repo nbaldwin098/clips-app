@@ -229,7 +229,7 @@ export function ShortsCard({ children, actions, fillMobile = false, onPrev, onNe
       <div
         className={
           fillMobile
-            ? 'relative bg-black overflow-hidden h-full w-full min-h-0 md:h-[min(100%,calc(100dvh-3.5rem))] md:w-[min(100%,calc((100dvh-3.5rem)*9/16))] md:max-h-full md:aspect-[9/16] md:shrink-0'
+            ? 'relative bg-black overflow-hidden h-full w-full min-h-0 md:h-full md:max-h-full md:w-auto md:aspect-[9/16] md:shrink-0'
             : 'relative bg-black overflow-hidden h-full aspect-[9/16] shrink-0'
         }
       >
