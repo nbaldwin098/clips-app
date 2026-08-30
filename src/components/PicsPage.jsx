@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { X, Share2, Download, Heart } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getPicsFeed, pickImmediatePhotoSrc, isHttpUrl, isDataImageUrl } from '../lib/picsService'
+import { isCatalogHydrated } from '../lib/catalogStore'
 import { isFeedable, hideBrokenMedia } from '../lib/catalogHealth'
 import { isPicHearted, togglePicHeart } from '../lib/picHearts'
 import { recordView } from '../lib/engagement'
@@ -321,11 +322,13 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
   const [viewerIndex, setViewerIndex] = useState(null)
   const [reel, setReel] = useState([])
   const [camera, setCamera] = useState(null)
+  const syncTick = useContentSyncTick()
+  const hydrated = isCatalogHydrated()
   const goToRef = useRef(null)
   const skipAutoOpen = useRef(false)
   const selfNav = useRef(false)
 
-  const scrollItems = useMemo(() => (items || []).filter(isFeedable), [items])
+  const scrollItems = useMemo(() => (items || []).filter(isFeedable), [items, syncTick])
 
   const refresh = useCallback(() => setItems(getPicsFeed()), [])
   const dropBroken = useCallback((id) => {
@@ -341,6 +344,7 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
   }, [scrollItems])
 
   useEffect(() => subscribeContentUpdates(refresh), [refresh])
+  useEffect(() => { setItems(getPicsFeed()) }, [syncTick])
   useEffect(() => {
     if (viewerIndex == null) return
     preloadPostedItems(reel.slice(viewerIndex + 1), 4)
@@ -432,6 +436,14 @@ export default function PicsPage({ onOpenAuth, onOpenProfile, initialPicId }) {
             ) : null
           }}
         />
+      </div>
+    )
+  }
+
+  if (!hydrated) {
+    return (
+      <div className="h-full min-h-0 bg-black flex items-center justify-center">
+        <p className="text-sm text-[#8a8a8a]">Loading photos…</p>
       </div>
     )
   }
