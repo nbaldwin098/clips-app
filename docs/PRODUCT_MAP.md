@@ -1,4 +1,4 @@
-# Clips — complete product map (deploy checklist)
+# Calabi — complete product map (deploy checklist)
 
 ## Public pages (no login)
 
