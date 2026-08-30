@@ -46,7 +46,8 @@ export async function startLiveLobby(user, { title = '', category = '' } = {}) {
     streamKey = cf.streamKey
     hlsUrl = cf.hlsUrl
     rtmpsUrl = cf.rtmpsUrl || ''
-    connected = true
+    // Provisioned playback URL ≠ a live encoder. Flag is explicit-only.
+    connected = liveIngestConnected()
   } else if (liveIngestConnected()) {
     streamKey = ensureStreamKey(user.id)
     hlsUrl = streamKey ? liveHlsPlayUrl(streamKey) : ''

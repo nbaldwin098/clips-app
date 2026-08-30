@@ -30,9 +30,13 @@ export function removeLiveChatMessage(streamUserId, messageId) {
 }
 
 export function trySendLiveChat(streamUserId, message, { actor } = {}) {
+  if (!actor?.id) return { ok: false, error: 'Sign in to chat.' }
   const channelId = streamUserId || GLOBAL_LIVE_CHANNEL_ID
   const text = String(message?.text || '').trim().slice(0, 500)
   if (!text) return { ok: false, error: 'Write a message.' }
+  if (message?.userId && message.userId !== actor.id) {
+    return { ok: false, error: 'Sign in to chat.' }
+  }
   // Soft filter: emoji/symbol-only spam (allow a single emoji reaction).
   const noSpace = text.replace(/\s+/g, '')
   const withoutEmoji = noSpace.replace(

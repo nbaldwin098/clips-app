@@ -1,6 +1,7 @@
 /** Cloud live board with HLS fields. Falls back if extra columns are missing. */
 import { lsGet, lsSet } from './storage'
 import { getSupabase, isSupabaseConfigured } from './supabaseClient'
+import { isFreshLive } from './liveStatus'
 
 function toRow(payload) {
   return {
@@ -20,19 +21,21 @@ function toRow(payload) {
 }
 
 function fromRow(r, prev = {}) {
+  const startedAt = r.started_at || prev.startedAt
+  const fresh = isFreshLive({ startedAt })
   const hlsUrl = r.hls_url || prev.hlsUrl || ''
   return {
     userId: r.user_id,
-    isLive: r.is_live !== false,
+    isLive: fresh && r.is_live !== false,
     title: r.title || prev.title || 'Live',
     handle: r.handle || prev.handle,
     displayName: r.display_name || prev.displayName,
     category: r.category || prev.category,
-    startedAt: r.started_at || prev.startedAt,
+    startedAt,
     watcherIds: Array.isArray(r.watcher_ids) ? r.watcher_ids : (prev.watcherIds || []),
     watchers: Array.isArray(r.watcher_ids) ? r.watcher_ids.length : (prev.watchers || 0),
     hlsUrl,
-    ingestConnected: !!(r.ingest_connected || hlsUrl || prev.ingestConnected),
+    ingestConnected: !!(fresh && r.ingest_connected),
     provider: r.provider || prev.provider || '',
     rtmpsUrl: r.rtmps_url || prev.rtmpsUrl || '',
     streamKey: prev.streamKey || '',
@@ -74,9 +77,11 @@ export async function pullLiveBoard() {
     if (error || !Array.isArray(data)) return false
     const local = lsGet('live_board', []) || []
     const localBy = Object.fromEntries(local.filter((b) => b?.userId).map((b) => [b.userId, b]))
-    const board = data.map((r) => fromRow(r, localBy[r.user_id] || {}))
+    const board = data.map((r) => fromRow(r, localBy[r.user_id] || {})).filter((b) => isFreshLive(b))
     for (const row of local) {
-      if (row?.isLive && row.userId && !board.some((b) => b.userId === row.userId)) board.unshift(row)
+      if (row?.isLive && isFreshLive(row) && row.userId && !board.some((b) => b.userId === row.userId)) {
+        board.unshift(row)
+      }
     }
     lsSet('live_board', board)
     return true

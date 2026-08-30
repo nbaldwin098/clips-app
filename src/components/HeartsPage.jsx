@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { Heart } from 'lucide-react'
 import { getPicHearts } from '../lib/picHearts'
 import { getById, getWatchItem } from '../lib/contentService'
+import { isFeedable } from '../lib/catalogHealth'
 import { useContentSyncTick } from '../lib/useContentSync'
 import PageHeader from './PageHeader'
 import { pickImmediatePhotoSrc } from '../lib/picsService'
@@ -31,7 +32,7 @@ export default function HeartsPage({ onNavigate, onOpenPic }) {
   const pics = useMemo(() => {
     return getPicHearts()
       .map((id) => getWatchItem(id) || getById(id))
-      .filter((i) => i?.type === 'pic')
+      .filter((i) => i?.type === 'pic' && isFeedable(i))
   }, [syncTick])
 
   return (

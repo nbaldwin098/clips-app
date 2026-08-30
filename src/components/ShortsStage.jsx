@@ -218,46 +218,50 @@ export default function ShortsStage({
           ))}
         </div>
 
-        {n > 1 && (
-          <div className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 flex-col gap-2 z-20">
-            <button
-              type="button"
-              onClick={() => step(-1)}
-              className="h-10 w-10 rounded-full bg-[#272727] hover:bg-[#3d3d3d] text-white flex items-center justify-center"
-              aria-label="Previous"
-            >
-              <ChevronUp className="h-5 w-5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => step(1)}
-              className="h-10 w-10 rounded-full bg-[#272727] hover:bg-[#3d3d3d] text-white flex items-center justify-center"
-              aria-label="Next"
-            >
-              <ChevronDown className="h-5 w-5" />
-            </button>
-          </div>
-        )}
       </div>
     </div>
   )
 }
 
-export function ShortsCard({ children, actions, fillMobile = false }) {
+export function ShortsCard({ children, actions, fillMobile = false, onPrev, onNext, showNav = false }) {
   return (
     <div className="h-full w-full min-h-0 flex items-stretch md:items-center justify-center gap-0 md:gap-5">
       <div
         className={
           fillMobile
-            ? 'relative bg-black overflow-hidden h-full w-full min-h-0 md:h-full md:w-auto md:aspect-[9/16] md:max-h-full md:shrink-0'
+            ? 'relative bg-black overflow-hidden h-full w-full min-h-0 md:h-[min(100%,calc(100dvh-3.5rem))] md:w-[min(100%,calc((100dvh-3.5rem)*9/16))] md:max-h-full md:aspect-[9/16] md:shrink-0'
             : 'relative bg-black overflow-hidden h-full aspect-[9/16] shrink-0'
         }
       >
         {children}
       </div>
-      {actions ? (
-        <div className="hidden md:flex flex-col items-center justify-end gap-4 shrink-0 w-14 pb-16 self-stretch">
-          {actions}
+      {(actions || showNav) ? (
+        <div className="hidden md:flex flex-col items-center justify-center gap-4 shrink-0 w-14 self-stretch">
+          {showNav ? (
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={onPrev}
+                className="h-10 w-10 rounded-full bg-[#272727] hover:bg-[#3d3d3d] text-white flex items-center justify-center"
+                aria-label="Previous clip"
+              >
+                <ChevronUp className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                onClick={onNext}
+                className="h-10 w-10 rounded-full bg-[#272727] hover:bg-[#3d3d3d] text-white flex items-center justify-center"
+                aria-label="Next clip"
+              >
+                <ChevronDown className="h-5 w-5" />
+              </button>
+            </div>
+          ) : null}
+          {actions ? (
+            <div className="flex flex-col items-center justify-end gap-4 flex-1 pb-16">
+              {actions}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>

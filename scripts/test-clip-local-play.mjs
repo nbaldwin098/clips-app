@@ -1,4 +1,11 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+
+const videoStorageSrc = readFileSync(new URL('../src/lib/videoStorage.js', import.meta.url), 'utf8')
+assert.ok(videoStorageSrc.includes('Original file bytes are uploaded as-is'), 'prepare keeps original file bytes')
+assert.ok(!videoStorageSrc.includes('MediaRecorder'), 'no MediaRecorder WebM force on iOS path')
+assert.ok(videoStorageSrc.includes('...processed,\n    file,'), 'prepare returns the original File')
+console.log('ok iOS original-file upload path')
 
 const store = new Map()
 globalThis.localStorage = {

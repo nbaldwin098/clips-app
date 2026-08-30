@@ -22,13 +22,16 @@ export function listComments(contentId) {
   return (lsGet(K.comments, {})[contentId] || []).filter((c) => !c.deleted)
 }
 export function addComment(contentId, { userId, handle, text, parentId = null, donationUsd = 0 }) {
+  if (!contentId || !userId) return null
+  const trimmed = String(text || '').trim()
+  if (!trimmed) return null
   const all = lsGet(K.comments, {})
   const list = all[contentId] || []
   const words = getBlockedWords()
   const lower = String(text).toLowerCase()
   const held = words.some((w) => w && lower.includes(w.toLowerCase()))
   const row = {
-    id: id('cmt'), userId, handle, text: String(text).slice(0, 5000), parentId,
+    id: id('cmt'), userId, handle, text: trimmed.slice(0, 5000), parentId,
     likes: 0, likedBy: [], pinned: false, hearted: false,
     donationUsd: Number(donationUsd) > 0 ? Number(donationUsd) : 0,
     createdAt: new Date().toISOString(), held, deleted: false,

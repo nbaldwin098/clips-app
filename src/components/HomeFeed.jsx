@@ -1,6 +1,6 @@
 import { useMemo, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { getStableHomeFeed, getStableFollowingFeed, getWatchItem } from '../lib/contentService'
+import { getStableHomeFeed, getStableFollowingFeed, getWatchItem, resolvePlayableItem } from '../lib/contentService'
 import { getPicsFeed } from '../lib/picsService'
 import { listContinueWatching } from '../lib/watchProgress'
 import { getActivePromotion, recordPromoClick } from '../lib/promotions'
@@ -49,7 +49,7 @@ export default function HomeFeed({
   )
   const continueItems = useMemo(() => {
     if (!user?.id) return []
-    return listContinueWatching(user.id).map((row) => getWatchItem(row.contentId)).filter((i) => i && i.type === 'video')
+    return listContinueWatching(user.id).map((row) => resolvePlayableItem(row.contentId)).filter((i) => i && i.type === 'video')
   }, [user?.id, syncTick])
 
   useEffect(() => {

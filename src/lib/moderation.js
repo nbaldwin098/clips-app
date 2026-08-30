@@ -63,7 +63,8 @@ export function getPlatformOwnerId() {
 }
 
 export function getAdminCode() {
-  return runtimeEnv('VITE_ADMIN_CODE')
+  // Never read a plaintext admin secret from the client bundle.
+  return ''
 }
 
 /** Owner is a cloud user whose email/handle matches kiddnixk aliases, or VITE_PLATFORM_OWNER_ID. */
@@ -119,7 +120,7 @@ export async function adminLogin(code, user) {
     }
   }
   if (!ok) {
-    return { ok: false, error: 'Invalid admin code. Leave it blank if you are already signed in as kiddnixk, or use VITE_ADMIN_CODE.' }
+    return { ok: false, error: 'Invalid admin code. Leave it blank if you are already signed in as kiddnixk.' }
   }
   lsSet(ADMIN_KEY, {
     at: Date.now(),
