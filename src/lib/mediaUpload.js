@@ -169,45 +169,73 @@ export async function uploadDataUrlToSupabase(dataUrl, userId, name = 'thumb.jpg
   }
 }
 
-function storagePathFromPublicUrl(publicUrl) {
+function decodeStoragePath(raw) {
+  const sliced = String(raw || '').split('?')[0]
+  if (!sliced) return ''
+  try {
+    return decodeURIComponent(sliced)
+  } catch {
+    return sliced
+  }
+}
+
+/** Bucket-relative path from a public, signed, or authenticated Storage URL. */
+export function storagePathFromPublicUrl(publicUrl) {
   const u = String(publicUrl || '')
   if (!u) return ''
   // Public object URL: .../storage/v1/object/public/clips/<path>
   let i = u.indexOf(PUBLIC_MARKER)
-  if (i >= 0) {
-    try {
-      return decodeURIComponent(u.slice(i + PUBLIC_MARKER.length).split('?')[0])
-    } catch {
-      return u.slice(i + PUBLIC_MARKER.length).split('?')[0]
-    }
-  }
+  if (i >= 0) return decodeStoragePath(u.slice(i + PUBLIC_MARKER.length))
   // Signed / render variants — still under the clips bucket
   const alt = `/storage/v1/object/sign/${BUCKET}/`
   i = u.indexOf(alt)
-  if (i >= 0) {
-    try {
-      return decodeURIComponent(u.slice(i + alt.length).split('?')[0])
-    } catch {
-      return u.slice(i + alt.length).split('?')[0]
-    }
-  }
+  if (i >= 0) return decodeStoragePath(u.slice(i + alt.length))
   const authenticated = `/storage/v1/object/authenticated/${BUCKET}/`
   i = u.indexOf(authenticated)
-  if (i >= 0) {
-    try {
-      return decodeURIComponent(u.slice(i + authenticated.length).split('?')[0])
-    } catch {
-      return u.slice(i + authenticated.length).split('?')[0]
-    }
-  }
+  if (i >= 0) return decodeStoragePath(u.slice(i + authenticated.length))
   return ''
 }
 
-export async function deleteHostedMedia(publicUrl) {
-  const path = storagePathFromPublicUrl(publicUrl)
+/**
+ * Accept a public/signed URL or a raw bucket path (`videos/<uid>/file.mp4`).
+ * Returns '' when the value is not a clips-bucket object.
+ */
+export function hostedMediaObjectPath(urlOrPath) {
+  const s = String(urlOrPath || '').trim()
+  if (!s) return ''
+  const fromUrl = storagePathFromPublicUrl(s)
+  if (fromUrl) return fromUrl
+  if (s.includes('://') || s.startsWith('data:') || s.startsWith('blob:')) return ''
+  const cleaned = s.replace(/^\/+/, '')
+  if (!cleaned || cleaned.includes('..')) return ''
+  if (/^(videos|pics|thumbs)\//i.test(cleaned)) return cleaned
+  return ''
+}
+
+/** Unique clips-bucket paths on a catalog row (media, thumb, stored path). */
+export function collectHostedMediaTargets(record) {
+  if (!record) return []
+  const seen = new Set()
+  const out = []
+  const add = (value) => {
+    const path = hostedMediaObjectPath(value)
+    if (!path || seen.has(path)) return
+    seen.add(path)
+    out.push(path)
+  }
+  add(record.storagePath)
+  add(record.mediaUrl)
+  add(record.sourceUrl)
+  add(record.thumbUrl)
+  add(record.mosaicThumb)
+  return out
+}
+
+export async function deleteHostedMedia(urlOrPath) {
+  const path = hostedMediaObjectPath(urlOrPath)
   if (!path) return false
   if (!isSupabaseConfigured()) {
-    console.warn('[Clips] deleteHostedMedia: Supabase not configured', path)
+    console.warn('[calabi] deleteHostedMedia: Supabase not configured', path)
     return false
   }
   try {
@@ -215,12 +243,12 @@ export async function deleteHostedMedia(publicUrl) {
     if (!sb) return false
     const { error } = await sb.storage.from(BUCKET).remove([path])
     if (error) {
-      console.warn('[Clips] storage remove failed:', error.message || error, path)
+      console.warn('[calabi] storage remove failed:', error.message || error, path)
       return false
     }
     return true
   } catch (err) {
-    console.warn('[Clips] deleteHostedMedia error:', err?.message || err)
+    console.warn('[calabi] deleteHostedMedia error:', err?.message || err)
     return false
   }
 }

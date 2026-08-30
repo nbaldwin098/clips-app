@@ -11,13 +11,14 @@ import {
   uploadFailedMessage,
   uploadHostRequiredMessage,
   deleteHostedMedia,
+  collectHostedMediaTargets,
   MAX_CLIP_DURATION_SEC,
   MAX_VIDEO_DURATION_SEC,
   clipLimitsMessage,
   videoLimitsMessage,
   audioOnlyMessage,
 } from './mediaUpload'
-import { pushContentRecord, deleteContentRecord, notifyContentChanged, syncContentFromCloud } from './contentSync'
+import { pushContentRecord, deleteContentRecord, fetchContentRecordById, notifyContentChanged, syncContentFromCloud } from './contentSync'
 import { newContentId } from './newContentId'
 import { getSubscriptionsForUser } from './engagement'
 import { getPicsFeed } from './picsService'
@@ -557,6 +558,27 @@ export function getWatchItem(id, fallback = null) {
   return null
 }
 
+/**
+ * Load a single catalog row by id (public + unlisted link). Used when the
+ * bulk catalog pull omitted the row after RLS tightened visibility.
+ */
+export async function ensureWatchItem(id) {
+  const existing = getWatchItem(id)
+  if (existing) return existing
+  try {
+    const row = await fetchContentRecordById(id)
+    if (!row?.id) return null
+    stashWatchItem(row)
+    if (row.visibility === 'public' || !row.visibility) {
+      saveImport(row)
+    }
+    notifyContentChanged()
+    return normalizeItem(row)
+  } catch {
+    return null
+  }
+}
+
 export function listImportsNormalized() {
   return withViewCounts(getImports().map(normalizeItem))
 }
@@ -787,10 +809,15 @@ export async function publishDraftItem(id, actor = null) {
 export async function deleteCatalogItem(id, actor = null, opts = {}) {
   if (!id) return { ok: false, error: 'Missing id' }
   if (!opts?.intentional) {
-    console.warn('[Clips] Refused deleteCatalogItem without intentional:true', id)
+    console.warn('[calabi] Refused deleteCatalogItem without intentional:true', id)
     return { ok: false, error: 'intentional-required' }
   }
-  const raw = getImports().find((i) => i.id === id) || null
+  let raw = getImports().find((i) => i.id === id) || null
+  if (!raw) {
+    try {
+      raw = await fetchContentRecordById(id)
+    } catch { /* ok — still try cloud row delete */ }
+  }
 
   try {
     const { snapshotCatalogBackup } = await import('./catalogBackup')
@@ -803,19 +830,15 @@ export async function deleteCatalogItem(id, actor = null, opts = {}) {
   const cloudOk = await deleteContentRecord(id, actor)
 
   const storageResults = []
-  if (raw) {
-    const urls = [...new Set([raw.mediaUrl, raw.sourceUrl, raw.thumbUrl, raw.mosaicThumb].filter(Boolean))]
-    for (const u of urls) {
-      const s = String(u || '')
-      if (!s.includes('/storage/v1/object/')) continue
-      try {
-        const removed = await deleteHostedMedia(s)
-        storageResults.push({ url: s, removed })
-        if (!removed) console.warn('[Clips] storage object not removed (may already be gone):', s)
-      } catch (err) {
-        console.warn('[Clips] storage delete threw:', err?.message || err, s)
-        storageResults.push({ url: s, removed: false })
-      }
+  const targets = collectHostedMediaTargets(raw)
+  for (const path of targets) {
+    try {
+      const removed = await deleteHostedMedia(path)
+      storageResults.push({ url: path, removed })
+      if (!removed) console.warn('[calabi] storage object not removed (may already be gone):', path)
+    } catch (err) {
+      console.warn('[calabi] storage delete threw:', err?.message || err, path)
+      storageResults.push({ url: path, removed: false })
     }
   }
 

@@ -12,21 +12,44 @@ const MAX = 200
 export const GLOBAL_LIVE_ROOM = 'lobby'
 export const GLOBAL_LIVE_CHANNEL_ID = '__calabi_global__'
 
-/** Active realtime channels by resolved id — avoid duplicate subscribe. */
-const activeSubs = new Map()
+/** Shared realtime/poll hubs by resolved id — one subscribe per channel. */
+const hubs = new Map()
+
+const GLOBAL_ALIASES = new Set([
+  '',
+  GLOBAL_LIVE_CHANNEL_ID.toLowerCase(),
+  GLOBAL_LIVE_ROOM,
+  'global',
+  '__clips_global__',
+])
 
 function isUuid(id) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(id || ''))
 }
 
 export function isGlobalLiveChannel(channelId) {
-  return !channelId || channelId === GLOBAL_LIVE_CHANNEL_ID || channelId === GLOBAL_LIVE_ROOM
+  const key = String(channelId || '').trim().toLowerCase()
+  return GLOBAL_ALIASES.has(key)
 }
 
 /** Normalize lobby aliases to one cache/subscribe key. */
 export function resolveLiveChatChannelId(channelId) {
-  if (isGlobalLiveChannel(channelId)) return GLOBAL_LIVE_CHANNEL_ID
-  return channelId || ''
+  const raw = String(channelId || '').trim()
+  if (isGlobalLiveChannel(raw)) return GLOBAL_LIVE_CHANNEL_ID
+  return raw
+}
+
+/** Drop duplicate message ids (upsert + realtime can double-emit). */
+export function dedupeLiveChatMessages(list) {
+  const seen = new Set()
+  const out = []
+  for (const row of Array.isArray(list) ? list : []) {
+    const id = row?.id
+    if (!id || seen.has(id)) continue
+    seen.add(id)
+    out.push(row)
+  }
+  return out
 }
 
 function rowToMessage(row) {
@@ -176,106 +199,168 @@ function tearDownChannel(sb, channel) {
   try { sb.removeChannel(channel) } catch { /* ignore */ }
 }
 
-export function subscribeLiveChat(channelId, onMessages) {
-  const resolved = resolveLiveChatChannelId(channelId)
-  if (!resolved) return () => {}
-  let cancelled = false
-  let channel = null
-  let pollTimer = null
-  let sbRef = null
-
-  const emit = (list) => {
-    if (!cancelled) onMessages(list)
+function emitHub(hub, list) {
+  const clean = dedupeLiveChatMessages(list)
+  for (const fn of hub.listeners) {
+    try { fn(clean) } catch { /* ignore */ }
   }
+}
 
-  fetchLiveChat(resolved).then(emit).catch(() => emit(readLocalLiveChat(resolved)))
+function pollTick(resolved, hub) {
+  if (hub.cancelled) return
+  fetchLiveChat(resolved)
+    .then((list) => emitHub(hub, list))
+    .catch(() => emitHub(hub, readLocalLiveChat(resolved)))
+}
 
-  const startPoll = () => {
-    if (pollTimer || cancelled) return
-    pollTimer = window.setInterval(() => {
-      emit(readLocalLiveChat(resolved))
-    }, 4000)
+function startPoll(resolved, hub) {
+  if (hub.pollTimer || hub.cancelled) return
+  if (typeof window === 'undefined' || typeof window.setInterval !== 'function') {
+    pollTick(resolved, hub)
+    return
   }
+  pollTick(resolved, hub)
+  hub.pollTimer = window.setInterval(() => pollTick(resolved, hub), 4000)
+}
 
-  const stopPoll = () => {
-    if (pollTimer) {
-      window.clearInterval(pollTimer)
-      pollTimer = null
+function stopPoll(hub) {
+  if (hub.pollTimer && typeof window !== 'undefined') {
+    window.clearInterval(hub.pollTimer)
+  }
+  hub.pollTimer = null
+}
+
+function attachRealtime(resolved, hub) {
+  if (hub.cancelled) return
+  if (!isSupabaseConfigured() || !(isGlobalLiveChannel(resolved) || isUuid(resolved))) {
+    startPoll(resolved, hub)
+    return
+  }
+  ;(async () => {
+    const sb = await getSupabase()
+    hub.sbRef = sb
+    if (!sb || hub.cancelled) {
+      startPoll(resolved, hub)
+      return
     }
-  }
 
-  const prev = activeSubs.get(resolved)
-  if (prev) {
-    try { prev() } catch { /* ignore */ }
-    activeSubs.delete(resolved)
-  }
+    const topic = isGlobalLiveChannel(resolved)
+      ? `global-live-chat:${GLOBAL_LIVE_ROOM}`
+      : `live-chat:${resolved}`
 
-  if (isSupabaseConfigured() && (isGlobalLiveChannel(channelId) || isUuid(resolved))) {
-    ;(async () => {
-      const sb = await getSupabase()
-      sbRef = sb
-      if (!sb || cancelled) {
-        startPoll()
+    const refresh = () => pollTick(resolved, hub)
+
+    tearDownChannel(sb, hub.channel)
+    const ch = sb.channel(topic)
+    if (isGlobalLiveChannel(resolved)) {
+      ch.on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'global_live_chat', filter: `room_id=eq.${GLOBAL_LIVE_ROOM}` },
+        refresh,
+      )
+    } else {
+      ch.on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'live_chat_messages', filter: `channel_id=eq.${resolved}` },
+        refresh,
+      )
+    }
+
+    ch.subscribe((status) => {
+      if (hub.cancelled) return
+      if (status === 'SUBSCRIBED') {
+        stopPoll(hub)
+        refresh()
         return
       }
-
-      const topic = isGlobalLiveChannel(channelId)
-        ? `global-live-chat:${GLOBAL_LIVE_ROOM}`
-        : `live-chat:${resolved}`
-
-      const refresh = () => {
-        fetchLiveChat(resolved).then(emit).catch(() => emit(readLocalLiveChat(resolved)))
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+        console.warn('[liveChat] realtime', status, topic)
+        startPoll(resolved, hub)
+        refresh()
       }
+    })
 
-      const ch = sb.channel(topic)
-      if (isGlobalLiveChannel(channelId)) {
-        ch.on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'global_live_chat', filter: `room_id=eq.${GLOBAL_LIVE_ROOM}` },
-          refresh,
-        )
-      } else {
-        ch.on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'live_chat_messages', filter: `channel_id=eq.${resolved}` },
-          refresh,
-        )
-      }
+    hub.channel = ch
+    if (hub.cancelled) {
+      tearDownChannel(sb, ch)
+      hub.channel = null
+    }
+  })()
+}
 
-      ch.subscribe((status) => {
-        if (cancelled) return
-        if (status === 'SUBSCRIBED') {
-          stopPoll()
-          refresh()
-          return
-        }
-        // TIMED_OUT / CHANNEL_ERROR / CLOSED — keep local poll + refetch
-        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-          console.warn('[liveChat] realtime', status, topic)
-          startPoll()
-          refresh()
-        }
-      })
+function bindReconnect(resolved, hub) {
+  if (typeof window === 'undefined' || hub.reconnectBound) return
+  hub.reconnectBound = true
+  hub.onOnline = () => {
+    if (hub.cancelled) return
+    startPoll(resolved, hub)
+    attachRealtime(resolved, hub)
+  }
+  hub.onVis = () => {
+    if (hub.cancelled) return
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+      startPoll(resolved, hub)
+      attachRealtime(resolved, hub)
+    }
+  }
+  window.addEventListener('online', hub.onOnline)
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', hub.onVis)
+  }
+}
 
-      channel = ch
-      if (cancelled) {
-        tearDownChannel(sb, ch)
-        channel = null
-      }
-    })()
-  } else {
-    startPoll()
+function unbindReconnect(hub) {
+  if (typeof window === 'undefined') return
+  if (hub.onOnline) window.removeEventListener('online', hub.onOnline)
+  if (hub.onVis && typeof document !== 'undefined') {
+    document.removeEventListener('visibilitychange', hub.onVis)
+  }
+  hub.onOnline = null
+  hub.onVis = null
+  hub.reconnectBound = false
+}
+
+function disposeHub(resolved, hub) {
+  hub.cancelled = true
+  stopPoll(hub)
+  unbindReconnect(hub)
+  tearDownChannel(hub.sbRef, hub.channel)
+  hub.channel = null
+  if (hubs.get(resolved) === hub) hubs.delete(resolved)
+}
+
+export function subscribeLiveChat(channelId, onMessages) {
+  const resolved = resolveLiveChatChannelId(channelId)
+  if (!resolved || typeof onMessages !== 'function') return () => {}
+
+  let hub = hubs.get(resolved)
+  if (!hub || hub.cancelled) {
+    hub = {
+      listeners: new Set(),
+      cancelled: false,
+      channel: null,
+      pollTimer: null,
+      sbRef: null,
+      reconnectBound: false,
+      onOnline: null,
+      onVis: null,
+    }
+    hubs.set(resolved, hub)
+    fetchLiveChat(resolved)
+      .then((list) => emitHub(hub, list))
+      .catch(() => emitHub(hub, readLocalLiveChat(resolved)))
+    attachRealtime(resolved, hub)
+    bindReconnect(resolved, hub)
   }
 
-  const unsub = () => {
-    cancelled = true
-    stopPoll()
-    tearDownChannel(sbRef, channel)
-    channel = null
-    if (activeSubs.get(resolved) === unsub) activeSubs.delete(resolved)
+  hub.listeners.add(onMessages)
+  const cached = readLocalLiveChat(resolved)
+  if (cached.length) onMessages(dedupeLiveChatMessages(cached))
+
+  return () => {
+    hub.listeners.delete(onMessages)
+    if (hub.listeners.size === 0) disposeHub(resolved, hub)
   }
-  activeSubs.set(resolved, unsub)
-  return unsub
 }
 
 export function canSyncLiveChat(channelId) {

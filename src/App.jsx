@@ -65,7 +65,7 @@ import { promoteDeviceUploadsToCloud } from './lib/promoteUploads'
 import { installRuntimeGuards } from './lib/selfHeal'
 import { pushLibraryCatalogToCloud } from './data/publicMediaSeed'
 import { isOwnerAccount } from './data/ownerLogin'
-import { getById, getWatchItem, stashWatchItem, flushScheduledPublishes, resolvePublicCreator } from './lib/contentService'
+import { getById, getWatchItem, stashWatchItem, ensureWatchItem, flushScheduledPublishes, resolvePublicCreator } from './lib/contentService'
 import { parseRoute, pushHash, migrateHashToPath, buildHash } from './lib/routes'
 import { useNextNav } from './lib/NextNavContext'
 import { syncPromotionsFromCloud } from './lib/promotions'
@@ -210,12 +210,23 @@ function AppShell() {
       setMiniItem(null)
       setRouteId(id)
       const item = getWatchItem(id)
+      if (!item) {
+        ensureWatchItem(id).then((found) => { if (found) applyRoute() }).catch(() => {})
+      }
       if (item?.type === 'pic') { setView('pics'); return }
       if (item?.type === 'short') { setView('clips'); return }
       setView('watch')
       return
     }
-    if (kind === 'watch' && id) { setMiniItem(null); setRouteId(id); setView('watch'); return }
+    if (kind === 'watch' && id) {
+      setMiniItem(null)
+      setRouteId(id)
+      setView('watch')
+      if (!getWatchItem(id)) {
+        ensureWatchItem(id).then((found) => { if (found) applyRoute() }).catch(() => {})
+      }
+      return
+    }
     if (kind === 'sound' && id) { setRouteId(id); setView('sound'); return }
     if (kind === 'tag' && id) { setRouteId(id); setView('tag'); return }
     if (kind === 'profile') {

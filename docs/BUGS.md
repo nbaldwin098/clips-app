@@ -58,9 +58,6 @@ Ship-blocking P0s from the 2026-08-27/30 launch list are **cleared** (verified o
 | BUG-018 | SEO | Server-render real HTML for About/Help/Legal bodies | Done in #106 | `done` |
 | BUG-019 | Watch | Share OG tags depend on Supabase row fetch | Soft unavailable + article HTML in #106 | `done` |
 | BUG-020 | Uploads | Clip 60s / video 24h limits — confirm UX errors are clear | Modal hint + immediate duration probe + publish reject (`clipLimitsMessage` / `videoLimitsMessage`) | `done` |
-| BUG-021 | iOS | Keep original-file upload path (no WebM re-encode) | Fixed once; add regression test so it doesn’t return | `open` |
-| BUG-022 | Delete | Cloud delete path for admin/creator — verify on Node deploy | `deleteCatalogItem` + `deleteHostedMedia` hardened (signed/public URLs, warn on fail) | `open` |
-| BUG-023 | Chat | Live chat cloud sync reliability | Reconnect/poll fallback + dedupe subscribe + channel key normalize | `open` |
 | BUG-024 | Feed | Endless clip/pic scroll edge cases | Prior PRs fixed stalls; re-verify after Next | `open` |
 | BUG-028 | Home | All/Videos/Shorts/Pics chips + empty “No posts yet” | #111 + #112 hydrate/early sync | `done` |
 | BUG-025 | Error reports | ErrorReportPrompt shipped — confirm tickets show in Admin | PR #96 | `open` |
@@ -79,7 +76,6 @@ Ship-blocking P0s from the 2026-08-27/30 launch list are **cleared** (verified o
 | BUG-045 | Docs | Update AdminSetup / Help for Node deploy + no hamburger | Help + AdminSetup updated on `cursor/do-500-batch-09e7` | `doing` |
 | BUG-046 | Env | Document required Render env vars for Node service | `docs/RENDER_ENV.md` + deploy checklist | `doing` |
 | BUG-047 | Dual write | Any remaining local-only media paths | Cloud is source of truth | `open` |
-| BUG-048 | Security | Review RLS on `videos` + storage policies after bucket recreate | | `open` |
 | BUG-049 | Perf | First Load JS ~255kB SpaShell — code-split peeled routes | | `open` |
 | BUG-050 | A11y | Live chat `aria-live` — spot-check after Next | LiveChatPanel has aria-live; toast region + skip-link on batch branch | `doing` |
 | BUG-051 | Legal | Terms still say “Clips” in places — brand to calabi | Done in #106 | `done` |
@@ -118,6 +114,10 @@ Ship-blocking P0s from the 2026-08-27/30 launch list are **cleared** (verified o
 
 | ID | Issue | PR | Date |
 |----|-------|-----|------|
+| BUG-021 | iOS original-file upload (no WebM) + regression | #187 | 2026-08-30 |
+| BUG-022 | Cloud delete: signed/public/path + warn on fail | #187 | 2026-08-30 |
+| BUG-023 | Live chat reconnect/poll + shared hub + key normalize | #187 | 2026-08-30 |
+| BUG-048 | videos+storage RLS audit (0028 extends 0027) | #187 | 2026-08-30 |
 | BUG-007 | Production `calabi.us` is Next.js on Render Node (`clips-app-2jlx.onrender.com`; `x-render-origin-server: Render`; `/api/health` 200). Do not re-add a Static Site. | verified live | 2026-08-30 |
 | BUG-091 | Clips open sideways: object `routeId` already stringified (#169); Next `globals.css` now has `scrollbar-gutter: stable`; catalog hydrate re-applies `/id` so shorts are not stuck on `/watch` | #169 + ship-ready | 2026-08-30 |
 | BUG-092 | Taste picker / banners / messy create — picker gone; Create is format chips; upload is YT-style details | #169 | 2026-08-27 |
@@ -168,8 +168,8 @@ Ads-related wontfix (**BUG-012/013**) remain correct: no in-stream/VAST inventor
 1. **BUG-010** — Live ingest (RTMP/HLS) — only after a second device can play HLS; keep `liveIngestFlagOn` false until then  
 2. **BUG-016** — Own payouts / admin withdraw (Stripe Express stays off)  
 3. **BUG-053** — MFA enroll flow spot-check on cloud  
-4. **BUG-021** — iOS original-file upload regression test  
-5. **BUG-040** — Quarantine or fix flaky named-activity smoke
+4. **BUG-040** — Quarantine or fix flaky named-activity smoke  
+5. **BUG-024** — Re-verify endless clip/pic scroll after Next
 
 ---
 
@@ -186,7 +186,7 @@ Rules:
 - Link a PR when status → `doing`  
 - Never delete history — move to Done / Won’t fix  
 
-Last updated: 2026-08-30 (P0 ship-blockers verified; product map says Calabi)
+Last updated: 2026-08-30 (BUG-021/022/023/048 shipped in #187)
 
 ### Product foundations (shipped partial — need ingest/OAuth/Stripe Cash SKUs)
 

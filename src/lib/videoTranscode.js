@@ -50,6 +50,8 @@ export async function prepareVideoForUploadMaybeTranscode(file, opts = {}) {
       type: 'video/mp4',
       lastModified: Date.now(),
     })
+    // Never ship WebM from this path — iOS Safari will not play it in the clip reel.
+    if (String(next.type || '').toLowerCase().includes('webm')) return base
     return {
       ...base,
       file: next,

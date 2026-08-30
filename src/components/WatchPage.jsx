@@ -6,7 +6,7 @@ import {
   MoreHorizontal, Flag, Download, RotateCcw,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { getById, getWatchItem, getRelated, getMoreFromCreator, getWatchQueue, listImportsNormalized } from '../lib/contentService'
+import { getById, getWatchItem, ensureWatchItem, getRelated, getMoreFromCreator, getWatchQueue, listImportsNormalized } from '../lib/contentService'
 import { recordView, getViews, toggleVote, getVotes, getUserVote, canAccessPaidPost } from '../lib/engagement'
 import { getWatchProgress, recordWatchProgress } from '../lib/watchProgress'
 import { recordInteraction } from '../lib/algorithmEngine'
@@ -119,6 +119,11 @@ export default function WatchPage({
   const { user, isAuthenticated } = useAuth()
   const syncTick = useContentSyncTick()
   const item = useMemo(() => (itemId ? getWatchItem(itemId) : null), [itemId, syncTick])
+  useEffect(() => {
+    if (!itemId || item) return undefined
+    ensureWatchItem(itemId).catch(() => {})
+    return undefined
+  }, [itemId, item])
   useEffect(() => {
     if (item?.type === 'short' && item.id) onPlayItem?.(item)
   }, [item?.id, item?.type])

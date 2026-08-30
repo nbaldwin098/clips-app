@@ -47,11 +47,11 @@ Treat `[x]` items as “addressed in-repo for that wave,” not “RTMP/Connect/
 ## 1. Reliability & P0
 
 - [x] **001.** Confirm old Static Render service stays deleted (BUG-007)
-- [ ] **002.** Verify cloud delete removes storage objects on prod (BUG-022)
+- [x] **002.** Verify cloud delete removes storage objects on prod (BUG-022)
 - [x] **003.** Regression test: iOS uploads never re-encode to WebM (BUG-021)
 - [ ] **004.** Confirm ErrorReportPrompt tickets show in Admin (BUG-025)
 - [ ] **005.** Spot-check MFA enroll/verify on Next (BUG-053)
-- [ ] **006.** Audit RLS on videos + clips storage (BUG-048)
+- [x] **006.** Audit RLS on videos + clips storage (BUG-048)
 - [x] **007.** Document required Render env vars (BUG-046)
 - [ ] **008.** Heal empty Supabase catalog without wiping paid prices
 - [x] **009.** Fail loudly when NEXT_PUBLIC_SUPABASE_* missing
@@ -102,7 +102,7 @@ Treat `[x]` items as “addressed in-repo for that wave,” not “RTMP/Connect/
 
 ## 3. Live chat, mods & community
 
-- [ ] **051.** Harden live chat multi-device sync (BUG-023)
+- [x] **051.** Harden live chat multi-device sync (BUG-023)
 - [ ] **052.** Migrate channelStaff to cloud (BUG-096)
 - [ ] **053.** Mod action audit log in cloud
 - [ ] **054.** Timeout presets + custom
