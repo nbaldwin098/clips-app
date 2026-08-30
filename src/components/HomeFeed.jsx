@@ -1,4 +1,4 @@
-import { useMemo, useEffect } from 'react'
+import { useMemo, useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { getStableHomeFeed, getStableFollowingFeed, getWatchItem, resolvePlayableItem } from '../lib/contentService'
 import { getPicsFeed } from '../lib/picsService'
@@ -29,6 +29,11 @@ export default function HomeFeed({
 }) {
   const { user } = useAuth()
   const syncTick = useContentSyncTick()
+  const [liveTick, setLiveTick] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => setLiveTick((n) => n + 1), 15000)
+    return () => clearInterval(id)
+  }, [])
   const hydrated = isCatalogHydrated()
   const items = useMemo(() => {
     const feed = getStableHomeFeed(user?.id || null)
@@ -45,7 +50,7 @@ export default function HomeFeed({
   }, [promo, syncTick])
   const onAir = useMemo(
     () => (listOnAirBoard(lsGet('live_board', []) || []) || []).filter((s) => s && !s.demo),
-    [syncTick]
+    [syncTick, liveTick]
   )
   const continueItems = useMemo(() => {
     if (!user?.id) return []
@@ -64,6 +69,7 @@ export default function HomeFeed({
 
   return (
     <div className="w-full bg-black" data-home="apex">
+      {onAir.length > 0 ? (
       <ApexHomeStage
         onAir={onAir}
         onNavigate={onNavigate}
@@ -72,6 +78,7 @@ export default function HomeFeed({
         onOpenCheckout={onOpenCheckout}
         onSelectLive={onSelectLive}
       />
+      ) : null}
 
       <div className="px-4 md:px-8 py-6 md:py-8 w-full space-y-8">
       {promo && promo.placement === 'home' && (
