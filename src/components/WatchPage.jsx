@@ -791,7 +791,7 @@ export default function WatchPage({
           <div className="mt-6 space-y-5">
             <h1 className="text-[1.65rem] font-semibold text-white leading-tight tracking-tight">{item.title || 'Untitled'}</h1>
 
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-4">
               <div className="flex items-center gap-3 min-w-0">
                 <button
                   type="button"
@@ -867,7 +867,7 @@ export default function WatchPage({
                 ) : null}
               </div>
 
-              <div className="flex items-center gap-2 overflow-x-auto pb-0.5 lg:justify-end">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Pill onClick={() => vote('up')} active={myVote === 'up'} title="Like">
                   <ThumbsUp className={`h-4 w-4 ${myVote === 'up' ? 'fill-current' : ''}`} />
                   {likesLabel(votes.up)}
