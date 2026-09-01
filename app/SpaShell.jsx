@@ -1,12 +1,18 @@
 'use client'
 
 import { useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import { useRouter, usePathname } from 'next/navigation'
-import App from '../src/App.jsx'
 import { healLocalState } from '../src/lib/selfHeal'
 import { restoreLostUploads } from '../src/lib/restoreUploads'
 import { syncContentFromCloud } from '../src/lib/contentSync'
 import { NextNavContext } from '../src/lib/NextNavContext'
+
+/** Client-only: Vite SPA reads localStorage/window on first paint. SSR would 418. */
+const App = dynamic(() => import('../src/App.jsx'), {
+  ssr: false,
+  loading: () => <div className="h-full w-full min-h-0 bg-[#000000]" aria-hidden />,
+})
 
 function isStaleAssetError(reason) {
   const msg = String(reason?.message || reason || '')
