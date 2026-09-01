@@ -180,6 +180,8 @@ export default function WatchPage({
   const [moreOpen, setMoreOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
   const moreRef = useRef(null)
+  const tipRef = useRef(null)
+  const [tipOpen, setTipOpen] = useState(false)
   const [autoplay, setAutoplay] = useState(prefs.autoplay !== false)
   const [theater, setTheater] = useState(!!prefs.theater)
   const [ambient, setAmbient] = useState(!!prefs.ambient)
@@ -227,6 +229,7 @@ export default function WatchPage({
     setCountdown(0)
     setCueText('')
     setMoreOpen(false)
+    setTipOpen(false)
     viewCountedRef.current = false
     if (iframeViewTimerRef.current) {
       clearTimeout(iframeViewTimerRef.current)
@@ -237,6 +240,7 @@ export default function WatchPage({
   useEffect(() => {
     const onDoc = (e) => {
       if (moreRef.current && !moreRef.current.contains(e.target)) setMoreOpen(false)
+      if (tipRef.current && !tipRef.current.contains(e.target)) setTipOpen(false)
     }
     document.addEventListener('mousedown', onDoc)
     return () => document.removeEventListener('mousedown', onDoc)
@@ -818,36 +822,47 @@ export default function WatchPage({
                 <FollowButton creatorId={item.creatorId || item.userId} handle={item.handle} onOpenAuth={onOpenAuth} className="ml-2" />
                 <EnableNotificationsButton compact className="ml-2" />
                 {ownCheckoutConfigured() ? (
-                  <div className="ml-2 flex items-center gap-1 flex-wrap justify-end">
-                    {TIP_AMOUNTS.map((n) => (
-                      <button
-                        key={n}
-                        type="button"
-                        disabled={!!tipBusy}
-                        onClick={() => donatePost(n)}
-                        className="h-8 px-2 rounded-full bg-white/10 text-[11px] font-semibold text-white"
-                      >
-                        {tipBusy === String(n) ? '…' : `$${n}`}
-                      </button>
-                    ))}
-                    <input
-                      type="number"
-                      min={TIP_AMOUNT_MIN}
-                      max={TIP_AMOUNT_MAX}
-                      step="0.01"
-                      value={customTip}
-                      onChange={(e) => setCustomTip(e.target.value)}
-                      placeholder="Other"
-                      className="h-8 w-16 rounded-full border border-white/20 bg-black/40 px-2 text-[11px] text-white"
-                    />
+                  <div className="relative ml-2 shrink-0" ref={tipRef}>
                     <button
                       type="button"
-                      disabled={!!tipBusy || !customTip}
-                      onClick={() => donatePost(customTip)}
-                      className="h-8 px-2 rounded-full bg-white text-[11px] font-semibold text-black disabled:opacity-40"
+                      onClick={() => setTipOpen((v) => !v)}
+                      className="h-9 px-3 text-sm font-medium inline-flex items-center border border-white/20 bg-transparent text-white hover:border-white/50 hover:bg-white/5"
                     >
-                      {tipBusy === customTip ? '…' : 'Give'}
+                      Tip
                     </button>
+                    {tipOpen ? (
+                      <div className="absolute left-0 top-[calc(100%+8px)] z-40 w-56 rounded-xl bg-[#212121] border border-white/10 p-2 shadow-2xl flex flex-wrap gap-1">
+                        {TIP_AMOUNTS.map((n) => (
+                          <button
+                            key={n}
+                            type="button"
+                            disabled={!!tipBusy}
+                            onClick={() => donatePost(n)}
+                            className="h-8 px-2 rounded-full bg-white/10 text-[11px] font-semibold text-white"
+                          >
+                            {tipBusy === String(n) ? '…' : `$${n}`}
+                          </button>
+                        ))}
+                        <input
+                          type="number"
+                          min={TIP_AMOUNT_MIN}
+                          max={TIP_AMOUNT_MAX}
+                          step="0.01"
+                          value={customTip}
+                          onChange={(e) => setCustomTip(e.target.value)}
+                          placeholder="Other"
+                          className="h-8 w-16 rounded-full border border-white/20 bg-black/40 px-2 text-[11px] text-white"
+                        />
+                        <button
+                          type="button"
+                          disabled={!!tipBusy || !customTip}
+                          onClick={() => donatePost(customTip)}
+                          className="h-8 px-2 rounded-full bg-white text-[11px] font-semibold text-black disabled:opacity-40"
+                        >
+                          {tipBusy === customTip ? '…' : 'Give'}
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
                 ) : null}
               </div>
