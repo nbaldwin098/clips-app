@@ -38,7 +38,7 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" className="h-full overflow-hidden">
       <head>
         <link rel="manifest" href="/manifest.webmanifest" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -48,7 +48,7 @@ export default function RootLayout({ children }) {
           rel="stylesheet"
         />
       </head>
-      <body className="bg-[#000000] text-zinc-100 antialiased selection:bg-white/30 selection:text-white">
+      <body className="h-full overflow-hidden bg-[#000000] text-zinc-100 antialiased selection:bg-white/30 selection:text-white">
         <Providers>{children}</Providers>
       </body>
     </html>
