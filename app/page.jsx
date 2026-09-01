@@ -20,7 +20,7 @@ export default async function HomePage() {
   return (
     <>
       {/* Crawler-visible home index. SpaShell covers this for interactive users. */}
-      <section className="px-4 py-10 max-w-3xl mx-auto">
+      <section className="sr-only">
         <h1 className="text-3xl font-semibold text-white">calabi</h1>
         <p className="mt-2 text-sm text-zinc-400">
           Watch clips, pics, and live streams from creators.
