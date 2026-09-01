@@ -37,6 +37,13 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
     }
   }, [open, initialMode])
 
+  useEffect(() => {
+    if (!open) return undefined
+    const onKey = (e) => { if (e.key === 'Escape') onClose?.() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open, onClose])
+
   if (!open) return null
 
   const title =
@@ -159,8 +166,8 @@ export default function AuthModal({ open, onClose, initialMode = 'signin' }) {
   }
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4" role="presentation">
-      <div className="w-full max-w-md rounded-2xl border border-[#2f2f37] bg-[#1f1f23] shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4" role="presentation" onClick={onClose}>
+      <div className="w-full max-w-md rounded-2xl border border-[#2f2f37] bg-[#1f1f23] shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#2f2f37]">
           <div className="flex items-center gap-3 min-w-0">
             <BrandMark size={32} withWord />
